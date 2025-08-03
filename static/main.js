@@ -2,27 +2,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const ageSexInput      = document.querySelector('input[name="age_sex"]');
   const presentTextarea  = document.querySelector('textarea[name="present_history"]');
   const pastTextarea     = document.getElementById('past_history');
-  const aiResponseDiv    = document.getElementById('ai_response');
 
-  // 1) Suggest past-history questions
-  document.getElementById('suggest_questions')?.addEventListener('click', async () => {
-    const payload = {
-      age_sex:         ageSexInput.value.trim(),
-      present_history: presentTextarea.value.trim()
-    };
-    try {
-      const res  = await fetch('/ai_suggestion/past_questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      pastTextarea.value = data.suggestion;
-    } catch (err) {
-      alert('Error: ' + err.message);
-    }
-  });
+  // Suggest past-history questions
+  const brainBtn = document.getElementById('suggest_questions');
+  if (brainBtn) {
+    brainBtn.addEventListener('click', async () => {
+      const payload = {
+        age_sex: ageSexInput.value.trim(),
+        present_history: presentTextarea.value.trim()
+      };
+      try {
+        const res = await fetch('/ai_suggestion/past_questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        pastTextarea.value = data.suggestion;
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    });
+  }
+});
+
 
   // 2) Generate provisional diagnoses
   document.getElementById('gen_diagnosis')?.addEventListener('click', async () => {
