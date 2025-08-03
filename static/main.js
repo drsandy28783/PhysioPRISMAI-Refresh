@@ -48,8 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Error: ' + err.message);
     }
   });
-});
-document.addEventListener('DOMContentLoaded', () => {
+
+  document.addEventListener('DOMContentLoaded', () => {
   const ageSexInput     = document.querySelector('input[name="age_sex"]');
   const presentInput    = document.querySelector('textarea[name="present_history"]');
   const pastInput       = document.querySelector('textarea[name="past_history"]');
