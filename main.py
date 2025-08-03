@@ -1030,267 +1030,16 @@ def ai_past_questions():
 @login_required()
 def ai_provisional_diagnosis():
     data = request.get_json() or {}
-    age_sex        = data.get('age_sex', '').strip()
-    present_hist   = data.get('present_history', '').strip()
-    past_hist      = data.get('past_history', '').strip()
+    age_sex    = data.get('age_sex', '').strip()
+    present_hist = data.get('present_history', '').strip()
+    past_hist    = data.get('past_history', '').strip()
 
     prompt = (
-        "You are a physiotherapy clinical decision-support assistant. "
-        "Exclude any patient identifiers.\n"
-        "History provided:\n"
-        f"- Age/Sex: {age_sex}\n"
-        f"- Present history: {present_hist}\n"
-        f"- Past history: {past_hist}\n\n"
-        "List up to two possible provisional diagnoses with a one-sentence rationale each. "
-        "Format each as a numbered item."
-    )
-
-    try:
-        suggestion = get_ai_suggestion(prompt)
-        return jsonify({'suggestion': suggestion})
-
-    except OpenAIError:
-        return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
-
-    except Exception:
-        return jsonify({'error': 'An unexpected error occurred.'}), 500
-
-
-@app.route('/ai_suggestion/subjective/<field>', methods=['POST'])
-
-@login_required()
-def ai_subjective_field(field):
-       data = request.get_json() or {}
-       age_sex      = data.get('age_sex', '').strip()
-       present_hist = data.get('present_history', '').strip()
-       past_hist    = data.get('past_history', '').strip()
-       inputs       = data.get('inputs', {})
-
-       prompt = (
-           "You’re a physiotherapy clinical decision-support assistant. Exclude all identifiers.\n"
-           "Patient info:\n"
-           f"- Age/Sex: {age_sex}\n"
-           f"- Present history: {present_hist}\n"
-           f"- Past history: {past_hist}\n\n"
-           "Subjective findings so far:\n" +
-           "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                     for k, v in inputs.items() if k != field and v) +
-           f"\n\nFor **{field.replace('_',' ').title()}**, provide **2 – 3 concise, open-ended questions** to explore this area further (align with WHO ICF)."
-       )
-
-       try:
-           suggestion = get_ai_suggestion(prompt)
-           return jsonify({'suggestion': suggestion})
-       except OpenAIError:
-           return jsonify({'error': 'AI service unavailable.'}), 503
-       except Exception:
-           return jsonify({'error': 'Unexpected error.'}), 500
-
-
-@app.route('/ai_suggestion/subjective_diagnosis', methods=['POST'])
-
-@login_required()
-def ai_subjective_diagnosis():
-       data = request.get_json() or {}
-       age_sex      = data.get('age_sex', '').strip()
-       present_hist = data.get('present_history', '').strip()
-       past_hist    = data.get('past_history', '').strip()
-       inputs       = data.get('inputs', {})
-
-       prompt = (
-           "You’re a physiotherapy clinical decision-support assistant. Exclude all identifiers.\n"
-           "Patient info:\n"
-           f"- Age/Sex: {age_sex}\n"
-           f"- Present history: {present_hist}\n"
-           f"- Past history: {past_hist}\n\n"
-           "Subjective exam findings:\n" +
-           "\n".join(f"- {k.replace('_',' ').title()}: {v}" for k, v in inputs.items() if v) +
-           "\n\nList up to **2 provisional diagnoses** with a **one-sentence rationale** each. Format as a numbered list."
-       )
-
-       try:
-           suggestion = get_ai_suggestion(prompt)
-           return jsonify({'suggestion': suggestion})
-       except OpenAIError:
-           return jsonify({'error': 'AI service unavailable.'}), 503
-       except Exception:
-           return jsonify({'error': 'Unexpected error.'}), 500
-
-
-@app.route('/ai_suggestion/perspectives/<field>', methods=['POST'])
-@login_required()
-def ai_perspectives_field(field):
-        data     = request.get_json() or {}
-        prev     = data.get('previous', {})      # from AddPatient + Subjective
-        inputs   = data.get('inputs', {})        # current field value
-
-        # Build prompt pieces
-        age_sex  = prev.get('age_sex', '')
-        present  = prev.get('present_history', '')
-        past     = prev.get('past_history', '')
-        subj     = prev.get('subjective', {})    # you may have stored as nested dict
-
-        prompt = (
-            "You are a physiotherapy clinical decision-support assistant. Exclude any identifiers.\n"
-            "Patient summary:\n"
-            f"- Age/Sex: {age_sex}\n"
-            f"- Present history: {present}\n"
-            f"- Past history: {past}\n\n"
-            "Subjective findings:\n" +
-            "\n".join(f"- {k.replace('_',' ').title()}: {v}" for k,v in subj.items() if v) +
-            "\n\n"
-            "Patient perspectives recorded so far:\n" +
-            "\n".join(f"- {k.replace('_',' ').title()}: {v}" 
-                      for k,v in prev.get('perspectives', {}).items() if k != field and v) +
-            f"\n\nFor **{field.replace('_',' ').title()}**, suggest **2–3 concise, open-ended questions** a physiotherapist can ask to explore this area deeper. "
-            "Format as a numbered list."
-        )
-
-        try:
-            suggestion = get_ai_suggestion(prompt)
-            return jsonify({'suggestion': suggestion})
-        except OpenAIError:
-            return jsonify({'error': 'AI service unavailable.'}), 503
-        except Exception:
-            return jsonify({'error': 'Unexpected error.'}), 500
-
-
-@app.route('/ai_suggestion/perspectives_diagnosis', methods=['POST'])
-@login_required()
-def ai_perspectives_diagnosis():
-        data   = request.get_json() or {}
-        prev   = data.get('previous', {})
-        inputs = data.get('inputs', {})
-
-        age_sex  = prev.get('age_sex', '')
-        present  = prev.get('present_history', '')
-        past     = prev.get('past_history', '')
-        subj     = prev.get('subjective', {})
-        persps   = inputs  # latest perspective values
-
-        prompt = (
-            "You are a physiotherapy clinical decision-support assistant. Exclude any identifiers.\n"
-            "Patient summary:\n"
-            f"- Age/Sex: {age_sex}\n"
-            f"- Present history: {present}\n"
-            f"- Past history: {past}\n\n"
-            "Subjective findings:\n" +
-            "\n".join(f"- {k.replace('_',' ').title()}: {v}" for k,v in subj.items() if v) +
-            "\n\n"
-            "Patient perspectives:\n" +
-            "\n".join(f"- {k.replace('_',' ').title()}: {v}" for k,v in persps.items() if v) +
-            "\n\nProvide up to **2 provisional clinical impressions** (1–2 sentences each), integrating these perspectives. "
-            "Number each item."
-        )
-
-        try:
-            suggestion = get_ai_suggestion(prompt)
-            return jsonify({'suggestion': suggestion})
-        except OpenAIError:
-            return jsonify({'error': 'AI service unavailable.'}), 503
-        except Exception:
-            return jsonify({'error': 'Unexpected error.'}), 500
-
-
-@app.route('/ai_suggestion/initial_plan/<field>', methods=['POST'])
-@login_required()
-def ai_initial_plan_field(field):
-    data      = request.get_json() or {}
-    prev      = data.get('previous', {})
-    selection = data.get('selection', '').strip()
-
-    # Build prompt
-    prompt = (
-        "You are a PHI-safe clinical assessment assistant. Use WHO-ICF and physiotherapy best practices.\n\n"
-        "Patient context:\n"
-        f"- Age/Sex: {prev.get('age_sex','')}\n"
-        f"- Present history: {prev.get('present_history','')}\n"
-        f"- Past history: {prev.get('past_history','')}\n\n"
-        "Subjective findings:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in (prev.get('subjective',{})).items() if v) +
-        "\n\nPerspectives:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in (prev.get('perspectives',{})).items() if v) +
-        f"\n\nThe therapist marked **{field.replace('_',' ').title()}** as “{selection}”. "
-        "Interpret “Mandatory assessment” as essential tests, “Assessment with precaution” as tests requiring caution, "
-        "and “Absolutely Contraindicated” as tests to avoid. "
-        "List 2–4 specific tests or maneuvers matching this category as a bullet list."
-    )
-
-    try:
-        suggestion = get_ai_suggestion(prompt)
-        return jsonify({'suggestion': suggestion})
-    except OpenAIError:
-        return jsonify({'error':'AI service unavailable.'}), 503
-    except Exception:
-        return jsonify({'error':'Unexpected error.'}), 500
-
-
-@app.route('/ai_suggestion/initial_plan_summary', methods=['POST'])
-@login_required()
-def ai_initial_plan_summary():
-    data        = request.get_json() or {}
-    prev        = data.get('previous', {})
-    assessments = data.get('assessments', {})
-
-    # Build prompt
-    prompt = (
-        "You are a PHI-safe clinical summarizer.\n\n"
-        "Patient context:\n"
-        f"- Age/Sex: {prev.get('age_sex','')}\n"
-        f"- Present history: {prev.get('present_history','')}\n"
-        f"- Past history: {prev.get('past_history','')}\n\n"
-        "Subjective findings:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in (prev.get('subjective',{})).items() if v) +
-        "\n\nPerspectives:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in (prev.get('perspectives',{})).items() if v) +
-        "\n\nAssessment plan:\n" +
-        "\n".join(
-          f"- {k.replace('_',' ').title()}: {assessments[k]['choice']} ({assessments[k]['details']})"
-          for k in assessments
-        ) +
-        "\n\nProvide a concise 2-3 sentence summary of the assessment findings and up to two provisional diagnoses."
-    )
-
-    try:
-        summary = get_ai_suggestion(prompt)
-        return jsonify({'summary': summary})
-    except OpenAIError:
-        return jsonify({'error':'AI service unavailable.'}), 503
-    except Exception:
-        return jsonify({'error':'Unexpected error.'}), 500
-
-@app.route('/ai_suggestion/patho/possible_source', methods=['POST'])
-@csrf.exempt
-@login_required()
-def ai_patho_source():
-    data      = request.get_json() or {}
-    prev      = data.get('previous', {})
-    selection = data.get('selection', '').strip()
-
-    # Build prompt
-    prompt = (
-        "You are a PHI-safe clinical reasoning assistant. Integrate all collected patient data—"
-        "demographics, presenting complaint, medical history, subjective findings, "
-        "patient perspectives, and planned assessments.\n\n"
-        "Patient summary:\n"
-        f"- Age/Sex: {prev.get('age_sex','')}\n"
-        f"- Present history: {prev.get('present_history','')}\n"
-        f"- Past history: {prev.get('past_history','')}\n\n"
-        "Subjective findings:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in prev.get('subjective',{}).items() if v) +
-        "\n\nPerspectives:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in prev.get('perspectives',{}).items() if v) +
-        "\n\nAssessment plan:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in prev.get('assessments',{}).items() if v.get('choice')) +
-        f"\n\nThe clinician marked **Possible Source of Symptoms** as “{selection}”. "
-        "Describe 2–3 concise, plausible anatomical or physiological mechanisms explaining how this source produces the patient’s symptoms. "
+        "Given the following patient case (no names or identifying details):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present_hist}\n"
+        f"Past history: {past_hist}\n"
+        "List up to two likely provisional diagnoses for physiotherapy with a brief rationale for each. "
         "Format as a numbered list."
     )
 
@@ -1298,9 +1047,290 @@ def ai_patho_source():
         suggestion = get_ai_suggestion(prompt)
         return jsonify({'suggestion': suggestion})
     except OpenAIError:
-        return jsonify({'error':'AI service unavailable.'}), 503
+        return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
     except Exception:
-        return jsonify({'error':'Unexpected error.'}), 500
+        return jsonify({'error': 'An unexpected error occurred.'}), 500
+
+
+
+@app.route('/ai_suggestion/subjective/<field>', methods=['POST'])
+@login_required()
+def ai_subjective_field(field):
+    data = request.get_json() or {}
+    age_sex     = data.get('age_sex', '').strip()
+    present_hist= data.get('present_history', '').strip()
+    past_hist   = data.get('past_history', '').strip()
+    inputs      = data.get('inputs', {})
+
+    # Compose a brief summary of relevant prior subjective findings (excluding current field)
+    subjective_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}"
+        for k, v in inputs.items() if k != field and v
+    )
+
+    prompt = (
+        "You are a physiotherapy clinical assistant. Do not use or request any patient names or identifiers.\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present_hist}\n"
+        f"Past history: {past_hist}\n"
+        f"Other subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
+        f"\nFor **{field.replace('_', ' ').title()}**, suggest 2–3 open-ended questions a physiotherapist should ask to clarify this aspect. "
+        "Format as a numbered list."
+    )
+
+    try:
+        suggestion = get_ai_suggestion(prompt)
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError:
+        return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
+    except Exception:
+        return jsonify({'error': 'Unexpected error.'}), 500
+
+
+@app.route('/ai_suggestion/subjective_diagnosis', methods=['POST'])
+@login_required()
+def ai_subjective_diagnosis():
+    data = request.get_json() or {}
+    age_sex     = data.get('age_sex', '').strip()
+    present_hist= data.get('present_history', '').strip()
+    past_hist   = data.get('past_history', '').strip()
+    inputs      = data.get('inputs', {})
+
+    findings = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}"
+        for k, v in inputs.items() if v
+    )
+
+    prompt = (
+        "Given the following (no names or patient identifiers):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present_hist}\n"
+        f"Past history: {past_hist}\n"
+        f"Subjective findings:\n{findings if findings else 'None'}\n"
+        "List up to 2 likely provisional diagnoses for physiotherapy, each with a one-sentence rationale. Format as a numbered list."
+    )
+
+    try:
+        suggestion = get_ai_suggestion(prompt)
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError:
+        return jsonify({'error': 'AI service unavailable.'}), 503
+    except Exception:
+        return jsonify({'error': 'Unexpected error.'}), 500
+
+
+@app.route('/ai_suggestion/perspectives/<field>', methods=['POST'])
+@login_required()
+def ai_perspectives_field(field):
+    data = request.get_json() or {}
+    prev   = data.get('previous', {})
+    inputs = data.get('inputs', {})
+
+    age_sex = prev.get('age_sex', '')
+    present = prev.get('present_history', '')
+    past    = prev.get('past_history', '')
+    subj    = prev.get('subjective', {})
+    perspectives = prev.get('perspectives', {})
+
+    subjective_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in subj.items() if v
+    )
+    perspectives_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in perspectives.items() if k != field and v
+    )
+
+    prompt = (
+        "Given this case (do not use any names or identifiers):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present}\n"
+        f"Past history: {past}\n"
+        f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
+        f"Perspectives recorded:\n{perspectives_summary if perspectives_summary else 'None'}\n"
+        f"\nFor **{field.replace('_', ' ').title()}**, suggest 2–3 open-ended questions a physiotherapist should ask to clarify this perspective. Format as a numbered list."
+    )
+
+    try:
+        suggestion = get_ai_suggestion(prompt)
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError:
+        return jsonify({'error': 'AI service unavailable.'}), 503
+    except Exception:
+        return jsonify({'error': 'Unexpected error.'}), 500
+
+
+@app.route('/ai_suggestion/perspectives_diagnosis', methods=['POST'])
+@login_required()
+def ai_perspectives_diagnosis():
+    data = request.get_json() or {}
+    prev   = data.get('previous', {})
+    inputs = data.get('inputs', {})
+
+    age_sex = prev.get('age_sex', '')
+    present = prev.get('present_history', '')
+    past    = prev.get('past_history', '')
+    subj    = prev.get('subjective', {})
+    persps  = inputs
+
+    subjective_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in subj.items() if v
+    )
+    perspectives_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in persps.items() if v
+    )
+
+    prompt = (
+        "Given this case (do not use any names or identifiers):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present}\n"
+        f"Past history: {past}\n"
+        f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
+        f"Perspectives:\n{perspectives_summary if perspectives_summary else 'None'}\n"
+        "Based on this information, provide up to 2 provisional clinical impressions for physiotherapy, each 1–2 sentences and integrating the patient perspectives. Format as a numbered list."
+    )
+
+    try:
+        suggestion = get_ai_suggestion(prompt)
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError:
+        return jsonify({'error': 'AI service unavailable.'}), 503
+    except Exception:
+        return jsonify({'error': 'Unexpected error.'}), 500
+
+
+
+@app.route('/ai_suggestion/initial_plan/<field>', methods=['POST'])
+@login_required()
+def ai_initial_plan_field(field):
+    data = request.get_json() or {}
+    prev      = data.get('previous', {})
+    selection = data.get('selection', '').strip()
+
+    age_sex = prev.get('age_sex', '')
+    present = prev.get('present_history', '')
+    past    = prev.get('past_history', '')
+    subj    = prev.get('subjective', {})
+    persp   = prev.get('perspectives', {})
+
+    subjective_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in subj.items() if v
+    )
+    perspectives_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in persp.items() if v
+    )
+
+    prompt = (
+        "Given this case (no patient names or identifiers):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present}\n"
+        f"Past history: {past}\n"
+        f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
+        f"Perspectives:\n{perspectives_summary if perspectives_summary else 'None'}\n"
+        f"\nThe therapist marked **{field.replace('_', ' ').title()}** as **{selection}**. "
+        "Interpret this category as:\n"
+        "- 'Mandatory assessment': essential tests\n"
+        "- 'Assessment with precaution': tests needing caution\n"
+        "- 'Absolutely contraindicated': tests to avoid\n"
+        "List 2–4 specific assessment tests or maneuvers that fit this category as a bullet list."
+    )
+
+    try:
+        suggestion = get_ai_suggestion(prompt)
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError:
+        return jsonify({'error': 'AI service unavailable.'}), 503
+    except Exception:
+        return jsonify({'error': 'Unexpected error.'}), 500
+
+
+
+@app.route('/ai_suggestion/initial_plan_summary', methods=['POST'])
+@login_required()
+def ai_initial_plan_summary():
+    data = request.get_json() or {}
+    prev        = data.get('previous', {})
+    assessments = data.get('assessments', {})
+
+    age_sex = prev.get('age_sex', '')
+    present = prev.get('present_history', '')
+    past    = prev.get('past_history', '')
+    subj    = prev.get('subjective', {})
+    persp   = prev.get('perspectives', {})
+
+    subjective_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in subj.items() if v
+    )
+    perspectives_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in persp.items() if v
+    )
+    assessments_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {assessments[k]['choice']} ({assessments[k]['details']})"
+        for k in assessments if assessments[k].get('choice') or assessments[k].get('details')
+    )
+
+    prompt = (
+        "Given this case (no patient names or identifiers):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present}\n"
+        f"Past history: {past}\n"
+        f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
+        f"Perspectives:\n{perspectives_summary if perspectives_summary else 'None'}\n"
+        f"Assessment plan:\n{assessments_summary if assessments_summary else 'None'}\n"
+        "In 2–3 sentences, summarize the assessment findings and list up to two likely provisional diagnoses."
+    )
+
+    try:
+        summary = get_ai_suggestion(prompt)
+        return jsonify({'summary': summary})
+    except OpenAIError:
+        return jsonify({'error': 'AI service unavailable.'}), 503
+    except Exception:
+        return jsonify({'error': 'Unexpected error.'}), 500
+
+
+@app.route('/ai_suggestion/patho/possible_source', methods=['POST'])
+@csrf.exempt
+@login_required()
+def ai_patho_source():
+    data = request.get_json() or {}
+    prev      = data.get('previous', {})
+    selection = data.get('selection', '').strip()
+
+    age_sex = prev.get('age_sex', '')
+    present = prev.get('present_history', '')
+    past    = prev.get('past_history', '')
+    subj    = prev.get('subjective', {})
+    persp   = prev.get('perspectives', {})
+    assess  = prev.get('assessments', {})
+
+    subjective_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in subj.items() if v
+    )
+    perspectives_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in persp.items() if v
+    )
+    assessments_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v['choice']}" for k, v in assess.items() if v.get('choice')
+    )
+
+    prompt = (
+        "Given this case (do not use patient names or identifiers):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present}\n"
+        f"Past history: {past}\n"
+        f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
+        f"Perspectives:\n{perspectives_summary if perspectives_summary else 'None'}\n"
+        f"Assessment plan:\n{assessments_summary if assessments_summary else 'None'}\n"
+        f"\nThe therapist marked Possible Source of Symptoms as: {selection}.\n"
+        "Describe 2–3 concise, plausible anatomical or physiological mechanisms explaining how this source could cause the patient's symptoms. Format as a numbered list."
+    )
+
+    try:
+        suggestion = get_ai_suggestion(prompt)
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError:
+        return jsonify({'error': 'AI service unavailable.'}), 503
+    except Exception:
+        return jsonify({'error': 'Unexpected error.'}), 500
 
 
 
@@ -1308,39 +1338,50 @@ def ai_patho_source():
 @csrf.exempt
 @login_required()
 def ai_chronic_factors():
-    data            = request.get_json() or {}
-    prev            = data.get('previous', {})
-    text_input      = data.get('input', '').strip()
-    causes_selected = data.get('causes', [])  # if you want checkboxes
+    data = request.get_json() or {}
+    prev           = data.get('previous', {})
+    text_input     = data.get('input', '').strip()
+    causes_selected= data.get('causes', [])
 
-    # Build prompt
+    age_sex = prev.get('age_sex', '')
+    present = prev.get('present_history', '')
+    past    = prev.get('past_history', '')
+    subj    = prev.get('subjective', {})
+    persp   = prev.get('perspectives', {})
+    assess  = prev.get('assessments', {})
+
+    subjective_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in subj.items() if v
+    )
+    perspectives_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in persp.items() if v
+    )
+    assessments_summary = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v.get('choice')}" for k, v in assess.items() if v.get('choice')
+    )
+
+    causes_str = ", ".join(causes_selected) if causes_selected else "None"
+
     prompt = (
-        "You are a PHI-safe clinical questioning assistant. Integrate all prior patient data:\n"
-        f"- Age/Sex: {prev.get('age_sex','')}\n"
-        f"- Present history: {prev.get('present_history','')}\n"
-        f"- Past history: {prev.get('past_history','')}\n\n"
-        "Subjective findings:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in prev.get('subjective',{}).items() if v) +
-        "\n\nPerspectives:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v}"
-                  for k,v in prev.get('perspectives',{}).items() if v) +
-        "\n\nAssessment plan:\n" +
-        "\n".join(f"- {k.replace('_',' ').title()}: {v.get('choice')}"
-                  for k,v in prev.get('assessments',{}).items() if v.get('choice')) +
-        "\n\nThe clinician indicated these maintenance causes:\n" +
-        ("\n".join(f"- {c}" for c in causes_selected) if causes_selected else "- None") +
-        f"\n\nSpecific factors described: {text_input}\n\n"
-        "What 3–5 directed, open-ended questions should the physiotherapist ask to clarify these chronic contributing factors?"
+        "Given this case (no patient names or identifiers):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present}\n"
+        f"Past history: {past}\n"
+        f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
+        f"Perspectives:\n{perspectives_summary if perspectives_summary else 'None'}\n"
+        f"Assessment plan:\n{assessments_summary if assessments_summary else 'None'}\n"
+        f"Maintenance causes indicated: {causes_str}\n"
+        f"Specific chronic factors described: {text_input if text_input else 'None'}\n"
+        "List 3–5 focused, open-ended questions a physiotherapist should ask to clarify these chronic contributing factors."
     )
 
     try:
         suggestion = get_ai_suggestion(prompt)
         return jsonify({'suggestion': suggestion})
     except OpenAIError:
-        return jsonify({'error':'AI service unavailable.'}), 503
+        return jsonify({'error': 'AI service unavailable.'}), 503
     except Exception:
-        return jsonify({'error':'Unexpected error.'}), 500
+        return jsonify({'error': 'Unexpected error.'}), 500
 
 
 
@@ -1348,74 +1389,80 @@ def ai_chronic_factors():
 @csrf.exempt
 @login_required()
 def clinical_flags_suggest(patient_id):
-    data   = request.get_json() or {}
-    prev   = data.get('previous', {})
-    field  = data.get('field', '')
-    text   = data.get('text', '').strip()
+    data = request.get_json() or {}
+    prev  = data.get('previous', {})
+    field = data.get('field', '')
+    text  = data.get('text', '').strip()
 
-    # Determine which flags are “relevant” based on prior inputs
-    # (e.g. if pain_irritability == Present → highlight Yellow Flags)
+    # Determine relevancy hints (optional, use your existing logic)
     relevancy_hints = []
     if prev.get('subjective', {}).get('pain_irritability') == 'Present':
-        relevancy_hints.append("Psychosocial risk factors (Yellow Flags)")
-    if prev.get('assessments', {}).get('special_tests', {}).choice =='Absolutely Contraindicated':
-        relevancy_hints.append("System/Environment barriers (Black Flags)")
-    # … add any other heuristics you like …
+        relevancy_hints.append('Psychosocial risk factors (Yellow Flags)')
+    if prev.get('assessments', {}).get('special_tests', {}).get('choice') == 'Absolutely Contraindicated':
+        relevancy_hints.append('System/Environment barriers (Black Flags)')
+
+    age_sex = prev.get('age_sex', '')
+    present = prev.get('present_history', '')
+    past    = prev.get('past_history', '')
+    subj    = prev.get('subjective', {})
+    persp   = prev.get('perspectives', {})
+    assess  = prev.get('assessments', {})
+
+    subjective_summary = "\n".join(
+        f"- {k.title()}: {v}" for k, v in subj.items() if v
+    )
+    perspectives_summary = "\n".join(
+        f"- {k.title()}: {v}" for k, v in persp.items() if v
+    )
+    assessments_summary = "\n".join(
+        f"- {k.title()}: {v.get('choice')}" for k, v in assess.items() if v.get('choice')
+    )
+    flags_summary = ", ".join(relevancy_hints) if relevancy_hints else "General flags"
 
     prompt = (
-        "You are a PHI-safe clinical prompting assistant.\n"
-        "Integrate patient data:\n"
-        f"- Age/Sex: {prev.get('age_sex','')}\n"
-        f"- Present history: {prev.get('present_history','')}\n"
-        f"- Past history: {prev.get('past_history','')}\n\n"
-        "Subjective findings:\n" +
-        "\n".join(f"- {k.title()}: {v}" for k,v in prev.get('subjective',{}).items() if v) +
-        "\n\nPerspectives:\n" +
-        "\n".join(f"- {k.title()}: {v}" for k,v in prev.get('perspectives',{}).items() if v) +
-        "\n\nAssessments:\n" +
-        "\n".join(f"- {k.title()}: {v.get('choice')}" for k,v in prev.get('assessments',{}).items() if v.get('choice')) +
-        "\n\nRelevant flags to consider (based on above):\n" +
-        ("\n".join(f"- {h}" for h in relevancy_hints) or "- General flags") +
-        f"\n\nYou are focusing on **{field.replace('_',' ').title()}** where the clinician noted:\n“{text}”\n\n"
-        "List 3–5 open-ended follow-up questions a physiotherapist should ask to probe this flag."
+        "Given this case (no patient names or identifiers):\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present}\n"
+        f"Past history: {past}\n"
+        f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
+        f"Perspectives:\n{perspectives_summary if perspectives_summary else 'None'}\n"
+        f"Assessment plan:\n{assessments_summary if assessments_summary else 'None'}\n"
+        f"Relevant clinical flags: {flags_summary}\n"
+        f"You are focusing on: {field.replace('_', ' ').title()} - {text}\n"
+        "List 3–5 open-ended follow-up questions a physiotherapist should ask to further explore this flag."
     )
 
     try:
         suggestion = get_ai_suggestion(prompt)
         return jsonify({'suggestions': suggestion})
     except OpenAIError:
-        return jsonify({'error':'AI service unavailable.'}), 503
+        return jsonify({'error': 'AI service unavailable.'}), 503
     except Exception:
-        return jsonify({'error':'Unexpected error.'}), 500
+        return jsonify({'error': 'Unexpected error.'}), 500
+
 
 
     # 10) Objective Assessment Suggestions
 @app.route('/objective_assessment/<patient_id>/suggest', methods=['POST'])
 @login_required(approved_only=False)
 def objective_assessment_suggest(patient_id):
-        data = request.get_json() or {}
-        logger.info(f"🔎 [server] ObjectiveAssessment payload for patient {patient_id}: {data}")
-        field  = data.get('field')
-        choice = data.get('value')
+    data = request.get_json() or {}
+    field  = data.get('field')
+    choice = data.get('value')
 
-        prompt = (
-            f"A physio is filling out an objective assessment for patient {patient_id}. "
-            f"They have chosen '{choice}' for the '{field}' field. "
-            "List 3–5 specific assessments they should perform next."
-        )
+    prompt = (
+        "A physiotherapist is selecting options during an objective assessment (do not use patient names or identifiers). "
+        f"For the '{field}' section, they have chosen: {choice}. "
+        "List 3–5 specific assessment actions or tests that should be performed next."
+    )
 
-        try:
-            suggestion = get_ai_suggestion(prompt).strip()
-            logger.info(f"💬 [server] ObjectiveAssessment suggestion: {suggestion}")
-            return jsonify({'suggestion': suggestion})
-
-        except OpenAIError as e:
-            logger.error(f"OpenAI API error in objective_assessment_suggest: {e}", exc_info=True)
-            return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
-
-        except Exception as e:
-            logger.error(f"Unexpected error in objective_assessment_suggest: {e}", exc_info=True)
-            return jsonify({'error': 'An unexpected error occurred.'}), 500
+    try:
+        suggestion = get_ai_suggestion(prompt).strip()
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError as e:
+        return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
+    except Exception as e:
+        return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 @app.route('/ai_suggestion/objective_assessment/<field>', methods=['POST'])
 @login_required(approved_only=False)
@@ -1424,73 +1471,78 @@ def objective_assessment_field_suggest(field):
     Suggest 3–5 specific objective assessments based on the selected field.
     """
     data = request.get_json() or {}
-    logger.info(f"🧠 [server] ObjectiveAssessment payload for patient {data.get('patient_id')}: {data}")
     choice = data.get('value', '')
 
     prompt = (
-        f"A physiotherapist is filling out an objective assessment for patient {data.get('patient_id')}. "
-        f"They have chosen '{choice}' for the '{field}' field. "
-        "List 3–5 specific assessments they should perform next."
+        "A physiotherapist is selecting options during an objective assessment (do not use patient names or identifiers). "
+        f"For the '{field}' section, they have chosen: {choice}. "
+        "List 3–5 specific assessment actions or tests that should be performed next."
     )
 
     try:
         suggestion = get_ai_suggestion(prompt).strip()
-        logger.info(f"🧠 [server] ObjectiveAssessment suggestion for “{field}”: {suggestion}")
         return jsonify({'suggestion': suggestion})
     except OpenAIError as e:
-        logger.error(f"OpenAI API error in objective_assessment_field_suggest: {e}", exc_info=True)
         return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
     except Exception as e:
-        logger.error(f"Unexpected error in objective_assessment_field_suggest: {e}", exc_info=True)
         return jsonify({'error': 'An unexpected error occurred.'}), 500
 
-
-            # at the bottom of main.py (after your other @app.route handlers)
 
 @app.route('/provisional_diagnosis_suggest/<patient_id>')
 @login_required()
 def provisional_diagnosis_suggest(patient_id):
-                # which field was clicked?
-                field = request.args.get('field', '')
-                logger.info(f"🧠 [server] provisional_diagnosis_suggest for patient {patient_id}, field {field}")
+    field = request.args.get('field', '')
 
-                # pull together any prior inputs you’ve stored — you can load them from Firestore
-                # or however you’ve been persisting each screen. Here’s a stub:
-                doc = db.collection('patients').document(patient_id).get()
-                if not doc.exists:
-                    return jsonify({'suggestion': ''}), 404
-                patient = doc.to_dict()
+    # Fetch patient document
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return jsonify({'suggestion': ''}), 404
+    patient = doc.to_dict()
 
-                # Example: you might also fetch each collection (subjective, perspectives, etc.)
-                # and merge them into a single `prev` dict. For now, we’ll just work off patient demographics:
-                prev = {
-                    'age_sex': patient.get('age_sex',''),
-                    'present_complaint': patient.get('present_complaint',''),
-                    # …and so on
-                }
+    # Build prior data (add more as needed)
+    prev = {
+        'age_sex': patient.get('age_sex', ''),
+        'present_complaint': patient.get('present_complaint', ''),
+        # ...extend with more data if required
+    }
 
-                # define a prompt for each box
-                prompts = {
-                    'likelihood':       f"Given all prior data for patient {patient_id}, suggest how likely diagnoses should be phrased.",
-                    'structure_fault':  f"For patient {patient_id}, suggest which anatomical structures to consider faulty based on history.",
-                    'symptom':          f"For patient {patient_id}, suggest clarifying questions about their main symptom.",
-                    'findings_support': f"List clinical findings that would support the provisional diagnosis in patient {patient_id}.",
-                    'findings_reject':  f"List common findings that might rule out this provisional diagnosis for patient {patient_id}."
-                }
+    # Define PHI-safe prompt templates
+    prompts = {
+        'likelihood':
+            "Given all the prior clinical data (no names or identifiers):\n"
+            f"Age/Sex: {prev['age_sex']}\nPresenting complaint: {prev['present_complaint']}\n"
+            "Suggest how likely provisional diagnoses should be phrased.",
+        'structure_fault':
+            "Based on the following patient case (do not use names or identifiers):\n"
+            f"Age/Sex: {prev['age_sex']}\nPresenting complaint: {prev['present_complaint']}\n"
+            "Suggest which anatomical structures to consider faulty based on the history.",
+        'symptom':
+            "Given this case (no identifiers):\n"
+            f"Age/Sex: {prev['age_sex']}\nPresenting complaint: {prev['present_complaint']}\n"
+            "Suggest clarifying questions about the patient's main symptom.",
+        'findings_support':
+            "From this case (no identifiers):\n"
+            f"Age/Sex: {prev['age_sex']}\nPresenting complaint: {prev['present_complaint']}\n"
+            "List clinical findings that would support the main provisional diagnosis.",
+        'findings_reject':
+            "From this case (no identifiers):\n"
+            f"Age/Sex: {prev['age_sex']}\nPresenting complaint: {prev['present_complaint']}\n"
+            "List common findings that would rule out the main provisional diagnosis."
+    }
 
-                # pick the right one (or default)
-                prompt = prompts.get(field, f"Help with {field} for patient {patient_id}.")
+    prompt = prompts.get(field, f"Help with {field} in a physiotherapy clinical case (do not use any patient names or identifiers).")
 
-                try:
-                    suggestion = get_ai_suggestion(prompt).strip()
-                    logger.info(f"🤖 [server] provisional_diagnosis_suggest → {suggestion}")
-                    return jsonify({'suggestion': suggestion})
-                except OpenAIError as e:
-                    logger.error(f"OpenAI API error in provisional_diagnosis_suggest: {e}", exc_info=True)
-                    return jsonify({'suggestion': 'AI service unavailable. Please try again later.'}), 503
-                except Exception as e:
-                    logger.error(f"Unexpected error in provisional_diagnosis_suggest: {e}", exc_info=True)
-                    return jsonify({'suggestion': ''}), 500
+    try:
+        suggestion = get_ai_suggestion(prompt).strip()
+        logger.info(f"[server] provisional_diagnosis_suggest {field}: {suggestion}")
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError as e:
+        logger.error(f"OpenAI API error in provisional_diagnosis_suggest: {e}", exc_info=True)
+        return jsonify({'suggestion': '', 'error': 'AI service unavailable. Please try again later.'}), 503
+    except Exception as e:
+        logger.error(f"Unexpected error in provisional_diagnosis_suggest: {e}", exc_info=True)
+        return jsonify({'suggestion': '', 'error': 'An unexpected error occurred.'}), 500
+
 
 
 
@@ -1500,36 +1552,42 @@ def provisional_diagnosis_suggest(patient_id):
 @login_required()
 def ai_smart_goals(field):
     data = request.get_json() or {}
-    # combine all your saved inputs from localStorage
+
+    # Combine all saved prior screen data
     prev = {
-        **data.get('previous', {}),                 # add_patient_data
-        **data.get('previous_subjective', {}),      # subjective_inputs
-        **data.get('previous_perspectives', {}),    # perspectives_inputs
-        **data.get('previous_assessments', {})      # initial_plan_inputs
+        **data.get('previous', {}),
+        **data.get('previous_subjective', {}),
+        **data.get('previous_per_spectives', {}),
+        **data.get('previous_assessments', {})
     }
     text = data.get('input', '').strip()
 
-    # field‑specific top‑level instructions
+    # Field-specific PHI-safe prompts
     prompts = {
-        'patient_goal':      "Based on the patient’s entire record, suggest 2–3 patient‑centric SMART goals they could aim for.",
-        'baseline_status':   "Given those goals and the patient context, what baseline status should I record? Describe the starting point.",
-        'measurable_outcome':"What measurable outcomes would you expect for these goals? List 2–3 concrete metrics.",
-        'time_duration':     "What realistic time duration (e.g. weeks or months) fits those outcomes given the patient's condition?"
+        'patient_goal':
+            "Based on the clinical context, suggest 2–3 patient-centric SMART goals the patient could aim for.",
+        'baseline_status':
+            "Given those goals and the patient context, what baseline status should be recorded as the starting point?",
+        'measurable_outcome':
+            "What measurable outcomes would you expect for these goals? List 2–3 concrete metrics.",
+        'time_duration':
+            "What realistic time duration (e.g., weeks or months) fits those outcomes for this patient's condition?"
     }
-    # fallback if something else slips in
+
+    # Fallback for unknown field
     base_prompt = prompts.get(field,
-        f"You are a PHI‑safe physiotherapy assistant. Help with field '{field}'."
+        f"You are a physiotherapy assistant (do not use any patient names or identifiers). Help with '{field}'."
     )
 
-    # *optional*—stitch in all prior screen data:
+    # Add prior context, if available
     context_lines = []
     for k, v in prev.items():
         if v:
-            context_lines.append(f"- {k}: {v}")
+            context_lines.append(f"- {k.replace('_', ' ').title()}: {v}")
     if context_lines:
-        base_prompt += "\n\nPatient context:\n" + "\n".join(context_lines)
+        base_prompt += "\n\nPatient clinical summary:\n" + "\n".join(context_lines)
 
-    # finally, tack on whatever free text the physio just entered:
+    # Add the current input, if present
     if text:
         base_prompt += f"\n\nCurrent input: {text}"
 
@@ -1543,129 +1601,126 @@ def ai_smart_goals(field):
 
 
 
+
 # 13) Treatment Plan Suggestions
 @app.route('/ai_suggestion/treatment_plan/<field>', methods=['POST'])
 @login_required()
 def treatment_plan_suggest(field):
-    data       = request.get_json() or {}
-    logger.info(f"🧠 [server] TreatmentPlan payload for patient {data.get('patient_id')}: {data}")
+    data = request.get_json() or {}
     text_input = data.get('input', '').strip()
 
-    # field‑specific prompts
+    # PHI-safe, field-specific prompts
     prompts = {
-        'treatment_plan': "Based on this patient’s case, outline 3‑4 evidence‑based interventions you would include in the treatment plan.",
-        'goal_targeted':  "Given the treatment goals and patient context, what specific goal would you target first?",
-        'reasoning':      "Explain the clinical reasoning that links the chosen interventions to the patient’s impairments.",
-        'reference':      "Suggest 1‑2 key references (articles or guidelines) that support this plan."
+        'treatment_plan':
+            "Given the clinical summary (no patient names or identifiers), outline 3–4 evidence-based interventions for the treatment plan.",
+        'goal_targeted':
+            "Given the treatment goals and clinical context, what specific goal should be targeted first?",
+        'reasoning':
+            "Explain the clinical reasoning that links the chosen interventions to the patient's impairments (no identifiers).",
+        'reference':
+            "Suggest 1–2 key references (articles or guidelines) supporting this treatment plan."
     }
-
     prompt = prompts.get(field,
-        f"For the field “{field}”, provide a brief suggestion based on the patient’s data."
+        f"You are a physiotherapy assistant (do not use names or identifiers). Help with '{field}'."
     )
+
+    # Optionally, include any current free-text input (without identifiers)
+    if text_input:
+        prompt += f"\nAdditional info: {text_input}"
 
     try:
         suggestion = get_ai_suggestion(prompt).strip()
-        logger.info(f"🧠 [server] TreatmentPlan suggestion for “{field}”: {suggestion}")
-        return jsonify({ 'field': field, 'suggestion': suggestion })
+        return jsonify({'field': field, 'suggestion': suggestion})
     except OpenAIError:
-        return jsonify({ 'error': 'AI service unavailable. Please try again later.' }), 503
+        return jsonify({'error': 'AI service unavailable.'}), 503
     except Exception:
-        return jsonify({ 'error': 'An unexpected error occurred.' }), 500
+        return jsonify({'error': 'An unexpected error occurred.'}), 500
+
 
 @app.route('/ai_suggestion/treatment_plan_summary/<patient_id>')
 @login_required()
 def treatment_plan_summary(patient_id):
     """
-    Gathers every saved screen for this patient and asks the AI to
-    produce a concise treatment‑plan summary.
+    Gathers every saved screen for this patient and asks the AI to produce a concise treatment plan summary.
     """
-    # 1) Load patient demographics
+    # Load patient demographics
     pat_doc = db.collection('patients').document(patient_id).get()
     patient_info = pat_doc.to_dict() if pat_doc.exists else {}
 
     # Helper to fetch the latest entry from a collection
     def fetch_latest(collection_name):
         coll = db.collection(collection_name) \
-                .where('patient_id', '==', patient_id) \
-                .order_by('timestamp', direction=firestore.Query.DESCENDING) \
-                .limit(1) \
-                .get()
+            .where('patient_id', '==', patient_id) \
+            .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+            .limit(1) \
+            .get()
         return coll[0].to_dict() if coll else {}
 
-    # 2) Pull in each screen’s data
-    subj      = fetch_latest('subjective_examination')       # e.g. pain, history
-    persp     = fetch_latest('subjective_perspectives')      # ICF beliefs
-    assess    = fetch_latest('subjective_assessments')       # initial plan choices
-    patho     = fetch_latest('pathophysiological_mechanism')
-    chronic   = fetch_latest('chronic_disease_factors')
-    flags     = fetch_latest('clinical_flags')
-    objective = fetch_latest('objective_assessment')
-    prov_dx   = fetch_latest('provisional_diagnosis')
-    goals     = fetch_latest('smart_goals')
-    tx_plan   = fetch_latest('treatment_plan')
+    # Pull in each screen's data
+    subj     = fetch_latest('subjective_examination')
+    persp    = fetch_latest('subjective_perspectives')
+    assess   = fetch_latest('subjective_assessments')
+    patho    = fetch_latest('pathophysiological_mechanism')
+    chronic  = fetch_latest('chronic_disease_factors')
+    flags    = fetch_latest('clinical_flags')
+    objective= fetch_latest('objective_assessment')
+    prov_dx  = fetch_latest('provisional_diagnosis')
+    goals    = fetch_latest('smart_goals')
+    tx_plan  = fetch_latest('treatment_plan')
 
-    # 3) Build a single prompt that walks the AI through each section
+    # Build a single prompt that walks the AI through each section (PHI safe)
     prompt = (
-        "You are a PHI‑safe clinical summarization assistant.\n\n"
+        "You are a PHI-safe clinical summarization assistant. Do not use any patient names or IDs in your answer.\n\n"
         f"Patient demographics: {patient_info.get('age_sex', 'N/A')}; "
         f"Sex: {patient_info.get('sex', 'N/A')}; "
         f"Past medical history: {patient_info.get('past_history', 'N/A')}.\n\n"
 
         "Subjective examination:\n"
-        + "\n".join(f"- {k}: {v}" for k,v in subj.items() if k not in ('patient_id','timestamp')) 
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k, v in subj.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
         "Patient perspectives (ICF model):\n"
-        + "\n".join(f"- {k}: {v}" for k,v in persp.items() if k not in ('patient_id','timestamp'))
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k, v in persp.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
         "Initial plan of assessment:\n"
-        + "\n".join(f"- {k}: {v.get('choice')} (details: {v.get('details','')})"
-                    for k,v in assess.items() if k not in ('patient_id','timestamp'))
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v.get('choice','') if isinstance(v, dict) else v}" for k, v in assess.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
         "Pathophysiological mechanism:\n"
-        + "\n".join(f"- {k}: {v}" for k,v in patho.items() if k not in ('patient_id','timestamp'))
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k, v in patho.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
         "Chronic disease factors:\n"
-        + f"- Maintenance causes: {chronic.get('maintenance_causes','')}\n"
-        + f"- Specific factors: {chronic.get('specific_factors','')}\n\n"
+        f"- Maintenance causes: {chronic.get('maintenance_causes','')}\n"
+        f"- Specific factors: {chronic.get('specific_factors','')}\n\n"
 
         "Clinical flags:\n"
-        + "\n".join(f"- {k}: {v}" for k,v in flags.items() if k not in ('patient_id','timestamp'))
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k, v in flags.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
         "Objective assessment:\n"
-        + "\n".join(f"- {k}: {v}" for k,v in objective.items() if k not in ('patient_id','timestamp'))
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k, v in objective.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
         "Provisional diagnosis:\n"
-        + "\n".join(f"- {k}: {v}" for k,v in prov_dx.items() if k not in ('patient_id','timestamp'))
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k, v in prov_dx.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
         "SMART goals:\n"
-        + "\n".join(f"- {k}: {v}" for k,v in goals.items() if k not in ('patient_id','timestamp'))
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k, v in goals.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
         "Finally, the treatment plan:\n"
-        + "\n".join(f"- {k}: {v}" for k,v in tx_plan.items() if k not in ('patient_id','timestamp'))
-        + "\n\n"
+        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k, v in tx_plan.items() if k not in ('patient_id', 'timestamp') and v) + "\n\n"
 
-        "Using all of the above, create a **concise treatment‑plan summary** "
-        "that links the patient’s history, exam findings, goals, and interventions into a coherent paragraph."
+        "Using all of the above, create a concise treatment plan summary paragraph "
+        "that links the history, exam findings, goals, and interventions into a coherent summary (no names or identifiers)."
     )
 
     try:
         summary = get_ai_suggestion(prompt).strip()
-        return jsonify({ 'summary': summary })
+        return jsonify({'summary': summary})
     except OpenAIError:
-        return jsonify({ 'error': 'AI service unavailable. Please try again later.' }), 503
+        return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
     except Exception:
-        return jsonify({ 'error': 'An unexpected error occurred.' }), 500
+        return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 
-@app.route('/ai/followup_suggestion/<patient_id>', methods=['POST'])
+
+@app.route('/ai_followup_suggestion/<patient_id>', methods=['POST'])
 @login_required()
 def ai_followup_suggestion(patient_id):
     # 1. Load patient record
@@ -1676,13 +1731,13 @@ def ai_followup_suggestion(patient_id):
 
     # 2. Parse the current form data
     data = request.get_json() or {}
-    session_no    = data.get('session_number')
-    session_date  = data.get('session_date')
-    grade         = data.get('grade')
-    perception    = data.get('perception')
-    feedback      = data.get('feedback')
+    session_no  = data.get('session_number')
+    session_date= data.get('session_date')
+    grade       = data.get('grade')
+    perception  = data.get('perception')
+    feedback    = data.get('feedback')
 
-    # 3. Build a PHI‑safe summary including SMART Goals
+    # 3. Build a PHI-safe summary including SMART Goals
     case_summary_lines = [
         f"Age/Sex: {patient.get('age_sex', 'N/A')}",
         f"History: {patient.get('chief_complaint', '')}",
@@ -1691,21 +1746,23 @@ def ai_followup_suggestion(patient_id):
         f"Initial Plan: {patient.get('initial_plan_summary', '')}",
         f"SMART Goals: {patient.get('smart_goals_summary', '')}"
     ]
-    case_summary = "\n".join(line for line in case_summary_lines if line.split(": ",1)[1])
+    case_summary = "\n".join(
+        line for line in case_summary_lines if line.split(":",1)[1].strip()
+    )
 
-    # 4. Stitch into a single prompt
+    # 4. Build a PHI-safe prompt (no IDs, no names)
     prompt = (
-        "You are a PHI‑safe clinical reasoning assistant for physiotherapy.\n\n"
-        f"Patient ID: {patient_id}\n\n"
+        "You are a PHI-safe clinical reasoning assistant for physiotherapy. "
+        "Never include patient names or IDs in your answer.\n\n"
         "Case summary so far:\n"
         f"{case_summary}\n\n"
-        "New follow‑up session details:\n"
-        f" • Session #: {session_no} on {session_date}\n"
-        f" • Grade: {grade}\n"
-        f" • Perception: {perception}\n"
-        f" • Feedback: {feedback}\n\n"
+        "New follow-up session details:\n"
+        f"- Session number: {session_no} on {session_date}\n"
+        f"- Grade: {grade}\n"
+        f"- Perception: {perception}\n"
+        f"- Feedback: {feedback}\n\n"
         "Based on ICF guidelines, the SMART Goals above, and the new session data, "
-        "suggest a focussed plan for the next treatment."
+        "suggest a focused plan for the next treatment."
     )
 
     # 5. Call the AI
@@ -1716,6 +1773,7 @@ def ai_followup_suggestion(patient_id):
         return jsonify({'error': 'AI service unavailable.'}), 503
     except Exception:
         return jsonify({'error': 'Unexpected error occurred.'}), 500
+
 
 
 if __name__ == '__main__':
