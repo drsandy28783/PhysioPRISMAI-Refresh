@@ -250,7 +250,7 @@ if (document.getElementById('perspectives-form')) {
     });
   }
 
-}
+
 // ——— AI on Pathophysiological Mechanism screen ———
 if (document.querySelector('select#possible_source')) {
   // load up all prior data
