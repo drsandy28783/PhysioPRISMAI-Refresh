@@ -1,34 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Subjective Examination - PRISM</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <div class="container">
-        <h2>Subjective Examination for {{ patient_id }}</h2>
-        <form method="POST">
-            <label>Impairment of body structure:</label>
-            <textarea class="input-field" name="body_structure" rows="2" required></textarea>
+{% extends "base.html" %}
+{% block title %}Subjective Examination – Physiologic PRISM{% endblock %}
 
-            <label>Impairment of body function:</label>
-            <textarea class="input-field" name="body_function" rows="2" required></textarea>
+{% block head %}
+<style>
+  .field-block { position: relative; margin-top: 12px; }
+  .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
+  .input-field { flex: 1; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+  .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; margin-left: 8px; }
+  .ai-popup { position: absolute; top: 2.5rem; right: 0; max-width: 300px; background: #fff; border: 1px solid #ccc; padding: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none; z-index: 100; }
+</style>
+{% endblock %}
 
-            <label>Activity Limitation / Participation / Restriction – Performance:</label>
-            <textarea class="input-field" name="activity_performance" rows="2" required></textarea>
+{% block content %}
+  <div class="container">
+    <h2>Subjective Examination for {{ patient_id }}</h2>
+    <form method="POST" id="subjective-form" action="{{ url_for('subjective', patient_id=patient_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="age_sex"        value="{{ patient.age_sex }}">
+      <input type="hidden" name="present_history" value="{{ patient.present_history }}">
+      <input type="hidden" name="past_history"    value="{{ patient.past_history }}">
 
-            <label>Activity Limitation / Participation / Restriction – Capacity:</label>
-            <textarea class="input-field" name="activity_capacity" rows="2" required></textarea>
 
-            <label>Contextual Factors – Environmental:</label>
-            <textarea class="input-field" name="contextual_environmental" rows="2" required></textarea>
+      {% set fields = [
+        ['body_structure', 'Impairment of body structure'],
+        ['body_function', 'Impairment of body function'],
+        ['activity_performance', 'Activity limitation / Participation – Performance'],
+        ['activity_capacity', 'Activity limitation / Participation – Capacity'],
+        ['contextual_environmental', 'Contextual Factors – Environmental'],
+        ['contextual_personal', 'Contextual Factors – Personal']
+      ] %}
 
-            <label>Contextual Factors – Personal:</label>
-            <textarea class="input-field" name="contextual_personal" rows="2" required></textarea>
+      {% for name,label in fields %}
+      <div class="field-block">
+        <label for="{{ name }}">{{ label }}:</label>
+        <div style="display:flex; align-items:center;">
+          <textarea id="{{ name }}" name="{{ name }}" class="input-field" rows="2" required>{{ request.form[name] or '' }}</textarea>
+          <button type="button" class="ai-btn" data-field="{{ name }}" title="Suggest {{ label|lower }}">🧠</button>
+        </div>
+        <div id="{{ name }}_popup" class="ai-popup"></div>
+      </div>
+      {% endfor %}
 
-            <button class="button" type="submit">Save & Continue to Patient Perspectives</button>
+      <div style="display:inline-flex; align-items:center; gap:12px; margin-top:16px;">
+        <button type="submit" class="button">Save &amp; Continue to Patient Perspectives</button>
+        <button type="button" id="gen_subjective_dx" class="button" title="Generate subjective diagnosis">🩺</button>
+        <a href="{{ url_for('add_patient') }}" class="button" style="background:#ccc; color:#000;">&larr; Back to Add Patient</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
 
-        </form>
-    </div>
-</body>
-</html>
+

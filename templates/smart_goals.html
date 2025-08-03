@@ -1,28 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SMART Goals - PRISM</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <div class="container">
-        <h2>SMART Goals for {{ patient_id }}</h2>
-        <form method="POST">
+{% extends "base.html" %}
+{% block title %}SMART Goals – Physiologic PRISM{% endblock %}
 
-            <label for="patient_goal">Goals (Patient-Centric):</label>
-            <textarea name="patient_goal" id="patient_goal" class="input-field" rows="2" required></textarea>
+{% block head %}
+<style>
+  .field-block { position: relative; margin-top: 20px; }
+  .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
+  .control-group { display: flex; align-items: flex-start; gap: 8px; }
+  .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+  .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; margin-left: 4px; }
+  .ai-popup { position: absolute; top: 2.5rem; right: 0; max-width: 300px; background: #fff; padding: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none; z-index: 100; }
+</style>
+{% endblock %}
 
-            <label for="baseline_status">Baseline Status:</label>
-            <textarea name="baseline_status" id="baseline_status" class="input-field" rows="2" required></textarea>
+{% block content %}
+<div class="container">
+  <h2>SMART Goals for {{ patient_id }}</h2>
+  <form method="POST" action="{{ url_for('smart_goals', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <label for="measurable_outcome">Measurable Outcomes Expected:</label>
-            <textarea name="measurable_outcome" id="measurable_outcome" class="input-field" rows="2" required></textarea>
+    {% set fields = [
+      ['patient_goal', 'Goals (Patient-Centric)', 'Enter goals here…'],
+      ['baseline_status', 'Baseline Status', 'Enter baseline status…'],
+      ['measurable_outcome', 'Measurable Outcomes Expected', 'Enter expected outcomes…'],
+      ['time_duration', 'Time Duration', 'Enter time duration…']
+    ] %}
 
-            <label for="time_duration">Time Duration:</label>
-            <textarea name="time_duration" id="time_duration" class="input-field" rows="2" required></textarea>
-
-            <button class="button" type="submit">Save & Continue to Treatment Plan</button>
-        </form>
+    {% for name, label, placeholder in fields %}
+    <div class="field-block">
+      <label for="{{ name }}">{{ label }}</label>
+      <div class="control-group">
+        <textarea id="{{ name }}" name="{{ name }}" class="input-field" rows="3" placeholder="{{ placeholder }}">{{ request.form[name] or '' }}</textarea>
+        <button type="button" class="ai-btn" data-field="{{ name }}" title="Ask AI for suggestions">🧠</button>
+      </div>
+      <div id="{{ name }}_popup" class="ai-popup"></div>
     </div>
-</body>
-</html>
+    {% endfor %}
+
+    <div style="margin-top:24px; display:flex; gap:12px; align-items:center;">
+      <button type="submit" class="button">Save &amp; Continue to Treatment Plan</button>
+      <a href="{{ url_for('provisional_diagnosis', patient_id=patient_id) }}" class="button" style="background:#ccc; color:#000;">&larr; Back to Provisional Diagnosis</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

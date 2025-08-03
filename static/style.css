@@ -136,3 +136,65 @@ th, td {
   display: flex;
   flex-direction: column;
 }
+/* —— Layout & Typography —— */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* —— Navbar —— */
+.navbar {
+  background-color: #00695c;
+  padding: 12px 24px;
+}
+.navbar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 20px;
+}
+.navbar a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* —— Forms & Buttons —— */
+.input-field {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.button {
+  background-color: #00796b;
+  color: #fff;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.button:hover {
+  background-color: #005f56;
+}
+
+/* —— Flash Messages —— */
+.flash-messages .flash {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 4px;
+}
+.flash.error   { background-color: #fdecea; color: #611a15; }
+.flash.success { background-color: #e8f5e9; color: #1b5e20; }

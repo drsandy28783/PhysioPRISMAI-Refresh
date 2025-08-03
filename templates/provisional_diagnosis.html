@@ -1,37 +1,67 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Provisional Diagnosis - PRISM</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <div class="container">
-        <h2>Provisional Diagnosis for {{ patient_id }}</h2>
-        <form method="POST">
-            <label for="likelihood">Likelihood of Diagnosis:</label>
-            <textarea name="likelihood" id="likelihood" class="input-field" rows="2" required></textarea>
+{% extends "base.html" %}
+{% block title %}Provisional Diagnosis – Physiologic PRISM{% endblock %}
 
-            <label for="structure_fault">Possible Structure at Fault:</label>
-            <textarea name="structure_fault" id="structure_fault" class="input-field" rows="2" required></textarea>
+{% block head %}
+<style>
+  .field-block { position: relative; margin-top: 20px; }
+  .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
+  .control-group { display: flex; align-items: flex-start; gap: 8px; }
+  .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+  .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; margin-left: 4px; }
+  .ai-popup {
+    position: absolute;
+    top: 2.5rem;
+    right: 0;
+    max-width: 300px;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 100;
+  }
+</style>
+{% endblock %}
 
-            <label for="symptom">Symptom:</label>
-            <textarea name="symptom" id="symptom" class="input-field" rows="2" required></textarea>
+{% block content %}
+<div class="container">
+  <h2>Provisional Diagnosis for {{ patient_id }}</h2>
+  <form method="POST" action="{{ url_for('provisional_diagnosis', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <label for="findings_support">Findings Supporting the Diagnosis:</label>
-            <textarea name="findings_support" id="findings_support" class="input-field" rows="2" required></textarea>
+    {% set fields = [
+      ['likelihood', 'Likelihood of Diagnosis', 'Enter likelihood here…'],
+      ['structure_fault', 'Possible Structure at Fault', 'Enter structure here…'],
+      ['symptom', 'Symptom', 'Enter symptom here…'],
+      ['findings_support', 'Findings Supporting the Diagnosis', 'Enter supporting findings…'],
+      ['findings_reject', 'Findings Rejecting the Diagnosis', 'Enter rejecting findings…']
+    ] %}
 
-            <label for="findings_reject">Findings Rejecting the Diagnosis:</label>
-            <textarea name="findings_reject" id="findings_reject" class="input-field" rows="2" required></textarea>
-
-            <label for="hypothesis_supported">Hypothesis Supported?:</label>
-            <select name="hypothesis_supported" id="hypothesis_supported" class="input-field" required>
-                <option value="">Select</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-            </select>
-
-            <button class="button" type="submit">Save & Continue</button>
-        </form>
+    {% for name, label, placeholder in fields %}
+    <div class="field-block">
+      <label for="{{ name }}">{{ label }}:</label>
+      <div class="control-group">
+        <textarea id="{{ name }}" name="{{ name }}" class="input-field" rows="3" placeholder="{{ placeholder }}">{{ request.form[name] or '' }}</textarea>
+        <button type="button" class="ai-btn" data-field="{{ name }}" title="Ask AI for suggestions">🧠</button>
+      </div>
+      <div id="{{ name }}_popup" class="ai-popup"></div>
     </div>
-</body>
-</html>
+    {% endfor %}
+
+    <div class="field-block" style="margin-top: 24px;">
+      <label for="hypothesis_supported">Hypothesis Supported?</label>
+      <select id="hypothesis_supported" name="hypothesis_supported" class="input-field">
+        <option value="" disabled>Select</option>
+        <option value="Yes" {% if request.form.hypothesis_supported == 'Yes' %}selected{% endif %}>Yes</option>
+        <option value="No" {% if request.form.hypothesis_supported == 'No' %}selected{% endif %}>No</option>
+      </select>
+    </div>
+
+    <div style="margin-top:24px; display:flex; gap:12px; align-items:center;">
+      <button type="submit" class="button">Save &amp; Finish</button>
+      <a href="{{ url_for('objective_assessment', patient_id=patient_id) }}" class="button" style="background:#ccc; color:#000;">&larr; Back to Objective</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

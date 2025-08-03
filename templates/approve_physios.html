@@ -1,42 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Approve Institute Physios - PRISM</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <div class="container">
-        <h2>Pending Approval - Physiotherapists</h2>
-        {% if physios %}
-            <table>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Action</th>
-                </tr>
-                {% for physio in physios %}
-                <tr>
-                    <td>{{ physio['name'] }}</td>
-                    <td>{{ physio['email'] }}</td>
-                    <td>{{ physio['phone'] }}</td>
-                    <td>
-                        <a href="/approve_user/{{ physio['id'] }}">
-                            <button class="button">Approve</button>
-                            <form action="/reject_user/{{ physio['id'] }}" method="get" style="display:inline;">
-                                <button class="button" style="background-color: crimson;">Reject</button>
-                            </form>
-
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
-        {% else %}
-            <p>No physiotherapists pending approval.</p>
-        {% endif %}
-        <br>
-        <a href="/dashboard">Back to Dashboard</a>
-    </div>
-</body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2>Pending Physiotherapist Approvals</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for physio in physios %}
+      <tr>
+        <td>{{ physio.name }}</td>
+        <td>{{ physio.email }}</td>
+        <td>
+          <form action="{{ url_for('approve_user', user_email=physio.email) }}"
+                method="post" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="button">Approve</button>
+          </form>
+          <form action="{{ url_for('reject_user', user_email=physio.email) }}"
+                method="post" style="display:inline; margin-left:8px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="button" style="background-color: crimson;">
+              Reject
+            </button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

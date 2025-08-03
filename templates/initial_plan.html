@@ -1,39 +1,68 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Initial Plan of Assessment - PRISM</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <div class="container">
-        <h2>Initial Plan of Assessment for {{ patient_id }}</h2>
-        <form method="POST">
+{% extends "base.html" %}
+{% block title %}Initial Plan of Assessment – Physiologic PRISM{% endblock %}
 
-            {% for section in [
-                ('active_movements', 'Active Movements'),
-                ('passive_movements', 'Passive Movements'),
-                ('passive_over_pressure', 'Passive Over Pressure'),
-                ('resisted_movements', 'Resisted Movements'),
-                ('combined_movements', 'Combined Movements'),
-                ('special_tests', 'Special Tests'),
-                ('neuro_dynamic_examination', 'Neurodynamic Examination')
-            ] %}
+{% block head %}
+<style>
+  .field-block { margin-top: 16px; position: relative; }
+  .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
+  .control-group { display: flex; align-items: center; gap: 8px; }
+  .control-group .input-field { flex: 1; }
+  .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; }
+  /* Optional: style AI suggestion textarea */
+  .ai-suggestion { margin-top: 8px; width: 100%; padding: 8px; background: #f0f0f0; border-radius: 4px; }
+</style>
+{% endblock %}
 
-            <div style="margin-bottom: 20px;">
-                <label><strong>{{ section[1] }}:</strong></label><br>
-                <select name="{{ section[0] }}" class="input-field" required>
-                    <option value="">Select</option>
-                    <option value="Mandatory assessment">Mandatory assessment</option>
-                    <option value="Assessment with precaution">Assessment with precaution</option>
-                    <option value="Absolutely Contraindicated">Absolutely Contraindicated</option>
-                </select><br>
-                <textarea name="{{ section[0] }}_details" class="input-field" rows="2" placeholder="Add relevant details if needed..."></textarea>
-            </div>
+{% block content %}
+  <div class="container">
+    <h2>Initial Plan of Assessment for {{ patient_id }}</h2>
+    <form id="initial-plan-form" method="POST" action="{{ url_for('initial_plan', patient_id=patient_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            {% endfor %}
+      {% set fields = [
+        ['active_movements',      'Active Movements'],
+        ['passive_movements',     'Passive Movements'],
+        ['passive_over_pressure', 'Passive Over Pressure'],
+        ['resisted_movements',    'Resisted Movements'],
+        ['combined_movements',    'Combined Movements'],
+        ['special_tests',         'Special Tests'],
+        ['neurodynamic',          'Neurodynamic Examination']
+      ] %}
 
-            <button class="button" type="submit">Save & Continue to Pathophysiological Mechanism</button>
-        </form>
-    </div>
-</body>
-</html>
+      {% set options = [
+        'Mandatory assessment',
+        'Assessment with precaution',
+        'Absolutely Contraindicated'
+      ] %}
+
+      {% for name, label in fields %}
+        <div class="field-block">
+          <label for="{{ name }}">{{ label }}</label>
+          <div class="control-group">
+            <select id="{{ name }}" name="{{ name }}" class="input-field" required>
+              <option value="" disabled selected>Select</option>
+              {% for opt in options %}
+                <option value="{{ opt }}" {% if request.form[name] == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="ai-btn" data-field="{{ name }}" title="Suggest tests for {{ label }}">🧠</button>
+          </div>
+          <textarea id="{{ name }}_suggestion" class="ai-suggestion" rows="2" readonly placeholder="AI suggestions..."></textarea>
+          <textarea name="{{ name }}_details" class="input-field" rows="2" placeholder="Details (optional)...">{{ request.form[name + '_details'] or '' }}</textarea>
+        </div>
+      {% endfor %}
+
+      <div style="margin-top:24px; display:flex; gap:12px; align-items:center;">
+        <button type="button" id="gen_initial_summary" class="button" style="font-size:0.9em; padding:0.5rem 1rem;">
+          Generate Assessment Summary
+        </button>
+        <button type="submit" class="button">Save &amp; Continue to Pathophysiological Mechanism</button>
+        <a href="{{ url_for('perspectives', patient_id=patient_id) }}" class="button" style="background:#ccc; color:#000;">
+          ← Back to Perspectives
+        </a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+
