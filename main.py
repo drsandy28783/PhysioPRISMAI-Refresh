@@ -1003,29 +1003,26 @@ def reactivate_user(user_email):
 @login_required()
 def ai_past_questions():
     data = request.get_json() or {}
-    age_sex        = data.get('age_sex', '').strip()
-    present_hist   = data.get('present_history', '').strip()
+    age_sex = data.get('age_sex', '').strip()
+    present_hist = data.get('present_history', '').strip()
 
     prompt = (
-        "You are a physiotherapy clinical decision-support assistant. "
-        "Exclude any patient identifiers.\n"
-        "History provided:\n"
-        f"- Age/Sex: {age_sex}\n"
-        f"- Present history: {present_hist}\n\n"
-        "Provide five concise follow-up questions to clarify the patient's past medical history, "
-        "focusing on relevant comorbidities, risk factors, and symptom timeline. "
-        "Format as a numbered list."
+        "Generate 5 concise follow-up questions to clarify past medical history for a physiotherapy case. "
+        "Focus only on comorbidities, risk factors, and symptom timeline. "
+        "Do not include or request any patient names, identifiers, or location data.\n"
+        f"Age/Sex: {age_sex}\n"
+        f"Present history: {present_hist}\n"
+        "Return the questions as a numbered list."
     )
 
     try:
         suggestion = get_ai_suggestion(prompt)
         return jsonify({'suggestion': suggestion})
-
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
-
     except Exception:
         return jsonify({'error': 'An unexpected error occurred.'}), 500
+
 
 
 @app.route('/ai_suggestion/provisional_diagnosis', methods=['POST'])
