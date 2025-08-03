@@ -154,6 +154,7 @@ def register():
             'is_admin': 0
         })
         session['user_id'] = email
+        session['user_name'] = name  
         return redirect('/dashboard')
     return render_template('register.html')
 
