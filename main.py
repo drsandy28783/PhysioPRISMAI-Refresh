@@ -290,6 +290,7 @@ def admin_dashboard():
 def view_patients():
     name_f = request.args.get('name')
     id_f = request.args.get('patient_id')
+    print("Session user_id:", session.get('user_id'))
 
     try:
         # Base collection
