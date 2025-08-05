@@ -477,7 +477,7 @@ def register_with_institute():
     
 
 @app.route('/approve_physios', methods=['GET', 'POST'])
-@login_required
+@login_required()
 def approve_physios():
     current_user_email = session.get('user_email')
     current_user_doc = db.collection('users').document(current_user_email).get()
@@ -503,7 +503,7 @@ def approve_physios():
 
 
 @app.route('/approve_user/<user_email>', methods=['POST'])
-@login_required
+@login_required()
 def approve_user(user_email):
     user_email = user_email.lower()
     try:
@@ -518,7 +518,7 @@ def approve_user(user_email):
 
 
 @app.route('/reject_user/<user_email>', methods=['POST'])
-@login_required
+@login_required()
 def reject_user(user_email):
     user_email = user_email.lower()
     try:
