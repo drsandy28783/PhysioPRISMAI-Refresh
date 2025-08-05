@@ -1,28 +1,107 @@
 {% extends "base.html" %}
-{% block title %}Patient List – Physiologic PRISM{% endblock %}
+{% block title %}Patient List{% if request.args.get('debug') %} (Debug Mode){% endif %} – Physiologic PRISM{% endblock %}
 
 {% block head %}
 <style>
   .filter-form { margin-bottom: 16px; }
+  .debug-info { 
+    background: #f0f0f0; 
+    padding: 10px; 
+    margin: 10px 0; 
+    border: 1px solid #ccc; 
+    font-family: monospace; 
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+  .patient-card {
+    border: 1px solid #ddd;
+    margin: 10px 0;
+    padding: 15px;
+    background: #f9f9f9;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .data-table th, .data-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-  <div class="container">
-    <h2>Patient List</h2>
+<div class="container">
+  <h2>Patient List{% if request.args.get('debug') %} (Debug Mode){% endif %}</h2>
 
-    <form method="GET" class="filter-form">
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <label>Filter by Name:
-          <input type="text" name="name" placeholder="Enter Name" value="{{ request.args.get('name', '') }}">
-        </label>
-        <label>Filter by Patient ID:
-          <input type="text" name="patient_id" placeholder="Enter ID" value="{{ request.args.get('patient_id', '') }}">
-        </label>
-        <button type="submit" class="button">Apply Filters</button>
+  <!-- Add debug toggle -->
+  <div style="margin-bottom: 10px;">
+    {% if request.args.get('debug') %}
+      <a href="{{ url_for('view_patients') }}?name={{ request.args.get('name', '') }}&patient_id={{ request.args.get('patient_id', '') }}" class="button">Exit Debug Mode</a>
+    {% else %}
+      <a href="{{ url_for('view_patients') }}?debug=1&name={{ request.args.get('name', '') }}&patient_id={{ request.args.get('patient_id', '') }}" class="button">Enable Debug Mode</a>
+    {% endif %}
+  </div>
+
+  <form method="GET" class="filter-form">
+    {% if request.args.get('debug') %}
+      <input type="hidden" name="debug" value="1">
+    {% endif %}
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <label>Filter by Name:
+        <input type="text" name="name" placeholder="Enter Name" value="{{ request.args.get('name', '') }}">
+      </label>
+      <label>Filter by Patient ID:
+        <input type="text" name="patient_id" placeholder="Enter ID" value="{{ request.args.get('patient_id', '') }}">
+      </label>
+      <button type="submit" class="button">Apply Filters</button>
+    </div>
+  </form>
+
+  <p>Found {{ patients|length }} patients</p>
+
+  {% if request.args.get('debug') %}
+    <!-- Debug Mode - Show raw data structure -->
+    {% for patient in patients %}
+    <div class="patient-card">
+      <h3>Patient {{ loop.index }}</h3>
+      
+      <h4>Expected Data:</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <strong>ID:</strong> {{ patient.get('patient_id') or patient.get('doc_id') or 'NOT FOUND' }}<br>
+          <strong>Name:</strong> 
+          {{ patient.get('name')
+            or patient.get('subjectiveExamination', {}).get('contextualFactorsPersonal')
+            or patient.get('contextualFactorsPersonal')
+            or 'NOT FOUND' }}<br>
+          <strong>Age/Sex:</strong> 
+          {{ patient.get('age_sex') or patient.get('ageSex') or 'NOT FOUND' }}<br>
+          <strong>Contact:</strong> 
+          {{ patient.get('contact') or patient.get('contactDetails') or 'NOT FOUND' }}<br>
+          <strong>Created:</strong> {{ patient.get('created_at') or 'NOT FOUND' }}
+        </div>
       </div>
-    </form>
 
+      <h4>All Available Fields:</h4>
+      <div class="debug-info">
+        {% for key, value in patient.items() %}
+{{ key }}: {{ value }}
+        {% endfor %}
+      </div>
+
+      <div style="margin-top: 10px;">
+        <a href="{{ url_for('edit_patient', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button">Edit</a>
+        <a href="{{ url_for('follow_ups', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button green">Add Follow-Up</a>
+        <a href="{{ url_for('view_follow_ups', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button green">View Follow-Ups</a>
+        <a href="{{ url_for('patient_report', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button">Report</a>
+        <a href="{{ url_for('download_report', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button">PDF</a>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <!-- Normal Mode - Regular table view -->
     <table class="data-table">
       <thead>
         <tr>
@@ -37,25 +116,46 @@
       <tbody>
         {% for patient in patients %}
         <tr>
-          <td>{{ patient.patient_id }}</td>
-          <td>{{ patient.name }}</td>
-          <td>{{ patient.age_sex }}</td>
-          <td>{{ patient.contact }}</td>
-          <td>{{ patient.created_at.strftime('%Y-%m-%d') }}</td>
+          <td>{{ patient.get('patient_id') or patient.get('doc_id') or 'N/A' }}</td>
+          <td>
+            {{ patient.get('name')
+              or patient.get('subjectiveExamination', {}).get('contextualFactorsPersonal')
+              or patient.get('contextualFactorsPersonal')
+              or 'N/A' }}
+          </td>
+          <td>
+            {{ patient.get('age_sex') or patient.get('ageSex') or 'N/A' }}
+          </td>
+          <td>
+            {{ patient.get('contact') or patient.get('contactDetails') or 'N/A' }}
+          </td>
+          <td>
+            {% set created_at = patient.get('created_at') %}
+            {% if created_at %}
+              {% if created_at and hasattr(created_at, 'strftime') %}
+                {{ created_at.strftime('%Y-%m-%d') }}
+              {% else %}
+                {{ created_at|string if created_at else 'N/A' }}
+              {% endif %}
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
           <td style="display: flex; flex-direction: column; gap: 4px;">
-            <a href="{{ url_for('edit_patient', patient_id=patient.patient_id) }}" class="button">Edit</a>
-            <a href="{{ url_for('follow_ups', patient_id=patient.patient_id) }}" class="button green">Add Follow-Up</a>
-            <a href="{{ url_for('view_follow_ups', patient_id=patient.patient_id) }}" class="button green">View Follow-Ups</a>
-            <a href="{{ url_for('patient_report', patient_id=patient.patient_id) }}" class="button">Report</a>
-            <a href="{{ url_for('download_report', patient_id=patient.patient_id) }}" class="button">PDF</a>
+            <a href="{{ url_for('edit_patient', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button">Edit</a>
+            <a href="{{ url_for('follow_ups', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button green">Add Follow-Up</a>
+            <a href="{{ url_for('view_follow_ups', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button green">View Follow-Ups</a>
+            <a href="{{ url_for('patient_report', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button">Report</a>
+            <a href="{{ url_for('download_report', patient_id=patient.get('patient_id') or patient.get('doc_id')) }}" class="button">PDF</a>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+  {% endif %}
 
-    <div style="margin-top: 24px;">
-      <a href="{{ url_for('dashboard') }}" class="button">&larr; Back to Dashboard</a>
-    </div>
+  <div style="margin-top: 24px;">
+    <a href="{{ url_for('dashboard') }}" class="button">&larr; Back to Dashboard</a>
   </div>
+</div>
 {% endblock %}

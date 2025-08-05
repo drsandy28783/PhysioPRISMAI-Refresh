@@ -30,6 +30,12 @@ logger = logging.getLogger(__name__)
 # initialize OpenAI
 openai.api_key = os.environ['OPENAI_API_KEY']
 
+# ---- Handle service account JSON if present in env ----
+if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON'):
+    # Write the JSON to a temp file and set GOOGLE_APPLICATION_CREDENTIALS to its path
+    with open('serviceAccount.json', 'w') as f:
+        f.write(os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.abspath('serviceAccount.json')
 
 cred = credentials.Certificate(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
 firebase_admin.initialize_app(cred)
@@ -1007,14 +1013,13 @@ def ai_past_questions():
     present_hist = data.get('present_history', '').strip()
 
     prompt = (
-        "Generate 5 concise follow-up questions to clarify past medical history for a physiotherapy case. "
-        "Focus only on comorbidities, risk factors, and symptom timeline. "
-        "Do not include or request any patient names, identifiers, or location data.\n"
-        f"Age/Sex: {age_sex}\n"
-        f"Present history: {present_hist}\n"
-        "Return the questions as a numbered list."
-    )
-
+    "Generate 5 short, clear follow-up questions suitable for a physiotherapy intake form. "
+    "Focus only on comorbidities, risk factors, and symptom timeline. "
+    "Do not include or request any patient names, identifiers, or location data.\n"
+    f"Age/Sex: {age_sex}\n"
+    f"Present history: {present_hist}\n"
+    "Return the questions as a numbered list."
+)
     try:
         suggestion = get_ai_suggestion(prompt)
         return jsonify({'suggestion': suggestion})
