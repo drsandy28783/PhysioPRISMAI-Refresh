@@ -11,7 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 from google.api_core.exceptions import GoogleAPIError
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, auth
 from firebase_admin.firestore import SERVER_TIMESTAMP
 from google.cloud.firestore_v1.base_query import FieldFilter
 import openai
@@ -148,6 +148,19 @@ def register():
         email = request.form['email']
         pwd = request.form['password']
         pw_hash = generate_password_hash(pwd)
+
+        # Create user in Firebase Auth
+        try:
+            user_record = auth.create_user(
+                email=email,
+                password=pwd,
+                display_name=name,
+            )
+        except Exception as e:
+            print("Error creating Firebase Auth user:", e)
+            return render_template('register.html', error=f"Registration failed: {e}")
+
+        # Store user in Firestore
         db.collection('users').document(email).set({
             'name': name,
             'email': email,
@@ -157,8 +170,9 @@ def register():
             'active': 1,
             'is_admin': 0
         })
+
         session['user_id'] = email
-        session['user_name'] = name  
+        session['user_name'] = name
         return redirect('/dashboard')
     return render_template('register.html')
 
@@ -168,27 +182,15 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         pwd = request.form['password']
-        doc = db.collection('users').document(
-            email).get()  # type: ignore[attr-defined]
-        if not doc.exists:
-            return "Invalid login credentials."
-        user = doc.to_dict()
-        if check_password_hash(user.get('password_hash', ''), pwd):
-            if user.get('approved', 0) == 1 and user.get('active', 1) == 1:
-                session.update({
-                    'user_id': email,
-                    'user_name': user.get('name'),
-                    'institute': user.get('institute'),
-                    'is_admin': user.get('is_admin', 0),
-                    'approved': user.get('approved', 0)
-                })
-                log_action(email, 'Login', f"{user.get('name')} logged in.")
+        user_doc = db.collection('users').document(email).get()
+        if user_doc.exists:
+            user = user_doc.to_dict()
+            pw_hash = user.get('password_hash')
+            if pw_hash and check_password_hash(pw_hash, pwd):
+                session['user_id'] = email
+                session['user_name'] = user.get('name', email)
                 return redirect('/dashboard')
-            elif user.get('active', 1) == 0:
-                return "Your account has been deactivated. Contact your admin."
-            else:
-                return "Your registration is pending admin approval."
-        return "Invalid login credentials."
+        return render_template('login.html', error="Invalid login credentials.")
     return render_template('login.html')
 
 
@@ -279,48 +281,52 @@ def register_institute():
         name = request.form['name']
         email = request.form['email']
         phone = request.form['phone']
-        pwd = generate_password_hash(request.form['password'])
+        pwd_plain = request.form['password']
+        pwd_hash = generate_password_hash(pwd_plain)
         inst = request.form['institute']
+
+        # Create user in Firebase Auth
+        try:
+            user_record = auth.create_user(
+                email=email,
+                password=pwd_plain,
+                display_name=name,
+            )
+        except Exception as e:
+            print("Error creating Firebase Auth user:", e)
+            return render_template('register_institute.html', error=f"Registration failed: {e}")
+
+        # Store user in Firestore
         db.collection('users').document(email).set({
-            'name':
-            name,
-            'email':
-            email,
-            'phone':
-            phone,
-            'password_hash':
-            pwd,
-            'institute':
-            inst,
-            'is_admin':
-            1,
-            'approved':
-            1,
-            'active':
-            1,
-            'created_at':
-            SERVER_TIMESTAMP
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'password_hash': pwd_hash,
+            'institute': inst,
+            'is_admin': 1,
+            'approved': 1,
+            'active': 1,
+            'created_at': SERVER_TIMESTAMP
         })
+
         log_action(None, 'Register', f"{name} registered as Institute Admin")
         return redirect('/login_institute')
     return render_template('register_institute.html')
-
 
 @app.route('/login_institute', methods=['GET', 'POST'])
 def login_institute():
     if request.method == 'POST':
         email = request.form['email']
         pwd = request.form['password']
-        doc = db.collection('users').document(
-            email).get()  # type: ignore[attr-defined]
+        doc = db.collection('users').document(email).get()
         if not doc.exists:
-            return "Invalid credentials or account doesn't exist."
+            return render_template('login_institute.html', error="Invalid credentials or account doesn't exist.")
         user = doc.to_dict()
         if check_password_hash(user.get('password_hash', ''), pwd):
             if user.get('approved', 0) == 0:
-                return "Your account is pending approval by the institute admin."
+                return render_template('login_institute.html', error="Your account is pending approval by the institute admin.")
             if user.get('active', 1) == 0:
-                return "Your account has been deactivated. Please contact your admin."
+                return render_template('login_institute.html', error="Your account has been deactivated. Please contact your admin.")
             session.update({
                 'user_id': email,
                 'user_name': user.get('name'),
@@ -328,13 +334,13 @@ def login_institute():
                 'is_admin': user.get('is_admin', 0),
                 'approved': user.get('approved', 0)
             })
-            log_action(email, 'Login',
-                       f"{user.get('name')} (Admin) logged in.")
+            log_action(email, 'Login', f"{user.get('name')} (Admin) logged in.")
             if user.get('is_admin', 0) == 1:
                 return redirect('/admin_dashboard')
             return redirect('/dashboard')
-        return "Invalid credentials or account doesn't exist."
+        return render_template('login_institute.html', error="Invalid credentials or account doesn't exist.")
     return render_template('login_institute.html')
+
 
 @app.route('/register_with_institute', methods=['GET', 'POST'])
 def register_with_institute():
@@ -342,7 +348,8 @@ def register_with_institute():
         name = request.form['name']
         email = request.form['email']
         phone = request.form['phone']
-        password = generate_password_hash(request.form['password'])
+        pwd_plain = request.form['password']
+        pwd_hash = generate_password_hash(pwd_plain)
         institute = request.form['institute']
         is_admin = 0
         approved = 0
@@ -355,27 +362,34 @@ def register_with_institute():
         if any(existing_email) or any(existing_phone):
             return "Email or phone number already registered."
 
-        # Register new user under selected institute
-        db.collection('users').add({
+        # Create user in Firebase Auth
+        try:
+            user_record = auth.create_user(
+                email=email,
+                password=pwd_plain,
+                display_name=name,
+            )
+        except Exception as e:
+            print("Error creating Firebase Auth user:", e)
+            return render_template('register_with_institute.html', error=f"Registration failed: {e}")
+
+        # Register new user under selected institute (Firestore)
+        db.collection('users').document(email).set({
             'name': name,
             'email': email,
             'phone': phone,
-            'password': password,
+            'password_hash': pwd_hash,
             'institute': institute,
             'is_admin': is_admin,
             'approved': approved,
-            'active': active
+            'active': active,
+            'created_at': SERVER_TIMESTAMP
         })
 
         log_action(user_id=None, action="Register", details=f"{name} registered as Institute Physio (pending approval)")
-
         return "Registration successful! Awaiting admin approval."
 
-    # GET method: show list of institutes (unique from admin users)
-    admins = db.collection('users').where('is_admin', '==', 1).stream()
-    institutes = list({admin.to_dict().get('institute') for admin in admins})
-
-    return render_template('register_with_institute.html', institutes=institutes)
+    return render_template('register_with_institute.html')
     
 
 @app.route('/approve_physios')
