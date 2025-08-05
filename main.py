@@ -30,16 +30,14 @@ logger = logging.getLogger(__name__)
 # initialize OpenAI
 openai.api_key = os.environ['OPENAI_API_KEY']
 
-# ---- Handle service account JSON if present in env ----
-if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON'):
-    # Write the JSON to a temp file and set GOOGLE_APPLICATION_CREDENTIALS to its path
-    with open('serviceAccount.json', 'w') as f:
-        f.write(os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.abspath('serviceAccount.json')
-
-cred = credentials.Certificate(os.environ['GOOGLE_APPLICATION_CREDENTIALS'])
-firebase_admin.initialize_app(cred)
+sa_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON']
+cred_dict = json.loads(sa_json)
+# cred_dict['project_id'] = 'YOUR-PROJECT-ID'  # Only needed if your JSON is missing it
+cred = credentials.Certificate(cred_dict)
+firebase_admin.initialize_app(cred, {'projectId': cred_dict.get('project_id')})
 db = firestore.client()
+
+
 def get_ai_suggestion(prompt: str) -> str:
     """
         Sends a prompt to OpenAI and returns the assistant's reply.
