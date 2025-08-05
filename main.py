@@ -120,21 +120,16 @@ def inject_csrf_token():
 
 
 def login_required(approved_only=True):
-
-    def wrapper(f):
-
-        @wraps(f)
+    def decorator(f):
+        @wraps(f)  # This line is crucial!
         def decorated_function(*args, **kwargs):
             if 'user_id' not in session:
                 return redirect('/login')
-            if approved_only and session.get('is_admin') != 1 and session.get(
-                    'approved') == 0:
+            if approved_only and session.get('is_admin') != 1 and session.get('approved') == 0:
                 return "Access denied. Awaiting approval by admin."
             return f(*args, **kwargs)
-
         return decorated_function
-
-    return wrapper
+    return decorator
 
 @app.route('/')
 def index():
