@@ -144,53 +144,102 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        pwd = request.form['password']
-        pw_hash = generate_password_hash(pwd)
+        name = request.form['name'].strip()
+        email = request.form['email'].strip().lower()
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
 
-        # Create user in Firebase Auth
+        if password != confirm_password:
+            flash("Passwords do not match", "danger")
+            return redirect('/register')
+
         try:
-            user_record = auth.create_user(
-                email=email,
-                password=pwd,
-                display_name=name,
+            # Firebase Auth: Create user
+            payload = {
+                'email': email,
+                'password': password,
+                'returnSecureToken': True
+            }
+            r = requests.post(
+                f'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}',
+                json=payload
             )
+            result = r.json()
+
+            if 'error' in result:
+                flash('Registration failed: ' + result['error']['message'], 'danger')
+                return redirect('/register')
+
+            # Firestore: Add user document
+            db.collection('users').document(email).set({
+                'name': name,
+                'email': email,
+                'role': 'individual',
+                'approved': 1,
+                'active': 1,
+                'is_admin': 0,
+                'created_at': SERVER_TIMESTAMP
+            })
+
+            flash('Registration successful. You can now log in.', 'success')
+            return redirect('/login')
+
         except Exception as e:
-            print("Error creating Firebase Auth user:", e)
-            return render_template('register.html', error=f"Registration failed: {e}")
+            print("Registration error:", e)
+            flash("Something went wrong. Please try again.", "danger")
+            return redirect('/register')
 
-        # Store user in Firestore
-        db.collection('users').document(email).set({
-            'name': name,
-            'email': email,
-            'password_hash': pw_hash,
-            'created_at': SERVER_TIMESTAMP,
-            'approved': 1,
-            'active': 1,
-            'is_admin': 0
-        })
-
-        session['user_id'] = email
-        session['user_name'] = name
-        return redirect('/dashboard')
     return render_template('register.html')
+
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        pwd = request.form['password']
-        user_doc = db.collection('users').document(email).get()
-        if user_doc.exists:
-            user = user_doc.to_dict()
-            pw_hash = user.get('password_hash')
-            if pw_hash and check_password_hash(pw_hash, pwd):
+        email = request.form['email'].strip().lower()
+        password = request.form['password']
+
+        try:
+            # Firebase Auth login
+            payload = {
+                'email': email,
+                'password': password,
+                'returnSecureToken': True
+            }
+            r = requests.post(
+                f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}',
+                json=payload
+            )
+            result = r.json()
+
+            if 'error' in result:
+                flash('Invalid credentials', 'danger')
+                return redirect('/login')
+
+            # Firestore check
+            user_doc = db.collection('users').document(email).get()
+            if not user_doc.exists:
+                flash('User not found in Firestore.', 'danger')
+                return redirect('/login')
+
+            user_data = user_doc.to_dict()
+
+            if user_data.get('approved') == 1 and user_data.get('active') == 1:
+                session['user_email'] = email
+                session['user_name'] = user_data.get('name')
                 session['user_id'] = email
-                session['user_name'] = user.get('name', email)
+                session['role'] = 'individual'
+                session['is_admin'] = 0
                 return redirect('/dashboard')
-        return render_template('login.html', error="Invalid login credentials.")
+            else:
+                flash('Your account is not approved or is inactive.', 'danger')
+                return redirect('/login')
+
+        except Exception as e:
+            print("Login error:", e)
+            flash("Login failed due to a system error.", "danger")
+            return redirect('/login')
+
     return render_template('login.html')
 
 
@@ -236,193 +285,252 @@ def admin_dashboard():
 
 
  
-
 @app.route('/view_patients')
-@login_required()
+@login_required
 def view_patients():
-        name_f = request.args.get('name')
-        id_f   = request.args.get('patient_id')
+    name_f = request.args.get('name')
+    id_f = request.args.get('patient_id')
 
-        try:
-            # 1) Base collection
-            coll = db.collection('patients')
-            q = coll
+    try:
+        # Base collection
+        q = db.collection('patients')
 
-            # 2) Apply filters
-            if name_f:
-                # Note: Firestore requires an order_by on the same field when using >=
-                q = q.where('name', '>=', name_f).order_by('name')
-            if id_f:
-                q = q.where('patient_id', '==', id_f)
+        # Apply filters
+        if name_f:
+            q = q.where('name', '>=', name_f).order_by('name')
+        if id_f:
+            q = q.where('patient_id', '==', id_f)
 
-            # 3) Restrict by institute or physio
-            if session.get('is_admin') == 1:
-                q = q.where('institute', '==', session.get('institute'))
-            else:
-                q = q.where('physio_id', '==', session.get('user_id'))
+        # Restrict by institute or physio
+        if session.get('is_admin') == 1:
+            q = q.where('institute', '==', session.get('institute'))
+        else:
+            q = q.where('physio_id', '==', session.get('user_id'))
 
-            # 4) Execute and materialize
-            docs = q.stream()
-            patients = [doc.to_dict() for doc in docs]
+        # Execute
+        docs = q.stream()
+        patients = [doc.to_dict() for doc in docs]
 
-        except GoogleAPIError as e:
-            logger.error(f"Firestore error in view_patients: {e}", exc_info=True)
-            flash("Could not load your patients list. Please try again later.", "error")
-            return redirect(url_for('dashboard'))
+    except GoogleAPIError as e:
+        logger.error(f"Firestore error in view_patients: {e}", exc_info=True)
+        flash("Could not load your patients list. Please try again later.", "error")
+        return redirect(url_for('dashboard'))
 
-        # 5) Render on success
-        return render_template('view_patients.html', patients=patients)
+    return render_template('view_patients.html', patients=patients)
 
 
 
 @app.route('/register_institute', methods=['GET', 'POST'])
 def register_institute():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        phone = request.form['phone']
-        pwd_plain = request.form['password']
-        pwd_hash = generate_password_hash(pwd_plain)
-        inst = request.form['institute']
+        name = request.form['name'].strip()
+        email = request.form['email'].strip().lower()
+        phone = request.form['phone'].strip()
+        password = request.form['password']
+        institute = request.form['institute'].strip()
 
-        # Create user in Firebase Auth
         try:
-            user_record = auth.create_user(
-                email=email,
-                password=pwd_plain,
-                display_name=name,
+            # Firebase Auth: Create user
+            payload = {
+                'email': email,
+                'password': password,
+                'returnSecureToken': True
+            }
+            r = requests.post(
+                f'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}',
+                json=payload
             )
+            result = r.json()
+
+            if 'error' in result:
+                flash('Registration failed: ' + result['error']['message'], 'danger')
+                return redirect('/register_institute')
+
+            # Firestore: Save admin user
+            db.collection('users').document(email).set({
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'institute': institute,
+                'role': 'institute_admin',
+                'approved': 1,
+                'active': 1,
+                'is_admin': 1,
+                'created_at': SERVER_TIMESTAMP
+            })
+
+            flash('Institute admin registered successfully. You can now log in.', 'success')
+            return redirect('/login_institute')
+
         except Exception as e:
-            print("Error creating Firebase Auth user:", e)
-            return render_template('register_institute.html', error=f"Registration failed: {e}")
+            print("Register institute error:", e)
+            flash("Something went wrong. Please try again.", "danger")
+            return redirect('/register_institute')
 
-        # Store user in Firestore
-        db.collection('users').document(email).set({
-            'name': name,
-            'email': email,
-            'phone': phone,
-            'password_hash': pwd_hash,
-            'institute': inst,
-            'is_admin': 1,
-            'approved': 1,
-            'active': 1,
-            'created_at': SERVER_TIMESTAMP
-        })
-
-        log_action(None, 'Register', f"{name} registered as Institute Admin")
-        return redirect('/login_institute')
     return render_template('register_institute.html')
 
 @app.route('/login_institute', methods=['GET', 'POST'])
 def login_institute():
     if request.method == 'POST':
-        email = request.form['email']
-        pwd = request.form['password']
-        doc = db.collection('users').document(email).get()
-        if not doc.exists:
-            return render_template('login_institute.html', error="Invalid credentials or account doesn't exist.")
-        user = doc.to_dict()
-        if check_password_hash(user.get('password_hash', ''), pwd):
-            if user.get('approved', 0) == 0:
-                return render_template('login_institute.html', error="Your account is pending approval by the institute admin.")
-            if user.get('active', 1) == 0:
-                return render_template('login_institute.html', error="Your account has been deactivated. Please contact your admin.")
-            session.update({
-                'user_id': email,
-                'user_name': user.get('name'),
-                'institute': user.get('institute'),
-                'is_admin': user.get('is_admin', 0),
-                'approved': user.get('approved', 0)
-            })
-            log_action(email, 'Login', f"{user.get('name')} (Admin) logged in.")
-            if user.get('is_admin', 0) == 1:
-                return redirect('/admin_dashboard')
-            return redirect('/dashboard')
-        return render_template('login_institute.html', error="Invalid credentials or account doesn't exist.")
+        email = request.form['email'].strip().lower()
+        password = request.form['password']
+
+        try:
+            # Firebase Auth login
+            payload = {
+                'email': email,
+                'password': password,
+                'returnSecureToken': True
+            }
+            r = requests.post(
+                f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}',
+                json=payload
+            )
+            result = r.json()
+
+            if 'error' in result:
+                flash('Invalid credentials', 'danger')
+                return redirect('/login_institute')
+
+            # Firestore check
+            user_doc = db.collection('users').document(email).get()
+            if not user_doc.exists:
+                flash('User not found in Firestore.', 'danger')
+                return redirect('/login_institute')
+
+            user_data = user_doc.to_dict()
+
+            if user_data.get('approved') == 1 and user_data.get('active') == 1:
+                session['user_email'] = email
+                session['user_name'] = user_data.get('name')
+                session['user_id'] = email
+                session['role'] = user_data.get('role')
+                session['is_admin'] = user_data.get('is_admin', 0)
+
+                if user_data.get('is_admin') == 1:
+                    return redirect('/admin_dashboard')
+                else:
+                    return redirect('/dashboard')
+            else:
+                flash('Your account is not approved or is inactive.', 'danger')
+                return redirect('/login_institute')
+
+        except Exception as e:
+            print("Login institute error:", e)
+            flash("Login failed due to a system error.", "danger")
+            return redirect('/login_institute')
+
     return render_template('login_institute.html')
 
 
 @app.route('/register_with_institute', methods=['GET', 'POST'])
 def register_with_institute():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        phone = request.form['phone']
-        pwd_plain = request.form['password']
-        pwd_hash = generate_password_hash(pwd_plain)
-        institute = request.form['institute']
-        is_admin = 0
-        approved = 0
-        active = 1
+        name = request.form['name'].strip()
+        email = request.form['email'].strip().lower()
+        phone = request.form['phone'].strip()
+        password = request.form['password']
+        institute = request.form['institute'].strip()
 
-        # Check if user already exists
-        existing_email = db.collection('users').where('email', '==', email).stream()
-        existing_phone = db.collection('users').where('phone', '==', phone).stream()
-
-        if any(existing_email) or any(existing_phone):
-            return "Email or phone number already registered."
-
-        # Create user in Firebase Auth
         try:
-            user_record = auth.create_user(
-                email=email,
-                password=pwd_plain,
-                display_name=name,
+            # Firebase Auth: Create account
+            payload = {
+                'email': email,
+                'password': password,
+                'returnSecureToken': True
+            }
+            r = requests.post(
+                f'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}',
+                json=payload
             )
+            result = r.json()
+
+            if 'error' in result:
+                flash('Registration failed: ' + result['error']['message'], 'danger')
+                return redirect('/register_with_institute')
+
+            # Save as unapproved institute physio
+            db.collection('users').document(email).set({
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'institute': institute,
+                'role': 'institute_physio',
+                'approved': 0,
+                'active': 1,
+                'is_admin': 0,
+                'created_at': SERVER_TIMESTAMP
+            })
+
+            flash('Registration request submitted. Please wait for admin approval.', 'info')
+            return redirect('/login_institute')
+
         except Exception as e:
-            print("Error creating Firebase Auth user:", e)
-            return render_template('register_with_institute.html', error=f"Registration failed: {e}")
+            print("Register with institute error:", e)
+            flash("Something went wrong. Please try again.", 'danger')
+            return redirect('/register_with_institute')
 
-        # Register new user under selected institute (Firestore)
-        db.collection('users').document(email).set({
-            'name': name,
-            'email': email,
-            'phone': phone,
-            'password_hash': pwd_hash,
-            'institute': institute,
-            'is_admin': is_admin,
-            'approved': approved,
-            'active': active,
-            'created_at': SERVER_TIMESTAMP
-        })
+    # Dropdown list: Get all institute names from approved admins
+    institute_admins = db.collection('users').where('is_admin', '==', 1).stream()
+    institutes = [{'institute': admin.to_dict().get('institute')} for admin in institute_admins]
 
-        log_action(user_id=None, action="Register", details=f"{name} registered as Institute Physio (pending approval)")
-        return "Registration successful! Awaiting admin approval."
+    return render_template('register_with_institute.html', institutes=institutes)
 
-    return render_template('register_with_institute.html')
     
 
-@app.route('/approve_physios')
-@login_required()
+@app.route('/approve_physios', methods=['GET', 'POST'])
+@login_required
 def approve_physios():
-    if session.get('is_admin') != 1:
-        return redirect('/login_institute')
+    current_user_email = session.get('user_email')
+    current_user_doc = db.collection('users').document(current_user_email).get()
 
-    docs = (db.collection('users')
-              .where('is_admin','==',0)
-              .where('approved','==',0)
-              .where('institute','==', session.get('institute'))
-              .stream())
+    if not current_user_doc.exists:
+        flash('Current user not found.', 'danger')
+        return redirect('/admin_dashboard')
 
-    pending = []
-    for d in docs:
-        data = d.to_dict()
-        # Firestore doc ID is the physio’s email
-        data['email'] = d.id
-        pending.append(data)
+    current_user_data = current_user_doc.to_dict()
+    institute_name = current_user_data.get('institute')
 
-    return render_template('approve_physios.html', physios=pending)
+    # Fetch all physios from the same institute who are not approved
+    pending = db.collection('users') \
+        .where('role', '==', 'institute_physio') \
+        .where('approved', '==', 0) \
+        .where('institute', '==', institute_name) \
+        .stream()
+
+    pending_physios = [doc.to_dict() for doc in pending]
+
+    return render_template('approve_physios.html', physios=pending_physios)
+
 
 
 @app.route('/approve_user/<user_email>', methods=['POST'])
-@login_required()
+@login_required
 def approve_user(user_email):
-        if session.get('is_admin') != 1:
-            return redirect('/login_institute')
-        db.collection('users').document(user_email).update({'approved': 1})
-        log_action(session.get('user_id'), 'Approve User',
-                   f"Approved user {user_email}")
-        return redirect('/approve_physios')
+    user_email = user_email.lower()
+    try:
+        db.collection('users').document(user_email).update({
+            'approved': 1
+        })
+        flash('User approved successfully.', 'success')
+    except Exception as e:
+        print("Approval error:", e)
+        flash('Error approving user.', 'danger')
+    return redirect('/approve_physios')
+
+
+@app.route('/reject_user/<user_email>', methods=['POST'])
+@login_required
+def reject_user(user_email):
+    user_email = user_email.lower()
+    try:
+        db.collection('users').document(user_email).delete()
+        flash('User rejected and deleted successfully.', 'info')
+    except Exception as e:
+        print("Rejection error:", e)
+        flash('Error rejecting user.', 'danger')
+    return redirect('/approve_physios')
+
 
 
 
