@@ -227,10 +227,11 @@ def login():
             if user_data.get('approved') == 1 and user_data.get('active') == 1:
                 session['user_email'] = email
                 session['user_name'] = user_data.get('name')
-                session['user_id'] = email
+                session['user_id'] = result['localId']   # <-- Set Firebase UID here!
                 session['role'] = 'individual'
                 session['is_admin'] = 0
                 return redirect('/dashboard')
+
             else:
                 flash('Your account is not approved or is inactive.', 'danger')
                 return redirect('/login')
