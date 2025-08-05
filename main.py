@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # initialize OpenAI
 openai.api_key = os.environ['OPENAI_API_KEY']
 
+FIREBASE_WEB_API_KEY = os.environ.get('FIREBASE_WEB_API_KEY')
 sa_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON']
 cred_dict = json.loads(sa_json)
 # cred_dict['project_id'] = 'YOUR-PROJECT-ID'  # Only needed if your JSON is missing it
