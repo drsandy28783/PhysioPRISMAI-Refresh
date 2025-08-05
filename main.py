@@ -290,34 +290,31 @@ def admin_dashboard():
 def view_patients():
     name_f = request.args.get('name')
     id_f = request.args.get('patient_id')
-    print("Session user_id:", session.get('user_id'))
 
     try:
-        # Base collection
-        q = db.collection('patients')
+        # Get the current user's Firebase UID from the session
+        current_uid = session.get('user_id')  # Should be Firebase UID
+
+        # Start query with filter
+        q = db.collection('patients').where('physiotherapistId', '==', current_uid)
 
         # Apply filters
         if name_f:
-            q = q.where('name', '>=', name_f).order_by('name')
+            # This is a workaround; Firestore does not support contains, only prefix with >= and < queries.
+            q = q.where('patientName', '>=', name_f).where('patientName', '<=', name_f + '\uf8ff')
         if id_f:
-            q = q.where('patient_id', '==', id_f)
+            q = q.where('id', '==', id_f)
 
-        # Restrict by institute or physio
-        if session.get('is_admin') == 1:
-            q = q.where('institute', '==', session.get('institute'))
-        else:
-            q = q.where('physio_id', '==', session.get('user_id'))
-
-        # Execute
         docs = q.stream()
         patients = [doc.to_dict() for doc in docs]
 
-    except GoogleAPIError as e:
+    except Exception as e:
         logger.error(f"Firestore error in view_patients: {e}", exc_info=True)
         flash("Could not load your patients list. Please try again later.", "error")
         return redirect(url_for('dashboard'))
 
     return render_template('view_patients.html', patients=patients)
+
 
 
 
