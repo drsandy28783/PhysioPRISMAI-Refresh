@@ -284,7 +284,7 @@ def admin_dashboard():
 
  
 @app.route('/view_patients')
-@login_required
+@login_required()
 def view_patients():
     name_f = request.args.get('name')
     id_f = request.args.get('patient_id')
