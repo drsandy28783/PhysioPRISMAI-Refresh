@@ -43,4 +43,4 @@ flask-wtf
 google-api-core
 sift-stack-py
 gunicorn
-
+ruff

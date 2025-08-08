@@ -1,18 +1,17 @@
 import os
 import io
 import json
+import csv
 import requests
-from flask import (Flask, render_template, request, redirect,session, url_for, flash,jsonify)
+from flask import (Flask, render_template, request, redirect,session, url_for, flash,jsonify, make_response, g)
 from datetime import datetime
-from flask_login import login_required
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from xhtml2pdf import pisa
 from functools import wraps
-from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 from google.api_core.exceptions import GoogleAPIError
 import firebase_admin
-from firebase_admin import credentials, firestore, auth
+from firebase_admin import credentials, firestore
 from firebase_admin.firestore import SERVER_TIMESTAMP
 from google.cloud.firestore_v1.base_query import FieldFilter
 import openai
@@ -134,6 +133,28 @@ def login_required(approved_only=True):
             return f(*args, **kwargs)
         return decorated_function
     return real_decorator
+
+
+def patient_access_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        patient_id = kwargs.get('patient_id')
+        if not patient_id:
+            return "Patient ID is required.", 400
+
+        doc = db.collection('patients').document(patient_id).get()
+        if not doc.exists:
+            return "Patient not found.", 404
+
+        patient = doc.to_dict()
+        if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+            return "Access denied.", 403
+
+        g.patient = patient
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 
 
 @app.route('/')
@@ -402,9 +423,10 @@ def login_institute():
             if user_data.get('approved') == 1 and user_data.get('active') == 1:
                 session['user_email'] = email
                 session['user_name'] = user_data.get('name')
-                session['user_id'] = email
+                session['user_id'] = result['localId'] # Use Firebase UID
                 session['role'] = user_data.get('role')
                 session['is_admin'] = user_data.get('is_admin', 0)
+                session['institute'] = user_data.get('institute')
 
                 if user_data.get('is_admin') == 1:
                     return redirect('/admin_dashboard')
@@ -618,41 +640,19 @@ def add_patient():
             'created_at':      SERVER_TIMESTAMP
         }
 
-        # 2) build a per‑month counter key, e.g. "2025/07"
-        now       = datetime.utcnow()
-        month_key = now.strftime('%Y%m')
+        # 2) Create a new patient document with an auto-generated ID
+        new_patient_ref = db.collection('patients').document()
+        pid = new_patient_ref.id
+        data['patient_id'] = pid
 
-        counter_ref = db.collection('patient_counters').document(month_key)
-
-        # 3) bump the counter transactionally
-        @firestore.transactional
-        def bump(txn):
-            snap = counter_ref.get(transaction=txn)
-            data_snap = snap.to_dict() or {}
-            if not snap.exists:
-                txn.set(counter_ref, {'count': 1})
-                return 1
-            else:
-                new_count = data_snap.get('count', 0) + 1
-                txn.update(counter_ref, {'count': new_count})
-                return new_count
-
-        seq = bump(db.transaction())
-
-        # 4) assemble your pretty patient ID "YYYY/MM/NN"
-        pid = f"{now.year:04d}/{now.month:02d}/{seq:02d}"
-
-        # 5) write the patient doc under that ID
-        db.collection('patients').document(pid).set({
-            **data,
-            'patient_id': pid
-        })
+        # 3) Set the data for the new patient
+        new_patient_ref.set(data)
 
         log_action(session.get('user_id'),
                    'Add Patient',
                    f"Added {data['name']} (ID: {pid})")
 
-        # 6) redirect to the next screen
+        # 4) redirect to the next screen
         return redirect(url_for('subjective', patient_id=pid))
 
     # GET → render the blank form
@@ -664,15 +664,9 @@ def add_patient():
 
 @app.route('/subjective/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
+@patient_access_required
 def subjective(patient_id):
-    doc = db.collection('patients').document(
-        patient_id).get()  # type: ignore[attr-defined]
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
-        return "Access denied."
+    patient = g.patient
     if request.method == 'POST':
         fields = [
             'body_structure', 'body_function', 'activity_performance',
@@ -690,14 +684,8 @@ def subjective(patient_id):
 
 @app.route('/perspectives/<path:patient_id>', methods=['GET','POST'])
 @login_required()
+@patient_access_required
 def perspectives(patient_id):
-    doc = db.collection('patients').document(patient_id).get()
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied."
-
     if request.method == 'POST':
         # ← UPDATED TO MATCH YOUR HTML FIELD NAMES
         keys = [
@@ -731,13 +719,8 @@ def perspectives(patient_id):
 
 @app.route('/initial_plan/<path:patient_id>', methods=['GET','POST'])
 @login_required()
+@patient_access_required
 def initial_plan(patient_id):
-    doc = db.collection('patients').document(patient_id).get()  # type: ignore[attr-defined]
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied."
     if request.method == 'POST':
         sections = ['active_movements','passive_movements','passive_over_pressure',
                     'resisted_movements','combined_movements','special_tests','neuro_dynamic_examination']
@@ -753,15 +736,8 @@ def initial_plan(patient_id):
 
 @app.route('/patho_mechanism/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
+@patient_access_required
 def patho_mechanism(patient_id):
-    doc = db.collection('patients').document(
-        patient_id).get()  # type: ignore[attr-defined]
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
-        return "Access denied."
     if request.method == 'POST':
         keys = [
             'area_involved', 'presenting_symptom', 'pain_type', 'pain_nature',
@@ -778,6 +754,7 @@ def patho_mechanism(patient_id):
 
 @app.route('/chronic_disease/<path:patient_id>', methods=['GET','POST'])
 @login_required()
+@patient_access_required
 def chronic_disease(patient_id):
     if request.method == 'POST':
         # Pull back *all* selected options as a Python list:
@@ -795,15 +772,8 @@ def chronic_disease(patient_id):
 
 @app.route('/clinical_flags/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
+@patient_access_required
 def clinical_flags(patient_id):
-    # fetch patient record just like your other screens
-    doc = db.collection('patients').document(patient_id).get()
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied."
-
     if request.method == 'POST':
         entry = {
             'patient_id': patient_id,
@@ -823,15 +793,8 @@ def clinical_flags(patient_id):
 @app.route('/objective_assessment/<path:patient_id>', methods=['GET','POST'])
 @csrf.exempt
 @login_required()
+@patient_access_required
 def objective_assessment(patient_id):
-    # (fetch patient, check access—same as your other screens)
-    doc = db.collection('patients').document(patient_id).get()
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied."
-
     if request.method == 'POST':
         entry = {
             'patient_id': patient_id,
@@ -848,15 +811,8 @@ def objective_assessment(patient_id):
 
 @app.route('/provisional_diagnosis/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
+@patient_access_required
 def provisional_diagnosis(patient_id):
-    doc = db.collection('patients').document(
-        patient_id).get()  # type: ignore[attr-defined]
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
-        return "Access denied."
     if request.method == 'POST':
         keys = [
             'likelihood', 'structure_fault', 'symptom', 'findings_support',
@@ -872,15 +828,8 @@ def provisional_diagnosis(patient_id):
 
 @app.route('/smart_goals/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
+@patient_access_required
 def smart_goals(patient_id):
-    doc = db.collection('patients').document(
-        patient_id).get()  # type: ignore[attr-defined]
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
-        return "Access denied."
     if request.method == 'POST':
         keys = [
             'patient_goal', 'baseline_status', 'measurable_outcome',
@@ -896,15 +845,8 @@ def smart_goals(patient_id):
 
 @app.route('/treatment_plan/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
+@patient_access_required
 def treatment_plan(patient_id):
-    doc = db.collection('patients').document(
-        patient_id).get()  # type: ignore[attr-defined]
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
-        return "Access denied."
     if request.method == 'POST':
         keys = ['treatment_plan', 'goal_targeted', 'reasoning', 'reference']
         entry = {k: request.form[k] for k in keys}
@@ -916,16 +858,9 @@ def treatment_plan(patient_id):
 
 @app.route('/follow_ups/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
+@patient_access_required
 def follow_ups(patient_id):
-    # 1) fetch patient and permission check
-    patient_doc = db.collection('patients').document(patient_id).get()
-    if not patient_doc.exists:
-        return "Patient not found", 404
-    patient = patient_doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied", 403
-
-    # 2) handle new entry
+    patient = g.patient
     if request.method == 'POST':
         entry = {
             'patient_id':      patient_id,
@@ -955,16 +890,9 @@ def follow_ups(patient_id):
 # ─── VIEW FOLLOW-UPS ROUTE ─────────────────────────────────────────────
 @app.route('/view_follow_ups/<path:patient_id>')
 @login_required()
+@patient_access_required
 def view_follow_ups(patient_id):
-    doc = db.collection('patients').document(patient_id).get()
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-
-    # Access control
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied."
-
+    patient = g.patient
     docs = (db.collection('follow_ups')
               .where('patient_id', '==', patient_id)
               .order_by('session_date', direction=firestore.Query.DESCENDING)
@@ -976,16 +904,10 @@ def view_follow_ups(patient_id):
 
 @app.route('/edit_patient/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
+@patient_access_required
 def edit_patient(patient_id):
+    patient = g.patient
     doc_ref = db.collection('patients').document(patient_id)
-    doc = doc_ref.get()
-    if not doc.exists:
-        return "Patient not found", 404
-
-    patient = doc.to_dict()
-
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied", 403
 
     if request.method == 'POST':
         updated_data = {
@@ -1002,15 +924,9 @@ def edit_patient(patient_id):
 
 @app.route('/patient_report/<path:patient_id>')
 @login_required()
+@patient_access_required
 def patient_report(patient_id):
-    doc = db.collection('patients').document(
-        patient_id).get()  # type: ignore[attr-defined]
-    if not doc.exists:
-        return "Patient not found."
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
-        return "Access denied."
+    patient = g.patient
     # fetch each section
     def fetch_one(coll):
         d = db.collection(coll).where('patient_id', '==',
@@ -1033,15 +949,9 @@ def patient_report(patient_id):
 
 @app.route('/download_report/<path:patient_id>')
 @login_required()
+@patient_access_required
 def download_report(patient_id):
-    # 1) Fetch patient record and check permissions
-    doc = db.collection('patients').document(patient_id).get()
-    if not doc.exists:
-        return "Patient not found.", 404
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied.", 403
-
+    patient = g.patient
     # 2) Fetch each section for the report
     def fetch_one(coll):
         result = db.collection(coll) \
@@ -1084,6 +994,7 @@ def download_report(patient_id):
         f"Downloaded PDF report for patient {patient_id}"
     )
     return response
+
 
 
 @app.route('/manage_users')
@@ -1248,7 +1159,6 @@ def ai_subjective_diagnosis():
 def ai_perspectives_field(field):
     data = request.get_json() or {}
     prev   = data.get('previous', {})
-    inputs = data.get('inputs', {})
 
     age_sex = prev.get('age_sex', '')
     present = prev.get('present_history', '')
@@ -1287,13 +1197,12 @@ def ai_perspectives_field(field):
 def ai_perspectives_diagnosis():
     data = request.get_json() or {}
     prev   = data.get('previous', {})
-    inputs = data.get('inputs', {})
 
     age_sex = prev.get('age_sex', '')
     present = prev.get('present_history', '')
     past    = prev.get('past_history', '')
     subj    = prev.get('subjective', {})
-    persps  = inputs
+    persps  = data.get('inputs', {})
 
     subjective_summary = "\n".join(
         f"- {k.replace('_', ' ').title()}: {v}" for k, v in subj.items() if v
@@ -1512,6 +1421,7 @@ def ai_chronic_factors():
 @app.route('/ai_suggestion/clinical_flags/<patient_id>/suggest', methods=['POST'])
 @csrf.exempt
 @login_required()
+@patient_access_required
 def clinical_flags_suggest(patient_id):
     data = request.get_json() or {}
     prev  = data.get('previous', {})
@@ -1569,6 +1479,7 @@ def clinical_flags_suggest(patient_id):
     # 10) Objective Assessment Suggestions
 @app.route('/objective_assessment/<patient_id>/suggest', methods=['POST'])
 @login_required(approved_only=False)
+@patient_access_required
 def objective_assessment_suggest(patient_id):
     data = request.get_json() or {}
     field  = data.get('field')
@@ -1583,9 +1494,9 @@ def objective_assessment_suggest(patient_id):
     try:
         suggestion = get_ai_suggestion(prompt).strip()
         return jsonify({'suggestion': suggestion})
-    except OpenAIError as e:
+    except OpenAIError:
         return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
-    except Exception as e:
+    except Exception:
         return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 @app.route('/ai_suggestion/objective_assessment/<field>', methods=['POST'])
@@ -1606,14 +1517,15 @@ def objective_assessment_field_suggest(field):
     try:
         suggestion = get_ai_suggestion(prompt).strip()
         return jsonify({'suggestion': suggestion})
-    except OpenAIError as e:
+    except OpenAIError:
         return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
-    except Exception as e:
+    except Exception:
         return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 
 @app.route('/provisional_diagnosis_suggest/<patient_id>')
 @login_required()
+@patient_access_required
 def provisional_diagnosis_suggest(patient_id):
     field = request.args.get('field', '')
 
@@ -1763,6 +1675,7 @@ def treatment_plan_suggest(field):
 
 @app.route('/ai_suggestion/treatment_plan_summary/<patient_id>')
 @login_required()
+@patient_access_required
 def treatment_plan_summary(patient_id):
     """
     Gathers every saved screen for this patient and asks the AI to produce a concise treatment plan summary.
@@ -1846,6 +1759,7 @@ def treatment_plan_summary(patient_id):
 
 @app.route('/ai_followup_suggestion/<patient_id>', methods=['POST'])
 @login_required()
+@patient_access_required
 def ai_followup_suggestion(patient_id):
     # 1. Load patient record
     doc = db.collection('patients').document(patient_id).get()

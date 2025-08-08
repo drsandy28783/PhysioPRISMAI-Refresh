@@ -1,6 +1,5 @@
 import sqlite3
 import os
-import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -61,7 +60,8 @@ def migrate_table(table_name):
 
 for tbl in tables:
     # skip sqlite_sequence and any internal tables
-    if tbl == 'sqlite_sequence': continue
+    if tbl == 'sqlite_sequence':
+        continue
     migrate_table(tbl)
 
 conn.close()
@@ -69,7 +69,6 @@ print("\n🎉 Migration script complete. Check Firestore Console.")
 # ——— after your migration loop ———
 
 # 1. List the project your Admin SDK is using:
-import firebase_admin
 app = firebase_admin.get_app()
 print("Using Firebase project:", app.project_id)
 
