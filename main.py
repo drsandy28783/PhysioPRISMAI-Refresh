@@ -85,7 +85,9 @@ def fetch_patient(patient_id):
 
 
 
-app = Flask(__name__)
+app = Flask(__name__,
+            static_folder='static',
+            template_folder='templates')
 app.secret_key =os.environ.get('SECRET_KEY', 'dev_default_key')
 app.config['WTF_CSRF_ENABLED'] = True
 @app.template_filter('datetimeformat')
