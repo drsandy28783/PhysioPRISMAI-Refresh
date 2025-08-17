@@ -8,35 +8,42 @@
   .button-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 24px;
   }
   .container {
-    max-width: 600px;
+    max-width: 640px;
     margin: 100px auto;
     text-align: center;
+  }
+  .subtitle {
+    margin-top: 8px;
+    color: #666;
+    font-size: 0.95rem;
   }
 </style>
 {% endblock %}
 
 {% block content %}
-  <div class="container">
-    <h1>Welcome to Physiologic PRISM</h1>
-
+<div class="container">
+  {% if session.get('user_id') %}
+    <h1>Welcome back to Physiologic PRISM</h1>
+    <p class="subtitle">You’re already signed in.</p>
     <div class="button-group">
-      <a href="{{ url_for('login') }}">
-        <button class="button">Individual Physiotherapist</button>
-      </a>
-      <a href="{{ url_for('login_institute') }}">
-        <button class="button">Institute Login</button>
-      </a>
-      <a href="{{ url_for('register_institute') }}">
-        <button class="button">Register Institute</button>
-      </a>
-      <a href="{{ url_for('register_with_institute') }}">
-        <button class="button">Join as Institute Physio</button>
-      </a>
+      <a href="{{ url_for('dashboard') }}"><button class="button">Go to Dashboard</button></a>
+      <a href="{{ url_for('logout') }}"><button class="button">Logout</button></a>
+      {% if session.get('is_super_admin') == 1 %}
+        <a href="{{ url_for('superadmin_home') }}"><button class="button">Super Admin</button></a>
+      {% endif %}
     </div>
-  </div>
+  {% else %}
+    <h1>Welcome to Physiologic PRISM</h1>
+    <p class="subtitle">Clinical reasoning tools for physiotherapists.</p>
+    <div class="button-group">
+      <a href="{{ url_for('login') }}"><button class="button">Login</button></a>
+      <a href="{{ url_for('register') }}"><button class="button">Register</button></a>
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

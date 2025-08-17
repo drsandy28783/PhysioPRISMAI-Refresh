@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h3>Super Admin</h3>
+
+  <h5>Pending Registrations</h5>
+  <table class="table table-sm">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Institute</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for r in pending %}
+      <tr>
+        <td>{{ r.name }}</td>
+        <td>{{ r.email }}</td>
+        <td>{{ r.role }}</td>
+        <td>
+          {% if r.role == 'institute_admin' %}New: {{ r.institute_name }}
+          {% elif r.role == 'institute_physio' %}Join: {{ r.institute_id }}
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('superadmin_approve', req_id=r.id) }}" style="display:inline">
+            <button class="btn btn-success btn-sm">Approve</button>
+          </form>
+          <form method="post" action="{{ url_for('superadmin_reject', req_id=r.id) }}" style="display:inline">
+            <button class="btn btn-outline-danger btn-sm">Reject</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">No pending requests</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h5 class="mt-4">All Users</h5>
+  <table class="table table-sm">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Institute</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td>{{ u.name }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.role }}</td>
+        <td>{{ u.status }}</td>
+        <td>{{ u.institute_id or '—' }}</td>
+        <td>
+          {% if u.role != 'super_admin' %}
+          <form method="post" action="{{ url_for('superadmin_delete_user', uid=u.id) }}" onsubmit="return confirm('Delete user?');">
+            <button class="btn btn-outline-danger btn-sm">Delete</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if logs %}
+  <h5 class="mt-4">Recent Activity</h5>
+  <ul class="list-group">
+    {% for l in logs %}
+      <li class="list-group-item small">{{ l.timestamp }} — {{ l.actor }} — {{ l.action }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endblock %}

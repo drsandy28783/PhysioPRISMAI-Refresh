@@ -5,36 +5,108 @@
 <style>
   /* Hide navbar on registration page */
   body > .navbar { display: none !important; }
-  .container { max-width: 400px; margin: 80px auto; }
+  .container { max-width: 560px; margin: 80px auto; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; }
+  .row .field-block { flex:1; min-width: 200px; }
+  .hint { color:#666; font-size: .9rem; margin-top: 6px; }
 </style>
 {% endblock %}
 
 {% block content %}
-  <div class="container">
-    <h2>Individual Physiotherapist Registration</h2>
-    <form method="POST" action="{{ url_for('register') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="container">
+  <h2>Register</h2>
+  <p class="hint">All registrations require approval by the super admin. You’ll set your password after approval.</p>
 
+  <form method="POST" action="{{ url_for('register') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="row">
       <div class="field-block">
+        <label>Full Name</label>
         <input class="input-field" type="text" name="name" placeholder="Full Name" required>
       </div>
-
       <div class="field-block">
+        <label>Age</label>
+        <input class="input-field" type="number" name="age" min="18" max="90" placeholder="Age">
+      </div>
+      <div class="field-block">
+        <label>Sex</label>
+        <select class="input-field" name="sex">
+          <option value="">--</option>
+          <option>Female</option>
+          <option>Male</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-block">
+      <label>Area of Practice</label>
+      <input class="input-field" type="text" name="area_of_practice" placeholder="e.g., Musculoskeletal, Sports, Neuro">
+    </div>
+
+    <div class="field-block">
+      <label>Physiotherapy Credentials (for verification)</label>
+      <input class="input-field" type="text" name="credentials" placeholder="e.g., BPT, MPT (Ortho)">
+    </div>
+
+    <div class="row">
+      <div class="field-block">
+        <label>Email</label>
         <input class="input-field" type="email" name="email" placeholder="Email" required>
       </div>
-
       <div class="field-block">
-        <input class="input-field" type="text" name="phone" placeholder="Phone Number" required>
+        <label>Phone</label>
+        <input class="input-field" type="tel" name="phone" placeholder="Phone Number">
       </div>
+    </div>
 
-      <div class="field-block">
-        <input class="input-field" type="password" name="password" placeholder="Password" required>
-      </div>
+    <div class="field-block">
+      <label>Role</label>
+      <select id="role" class="input-field" name="role" required>
+        <option value="">-- select --</option>
+        <option value="individual">Individual Physiotherapist</option>
+        <option value="institute_admin">Institute Admin (register a new institute)</option>
+        <option value="institute_physio">Institute Physio (join an existing institute)</option>
+      </select>
+    </div>
 
-      <div style="margin-top:24px; display:flex; gap:12px; align-items:center;">
-        <button type="submit" class="button">Register</button>
-        <a href="{{ url_for('login') }}" class="button" style="background:#ccc; color:#000;">Already registered? Login</a>
-      </div>
-    </form>
-  </div>
+    <!-- Shown only when role = institute_admin -->
+    <div id="inst_admin_block" class="field-block" style="display:none">
+      <label>Institute Name</label>
+      <input class="input-field" type="text" name="institute_name" placeholder="Institute / Clinic Name">
+      <div class="hint">A new institute record will be created on approval.</div>
+    </div>
+
+    <!-- Shown only when role = institute_physio -->
+    <div id="inst_physio_block" class="field-block" style="display:none">
+      <label>Select Institute</label>
+      <select class="input-field" name="institute_id">
+        <option value="">-- select --</option>
+        {% for i in institutes %}
+          <option value="{{ i.id }}">{{ i.name }}</option>
+        {% endfor %}
+      </select>
+      <div class="hint">Only approved institutes are listed.</div>
+    </div>
+
+    <div style="margin-top:24px; display:flex; gap:12px; align-items:center;">
+      <button type="submit" class="button">Submit for Approval</button>
+      <a href="{{ url_for('login') }}" class="button" style="background:#ccc; color:#000;">Back to Login</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  const roleSel = document.getElementById('role');
+  const adminBlock = document.getElementById('inst_admin_block');
+  const physioBlock = document.getElementById('inst_physio_block');
+  function updateBlocks() {
+    const v = roleSel.value;
+    adminBlock.style.display = (v === 'institute_admin') ? 'block' : 'none';
+    physioBlock.style.display = (v === 'institute_physio') ? 'block' : 'none';
+  }
+  roleSel.addEventListener('change', updateBlocks);
+  updateBlocks();
+</script>
 {% endblock %}
