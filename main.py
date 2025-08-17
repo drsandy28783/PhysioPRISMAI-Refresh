@@ -312,28 +312,43 @@ def admin_dashboard():
 @app.route('/view_patients')
 @login_required()
 def view_patients():
-    name_f = request.args.get('name')
-    id_f = request.args.get('patient_id')
+    # optional filters
+    name_f = (request.args.get('name') or '').strip().lower()
+    id_f   = (request.args.get('patient_id') or '').strip()
 
     try:
-        # Get the current user's Firebase UID from the session
-        current_uid = session.get('user_id')  # Should be Firebase UID
+        uid = session.get('user_id')  # Firebase UID saved at login
 
-        # Start query with filter
-        q = db.collection('patients').where('physiotherapistId', '==', current_uid)
+        # 1) Fetch only this physio's patients from Firestore
+        docs = (
+            db.collection('patients')
+              .where('physio_id', '==', uid)  # <-- key fix
+              .stream()
+        )
 
-        # Apply filters
+        patients = []
+        for d in docs:
+            p = d.to_dict() or {}
+            p.setdefault('patient_id', d.id)  # template expects this
+            patients.append(p)
+
+        # 2) Apply optional filters in Python (safer/portable)
         if name_f:
-            # This is a workaround; Firestore does not support contains, only prefix with >= and < queries.
-            q = q.where('patientName', '>=', name_f).where('patientName', '<=', name_f + '\uf8ff')
-        if id_f:
-            q = q.where('id', '==', id_f)
+            def name_matches(p):
+                # template uses these fallbacks for display
+                candidates = [
+                    str(p.get('name', '')),
+                    str(p.get('subjectiveExamination', {}).get('contextualFactorsPersonal', '')),
+                    str(p.get('contextualFactorsPersonal', '')),
+                ]
+                return any(c.lower().startswith(name_f) for c in candidates if c)
+            patients = [p for p in patients if name_matches(p)]
 
-        docs = q.stream()
-        patients = [doc.to_dict() for doc in docs]
+        if id_f:
+            patients = [p for p in patients if p.get('patient_id') == id_f or str(p.get('id', '')) == id_f]
 
     except Exception as e:
-        logger.error(f"Firestore error in view_patients: {e}", exc_info=True)
+        logger.error("Firestore error in view_patients: %s", e, exc_info=True)
         flash("Could not load your patients list. Please try again later.", "error")
         return redirect(url_for('dashboard'))
 
