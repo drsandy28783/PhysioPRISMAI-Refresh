@@ -121,25 +121,43 @@ def now_ts():
     return datetime.now(timezone.utc)
 
 
+AI_REQUEST_TIMEOUT = int(os.getenv("AI_REQUEST_TIMEOUT", "18"))
+
 def get_ai_suggestion(prompt: str) -> str:
     """PHI-safe, token-efficient single entry point used by all endpoints."""
-    safe_prompt = _redact_phi(prompt, max_chars=1500)
+    safe_prompt = _redact_phi(prompt, max_chars=1500).strip()
+    if not safe_prompt:
+        return ""  # fast-fail on empty input
 
-    resp = openai.chat.completions.create(
-        model=AI_MODEL,
-        messages=[
-            {"role": "system", "content":
-             "You are a physiotherapy assistant. PHI guardrails: never output or request names, "
-             "addresses, phone numbers, emails, dates of birth, IDs, or exact locations. "
-             "Be concise and return only the requested items."},
-            {"role": "user", "content": safe_prompt},
-        ],
-        temperature=AI_TEMPERATURE,              # env-tuned (default 0.2)
-        max_tokens=AI_MAXTOKENS_DEFAULT,         # env-tuned (default 140)
-        stop=[],
-    )
-    out = (resp.choices[0].message.content or "").strip()
-    return _clip_output(out, max_lines=8)
+    start = datetime.now(timezone.utc)
+    try:
+        resp = openai.chat.completions.create(
+            model=AI_MODEL,
+            messages=[
+                {"role": "system", "content":
+                 "You are a physiotherapy assistant. PHI guardrails: never output or request names, "
+                 "addresses, phone numbers, emails, dates of birth, IDs, or exact locations. "
+                 "Be concise and return only the requested items."},
+                {"role": "user", "content": safe_prompt},
+            ],
+            temperature=AI_TEMPERATURE,
+            max_tokens=AI_MAXTOKENS_DEFAULT,
+            stop=[],
+            # For SDKs <1.0: use request_timeout=AI_REQUEST_TIMEOUT
+            timeout=AI_REQUEST_TIMEOUT,
+        )
+        out = (resp.choices[0].message.content or "").strip()
+        return _clip_output(out, max_lines=8)
+    except Exception as e:
+        logger.error("OpenAI call failed: %r", e, exc_info=True)
+        # bubble up; your route's except turns this into JSON error already
+        raise
+    finally:
+        try:
+            ms = int((datetime.now(timezone.utc) - start).total_seconds() * 1000)
+            logger.info("AI call took %sms", ms)
+        except Exception:
+            pass
 
 
 
@@ -316,18 +334,12 @@ def login():
 
     try:
         # 1) Firebase Auth sign-in
-        payload = {
-            'email': email,
-            'password': password,
-            'returnSecureToken': True
-        }
+        payload = {'email': email, 'password': password, 'returnSecureToken': True}
         r = requests.post(
             f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}',
-            json=payload,
-            timeout=15
+            json=payload, timeout=15
         )
         result = r.json()
-
         if 'error' in result:
             msg = result['error'].get('message', 'Authentication failed')
             flash(f'Login failed: {msg}', 'danger')
@@ -342,10 +354,10 @@ def login():
             return redirect(url_for('login'))
         profile = snap.to_dict() or {}
 
-        # Helper to interpret 1/0, true/false, etc.
+        # helper: 1/0, true/false, etc.
         def as_bool(v):
             if isinstance(v, str):
-                return v.strip().lower() in ('1', 'true', 'yes', 'y', 'on')
+                return v.strip().lower() in ('1','true','yes','y','on')
             return bool(v)
 
         # 3) Approval and active gates
@@ -357,18 +369,19 @@ def login():
             return redirect(url_for('login'))
 
         # 4) Success → set session
+        role = (profile.get('role') or 'individual').strip().lower()
         session['user_email'] = email
         session['user_name']  = profile.get('name') or result.get('displayName') or email.split('@')[0]
         session['user_id']    = uid
-        session['role']       = profile.get('role', 'individual')
+        session['role']       = role
 
-        def as_bool(v):
-            if isinstance(v, str):
-                return v.strip().lower() in ('1','true','yes','y','on')
-            return bool(v)
+        # Admin status STRICTLY by role (ignore stored is_admin)
+        session['is_super_admin'] = 1 if (role == 'super_admin' or as_bool(profile.get('is_super_admin', 0))) else 0
+        session['is_admin']       = 1 if role in ('admin', 'institute_admin') else 0
 
-        session['is_admin']        = 1 if as_bool(profile.get('is_admin', 0)) else 0
-        session['is_super_admin']  = 1 if (as_bool(profile.get('is_super_admin', 0)) or profile.get('role') == 'super_admin') else 0
+        # Optional institute info for your admin template
+        session['institute']    = profile.get('institute_name') or profile.get('institute') or ''
+        session['institute_id'] = profile.get('institute_id') or ''
 
         # Optional audit
         try:
@@ -376,17 +389,20 @@ def login():
         except Exception:
             pass
 
-        # >>> Add this early redirect <<<
+        # Early redirects by role
         if session['is_super_admin'] == 1:
             return redirect(url_for('superadmin_home'))
+        if session['is_admin'] == 1:
+            return redirect(url_for('admin_dashboard'))
 
-        # fall back to normal dashboard
+        # Fallback
         return redirect(url_for('dashboard'))
 
     except Exception as e:
         app.logger.error("Login exception: %s", e, exc_info=True)
         flash('Something went wrong while logging in. Please try again.', 'danger')
         return redirect(url_for('login'))
+
 
 
 
@@ -1347,6 +1363,7 @@ def ai_provisional_diagnosis():
 
 
 @app.route('/ai_suggestion/subjective/<field>', methods=['POST'])
+@csrf.exempt
 @login_required()
 def ai_subjective_field(field):
     data = request.get_json() or {}
@@ -1382,6 +1399,7 @@ def ai_subjective_field(field):
 
 
 @app.route('/ai_suggestion/subjective_diagnosis', methods=['POST'])
+@csrf.exempt
 @login_required()
 def ai_subjective_diagnosis():
     data = request.get_json() or {}
@@ -1415,6 +1433,7 @@ def ai_subjective_diagnosis():
 
 
 @app.route('/ai_suggestion/perspectives/<field>', methods=['POST'])
+@csrf.exempt
 @login_required()
 def ai_perspectives_field(field):
     data = request.get_json() or {}
@@ -1454,6 +1473,7 @@ def ai_perspectives_field(field):
 
 
 @app.route('/ai_suggestion/perspectives_diagnosis', methods=['POST'])
+@csrf.exempt
 @login_required()
 def ai_perspectives_diagnosis():
     data = request.get_json() or {}
@@ -1494,6 +1514,7 @@ def ai_perspectives_diagnosis():
 
 
 @app.route('/ai_suggestion/initial_plan/<field>', methods=['POST'])
+@csrf.exempt
 @login_required()
 def ai_initial_plan_field(field):
     data = request.get_json() or {}
@@ -1540,6 +1561,7 @@ def ai_initial_plan_field(field):
 
 
 @app.route('/ai_suggestion/initial_plan_summary', methods=['POST'])
+@csrf.exempt
 @login_required()
 def ai_initial_plan_summary():
     data = request.get_json() or {}
@@ -1746,6 +1768,7 @@ def clinical_flags_suggest(patient_id):
 
     # 10) Objective Assessment Suggestions
 @app.route('/objective_assessment/<patient_id>/suggest', methods=['POST'])
+@csrf.exempt
 @login_required(approved_only=False)
 @patient_access_required
 def objective_assessment_suggest(patient_id):
@@ -1769,6 +1792,7 @@ def objective_assessment_suggest(patient_id):
         return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 @app.route('/ai_suggestion/objective_assessment/<field>', methods=['POST'])
+@csrf.exempt
 @login_required(approved_only=False)
 def objective_assessment_field_suggest(field):
     """
@@ -1794,6 +1818,7 @@ def objective_assessment_field_suggest(field):
 
 
 @app.route('/provisional_diagnosis_suggest/<patient_id>')
+@csrf.exempt
 @login_required()
 @patient_access_required
 def provisional_diagnosis_suggest(patient_id):
@@ -1856,6 +1881,7 @@ def provisional_diagnosis_suggest(patient_id):
 
 
 @app.route('/ai_suggestion/smart_goals/<field>', methods=['POST'])
+@csrf.exempt
 @login_required()
 def ai_smart_goals(field):
     data = request.get_json() or {}
@@ -1912,6 +1938,7 @@ def ai_smart_goals(field):
 
 # 13) Treatment Plan Suggestions
 @app.route('/ai_suggestion/treatment_plan/<field>', methods=['POST'])
+@csrf.exempt
 @login_required()
 def treatment_plan_suggest(field):
     data = request.get_json() or {}
@@ -1947,6 +1974,7 @@ def treatment_plan_suggest(field):
 
 
 @app.route('/ai_suggestion/treatment_plan_summary/<patient_id>')
+@csrf.exempt
 @login_required()
 @patient_access_required
 def treatment_plan_summary(patient_id):
@@ -2034,6 +2062,7 @@ def treatment_plan_summary(patient_id):
 
 
 @app.route('/ai_followup_suggestion/<patient_id>', methods=['POST'])
+@csrf.exempt
 @login_required()
 @patient_access_required
 def ai_followup_suggestion(patient_id):
