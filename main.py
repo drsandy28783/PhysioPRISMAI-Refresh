@@ -1,4 +1,5 @@
 import os
+import re
 import io
 import json
 import csv
@@ -31,6 +32,31 @@ logger = logging.getLogger(__name__)
 
 # initialize OpenAI
 openai.api_key = os.environ['OPENAI_API_KEY']
+AI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4-turbo")
+AI_TEMPERATURE = float(os.environ.get("OPENAI_TEMPERATURE", "0.2"))
+AI_MAXTOKENS_DEFAULT = int(os.environ.get("OPENAI_MAXTOKENS_DEFAULT", "140"))
+
+_PHI_PATTERNS = [
+    (re.compile(r'\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b', re.I), "[REDACTED_EMAIL]"),
+    (re.compile(r'\b(?:\+?\d[\d\s\-]{7,}\d)\b'), "[REDACTED_PHONE]"),
+    (re.compile(r'\b\d{1,2}\s+[A-Za-z]{3,}\s+\d{2,4}\b'), "[REDACTED_DATE]"),
+    (re.compile(r'\b\d{4}-\d{2}-\d{2}\b'), "[REDACTED_DATE]"),
+    (re.compile(r'\b\d{2}/\d{2}/\d{2,4}\b'), "[REDACTED_DATE]"),
+    (re.compile(r'\b(?:MRN|UHID|ID)[:\s]*[A-Za-z0-9-]{4,}\b', re.I), "[REDACTED_ID]"),
+    (re.compile(r'\b\d{12,16}\b'), "[REDACTED_NUMBER]"),
+]
+
+def _redact_phi(text: str, max_chars: int = 1500) -> str:
+    text = (text or "")[:max_chars]
+    for pat, repl in _PHI_PATTERNS:
+        text = pat.sub(repl, text)
+    return text.strip()
+
+def _clip_output(text: str, max_lines: int = 8) -> str:
+    if not text:
+        return ""
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    return "\n".join(lines[:max_lines]).strip()
 
 FIREBASE_WEB_API_KEY = os.environ.get('FIREBASE_WEB_API_KEY')
 sa_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON']
@@ -96,23 +122,25 @@ def now_ts():
 
 
 def get_ai_suggestion(prompt: str) -> str:
-    """
-        Sends a prompt to OpenAI and returns the assistant's reply.
-        """
-    # Using the v1+ client syntax
+    """PHI-safe, token-efficient single entry point used by all endpoints."""
+    safe_prompt = _redact_phi(prompt, max_chars=1500)
+
     resp = openai.chat.completions.create(
-        model="gpt-4-turbo",
-        messages=[{
-            "role": "system",
-            "content": "You are a helpful clinical reasoning assistant."
-        }, {
-            "role": "user",
-            "content": prompt
-        }],
-        temperature=0.7,
-        max_tokens=200)
-    # The path to the text is the same
-    return resp.choices[0].message.content
+        model=AI_MODEL,
+        messages=[
+            {"role": "system", "content":
+             "You are a physiotherapy assistant. PHI guardrails: never output or request names, "
+             "addresses, phone numbers, emails, dates of birth, IDs, or exact locations. "
+             "Be concise and return only the requested items."},
+            {"role": "user", "content": safe_prompt},
+        ],
+        temperature=AI_TEMPERATURE,              # env-tuned (default 0.2)
+        max_tokens=AI_MAXTOKENS_DEFAULT,         # env-tuned (default 140)
+        stop=[],
+    )
+    out = (resp.choices[0].message.content or "").strip()
+    return _clip_output(out, max_lines=8)
+
 
 
 def log_action(user_id, action, details=None):
@@ -1278,6 +1306,7 @@ def ai_past_questions():
     f"Age/Sex: {age_sex}\n"
     f"Present history: {present_hist}\n"
     "Return the questions as a numbered list."
+     "Return only a numbered list of up to 5 questions. Do not include explanations or extra text."
 )
     try:
         suggestion = get_ai_suggestion(prompt)
@@ -1304,7 +1333,7 @@ def ai_provisional_diagnosis():
         f"Present history: {present_hist}\n"
         f"Past history: {past_hist}\n"
         "List up to two likely provisional diagnoses for physiotherapy with a brief rationale for each. "
-        "Format as a numbered list."
+         "Format as a numbered list."
     )
 
     try:
@@ -1340,6 +1369,7 @@ def ai_subjective_field(field):
         f"Other subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
         f"\nFor **{field.replace('_', ' ').title()}**, suggest 2–3 open-ended questions a physiotherapist should ask to clarify this aspect. "
         "Format as a numbered list."
+         "Return only a numbered list of up to 2-3 suggestions. No explanations."
     )
 
     try:
@@ -1372,6 +1402,7 @@ def ai_subjective_diagnosis():
         f"Past history: {past_hist}\n"
         f"Subjective findings:\n{findings if findings else 'None'}\n"
         "List up to 2 likely provisional diagnoses for physiotherapy, each with a one-sentence rationale. Format as a numbered list."
+         "Answer in up to 5 numbered points. Do not include patient names or identifiers."
     )
 
     try:
@@ -1410,6 +1441,7 @@ def ai_perspectives_field(field):
         f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
         f"Perspectives recorded:\n{perspectives_summary if perspectives_summary else 'None'}\n"
         f"\nFor **{field.replace('_', ' ').title()}**, suggest 2–3 open-ended questions a physiotherapist should ask to clarify this perspective. Format as a numbered list."
+         "Provide only a short list (2-3 items). No preamble or explanations."
     )
 
     try:
@@ -1448,6 +1480,7 @@ def ai_perspectives_diagnosis():
         f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
         f"Perspectives:\n{perspectives_summary if perspectives_summary else 'None'}\n"
         "Based on this information, provide up to 2 provisional clinical impressions for physiotherapy, each 1–2 sentences and integrating the patient perspectives. Format as a numbered list."
+         "Provide only a short list (2 items). No preamble or explanations."
     )
 
     try:
@@ -1492,7 +1525,8 @@ def ai_initial_plan_field(field):
         "- 'Mandatory assessment': essential tests\n"
         "- 'Assessment with precaution': tests needing caution\n"
         "- 'Absolutely contraindicated': tests to avoid\n"
-        "List 2–4 specific assessment tests or maneuvers that fit this category as a bullet list."
+        "List 2–4 specific assessment tests or maneuvers that fit this category as a numbered list."
+         "Return only a concise list of relevant points. Maximum 5."
     )
 
     try:
@@ -1537,7 +1571,9 @@ def ai_initial_plan_summary():
         f"Subjective findings:\n{subjective_summary if subjective_summary else 'None'}\n"
         f"Perspectives:\n{perspectives_summary if perspectives_summary else 'None'}\n"
         f"Assessment plan:\n{assessments_summary if assessments_summary else 'None'}\n"
-        "In 2–3 sentences, summarize the assessment findings and list up to two likely provisional diagnoses."
+        "In 2–3 sentences, summarize the assessment findings and include up to two likely provisional diagnoses within those sentences."
+         "Summarize in 2–3 sentences only."
+
     )
 
     try:
@@ -1584,6 +1620,7 @@ def ai_patho_source():
         f"Assessment plan:\n{assessments_summary if assessments_summary else 'None'}\n"
         f"\nThe therapist marked Possible Source of Symptoms as: {selection}.\n"
         "Describe 2–3 concise, plausible anatomical or physiological mechanisms explaining how this source could cause the patient's symptoms. Format as a numbered list."
+         "Provide only 3–5 possible sources in numbered form. Do not include personal data."
     )
 
     try:
@@ -1635,6 +1672,7 @@ def ai_chronic_factors():
         f"Maintenance causes indicated: {causes_str}\n"
         f"Specific chronic factors described: {text_input if text_input else 'None'}\n"
         "List 3–5 focused, open-ended questions a physiotherapist should ask to clarify these chronic contributing factors."
+         "Return 3–5 numbered points. Do not include any names, dates, or identifiers."
     )
 
     try:
@@ -1693,6 +1731,7 @@ def clinical_flags_suggest(patient_id):
         f"Relevant clinical flags: {flags_summary}\n"
         f"You are focusing on: {field.replace('_', ' ').title()} - {text}\n"
         "List 3–5 open-ended follow-up questions a physiotherapist should ask to further explore this flag."
+         "Provide only 3–5 concise numbered points. Avoid identifiers."
     )
 
     try:
@@ -1718,6 +1757,7 @@ def objective_assessment_suggest(patient_id):
         "A physiotherapist is selecting options during an objective assessment (do not use patient names or identifiers). "
         f"For the '{field}' section, they have chosen: {choice}. "
         "List 3–5 specific assessment actions or tests that should be performed next."
+         "Return only 3–5 items in a numbered list. Do not add extra commentary."
     )
 
     try:
@@ -1741,6 +1781,7 @@ def objective_assessment_field_suggest(field):
         "A physiotherapist is selecting options during an objective assessment (do not use patient names or identifiers). "
         f"For the '{field}' section, they have chosen: {choice}. "
         "List 3–5 specific assessment actions or tests that should be performed next."
+         "Return only 3–5 items in a numbered list. Do not add extra commentary."
     )
 
     try:
@@ -1793,6 +1834,7 @@ def provisional_diagnosis_suggest(patient_id):
             "From this case (no identifiers):\n"
             f"Age/Sex: {prev['age_sex']}\nPresenting complaint: {prev['present_complaint']}\n"
             "List common findings that would rule out the main provisional diagnosis."
+             
     }
 
     prompt = prompts.get(field, f"Help with {field} in a physiotherapy clinical case (do not use any patient names or identifiers).")
@@ -1837,6 +1879,7 @@ def ai_smart_goals(field):
             "What measurable outcomes would you expect for these goals? List 2–3 concrete metrics.",
         'time_duration':
             "What realistic time duration (e.g., weeks or months) fits those outcomes for this patient's condition?"
+             "Write 2–3 SMART goals only, in numbered list format."
     }
 
     # Fallback for unknown field
@@ -1884,6 +1927,7 @@ def treatment_plan_suggest(field):
             "Explain the clinical reasoning that links the chosen interventions to the patient's impairments (no identifiers).",
         'reference':
             "Suggest 1–2 key references (articles or guidelines) supporting this treatment plan."
+             "List up to 5 plan components in numbered points. Keep concise."
     }
     prompt = prompts.get(field,
         f"You are a physiotherapy assistant (do not use names or identifiers). Help with '{field}'."
@@ -1976,6 +2020,7 @@ def treatment_plan_summary(patient_id):
 
         "Using all of the above, create a concise treatment plan summary paragraph "
         "that links the history, exam findings, goals, and interventions into a coherent summary (no names or identifiers)."
+         "Summarize in 3–5 numbered points. No preamble."
     )
 
     try:
@@ -2031,7 +2076,7 @@ def ai_followup_suggestion(patient_id):
         f"- Perception: {perception}\n"
         f"- Feedback: {feedback}\n\n"
         "Based on ICF guidelines, the SMART Goals above, and the new session data, "
-        "suggest a focused plan for the next treatment."
+         "suggest a focused plan for the next treatment."
     )
 
     # 5. Call the AI
