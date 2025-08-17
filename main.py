@@ -2,22 +2,24 @@ import os
 import io
 import json
 import csv
+import profile
 import requests
+import secrets
 from flask import (Flask, render_template, request, redirect,session, url_for, flash,jsonify, make_response, g)
-from datetime import datetime
+from datetime import datetime, timezone
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from xhtml2pdf import pisa
 from functools import wraps
 import logging
 from google.api_core.exceptions import GoogleAPIError
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, auth as fb_auth
 from firebase_admin.firestore import SERVER_TIMESTAMP
 from google.cloud.firestore_v1.base_query import FieldFilter
 import openai
 # some versions of the OpenAI pip package don’t expose openai.error
 try:
-    from openai.error import OpenAIError
+    from openai import OpenAIError
 except ImportError:
     # fall back so our except‐clauses below still work
     OpenAIError = Exception
@@ -37,6 +39,60 @@ cred_dict = json.loads(sa_json)
 cred = credentials.Certificate(cred_dict)
 firebase_admin.initialize_app(cred, {'projectId': cred_dict.get('project_id')})
 db = firestore.client()
+
+def _truthy(v):
+    if isinstance(v, str):
+        return v.strip().lower() in ("1", "true", "yes", "y", "on")
+    return bool(v)
+
+def _get_user_profile():
+    """
+    Tries UID first (if session['user_id'] looks like a UID), then falls back to email-keyed doc.
+    Returns dict with at least {'id': <doc_id>, ...} or None.
+    """
+    uid = session.get('user_id')
+    email = (session.get('email') or session.get('user_email') or "").lower()
+
+    # Try UID doc if uid doesn't look like an email
+    if uid and "@" not in uid:
+        snap = db.collection("users").document(uid).get()
+        if snap.exists:
+            d = snap.to_dict() or {}
+            d["id"] = snap.id
+            return d
+
+    # Fallback to email-keyed doc (your current schema)
+    key = email or (uid if uid and "@" in uid else None)
+    if key:
+        snap = db.collection("users").document(key).get()
+        if snap.exists:
+            d = snap.to_dict() or {}
+            d["id"] = snap.id
+            return d
+    return None
+
+def _has_role(profile, role):
+    if role == "super_admin":
+        return _truthy(profile.get("is_super_admin")) or profile.get("role") == "super_admin"
+    if role == "admin":
+        # treat legacy flags as admin
+        return _truthy(profile.get("is_admin")) or profile.get("role") in ("admin", "institute_admin")
+    return profile.get("role") == role
+
+def role_required(*roles):
+    def deco(fn):
+        @wraps(fn)
+        def _w(*a, **k):
+            prof = _get_user_profile()
+            if not prof:
+                return redirect(url_for("login"))
+            if any(_has_role(prof, r) for r in roles):
+                return fn(*a, **k)
+            return ("Forbidden", 403)
+        return _w
+    return deco
+def now_ts():
+    return datetime.now(timezone.utc)
 
 
 def get_ai_suggestion(prompt: str) -> str:
@@ -164,107 +220,146 @@ def index():
     return render_template('index.html')
 
 
+from datetime import datetime, timezone
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        name = request.form['name'].strip()
-        email = request.form['email'].strip().lower()
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
+    if request.method == 'GET':
+        # Show only approved institutes to join
+        institutes = [
+            {**d.to_dict(), 'id': d.id}
+            for d in db.collection('institutes').where('status', '==', 'approved').stream()
+        ]
+        return render_template('register.html', institutes=institutes)
 
-        if password != confirm_password:
-            flash("Passwords do not match", "danger")
-            return redirect('/register')
+    # POST: store a registration request (no Auth user yet)
+    form = request.form
+    role = (form.get('role') or '').strip()  # individual | institute_admin | institute_physio
 
-        try:
-            # Firebase Auth: Create user
-            payload = {
-                'email': email,
-                'password': password,
-                'returnSecureToken': True
-            }
-            r = requests.post(
-                f'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}',
-                json=payload
-            )
-            result = r.json()
+    # Basic fields
+    payload = {
+        'name': (form.get('name') or '').strip(),
+        'age': (form.get('age') or '').strip(),
+        'sex': (form.get('sex') or '').strip(),
+        'area_of_practice': (form.get('area_of_practice') or '').strip(),
+        'credentials': (form.get('credentials') or '').strip(),
+        'email': (form.get('email') or '').strip().lower(),
+        'phone': (form.get('phone') or '').strip(),
+        'role': role,
+        'status': 'pending',
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'updated_at': datetime.now(timezone.utc).isoformat(),
+    }
 
-            if 'error' in result:
-                flash('Registration failed: ' + result['error']['message'], 'danger')
-                return redirect('/register')
+    # Role-specific validation
+    if role == 'institute_admin':
+        payload['institute_name'] = (form.get('institute_name') or '').strip()
+        if not payload['institute_name']:
+            flash('Institute name is required for Institute Admin.', 'danger')
+            return redirect(url_for('register'))
 
-            # Firestore: Add user document
-            db.collection('users').document(email).set({
-                'name': name,
-                'email': email,
-                'role': 'individual',
-                'approved': 1,
-                'active': 1,
-                'is_admin': 0,
-                'created_at': SERVER_TIMESTAMP
-            })
+    if role == 'institute_physio':
+        payload['institute_id'] = (form.get('institute_id') or '').strip()
+        if not payload['institute_id']:
+            flash('Please select an institute to join.', 'danger')
+            return redirect(url_for('register'))
 
-            flash('Registration successful. You can now log in.', 'success')
-            return redirect('/login')
+    # Save request for super admin approval
+    db.collection('registration_requests').add(payload)
 
-        except Exception as e:
-            print("Registration error:", e)
-            flash("Something went wrong. Please try again.", "danger")
-            return redirect('/register')
+    flash('Thanks! Your registration request was submitted. You can log in after approval.', 'success')
+    return redirect(url_for('login'))
 
-    return render_template('register.html')
 
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form['email'].strip().lower()
-        password = request.form['password']
+    if request.method == 'GET':
+        return render_template('login.html')
 
+    # --- POST: authenticate with Firebase Auth (REST) ---
+    email = (request.form.get('email') or '').strip().lower()
+    password = request.form.get('password') or ''
+
+    if not email or not password:
+        flash('Please enter email and password.', 'danger')
+        return redirect(url_for('login'))
+
+    try:
+        # 1) Firebase Auth sign-in
+        payload = {
+            'email': email,
+            'password': password,
+            'returnSecureToken': True
+        }
+        r = requests.post(
+            f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}',
+            json=payload,
+            timeout=15
+        )
+        result = r.json()
+
+        if 'error' in result:
+            msg = result['error'].get('message', 'Authentication failed')
+            flash(f'Login failed: {msg}', 'danger')
+            return redirect(url_for('login'))
+
+        uid = result.get('localId')  # Firebase UID
+
+        # 2) Load Firestore profile (email-keyed in your DB)
+        snap = db.collection('users').document(email).get()
+        if not snap.exists:
+            flash('User not found in Firestore profile. Contact support.', 'danger')
+            return redirect(url_for('login'))
+        profile = snap.to_dict() or {}
+
+        # Helper to interpret 1/0, true/false, etc.
+        def as_bool(v):
+            if isinstance(v, str):
+                return v.strip().lower() in ('1', 'true', 'yes', 'y', 'on')
+            return bool(v)
+
+        # 3) Approval and active gates
+        if not as_bool(profile.get('approved', 0)):
+            flash('Your account is not approved yet. Please wait for approval.', 'danger')
+            return redirect(url_for('login'))
+        if not as_bool(profile.get('active', 1)):
+            flash('Your account is deactivated. Contact support.', 'danger')
+            return redirect(url_for('login'))
+
+        # 4) Success → set session
+        session['user_email'] = email
+        session['user_name']  = profile.get('name') or result.get('displayName') or email.split('@')[0]
+        session['user_id']    = uid
+        session['role']       = profile.get('role', 'individual')
+
+        def as_bool(v):
+            if isinstance(v, str):
+                return v.strip().lower() in ('1','true','yes','y','on')
+            return bool(v)
+
+        session['is_admin']        = 1 if as_bool(profile.get('is_admin', 0)) else 0
+        session['is_super_admin']  = 1 if (as_bool(profile.get('is_super_admin', 0)) or profile.get('role') == 'super_admin') else 0
+
+        # Optional audit
         try:
-            # Firebase Auth login
-            payload = {
-                'email': email,
-                'password': password,
-                'returnSecureToken': True
-            }
-            r = requests.post(
-                f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}',
-                json=payload
-            )
-            result = r.json()
+            log_action(session['user_id'], 'login', f"user={email}")
+        except Exception:
+            pass
 
-            if 'error' in result:
-                flash('Invalid credentials', 'danger')
-                return redirect('/login')
+        # >>> Add this early redirect <<<
+        if session['is_super_admin'] == 1:
+            return redirect(url_for('superadmin_home'))
 
-            # Firestore check
-            user_doc = db.collection('users').document(email).get()
-            if not user_doc.exists:
-                flash('User not found in Firestore.', 'danger')
-                return redirect('/login')
+        # fall back to normal dashboard
+        return redirect(url_for('dashboard'))
 
-            user_data = user_doc.to_dict()
+    except Exception as e:
+        app.logger.error("Login exception: %s", e, exc_info=True)
+        flash('Something went wrong while logging in. Please try again.', 'danger')
+        return redirect(url_for('login'))
 
-            if user_data.get('approved') == 1 and user_data.get('active') == 1:
-                session['user_email'] = email
-                session['user_name'] = user_data.get('name')
-                session['user_id'] = result['localId']   # <-- Set Firebase UID here!
-                session['role'] = 'individual'
-                session['is_admin'] = 0
-                return redirect('/dashboard')
-
-            else:
-                flash('Your account is not approved or is inactive.', 'danger')
-                return redirect('/login')
-
-        except Exception as e:
-            print("Login error:", e)
-            flash("Login failed due to a system error.", "danger")
-            return redirect('/login')
-
-    return render_template('login.html')
 
 
 @app.route('/logout')
@@ -272,10 +367,118 @@ def logout():
     session.clear()
     return redirect('/login')
 
+@app.route('/superadmin')
+@role_required('super_admin')
+def superadmin_home():
+    pending = [{**d.to_dict(), 'id': d.id} for d in db.collection('registration_requests').where('status', '==', 'pending').stream()]
+    users = [{**d.to_dict(), 'id': d.id} for d in db.collection('users').stream()]
+    # Optional: recent activity logs if you already have audit_logs collection
+    logs = [{**d.to_dict(), 'id': d.id} for d in db.collection('audit_logs').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(50).stream()]
+    return render_template('superadmin.html', pending=pending, users=users, logs=logs)
+
+@app.post('/superadmin/approve/<req_id>')
+@role_required('super_admin')
+def superadmin_approve(req_id):
+    req_ref = db.collection('registration_requests').document(req_id)
+    snap = req_ref.get()
+    if not snap.exists:
+        flash('Request not found', 'error'); return redirect(url_for('superadmin_home'))
+    r = snap.to_dict()
+
+    email = (r.get('email') or '').lower()
+    if not email:
+        flash('Request missing email', 'error'); return redirect(url_for('superadmin_home'))
+
+    # 1) Ensure a Firebase Auth user exists (for mobile login etc.)
+    try:
+        user_rec = fb_auth.get_user_by_email(email)
+    except Exception:
+        tmp_pwd = secrets.token_urlsafe(12)
+        user_rec = fb_auth.create_user(
+            email=email,
+            display_name=r.get('name', ''),
+            password=tmp_pwd,
+            disabled=False
+        )
+    uid = user_rec.uid
+
+    # 2) Institute handling
+    institute_id = None
+    if r.get('role') == 'institute_admin':
+        inst = {
+            'name': r.get('institute_name'),
+            'admin_uid': uid,
+            'admin_email': email,
+            'status': 'approved',
+            'created_at': now_ts().isoformat(),
+            'updated_at': now_ts().isoformat(),
+        }
+        institute_id = db.collection('institutes').add(inst)[1].id
+    elif r.get('role') == 'institute_physio':
+        institute_id = r.get('institute_id')
+
+    # 3) Upsert the user profile **keyed by email** (your current schema)
+    user_doc = {
+        'uid': uid,
+        'email': email,
+        'name': r.get('name'),
+        'phone': r.get('phone'),
+        'role': r.get('role') or 'individual',
+        'approved': 1,          # <- your style
+        'active': 1,            # <- optional but matches your docs
+        'is_admin': 1 if (r.get('role') in ('admin', 'institute_admin')) else 0,
+        # Preserve existing super-admins; don't accidentally demote them
+        'is_super_admin': 1 if r.get('role') == 'super_admin' else None,
+        'area_of_practice': r.get('area_of_practice'),
+        'credentials': r.get('credentials'),
+        'sex': r.get('sex'),
+        'age': r.get('age'),
+        'institute_id': institute_id,
+        'updated_at': now_ts().isoformat(),
+    }
+    # prune None so we don't overwrite existing is_super_admin=1
+    user_doc = {k: v for k, v in user_doc.items() if v is not None}
+    db.collection('users').document(email).set(user_doc, merge=True)
+
+    # 4) Close the request
+    req_ref.update({'status': 'approved', 'approved_at': now_ts().isoformat()})
+
+    flash('Approved. User can log in now (use Forgot Password to set password).', 'success')
+    return redirect(url_for('superadmin_home'))
+
+@app.post('/superadmin/reject/<req_id>')
+@role_required('super_admin')
+def superadmin_reject(req_id):
+    req_ref = db.collection('registration_requests').document(req_id)
+    if not req_ref.get().exists:
+        flash('Request not found', 'error'); return redirect(url_for('superadmin_home'))
+    req_ref.update({'status': 'rejected', 'rejected_at': now_ts().isoformat()})
+    flash('Request rejected.', 'info')
+    return redirect(url_for('superadmin_home'))
+
+@app.post('/superadmin/delete_user/<uid>')
+@role_required('super_admin')
+def superadmin_delete_user(uid):
+    # uid is Firebase UID; try to delete from Auth and profile (email-keyed)
+    try:
+        fb_auth.delete_user(uid)
+    except Exception:
+        pass
+
+    # delete by email-key if present
+    q = db.collection('users').where('uid', '==', uid).limit(1).get()
+    if q:
+        db.collection('users').document(q[0].id).delete()
+
+    flash('User deleted.', 'info')
+    return redirect(url_for('superadmin_home'))
+
 
 @app.route('/dashboard')
 @login_required()
 def dashboard():
+    if session.get('is_super_admin') == 1:
+        return redirect(url_for('superadmin_home'))
     return render_template('dashboard.html', name=session.get('user_name'))
 
 
@@ -592,13 +795,21 @@ def audit_logs():
                 data['name'] = user_map[uid]['name']
                 logs.append(data)
 
-    elif session.get('is_admin') == 0:
-        # Individual physio: only their logs
-        entries = db.collection('audit_logs').where('user_id', '==', session['user_id']).stream()
-        for e in entries:
-            data = e.to_dict()
-            data['name'] = session['user_name']
-            logs.append(data)
+    elif session.get('is_admin') == 1:
+     users = db.collection('users').where('institute', '==', session['institute']).stream()
+     profiles = []
+     for u in users:
+         d = u.to_dict() or {}
+         uid = d.get('uid') or u.id  # fallback to doc id if older docs
+         profiles.append({'uid': uid, 'name': d.get('name', 'Unknown')})
+
+     for p in profiles:
+         entries = db.collection('audit_logs').where('user_id', '==', p['uid']).stream()
+         for e in entries:
+             data = e.to_dict()
+             data['name'] = p['name']
+             logs.append(data)
+
 
     # Sort by timestamp descending
     logs.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
@@ -611,19 +822,20 @@ def export_audit_logs():
     if session.get('is_admin') != 1:
         return redirect('/login_institute')
 
-    users = db.collection('users') \
-              .where('institute', '==', session['institute']) \
-              .stream()
-    user_map = {u.id: u.to_dict() for u in users}
-    user_ids = list(user_map.keys())
+    users = db.collection('users').where('institute', '==', session['institute']).stream()
+    profiles = []
+    for u in users:
+        d = u.to_dict() or {}
+        uid = d.get('uid') or u.id
+        profiles.append({'uid': uid, 'name': d.get('name', 'Unknown')})
 
     logs = []
-    for uid in user_ids:
-        entries = db.collection('audit_logs').where('user_id', '==', uid).stream()
+    for p in profiles:
+        entries = db.collection('audit_logs').where('user_id', '==', p['uid']).stream()
         for e in entries:
             log = e.to_dict()
             logs.append([
-                user_map[uid]['name'],
+                p['name'],
                 log.get('action', ''),
                 log.get('details', ''),
                 log.get('timestamp', '')
@@ -1711,16 +1923,18 @@ def treatment_plan_summary(patient_id):
         return coll[0].to_dict() if coll else {}
 
     # Pull in each screen's data
+        # inside treatment_plan_summary()
     subj     = fetch_latest('subjective_examination')
-    persp    = fetch_latest('subjective_perspectives')
-    assess   = fetch_latest('subjective_assessments')
-    patho    = fetch_latest('pathophysiological_mechanism')
-    chronic  = fetch_latest('chronic_disease_factors')
+    persp    = fetch_latest('patient_perspectives')
+    assess   = fetch_latest('objective_assessments')
+    patho    = fetch_latest('patho_mechanism')
+    chronic  = fetch_latest('chronic_diseases')
     flags    = fetch_latest('clinical_flags')
-    objective= fetch_latest('objective_assessment')
+    objective= fetch_latest('objective_assessments')
     prov_dx  = fetch_latest('provisional_diagnosis')
     goals    = fetch_latest('smart_goals')
     tx_plan  = fetch_latest('treatment_plan')
+
 
     # Build a single prompt that walks the AI through each section (PHI safe)
     prompt = (
