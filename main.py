@@ -13,9 +13,8 @@ from xhtml2pdf import pisa
 from functools import wraps
 import logging
 from google.api_core.exceptions import GoogleAPIError
-import firebase_admin
-from firebase_admin import credentials, firestore, auth as fb_auth
-from firebase_admin.firestore import SERVER_TIMESTAMP
+from firebase_admin_init import db
+from firebase_admin import auth as fb_auth
 from google.cloud.firestore_v1.base_query import FieldFilter
 import openai
 # some versions of the OpenAI pip package don’t expose openai.error
@@ -223,7 +222,13 @@ def set_csrf_cookie(response):
 def inject_csrf_token():
     return dict(csrf_token=generate_csrf)
 
-
+@app.get("/_firestore_ping")
+def firestore_ping():
+    # Write a heartbeat doc so we know credentials & Firestore work
+    db.collection("_health").document("last_ping").set(
+        {"ts": _fa_fs.SERVER_TIMESTAMP}, merge=True
+    )
+    return jsonify({"ok": True})
 
 
 def login_required(approved_only=True):
