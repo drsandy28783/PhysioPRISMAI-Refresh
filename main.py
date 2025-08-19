@@ -15,6 +15,8 @@ import logging
 from google.api_core.exceptions import GoogleAPIError
 from firebase_admin_init import db
 from firebase_admin import auth as fb_auth,  firestore as _fa_fs
+from firestore_helpers import (upsert_user_profile, create_patient, list_patients_for_owner, update_patient, delete_patient, create_follow_up, list_followups_for_patient
+)
 from google.cloud.firestore_v1.base_query import FieldFilter
 import openai
 # some versions of the OpenAI pip package don’t expose openai.error
@@ -89,6 +91,17 @@ def _get_user_profile():
             d["id"] = snap.id
             return d
     return None
+
+def get_uid_from_request() -> str | None:
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None
+    id_token = auth_header.split(" ", 1)[1].strip()
+    try:
+        decoded = fb_auth.verify_id_token(id_token)
+        return decoded.get("uid")
+    except Exception:
+        return None
 
 def _has_role(profile, role):
     if role == "super_admin":
@@ -265,6 +278,61 @@ def patient_access_required(f):
 def index():
     return render_template('index.html')
 
+@app.post("/api/users/upsert")
+def api_upsert_profile():
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    email = request.json.get("email", "")
+    partial = request.json.get("profile", {}) or {}
+    upsert_user_profile(uid, email, partial)
+    return jsonify({"status": "ok"})
+
+@app.post("/api/patients")
+def api_create_patient():
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    pid = create_patient(uid, request.json or {})
+    return jsonify({"id": pid}), 201
+
+@app.get("/api/patients/mine")
+def api_list_my_patients():
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    return jsonify(list_patients_for_owner(uid))
+
+@app.patch("/api/patients/<patient_id>")
+def api_update_patient(patient_id):
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    update_patient(patient_id, request.json or {})
+    return jsonify({"status": "ok"})
+
+@app.delete("/api/patients/<patient_id>")
+def api_delete_patient(patient_id):
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    delete_patient(patient_id)
+    return jsonify({"status": "ok"})
+
+@app.post("/api/patients/<patient_id>/follow-ups")
+def api_create_followup(patient_id):
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    fid = create_follow_up(uid, patient_id, request.json or {})
+    return jsonify({"id": fid}), 201
+
+@app.get("/api/patients/<patient_id>/follow-ups")
+def api_list_followups(patient_id):
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"error": "unauthorized"}), 401
+    return jsonify(list_followups_for_patient(patient_id))
 
 from datetime import datetime, timezone
 
