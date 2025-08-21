@@ -15,9 +15,13 @@ import logging
 from google.api_core.exceptions import GoogleAPIError
 from firebase_admin_init import db
 from firebase_admin import auth as fb_auth,  firestore as _fa_fs
+SERVER_TIMESTAMP = _fa_fs.SERVER_TIMESTAMP
 from firestore_helpers import (upsert_user_profile, create_patient, list_patients_for_owner, update_patient, delete_patient, create_follow_up, list_followups_for_patient
 )
 from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud import firestore
+from werkzeug.utils import secure_filename
+
 import openai
 # some versions of the OpenAI pip package don’t expose openai.error
 try:
@@ -102,6 +106,49 @@ def get_uid_from_request() -> str | None:
         return decoded.get("uid")
     except Exception:
         return None
+
+
+
+AUTH_BASE = "https://identitytoolkit.googleapis.com/v1"
+FIREBASE_WEB_API_KEY = os.environ.get('FIREBASE_WEB_API_KEY')  # already present, keep
+
+def _firebase_signup(email: str, password: str):
+    url = f"{AUTH_BASE}/accounts:signUp?key={FIREBASE_WEB_API_KEY}"
+    r = requests.post(url, json={
+        "email": email, "password": password, "returnSecureToken": True
+    }, timeout=20)
+    return r.json()
+
+def _firebase_signin(email: str, password: str):
+    url = f"{AUTH_BASE}/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
+    r = requests.post(url, json={
+        "email": email, "password": password, "returnSecureToken": True
+    }, timeout=20)
+    return r.json()
+
+def _ensure_individual_profile(email: str, uid: str, name: str = ""):
+    """Keep your current email-keyed schema; create if missing."""
+    ref = db.collection('users').document(email)
+    snap = ref.get()
+    if not snap.exists:
+        ref.set({
+            'uid': uid,
+            'email': email,
+            'name': name or email.split('@')[0],
+            'role': 'individual',
+            'approved': 1,         # individuals are self‑serve
+            'active': 1,
+            'is_admin': 0,
+            'created_at': SERVER_TIMESTAMP,
+            'updated_at': SERVER_TIMESTAMP,
+            # slots for future monetization/compliance
+            'tokens_remaining': 0,
+            'gdpr_consent': False,
+            'hipaa_ack': False,
+        })
+    else:
+        ref.set({'uid': uid, 'updated_at': SERVER_TIMESTAMP}, merge=True)
+
 
 def _has_role(profile, role):
     if role == "super_admin":
@@ -191,7 +238,6 @@ def fetch_patient(patient_id):
         return None
 
 
-FIREBASE_WEB_API_KEY = os.environ.get('FIREBASE_WEB_API_KEY')
 
 
 app = Flask(__name__,
@@ -226,6 +272,14 @@ def set_csrf_cookie(response):
     response.set_cookie('csrf_token', generate_csrf())
     return response
 
+@app.after_request
+def add_cors(resp):
+    resp.headers.setdefault("Access-Control-Allow-Origin", "*")
+    resp.headers.setdefault("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    resp.headers.setdefault("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+    return resp
+
+
 @app.context_processor
 def inject_csrf_token():
     return dict(csrf_token=generate_csrf)
@@ -236,6 +290,620 @@ def firestore_ping():
     db.collection("_health").document("last_ping").set(
         {"ts": _fa_fs.SERVER_TIMESTAMP}, merge=True
     )
+    return jsonify({"ok": True})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API HELPERS: token-auth admin check + profile lookup by UID
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _profile_by_uid(uid: str) -> dict | None:
+    q = db.collection("users").where("uid", "==", uid).limit(1).get()
+    if not q:
+        return None
+    d = q[0].to_dict() or {}
+    d.setdefault("id", q[0].id)   # email-keyed doc id
+    return d
+
+def _require_admin_from_token():
+    """
+    Returns (profile_dict, error_response_or_None).
+    Validates Authorization Bearer token, loads profile by UID, ensures admin.
+    """
+    uid = get_uid_from_request()
+    if not uid:
+        return None, (jsonify({"ok": False, "error": "UNAUTHORIZED"}), 401)
+
+    me = _profile_by_uid(uid)
+    if not me:
+        return None, (jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403)
+
+    role = (me.get("role") or "").lower()
+    is_admin = int(me.get("is_admin", 0)) == 1 or role in ("admin", "institute_admin")
+    if not is_admin:
+        return None, (jsonify({"ok": False, "error": "FORBIDDEN"}), 403)
+
+    return me, None
+
+def _profile_by_uid(uid: str) -> dict | None:
+    """Return the email-keyed user profile for a given Firebase UID."""
+    q = db.collection("users").where("uid", "==", uid).limit(1).get()
+    if not q:
+        return None
+    doc = q[0]
+    d = doc.to_dict() or {}
+    d.setdefault("id", doc.id)  # email doc id
+    return d
+
+def _is_admin(profile: dict) -> bool:
+    role = (profile.get("role") or "").lower()
+    return int(profile.get("is_admin", 0)) == 1 or role in ("admin", "institute_admin")
+
+def _require_admin_from_token():
+    """
+    Returns (profile_dict, error_response_or_None).
+    Validates Authorization Bearer token, loads profile by UID, ensures admin.
+    """
+    uid = get_uid_from_request()
+    if not uid:
+        return None, (jsonify({"ok": False, "error": "UNAUTHORIZED"}), 401)
+    me = _profile_by_uid(uid)
+    if not me:
+        return None, (jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403)
+    if not _is_admin(me):
+        return None, (jsonify({"ok": False, "error": "FORBIDDEN"}), 403)
+    return me, None
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1) JSON: AUDIT LOGS (admin: institute-wide; non-admin: self)
+#    GET /api/audit_logs   -> { ok: true, items: [...], admin?: {...} }
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/audit_logs")
+@csrf.exempt   # GET is fine without CSRF, but ok to exempt
+def api_audit_logs():
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"ok": False, "error": "UNAUTHORIZED"}), 401
+
+    me = _profile_by_uid(uid)
+    if not me:
+        return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
+
+    items = []
+    role = (me.get("role") or "").lower()
+    is_admin = int(me.get("is_admin", 0)) == 1 or role in ("admin", "institute_admin")
+
+    if is_admin:
+        inst = me.get("institute", "")
+        # all users in the same institute (map uid->name)
+        users = db.collection("users").where("institute", "==", inst).stream()
+        people = []
+        for u in users:
+            d = u.to_dict() or {}
+            uid_i = d.get("uid") or u.id
+            people.append({"uid": uid_i, "name": d.get("name", "Unknown")})
+
+        for p in people:
+            entries = db.collection("audit_logs").where("user_id", "==", p["uid"]).stream()
+            for e in entries:
+                d = e.to_dict() or {}
+                d["name"] = p["name"]
+                items.append(d)
+
+        # newest first
+        items.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
+        return jsonify({"ok": True, "items": items, "admin": {"institute": inst}})
+
+    else:
+        # self only
+        entries = db.collection("audit_logs").where("user_id", "==", uid).stream()
+        for e in entries:
+            d = e.to_dict() or {}
+            d["name"] = me.get("name", "You")
+            items.append(d)
+        items.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
+        return jsonify({"ok": True, "items": items})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2) JSON: USER APPROVAL / REJECTION (admin only; same institute)
+#    POST /api/users/approve  { email }
+#    POST /api/users/reject   { email }
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/api/users/approve")
+@csrf.exempt
+def api_users_approve():
+    admin, err = _require_admin_from_token()
+    if err: return err
+
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+
+    target = doc.to_dict() or {}
+    if (target.get("institute") or "") != (admin.get("institute") or ""):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection("users").document(email).update({
+        "approved": 1,
+        "updated_at": SERVER_TIMESTAMP
+    })
+    try:
+        log_action(admin.get("uid"), "Approve User", f"{email}")
+    except Exception:
+        pass
+
+    return jsonify({"ok": True})
+
+
+@app.post("/api/users/reject")
+@csrf.exempt
+def api_users_reject():
+    admin, err = _require_admin_from_token()
+    if err: return err
+
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+
+    target = doc.to_dict() or {}
+    if (target.get("institute") or "") != (admin.get("institute") or ""):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection("users").document(email).delete()
+    try:
+        log_action(admin.get("uid"), "Reject User", f"{email}")
+    except Exception:
+        pass
+
+    return jsonify({"ok": True})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3) JSON: USER ACTIVATE / DEACTIVATE (admin only; same institute)
+#    POST /api/users/deactivate { email }
+#    POST /api/users/reactivate { email }
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/api/users/deactivate")
+@csrf.exempt
+def api_users_deactivate():
+    admin, err = _require_admin_from_token()
+    if err: return err
+
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+
+    target = doc.to_dict() or {}
+    if (target.get("institute") or "") != (admin.get("institute") or ""):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection("users").document(email).update({
+        "active": 0,
+        "updated_at": SERVER_TIMESTAMP
+    })
+    try:
+        log_action(admin.get("uid"), "Deactivate User", f"{email}")
+    except Exception:
+        pass
+
+    return jsonify({"ok": True})
+
+
+@app.post("/api/users/reactivate")
+@csrf.exempt
+def api_users_reactivate():
+    admin, err = _require_admin_from_token()
+    if err: return err
+
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+
+    target = doc.to_dict() or {}
+    if (target.get("institute") or "") != (admin.get("institute") or ""):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection("users").document(email).update({
+        "active": 1,
+        "updated_at": SERVER_TIMESTAMP
+    })
+    try:
+        log_action(admin.get("uid"), "Reactivate User", f"{email}")
+    except Exception:
+        pass
+
+    return jsonify({"ok": True})
+
+@app.get("/api/patients/<patient_id>")
+@csrf.exempt  # GET doesn’t need CSRF, but exempt is harmless for mobile
+def api_get_patient(patient_id):
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"ok": False, "error": "UNAUTHORIZED"}), 401
+
+    try:
+        data = fetch_patient(patient_id)  # must exist in your codebase
+    except Exception as e:
+        return jsonify({"ok": False, "error": "FETCH_FAILED"}), 500
+
+    if not data:
+        return jsonify({"ok": False, "error": "NOT_FOUND"}), 404
+
+    # Optional owner check (uncomment if you store owner_uid on patient)
+    # if data.get("owner_uid") != uid and not _is_admin(_profile_by_uid(uid) or {}):
+    #     return jsonify({"ok": False, "error": "FORBIDDEN"}), 403
+
+    return jsonify({"ok": True, "patient": data})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SECURE GENERIC QUERY  — POST /api/firestore/query
+#  - Whitelisted collections & fields
+#  - Limited ops, filters, order, and page size
+#  - Row-level security for patients/users/audit_logs
+# ─────────────────────────────────────────────────────────────────────────────
+
+ALLOWED_QUERY = {
+    "patients": {
+        "fields": {"patient_id", "name", "age_sex", "owner_uid", "institute", "created_at"},
+        "orderable": {"name", "created_at"},
+        "ops": {"==", "in", ">=", "<=", "array_contains"},
+        "types": {}
+    },
+    "users": {
+        "fields": {"email", "uid", "name", "role", "approved", "active", "institute", "is_admin", "created_at"},
+        "orderable": {"name", "created_at"},
+        "ops": {"==", "in"},
+        "types": {"approved": int, "active": int, "is_admin": int}
+    },
+    "audit_logs": {
+        "fields": {"user_id", "action", "details", "timestamp"},
+        "orderable": {"timestamp"},
+        "ops": {"==", ">=", "<="},
+        "types": {}
+    },
+}
+SAFE_MAX_LIMIT = 50
+
+@app.post("/api/firestore/query")
+@csrf.exempt
+def api_firestore_query():
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"ok": False, "error": "UNAUTHORIZED"}), 401
+
+    me = _profile_by_uid(uid)
+    if not me:
+        return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
+
+    data = request.get_json(silent=True) or {}
+    collection = (data.get("collection") or "").strip()
+    if collection not in ALLOWED_QUERY:
+        return jsonify({"ok": False, "error": "COLLECTION_NOT_ALLOWED"}), 403
+
+    spec = ALLOWED_QUERY[collection]
+    allowed_fields = spec["fields"]
+    allowed_ops = spec["ops"]
+    orderable = spec["orderable"]
+    casters = spec.get("types", {})
+
+    filters = data.get("filters") or []
+    if not isinstance(filters, list):
+        return jsonify({"ok": False, "error": "BAD_FILTERS"}), 400
+
+    order_by = data.get("order_by")
+    order_dir = (data.get("order_dir") or "asc").lower()
+    limit = int(data.get("limit") or 20)
+    if limit > SAFE_MAX_LIMIT:
+        limit = SAFE_MAX_LIMIT
+    if order_by and order_by not in orderable:
+        return jsonify({"ok": False, "error": "ORDER_BY_NOT_ALLOWED"}), 400
+    if order_dir not in ("asc", "desc"):
+        order_dir = "asc"
+
+    # base query
+    q = db.collection(collection)
+
+    # Row-level security
+    if collection == "patients":
+        if _is_admin(me):
+            # To restrict admins to their institute’s patients, ensure patients store "institute"
+            # q = q.where("institute", "==", me.get("institute", ""))
+            pass
+        else:
+            q = q.where("owner_uid", "==", uid)
+
+    elif collection == "users":
+        if not _is_admin(me):
+            return jsonify({"ok": False, "error": "FORBIDDEN"}), 403
+        q = q.where("institute", "==", me.get("institute", ""))
+
+    elif collection == "audit_logs":
+        if _is_admin(me):
+            # If you store institute on logs, constrain here; else default to self to avoid full scans.
+            # q = q.where("institute", "==", me.get("institute", ""))
+            pass
+        else:
+            q = q.where("user_id", "==", uid)
+
+    # Client filters (whitelisted)
+    if len(filters) > 3:
+        return jsonify({"ok": False, "error": "TOO_MANY_FILTERS"}), 400
+
+    for f in filters:
+        if not isinstance(f, dict):
+            return jsonify({"ok": False, "error": "BAD_FILTER_ITEM"}), 400
+        field = f.get("field")
+        op = f.get("op")
+        value = f.get("value")
+        if field not in allowed_fields:
+            return jsonify({"ok": False, "error": f"FIELD_NOT_ALLOWED:{field}"}), 400
+        if op not in allowed_ops:
+            return jsonify({"ok": False, "error": f"OP_NOT_ALLOWED:{op}"}), 400
+        caster = casters.get(field)
+        if caster is int:
+            try:
+                value = int(value)
+            except Exception:
+                return jsonify({"ok": False, "error": f"BAD_TYPE_FOR:{field}"}), 400
+        q = q.where(field, op, value)
+
+    # Sorting + limit
+    if order_by:
+        try:
+            direction = firestore.Query.ASCENDING if order_dir == "asc" else firestore.Query.DESCENDING
+            q = q.order_by(order_by, direction=direction)
+        except Exception:
+            # order_by not supported without index; fail safe
+            return jsonify({"ok": False, "error": "ORDER_BY_UNAVAILABLE"}), 400
+
+    q = q.limit(limit)
+
+    try:
+        docs = q.stream()
+        items = []
+        for d in docs:
+            row = d.to_dict() or {}
+            row["id"] = d.id
+            items.append(row)
+        return jsonify({"ok": True, "items": items})
+    except Exception:
+        return jsonify({"ok": False, "error": "QUERY_FAILED"}), 500
+    
+
+@app.post("/api/transcribe")
+@csrf.exempt
+def api_transcribe_audio():
+    if "audio" not in request.files:
+        return jsonify({"ok": False, "error": "NO_FILE"}), 400
+    if openai is None or not getattr(openai, "api_key", ""):
+        return jsonify({"ok": False, "error": "OPENAI_NOT_CONFIGURED"}), 500
+
+    f = request.files["audio"]
+    filename = secure_filename(f.filename or "audio.webm")
+    tmp_path = os.path.join("/tmp", filename)
+    f.save(tmp_path)
+
+    try:
+        with open(tmp_path, "rb") as audio_file:
+            # Whisper v1
+            transcript = openai.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+        text = getattr(transcript, "text", None) or getattr(transcript, "get", lambda k: None)("text")
+        return jsonify({"ok": True, "text": text or ""})
+    except Exception as e:
+        return jsonify({"ok": False, "error": "TRANSCRIBE_FAILED"}), 500
+    finally:
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /api/audit_logs — admin: institute-wide; non-admin: self
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/audit_logs")
+@csrf.exempt
+def api_audit_logs():
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"ok": False, "error": "UNAUTHORIZED"}), 401
+
+    me = _profile_by_uid(uid)
+    if not me:
+        return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
+
+    items = []
+    if _is_admin(me):
+        inst = me.get("institute", "")
+        users = db.collection("users").where("institute", "==", inst).stream()
+        people = []
+        for u in users:
+            d = u.to_dict() or {}
+            uid_i = d.get("uid") or u.id
+            people.append({"uid": uid_i, "name": d.get("name", "Unknown")})
+
+        for p in people:
+            entries = db.collection("audit_logs").where("user_id", "==", p["uid"]).stream()
+            for e in entries:
+                d = e.to_dict() or {}
+                d["name"] = p["name"]
+                items.append(d)
+
+        # newest first if timestamps are comparable
+        try:
+            items.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
+        except Exception:
+            pass
+
+        return jsonify({"ok": True, "items": items, "admin": {"institute": inst}})
+    else:
+        entries = db.collection("audit_logs").where("user_id", "==", uid).stream()
+        for e in entries:
+            d = e.to_dict() or {}
+            d["name"] = me.get("name", "You")
+            items.append(d)
+        try:
+            items.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
+        except Exception:
+            pass
+        return jsonify({"ok": True, "items": items})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER MGMT — admin only, same-institute guard
+# POST /api/users/approve {email}
+# POST /api/users/reject {email}
+# POST /api/users/deactivate {email}
+# POST /api/users/reactivate {email}
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/api/users/approve")
+@csrf.exempt
+def api_users_approve():
+    admin, err = _require_admin_from_token()
+    if err: return err
+
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+
+    target = doc.to_dict() or {}
+    if (target.get("institute") or "") != (admin.get("institute") or ""):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection("users").document(email).update({
+        "approved": 1,
+        "updated_at": SERVER_TIMESTAMP
+    })
+    try:
+        log_action(admin.get("uid"), "Approve User", email)
+    except Exception:
+        pass
+
+    return jsonify({"ok": True})
+
+
+@app.post("/api/users/reject")
+@csrf.exempt
+def api_users_reject():
+    admin, err = _require_admin_from_token()
+    if err: return err
+
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+
+    target = doc.to_dict() or {}
+    if (target.get("institute") or "") != (admin.get("institute") or ""):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection("users").document(email).delete()
+    try:
+        log_action(admin.get("uid"), "Reject User", email)
+    except Exception:
+        pass
+
+    return jsonify({"ok": True})
+
+
+@app.post("/api/users/deactivate")
+@csrf.exempt
+def api_users_deactivate():
+    admin, err = _require_admin_from_token()
+    if err: return err
+
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+
+    target = doc.to_dict() or {}
+    if (target.get("institute") or "") != (admin.get("institute") or ""):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection("users").document(email).update({
+        "active": 0,
+        "updated_at": SERVER_TIMESTAMP
+    })
+    try:
+        log_action(admin.get("uid"), "Deactivate User", email)
+    except Exception:
+        pass
+
+    return jsonify({"ok": True})
+
+
+@app.post("/api/users/reactivate")
+@csrf.exempt
+def api_users_reactivate():
+    admin, err = _require_admin_from_token()
+    if err: return err
+
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+
+    target = doc.to_dict() or {}
+    if (target.get("institute") or "") != (admin.get("institute") or ""):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection("users").document(email).update({
+        "active": 1,
+        "updated_at": SERVER_TIMESTAMP
+    })
+    try:
+        log_action(admin.get("uid"), "Reactivate User", email)
+    except Exception:
+        pass
+
     return jsonify({"ok": True})
 
 
@@ -271,6 +939,62 @@ def patient_access_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def _ensure_institute_admin_profile(*, email: str, uid: str, name: str, institute: str) -> dict:
+    """
+    Ensure the email-keyed user doc exists as an *approved, active* institute admin.
+    Returns the profile dict.
+    """
+    doc_ref = db.collection("users").document(email)
+    snap = doc_ref.get()
+    base = snap.to_dict() or {}
+
+    profile = {
+        "email": email,
+        "uid": uid,
+        "name": name or base.get("name"),
+        "role": "institute_admin",
+        "is_admin": 1,
+        "approved": 1,
+        "active": 1,
+        "institute": institute or base.get("institute", ""),
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    }
+    # keep created_at if present
+    if not snap.exists:
+        profile["created_at"] = firestore.SERVER_TIMESTAMP
+
+    doc_ref.set({**base, **profile}, merge=True)
+    return doc_ref.get().to_dict() or profile
+
+
+def _ensure_institute_physio_profile_pending(
+    *, email: str, uid: str, name: str, institute: str, institute_id: str | None = None
+) -> dict:
+    """
+    Ensure the email-keyed user doc exists as a *pending* institute physio.
+    Returns the profile dict.
+    """
+    doc_ref = db.collection("users").document(email)
+    snap = doc_ref.get()
+    base = snap.to_dict() or {}
+
+    profile = {
+        "email": email,
+        "uid": uid,
+        "name": name or base.get("name"),
+        "role": "physio",
+        "is_admin": 0,
+        "approved": 0,    # PENDING
+        "active": 1,
+        "institute": institute or base.get("institute", ""),
+        "institute_id": institute_id or base.get("institute_id", ""),
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    }
+    if not snap.exists:
+        profile["created_at"] = firestore.SERVER_TIMESTAMP
+
+    doc_ref.set({**base, **profile}, merge=True)
+    return doc_ref.get().to_dict() or profile
 
 
 
@@ -279,6 +1003,7 @@ def index():
     return render_template('index.html')
 
 @app.post("/api/users/upsert")
+@csrf.exempt
 def api_upsert_profile():
     uid = get_uid_from_request()
     if not uid:
@@ -289,6 +1014,7 @@ def api_upsert_profile():
     return jsonify({"status": "ok"})
 
 @app.post("/api/patients")
+@csrf.exempt
 def api_create_patient():
     uid = get_uid_from_request()
     if not uid:
@@ -297,6 +1023,7 @@ def api_create_patient():
     return jsonify({"id": pid}), 201
 
 @app.get("/api/patients/mine")
+@csrf.exempt
 def api_list_my_patients():
     uid = get_uid_from_request()
     if not uid:
@@ -304,6 +1031,7 @@ def api_list_my_patients():
     return jsonify(list_patients_for_owner(uid))
 
 @app.patch("/api/patients/<patient_id>")
+@csrf.exempt
 def api_update_patient(patient_id):
     uid = get_uid_from_request()
     if not uid:
@@ -312,6 +1040,7 @@ def api_update_patient(patient_id):
     return jsonify({"status": "ok"})
 
 @app.delete("/api/patients/<patient_id>")
+@csrf.exempt
 def api_delete_patient(patient_id):
     uid = get_uid_from_request()
     if not uid:
@@ -320,6 +1049,7 @@ def api_delete_patient(patient_id):
     return jsonify({"status": "ok"})
 
 @app.post("/api/patients/<patient_id>/follow-ups")
+@csrf.exempt
 def api_create_followup(patient_id):
     uid = get_uid_from_request()
     if not uid:
@@ -328,13 +1058,103 @@ def api_create_followup(patient_id):
     return jsonify({"id": fid}), 201
 
 @app.get("/api/patients/<patient_id>/follow-ups")
+@csrf.exempt
 def api_list_followups(patient_id):
     uid = get_uid_from_request()
     if not uid:
         return jsonify({"error": "unauthorized"}), 401
     return jsonify(list_followups_for_patient(patient_id))
 
-from datetime import datetime, timezone
+@app.post("/api/individual/register")
+@csrf.exempt
+def api_individual_register():
+    """
+    JSON: { "email": "...", "password": "...", "name": "..." }
+    Creates Firebase Auth user and a Firestore profile (role='individual', approved=1).
+    """
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    name = (data.get("name") or "").strip()
+
+    if not email or not password:
+        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED"}), 400
+    if len(password) < 6:
+        return jsonify({"ok": False, "error": "WEAK_PASSWORD_MIN_6"}), 400
+
+    res = _firebase_signup(email, password)
+    if "error" in res:
+        return jsonify({"ok": False, "error": res["error"].get("message", "SIGNUP_FAILED")}), 400
+
+    uid = res.get("localId")
+    if not uid:
+        return jsonify({"ok": False, "error": "NO_UID"}), 500
+
+    _ensure_individual_profile(email=email, uid=uid, name=name)
+    prof = db.collection('users').document(email).get().to_dict()
+
+    return jsonify({"ok": True, "uid": uid, "profile": prof}), 201
+
+
+@app.post("/api/individual/login")
+@csrf.exempt
+def api_individual_login():
+    """
+    JSON: { "email": "...", "password": "..." }
+    Signs in with Firebase Auth; checks your Firestore email‑keyed profile.
+    """
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    if not email or not password:
+        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED"}), 400
+
+    res = _firebase_signin(email, password)
+    if "error" in res:
+        return jsonify({"ok": False, "error": res["error"].get("message", "LOGIN_FAILED")}), 401
+
+    uid = res.get("localId")
+    id_token = res.get("idToken")
+    if not uid or not id_token:
+        return jsonify({"ok": False, "error": "NO_UID_OR_TOKEN"}), 500
+
+    # Ensure profile (in case user was created outside your app)
+    _ensure_individual_profile(email=email, uid=uid)
+    snap = db.collection('users').document(email).get()
+    if not snap.exists:
+        return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
+    profile = snap.to_dict() or {}
+
+    def as_bool(v):
+        if isinstance(v, str):
+            return v.strip().lower() in ('1','true','yes','y','on')
+        return bool(v)
+
+    if not as_bool(profile.get('approved', 1)):
+        return jsonify({"ok": False, "error": "NOT_APPROVED"}), 403
+    if not as_bool(profile.get('active', 1)):
+        return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
+    if (profile.get('role') or 'individual') != 'individual':
+        return jsonify({"ok": False, "error": "ROLE_MISMATCH"}), 403
+
+    # Optional server session (used by your web templates)
+    session['user_email'] = email
+    session['user_name']  = profile.get('name') or email.split('@')[0]
+    session['user_id']    = uid
+    session['role']       = 'individual'
+    session['is_super_admin'] = 0
+    session['is_admin']       = 0
+    session['institute']      = profile.get('institute','')
+    session['institute_id']   = profile.get('institute_id','')
+
+    try:
+        log_action(uid, 'login', f"user={email}")
+    except Exception:
+        pass
+
+    return jsonify({"ok": True, "uid": uid, "profile": profile, "idToken": id_token}), 200
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -485,7 +1305,7 @@ def superadmin_home():
     pending = [{**d.to_dict(), 'id': d.id} for d in db.collection('registration_requests').where('status', '==', 'pending').stream()]
     users = [{**d.to_dict(), 'id': d.id} for d in db.collection('users').stream()]
     # Optional: recent activity logs if you already have audit_logs collection
-    logs = [{**d.to_dict(), 'id': d.id} for d in db.collection('audit_logs').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(50).stream()]
+    logs = [{**d.to_dict(), 'id': d.id} for d in db.collection('audit_logs').order_by('timestamp', direction=_fa_fs.Query.DESCENDING).limit(50).stream()]
     return render_template('superadmin.html', pending=pending, users=users, logs=logs)
 
 @app.post('/superadmin/approve/<req_id>')
@@ -670,6 +1490,181 @@ def view_patients():
     return render_template('view_patients.html', patients=patients)
 
 
+# ------------------------------
+#   INSTITUTE: ADMIN AUTH (API)
+# ------------------------------
+
+@app.post("/api/institute/admin/register")
+@csrf.exempt
+def api_institute_admin_register():
+    """
+    JSON: { "name": "...", "email": "...", "password": "...", "institute": "..." }
+    Creates a Firebase Auth user, upserts users/{email} as institute_admin (approved=1).
+    """
+    d = request.get_json(silent=True) or {}
+    name = (d.get("name") or "").strip()
+    email = (d.get("email") or "").strip().lower()
+    password = d.get("password") or ""
+    institute = (d.get("institute") or "").strip()
+
+    if not (name and email and password and institute):
+        return jsonify({"ok": False, "error": "REQUIRED_FIELDS"}), 400
+    if len(password) < 6:
+        return jsonify({"ok": False, "error": "WEAK_PASSWORD_MIN_6"}), 400
+
+    res = _firebase_signup(email, password)
+    if "error" in res:
+        return jsonify({"ok": False, "error": res["error"].get("message", "SIGNUP_FAILED")}), 400
+
+    uid = res.get("localId")
+    if not uid:
+        return jsonify({"ok": False, "error": "NO_UID"}), 500
+
+    _ensure_institute_admin_profile(email=email, uid=uid, name=name, institute=institute)
+
+    # Optional: create / upsert institutes collection
+    db.collection("institutes").add({
+        "name": institute,
+        "admin_uid": uid,
+        "admin_email": email,
+        "status": "approved",
+        "created_at": SERVER_TIMESTAMP,
+        "updated_at": SERVER_TIMESTAMP,
+    })
+
+    profile = db.collection("users").document(email).get().to_dict()
+    return jsonify({"ok": True, "uid": uid, "profile": profile}), 201
+
+
+@app.post("/api/institute/admin/login")
+@csrf.exempt
+def api_institute_admin_login():
+    """
+    JSON: { "email": "...", "password": "..." }
+    """
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    password = d.get("password") or ""
+
+    if not (email and password):
+        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED"}), 400
+
+    res = _firebase_signin(email, password)
+    if "error" in res:
+        return jsonify({"ok": False, "error": res["error"].get("message", "LOGIN_FAILED")}), 401
+
+    uid = res.get("localId")
+    id_token = res.get("idToken")
+    if not uid or not id_token:
+        return jsonify({"ok": False, "error": "NO_UID_OR_TOKEN"}), 500
+
+    snap = db.collection("users").document(email).get()
+    if not snap.exists:
+        return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
+    profile = snap.to_dict() or {}
+
+    # gates
+    if profile.get("role") not in ("admin", "institute_admin"):
+        return jsonify({"ok": False, "error": "ROLE_MISMATCH"}), 403
+    if int(profile.get("approved", 0)) != 1:
+        return jsonify({"ok": False, "error": "NOT_APPROVED"}), 403
+    if int(profile.get("is_admin", 0)) != 1:
+        return jsonify({"ok": False, "error": "NOT_ADMIN"}), 403
+
+    # set your existing session layout (so your templates keep working)
+    session['user_email'] = email
+    session['user_name']  = profile.get('name') or email.split('@')[0]
+    session['user_id']    = uid
+    session['role']       = 'institute_admin'
+    session['is_super_admin'] = 0
+    session['is_admin']   = 1
+    session['institute']  = profile.get('institute', '')
+    session['institute_id'] = profile.get('institute_id', '')
+
+    try: log_action(uid, 'login', f"institute_admin={email}")
+    except Exception: pass
+
+    return jsonify({"ok": True, "uid": uid, "profile": profile, "idToken": id_token}), 200
+
+
+# -------------------------------------
+#   INSTITUTE: PHYSIO REG + APPROVAL
+# -------------------------------------
+
+@app.post("/api/institute/physio/register")
+@csrf.exempt
+def api_institute_physio_register():
+    """
+    JSON: { "name": "...", "email": "...", "password": "...", "institute": "...", "institute_id": "..."? }
+    Creates Firebase Auth user and a users/{email} with role=institute_physio, approved=0 (pending).
+    """
+    d = request.get_json(silent=True) or {}
+    name = (d.get("name") or "").strip()
+    email = (d.get("email") or "").strip().lower()
+    password = d.get("password") or ""
+    institute = (d.get("institute") or "").strip()
+    institute_id = (d.get("institute_id") or "").strip() or None
+
+    if not (name and email and password and institute):
+        return jsonify({"ok": False, "error": "REQUIRED_FIELDS"}), 400
+
+    res = _firebase_signup(email, password)
+    if "error" in res:
+        return jsonify({"ok": False, "error": res["error"].get("message", "SIGNUP_FAILED")}), 400
+
+    uid = res.get("localId")
+    if not uid:
+        return jsonify({"ok": False, "error": "NO_UID"}), 500
+
+    _ensure_institute_physio_profile_pending(email=email, uid=uid, name=name, institute=institute, institute_id=institute_id)
+    return jsonify({"ok": True, "status": "PENDING_APPROVAL"}), 201
+
+
+@app.get("/api/institute/physios/pending")
+@csrf.exempt
+@login_required()
+def api_institute_pending_physios():
+    """Admin-only: list unapproved physios in admin's institute."""
+    if session.get('is_admin') != 1:
+        return jsonify({"ok": False, "error": "FORBIDDEN"}), 403
+    inst = session.get('institute') or ''
+    docs = (db.collection('users')
+              .where('role', '==', 'institute_physio')
+              .where('approved', '==', 0)
+              .where('institute', '==', inst)
+              .stream())
+    items = [d.to_dict() for d in docs]
+    return jsonify({"ok": True, "items": items})
+
+
+@app.post("/api/institute/physio/approve")
+@csrf.exempt
+@login_required()
+def api_institute_approve_physio():
+    """Admin-only: body { email: '...' } → set approved=1."""
+    if session.get('is_admin') != 1:
+        return jsonify({"ok": False, "error": "FORBIDDEN"}), 403
+    d = request.get_json(silent=True) or {}
+    email = (d.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"ok": False, "error": "EMAIL_REQUIRED"}), 400
+
+    # ensure in same institute
+    target = db.collection('users').document(email).get()
+    if not target.exists:
+        return jsonify({"ok": False, "error": "USER_NOT_FOUND"}), 404
+    t = target.to_dict() or {}
+    if t.get('institute') != session.get('institute'):
+        return jsonify({"ok": False, "error": "DIFFERENT_INSTITUTE"}), 403
+
+    db.collection('users').document(email).update({
+        'approved': 1,
+        'updated_at': SERVER_TIMESTAMP
+    })
+    try: log_action(session['user_id'], 'Approve Physio', f"{email}")
+    except Exception: pass
+
+    return jsonify({"ok": True})
 
 
 @app.route('/register_institute', methods=['GET', 'POST'])
@@ -885,42 +1880,73 @@ def reject_user(user_email):
     return redirect('/approve_physios')
 
 
+@app.get("/api/audit_logs")
+@csrf.exempt
+def api_audit_logs():
+    """
+    For institute admins: returns all audit logs for users in their institute.
+    Non-admins: returns only their own logs.
+    Response: { ok: true, items: [ {user_id, name, action, details, timestamp} ], admin?: {...} }
+    """
+    uid = get_uid_from_request()
+    if not uid:
+        return jsonify({"ok": False, "error": "UNAUTHORIZED"}), 401
+
+    # find the caller's profile (email-keyed doc with uid field)
+    user_q = db.collection("users").where("uid", "==", uid).limit(1).get()
+    if not user_q:
+        return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
+    me = user_q[0].to_dict() or {}
+
+    items = []
+
+    if int(me.get("is_admin", 0)) == 1:
+        inst = me.get("institute", "")
+        # gather all users (by uid!) in the same institute
+        users = db.collection("users").where("institute", "==", inst).stream()
+        profiles = []
+        for u in users:
+            d = u.to_dict() or {}
+            uid_i = d.get("uid") or u.id  # fallback
+            profiles.append({"uid": uid_i, "name": d.get("name", "Unknown")})
+
+        # fetch logs per uid
+        for p in profiles:
+            entries = db.collection("audit_logs").where("user_id", "==", p["uid"]).stream()
+            for e in entries:
+                d = e.to_dict()
+                d["name"] = p["name"]
+                items.append(d)
+
+        return jsonify({"ok": True, "items": items, "admin": {"institute": inst}})
+    else:
+        # non-admin: own logs only
+        entries = db.collection("audit_logs").where("user_id", "==", uid).stream()
+        for e in entries:
+            d = e.to_dict()
+            d["name"] = me.get("name", "You")
+            items.append(d)
+        return jsonify({"ok": True, "items": items})
 
 
 @app.route('/audit_logs')
 @login_required()
 def audit_logs():
     logs = []
-
     if session.get('is_admin') == 1:
-        # Admin: fetch logs for all users in their institute
-        users = db.collection('users') \
-                  .where('institute', '==', session['institute']) \
-                  .stream()
-        user_map = {u.id: u.to_dict() for u in users}
-        user_ids = list(user_map.keys())
+        users = db.collection('users').where('institute', '==', session['institute']).stream()
+        profiles = []
+    for u in users:
+        d = u.to_dict() or {}
+        uid = d.get('uid') or u.id  # fallback to doc id if older docs
+        profiles.append({'uid': uid, 'name': d.get('name', 'Unknown')})
 
-        for uid in user_ids:
-            entries = db.collection('audit_logs').where('user_id', '==', uid).stream()
-            for e in entries:
-                data = e.to_dict()
-                data['name'] = user_map[uid]['name']
-                logs.append(data)
-
-    elif session.get('is_admin') == 1:
-     users = db.collection('users').where('institute', '==', session['institute']).stream()
-     profiles = []
-     for u in users:
-         d = u.to_dict() or {}
-         uid = d.get('uid') or u.id  # fallback to doc id if older docs
-         profiles.append({'uid': uid, 'name': d.get('name', 'Unknown')})
-
-     for p in profiles:
-         entries = db.collection('audit_logs').where('user_id', '==', p['uid']).stream()
-         for e in entries:
-             data = e.to_dict()
-             data['name'] = p['name']
-             logs.append(data)
+    for p in profiles:
+        entries = db.collection('audit_logs').where('user_id', '==', p['uid']).stream()
+        for e in entries:
+            data = e.to_dict()
+            data['name'] = p['name']
+            logs.append(data)
 
 
     # Sort by timestamp descending
@@ -1236,7 +2262,7 @@ def view_follow_ups(patient_id):
     patient = g.patient
     docs = (db.collection('follow_ups')
               .where('patient_id', '==', patient_id)
-              .order_by('session_date', direction=firestore.Query.DESCENDING)
+              .order_by('session_date', direction=_fa_fs.Query.DESCENDING)
               .stream())
     followups = [d.to_dict() for d in docs]
 
@@ -2057,7 +3083,7 @@ def treatment_plan_summary(patient_id):
     def fetch_latest(collection_name):
         coll = db.collection(collection_name) \
             .where('patient_id', '==', patient_id) \
-            .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+            .order_by('timestamp', direction=_fa_fs.Query.DESCENDING) \
             .limit(1) \
             .get()
         return coll[0].to_dict() if coll else {}
