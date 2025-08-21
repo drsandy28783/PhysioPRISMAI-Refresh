@@ -1256,11 +1256,14 @@ def view_patients():
 
     try:
         uid = session.get('user_id')  # Firebase UID saved at login
+        if not uid:
+            flash("Session expired. Please log in again.", "error")
+            return redirect(url_for('login'))
 
         # 1) Fetch only this physio's patients from Firestore
         docs = (
             db.collection('patients')
-              .where('physio_id', '==', uid)  # <-- key fix
+              .where('physio_id', '==', uid)
               .stream()
         )
 
@@ -1273,7 +1276,6 @@ def view_patients():
         # 2) Apply optional filters in Python (safer/portable)
         if name_f:
             def name_matches(p):
-                # template uses these fallbacks for display
                 candidates = [
                     str(p.get('name', '')),
                     str(p.get('subjectiveExamination', {}).get('contextualFactorsPersonal', '')),
@@ -1285,12 +1287,37 @@ def view_patients():
         if id_f:
             patients = [p for p in patients if p.get('patient_id') == id_f or str(p.get('id', '')) == id_f]
 
+        # 3) Normalize created_at for templates (no hasattr in Jinja)
+        #    - adds p['created_at_str'] as 'DD-MM-YYYY'
+        #    - also adds a temp timestamp for sorting (then removes it)
+        from datetime import datetime
+
+        for p in patients:
+            ts = p.get('created_at')
+            dt = None
+            if ts is not None:
+                if hasattr(ts, 'strftime'):  # Firestore/Python datetime
+                    dt = ts
+                elif isinstance(ts, str):
+                    try:
+                        dt = datetime.fromisoformat(ts)
+                    except Exception:
+                        dt = None
+            p['created_at_str'] = dt.strftime('%d-%m-%Y') if dt else ''
+            p['_sort_ts'] = (dt.timestamp() if dt else 0.0)
+
+        # Optional: show most recent first
+        patients.sort(key=lambda x: x.get('_sort_ts', 0.0), reverse=True)
+        for p in patients:
+            p.pop('_sort_ts', None)
+
     except Exception as e:
         logger.error("Firestore error in view_patients: %s", e, exc_info=True)
         flash("Could not load your patients list. Please try again later.", "error")
         return redirect(url_for('dashboard'))
 
     return render_template('view_patients.html', patients=patients)
+
 
 
 # ------------------------------
