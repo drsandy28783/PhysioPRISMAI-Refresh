@@ -1,43 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Physio PRISM{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    {% block head %}{% endblock %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Physio PRISM{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  {% block head %}{% endblock %}
+  <style>
+    /* page scaffold */
+    html, body { height: 100%; }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #f7f9fb;
+    }
+    .container {
+      flex: 1;
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+    /* subtle disclaimer footer */
+    footer.disclaimer {
+      background: #f2fbfc;
+      color: #0a5460;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 10px 12px;
+      border-top: 1px solid rgba(8,127,140,0.15);
+    }
+    /* flash messages stay visible without the nav */
+    .flash-messages { margin-bottom: 12px; }
+  </style>
 </head>
 <body>
-    <nav class="navbar">
-        <ul>
-            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('view_patients') }}">Patients</a></li>
-            <li><a href="{{ url_for('add_patient') }}">Add Patient</a></li>
-            <li><a href="{{ url_for('logout') }}">Logout</a></li>
-        </ul>
-    </nav>
+  <!-- (Navbar removed intentionally) -->
 
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
-        {% block content %}{% endblock %}
-    </div>
+    {% block content %}{% endblock %}
+  </div>
 
-    {% block scripts %}{% endblock %}
+  <!-- Subtle, non‑obtrusive global disclaimer (appears on every page) -->
+  <footer class="disclaimer">
+    ⚠️ AI-generated suggestions are meant to support clinical decision‑making and may not always be accurate.
+    Final judgment must be made by a qualified professional.
+  </footer>
 
-    <script>
-        window.patientId = "{{ patient_id }}";
-      </script>
-
-
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+  <script>
+    /* Safe even if patient_id is not provided; becomes empty string */
+    window.patientId = "{{ patient_id|default('', true) }}";
+  </script>
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

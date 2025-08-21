@@ -1,200 +1,111 @@
+/* =========================
+   PhysioLogic PRISM – Teal UI
+   ========================= */
+
 :root {
-  --dark-green: #12594C;
-  --mid-green: #20735B;
-  --shadow-green: #9BBFB5;
-  --mint: #4BA684;
-  --soft-white: #F2F2F2;
+  --brand-teal:       #0BAFBF;   /* primary */
+  --brand-teal-600:   #0A98A6;   /* hover */
+  --brand-teal-700:   #087F8C;   /* links */
+  --brand-teal-900:   #065A60;   /* headings */
+  --brand-bg:         #F7F9FB;   /* background */
+  --brand-card:       #FFFFFF;   /* cards */
+  --brand-border:     rgba(8,127,140,0.18);
+  --brand-muted:      #6c8a91;
+  --text-color:       #08373D;
 }
 
+/* --- Layout --- */
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: var(--soft-white);
-  color: var(--dark-green);
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: var(--brand-bg);
+  color: var(--text-color);
   margin: 0;
   padding: 0;
 }
-
 .container {
-  max-width: 600px;
-  margin: auto;
-  padding: 2rem;
+  max-width: 900px;
+  margin: 40px auto;
+  background: var(--brand-card);
+  padding: 24px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  border: 1px solid var(--brand-border);
 }
 
-.button {
-  background-color: var(--mint);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  font-size: 16px;
-  cursor: pointer;
-}
+/* --- Headings & links --- */
+h1, h2, h3 { color: var(--brand-teal-900); margin-top: 0; }
+a { color: var(--brand-teal-700); text-decoration: none; }
+a:hover { color: var(--brand-teal-600); }
 
-.input-field {
+/* --- Forms & inputs --- */
+.input-field,
+input[type="text"], input[type="email"], input[type="password"], select, textarea {
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid var(--shadow-green);
-  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--brand-border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-color);
+  box-sizing: border-box;
 }
-table {
+.form-group label { font-weight: 600; color: var(--brand-teal-900); margin-bottom: 6px; }
+
+/* --- Buttons --- */
+.button, button, input[type="submit"] {
+  background: var(--brand-teal);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.button:hover, button:hover, input[type="submit"]:hover {
+  background: var(--brand-teal-600);
+}
+.small-button {
+  background: var(--brand-teal);
+  color: #fff;
+  padding: 7px 10px;
+  margin: 2px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.small-button:hover { background: var(--brand-teal-600); }
+
+/* --- Tables --- */
+table, .data-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin: 18px 0;
+  background: #fff;
 }
-
 th, td {
-  border: 1px solid var(--shadow-green);
-  padding: 10px;
+  border: 1px solid var(--brand-border);
+  padding: 10px 12px;
   text-align: left;
 }
-
-.form-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
+thead th {
+  background: #F2FBFC;
+  color: var(--brand-teal-900);
+  font-weight: 700;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
+/* --- Flash messages --- */
+.flash.success { background: #E8F9FB; color: #0e7c79; border: 1px solid #b8eee7; padding: 8px 10px; border-radius: 6px; }
+.flash.error   { background: #FFF1F1; color: #b00020; border: 1px solid #ffd2d2; padding: 8px 10px; border-radius: 6px; }
 
-.form-group label {
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.form-group select {
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  max-width: 300px;
-}
-
-.full-width {
-  align-items: flex-start;
-}
-
-.filter-form .filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-}
-
-.data-table th,
-.data-table td {
-  border: 1px solid #ccc;
-  padding: 8px 12px;
-  text-align: center;
-}
-
-.small-button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 6px 10px;
-  margin: 2px;
-  text-decoration: none;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  display: inline-block;
-}
-
-.centered {
-  text-align: center;
-  margin-top: 20px;
-}
-.button-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-}
-
-.button-group .small-button {
-  white-space: nowrap;
-}
-.filter-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 20px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-}
-/* —— Layout & Typography —— */
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  margin: 0;
-  padding: 0;
-}
-.container {
-  max-width: 800px;
-  margin: 40px auto;
+/* --- Cards --- */
+.card, .panel {
   background: #fff;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border: 1px solid var(--brand-border);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  padding: 16px;
+  margin-bottom: 20px;
 }
 
-/* —— Navbar —— */
-.navbar {
-  background-color: #00695c;
-  padding: 12px 24px;
-}
-.navbar ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  gap: 20px;
-}
-.navbar a {
-  color: #fff;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-/* —— Forms & Buttons —— */
-.input-field {
-  width: 100%;
-  padding: 8px 12px;
-  margin-bottom: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-.button {
-  background-color: #00796b;
-  color: #fff;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.button:hover {
-  background-color: #005f56;
-}
-
-/* —— Flash Messages —— */
-.flash-messages .flash {
-  margin-bottom: 12px;
-  padding: 10px;
-  border-radius: 4px;
-}
-.flash.error   { background-color: #fdecea; color: #611a15; }
-.flash.success { background-color: #e8f5e9; color: #1b5e20; }
+/* --- Remove old navbar entirely --- */
+.navbar { display: none !important; }
