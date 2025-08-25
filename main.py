@@ -1031,7 +1031,10 @@ def api_login_unified():
             return 'institute_physio'
         return 'individual'
 
-    role = normalize_role(profile.get("role", ""))
+    raw_role = profile.get("role", "")
+    print(f"[DEBUG] Raw role from Firestore: '{raw_role}'")
+    role = normalize_role(raw_role)
+    print(f"[DEBUG] Normalized role: '{role}'")
 
     approved = int(profile.get("approved", 1) or 1)
     active   = int(profile.get("active", 1) or 1)
