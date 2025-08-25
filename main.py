@@ -2853,13 +2853,12 @@ def provisional_diagnosis_suggest(patient_id):
 def ai_smart_goals(field):
     data = request.get_json() or {}
 
-    # Combine all saved prior screen data
     prev = {
-        **data.get('previous', {}),
-        **data.get('previous_subjective', {}),
-        **data.get('previous_per_spectives', {}),
-        **data.get('previous_assessments', {})
-    }
+    **data.get('previous', {}),
+    **data.get('previous_subjective', {}),
+    **data.get('previous_perspectives', {}),
+    **data.get('previous_assessments', {})
+}
     text = data.get('input', '').strip()
 
     # Field-specific PHI-safe prompts

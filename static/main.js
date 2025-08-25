@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const field = btn.dataset.field;
         const text  = document.getElementById(field).value.trim();
         try {
-          const res = await fetch(`/ai_suggestion/clinical_flags/{{ patient_id }}/suggest`, {
+          const res = await fetch(`/ai_suggestion/clinical_flags/${window.patientId}/suggest`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ previous: allPrev, field, text })
@@ -358,11 +358,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch(`/ai_suggestion/provisional_diagnosis`, {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ previous: allPrev })
+          body: JSON.stringify({ age_sex: allPrev.age_sex, present_history: allPrev.present_history, past_history: allPrev.past_history })
         });
-        const { diagnosis, error } = await res.json();
+        const { suggestion, error } = await res.json();
         if (error) throw new Error(error);
-        alert("Provisional Diagnosis:\n\n" + diagnosis.trim());
+        alert("Provisional Diagnosis:\n\n" + suggestion.trim());
       } catch (err) {
         alert("Error: " + err.message);
         console.error(err);
@@ -387,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
             previous: JSON.parse(localStorage.getItem('add_patient_data')    || '{}'),
             previous_subjective: JSON.parse(localStorage.getItem('subjective_inputs')   || '{}'),
             previous_perspectives: JSON.parse(localStorage.getItem('perspectives_inputs') || '{}'),
-            previous_assessments: JSON.parse(localStorage.getItem('initial_plan_inputs')  || '{}'),
+            previous_assessments: JSON.parse(localStorage.getItem('initial_plan_assessments')  || '{}'),
             input
           })
         });
@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
         popup.textContent = 'Thinking…';
         popup.style.display = 'block';
         try {
-          const resp = await fetch(`/ai/followup_suggestion/${window.patientId}`, {
+          const resp = await fetch(`/ai_followup_suggestion/${window.patientId}`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
