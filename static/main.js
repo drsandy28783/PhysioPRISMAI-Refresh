@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Provisional diagnosis button
+    // Provisional suggestion button
     const genPerspDx = document.getElementById('gen_perspectives_dx');
     if (genPerspDx) {
       genPerspDx.addEventListener('click', async () => {
