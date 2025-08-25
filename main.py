@@ -237,6 +237,18 @@ def fetch_patient(patient_id):
         logger.error(f"Firestore error fetching patient {patient_id}: {e}", exc_info=True)
         return None
 
+def _json_or_form(req):
+    data = req.get_json(silent=True)
+    if not data:
+        if req.form:
+            data = req.form.to_dict()
+        else:
+            try:
+                import json
+                data = json.loads(req.data or '{}')
+            except Exception:
+                data = {}
+    return data
 
 
 
@@ -899,6 +911,7 @@ def api_individual_register():
     return jsonify({"ok": True, "uid": uid, "profile": prof}), 201
 
 
+
 @app.post("/api/individual/login")
 @csrf.exempt
 def api_individual_login():
@@ -906,7 +919,7 @@ def api_individual_login():
     JSON: { "email": "...", "password": "..." }
     Signs in with Firebase Auth; checks your Firestore email‑keyed profile.
     """
-    data = request.get_json(silent=True) or {}
+    data = _json_or_form(request)
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
 
