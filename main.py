@@ -1049,18 +1049,23 @@ def api_login_unified():
     elif role == "institute_physio":
         if approved != 1:
             return jsonify({"ok": False, "error": "NOT_APPROVED"}), 403
+    if active != 1:
+        return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
+# ✅ allow admins to use the same endpoint (without changing their powers)
+    elif role in ("admin", "super_admin"):
         if active != 1:
             return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
     else:
         return jsonify({"ok": False, "error": "UNKNOWN_ROLE"}), 403
 
-    # 4) Light server session (useful for web views)
+# 4) Light server session (useful for web views)
     session['user_email'] = email
     session['user_name']  = profile.get('name') or email.split('@')[0]
     session['user_id']    = uid
     session['role']       = role
     session['is_super_admin'] = 1 if role == 'super_admin' else 0
-    session['is_admin']       = 1 if role == 'institute_admin' else 0
+    # ✅ treat all admin variants as admin for server-side checks
+    session['is_admin']       = 1 if role in ('institute_admin', 'admin', 'super_admin') else 0
     session['institute']      = profile.get('institute', '')
     session['institute_id']   = profile.get('institute_id', '')
 
