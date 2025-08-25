@@ -914,22 +914,21 @@ def api_individual_register():
 @app.post("/api/login")
 @csrf.exempt
 def api_login_unified():
-    """
-    JSON: { "email": "...", "password": "..." }
-    - Signs in via Firebase Auth (REST).
-    - Loads users/{email} profile.
-    - Enforces role-based rules:
-        * individual            -> must be active
-        * institute_admin       -> must be role='institute_admin'
-        * institute_physio      -> must be approved=1 and active=1
-    Returns: { ok, uid, idToken, profile }
-    """
+    # --- robust body parsing: JSON or form ---
+    raw = request.get_data(cache=False, as_text=True)  # for debugging if needed
     data = request.get_json(silent=True) or {}
+    if not data and request.form:
+        # Accept application/x-www-form-urlencoded as fallback
+        data = request.form.to_dict(flat=True)
+
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
 
     if not email or not password:
-        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED"}), 400
+        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED", "debug": {
+            "content_type": request.headers.get("Content-Type"),
+            "raw_len": len(raw)
+        }}), 400
 
     # 1) Firebase sign-in
     res = _firebase_signin(email, password)
