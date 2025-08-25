@@ -1018,7 +1018,20 @@ def api_login_unified():
         return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
 
     profile = doc.to_dict() or {}
-    role = str(profile.get("role", "")).strip().lower().replace("-", "_")
+
+    def normalize_role(input_role):
+        s = str(input_role or '').strip().lower().replace('-', '_')
+        if s == 'super_admin':
+            return 'super_admin'
+        if s == 'admin':
+            return 'admin'
+        if s in ('institute_admin', 'admin_institute'):
+            return 'institute_admin'
+        if s in ('institute_physio', 'physio'):
+            return 'institute_physio'
+        return 'individual'
+
+    role = normalize_role(profile.get("role", ""))
 
     approved = int(profile.get("approved", 1) or 1)
     active   = int(profile.get("active", 1) or 1)
