@@ -909,6 +909,67 @@ def api_individual_register():
     prof = db.collection('users').document(email).get().to_dict()
 
     return jsonify({"ok": True, "uid": uid, "profile": prof}), 201
+@app.post("/api/institute/physio/login")
+@csrf.exempt
+def api_institute_physio_login():
+    """
+    JSON: { "email": "...", "password": "..." }
+    Signs in with Firebase Auth; checks your Firestore email-keyed profile.
+    Ensures user has 'physio' or 'institute_physio' role and is approved/active.
+    """
+    data = _json_or_form(request)
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    if not email or not password:
+        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED"}), 400
+
+    res = _firebase_signin(email, password)
+    if "error" in res:
+        return jsonify({"ok": False, "error": res["error"].get("message", "LOGIN_FAILED")}), 401
+
+    uid = res.get("localId")
+    id_token = res.get("idToken")
+    if not uid or not id_token:
+        return jsonify({"ok": False, "error": "NO_UID_OR_TOKEN"}), 500
+
+    snap = db.collection("users").document(email).get()
+    if not snap.exists:
+        return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
+    profile = snap.to_dict() or {}
+
+    def as_bool(v):
+        if isinstance(v, str):
+            return v.strip().lower() in ('1','true','yes','y','on')
+        return bool(v)
+
+    # Role check: ensure it's a physio role
+    if profile.get("role") not in ("physio", "institute_physio"):
+        return jsonify({"ok": False, "error": "ROLE_MISMATCH"}), 403
+    
+    # Approval and active status checks
+    if not as_bool(profile.get("approved", 0)): # Physios need explicit approval
+        return jsonify({"ok": False, "error": "NOT_APPROVED"}), 403
+    if not as_bool(profile.get("active", 1)):
+        return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
+
+    # Optional: set server session for web views (if applicable)
+    session['user_email'] = email
+    session['user_name']  = profile.get('name') or email.split('@')[0]
+    session['user_id']    = uid
+    session['role']       = profile.get('role') # 'physio' or 'institute_physio'
+    session['is_super_admin'] = 0
+    session['is_admin']   = 0 # Physios are not admins
+    session['institute']  = profile.get('institute', '')
+    session['institute_id'] = profile.get('institute_id', '')
+
+    try:
+        log_action(uid, 'login', f"institute_physio={email}")
+    except Exception:
+        pass
+
+    return jsonify({"ok": True, "uid": uid, "profile": profile, "idToken": id_token}), 200
+
 
 # --- UNIFIED LOGIN -----------------------------------------------------------
 @app.post("/api/login")
