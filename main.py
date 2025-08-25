@@ -910,6 +910,84 @@ def api_individual_register():
 
     return jsonify({"ok": True, "uid": uid, "profile": prof}), 201
 
+# --- UNIFIED LOGIN -----------------------------------------------------------
+@app.post("/api/login")
+@csrf.exempt
+def api_login_unified():
+    """
+    JSON: { "email": "...", "password": "..." }
+    - Signs in via Firebase Auth (REST).
+    - Loads users/{email} profile.
+    - Enforces role-based rules:
+        * individual            -> must be active
+        * institute_admin       -> must be role='institute_admin'
+        * institute_physio      -> must be approved=1 and active=1
+    Returns: { ok, uid, idToken, profile }
+    """
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    if not email or not password:
+        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED"}), 400
+
+    # 1) Firebase sign-in
+    res = _firebase_signin(email, password)
+    if "error" in res:
+        return jsonify({"ok": False, "error": res["error"].get("message", "LOGIN_FAILED")}), 401
+
+    uid = res.get("localId")
+    id_token = res.get("idToken")
+    if not uid or not id_token:
+        return jsonify({"ok": False, "error": "NO_UID_OR_TOKEN"}), 500
+
+    # 2) Load the user's profile (email-keyed doc)
+    doc = db.collection("users").document(email).get()
+    if not doc.exists:
+        return jsonify({"ok": False, "error": "PROFILE_NOT_FOUND"}), 403
+
+    profile = doc.to_dict() or {}
+    role = str(profile.get("role", "")).strip().lower().replace("-", "_")
+
+    # Normalize flags
+    approved = int(profile.get("approved", 1) or 1)       # individuals often default to 1
+    active   = int(profile.get("active", 1) or 1)
+
+    # 3) Role-based gates
+    if role == "individual":
+        if active != 1:
+            return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
+
+    elif role == "institute_admin":
+        # You already treat admins distinctly elsewhere; keep it strict:
+        if active != 1:
+            return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
+
+    elif role == "institute_physio":
+        if approved != 1:
+            return jsonify({"ok": False, "error": "NOT_APPROVED"}), 403
+        if active != 1:
+            return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
+
+    else:
+        return jsonify({"ok": False, "error": "UNKNOWN_ROLE"}), 403
+
+    # 4) Set a light server session (useful for your web views)
+    session['user_email'] = email
+    session['user_name']  = profile.get('name') or email.split('@')[0]
+    session['user_id']    = uid
+    session['role']       = role
+    session['is_super_admin'] = 1 if role == 'super_admin' else 0
+    session['is_admin']       = 1 if role == 'institute_admin' else 0
+    session['institute']      = profile.get('institute', '')
+    session['institute_id']   = profile.get('institute_id', '')
+
+    try:
+        log_action(uid, 'login', f"{role}={email}")
+    except Exception:
+        pass
+
+    return jsonify({"ok": True, "uid": uid, "idToken": id_token, "profile": profile}), 200
 
 
 @app.post("/api/individual/login")
