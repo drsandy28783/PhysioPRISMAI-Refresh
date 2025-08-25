@@ -975,21 +975,32 @@ def api_institute_physio_login():
 @app.post("/api/login")
 @csrf.exempt
 def api_login_unified():
-    # --- robust body parsing: JSON or form ---
-    raw = request.get_data(cache=False, as_text=True)  # for debugging if needed
-    data = request.get_json(silent=True) or {}
-    if not data and request.form:
-        # Accept application/x-www-form-urlencoded as fallback
-        data = request.form.to_dict(flat=True)
+    # --- robust body parsing: try JSON first, then form, then raw JSON ---
+    data = request.get_json(silent=True)
+    if not data:
+        if request.form:
+            data = request.form.to_dict(flat=True)
+        else:
+            raw = request.get_data(as_text=True)  # safe now (cache=True by default)
+            try:
+                data = json.loads(raw) if raw else {}
+            except Exception:
+                data = {}
 
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
 
     if not email or not password:
-        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED", "debug": {
-            "content_type": request.headers.get("Content-Type"),
-            "raw_len": len(raw)
-        }}), 400
+        raw_len = len(request.get_data(as_text=True) or "")
+        return jsonify({
+            "ok": False,
+            "error": "EMAIL_PASSWORD_REQUIRED",
+            "debug": {
+                "content_type": request.headers.get("Content-Type"),
+                "raw_len": raw_len,
+                "parsed": bool(data),
+            },
+        }), 400
 
     # 1) Firebase sign-in
     res = _firebase_signin(email, password)
@@ -1009,30 +1020,25 @@ def api_login_unified():
     profile = doc.to_dict() or {}
     role = str(profile.get("role", "")).strip().lower().replace("-", "_")
 
-    # Normalize flags
-    approved = int(profile.get("approved", 1) or 1)       # individuals often default to 1
+    approved = int(profile.get("approved", 1) or 1)
     active   = int(profile.get("active", 1) or 1)
 
     # 3) Role-based gates
     if role == "individual":
         if active != 1:
             return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
-
     elif role == "institute_admin":
-        # You already treat admins distinctly elsewhere; keep it strict:
         if active != 1:
             return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
-
     elif role == "institute_physio":
         if approved != 1:
             return jsonify({"ok": False, "error": "NOT_APPROVED"}), 403
         if active != 1:
             return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
-
     else:
         return jsonify({"ok": False, "error": "UNKNOWN_ROLE"}), 403
 
-    # 4) Set a light server session (useful for your web views)
+    # 4) Light server session (useful for web views)
     session['user_email'] = email
     session['user_name']  = profile.get('name') or email.split('@')[0]
     session['user_id']    = uid
@@ -1048,6 +1054,7 @@ def api_login_unified():
         pass
 
     return jsonify({"ok": True, "uid": uid, "idToken": id_token, "profile": profile}), 200
+
 
 
 @app.post("/api/individual/login")
