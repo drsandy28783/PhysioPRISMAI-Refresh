@@ -1060,10 +1060,20 @@ def api_login_unified():
     role = normalize_role(raw_role)
     print(f"[DEBUG] Normalized role: '{role}'")
 
-    approved = int(profile.get("approved", 1) or 1)
-    active   = int(profile.get("active", 1) or 1)
+    # Convert boolean fields safely
+    def as_int_bool(value):
+        if isinstance(value, bool):
+            return 1 if value else 0
+        if isinstance(value, str):
+            return 1 if value.lower() in ('1', 'true', 'yes', 'active') else 0
+        return int(value) if value is not None else 0
 
-    # 3) Role-based gates
+    approved = as_int_bool(profile.get("approved", 1))
+    active = as_int_bool(profile.get("active", 1))
+    
+    print(f"[DEBUG] Final check values: role={role}, approved={approved}, active={active}")
+
+    # 3) Role-based gates - FIXED INDENTATION
     if role == "individual":
         if active != 1:
             return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
@@ -1072,15 +1082,19 @@ def api_login_unified():
             return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
     elif role == "institute_physio":
         if approved != 1:
+            print(f"[DEBUG] institute_physio not approved: {approved}")
             return jsonify({"ok": False, "error": "NOT_APPROVED"}), 403
-    if active != 1:
-        return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
-# ✅ allow admins to use the same endpoint (without changing their powers)
+        if active != 1:
+            print(f"[DEBUG] institute_physio not active: {active}")
+            return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
     elif role in ("admin", "super_admin"):
         if active != 1:
             return jsonify({"ok": False, "error": "DEACTIVATED"}), 403
     else:
+        print(f"[DEBUG] Unknown role encountered: '{role}'")
         return jsonify({"ok": False, "error": "UNKNOWN_ROLE"}), 403
+
+    print(f"[DEBUG] All role checks passed for: {role}")
 
 # 4) Light server session (useful for web views)
     session['user_email'] = email
