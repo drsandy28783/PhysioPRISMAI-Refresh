@@ -237,18 +237,33 @@ def fetch_patient(patient_id):
         logger.error(f"Firestore error fetching patient {patient_id}: {e}", exc_info=True)
         return None
 
+# REPLACE the _json_or_form function (around line 396) with this:
 def _json_or_form(req):
-    data = req.get_json(silent=True)
-    if not data:
-        if req.form:
-            data = req.form.to_dict()
-        else:
-            try:
-                import json
-                data = json.loads(req.data or '{}')
-            except Exception:
-                data = {}
-    return data
+    """Robust request data parsing for both web forms and mobile JSON"""
+    
+    # First try: Standard JSON parsing
+    try:
+        data = req.get_json(force=False, silent=True)
+        if data:
+            return data
+    except Exception:
+        pass
+    
+    # Second try: Form data (for web)
+    if req.form:
+        return req.form.to_dict()
+    
+    # Third try: Raw data as JSON (for mobile)
+    try:
+        raw_data = req.get_data(as_text=True)
+        if raw_data:
+            import json
+            return json.loads(raw_data)
+    except Exception:
+        pass
+    
+    # Fourth try: Empty request
+    return {}
 
 
 
@@ -975,6 +990,15 @@ def api_institute_physio_login():
 @app.post("/api/login")
 @csrf.exempt
 def api_login_unified():
+    print(f"=== LOGIN DEBUG ===")
+    print(f"Content-Type: {request.headers.get('Content-Type')}")
+    print(f"Raw data: {request.get_data(as_text=True)}")
+    print(f"Form data: {dict(request.form)}")
+    print(f"JSON data: {request.get_json(silent=True)}")
+    
+    data = _json_or_form(request)
+    print(f"Parsed data: {data}")
+    print(f"=== END DEBUG ===")
     # --- robust body parsing: try JSON first, then form, then raw JSON ---
     data = request.get_json(silent=True)
     if not data:
