@@ -107,7 +107,15 @@ def get_uid_from_request() -> str | None:
     except Exception:
         return None
 
-
+def get_user_data_scope(profile):
+    """Determine what data user can access based on role"""
+    role = profile.get('role', 'individual')
+    
+    return {
+        'role': role,
+        'institute_id': profile.get('institute_id') if role in ['institute_admin', 'institute_physio'] else None,
+        'can_see_institute_data': role == 'institute_admin'
+    }
 
 AUTH_BASE = "https://identitytoolkit.googleapis.com/v1"
 FIREBASE_WEB_API_KEY = os.environ.get('FIREBASE_WEB_API_KEY')  # already present, keep
@@ -849,16 +857,62 @@ def api_create_patient():
     uid = get_uid_from_request()
     if not uid:
         return jsonify({"error": "unauthorized"}), 401
-    pid = create_patient(uid, request.json or {})
-    return jsonify({"id": pid}), 201
 
-@app.get("/api/patients/mine")
+    profile = _profile_by_uid(uid)
+    if not profile:
+        return jsonify({"error": "profile_not_found"}), 401
+        
+    data = request.get_json() or {}
+    
+    # Add owner and institute info
+    patient_data = {
+        'owner_uid': uid,
+        'institute_id': profile.get('institute_id'),
+        **data,
+        'created_at': SERVER_TIMESTAMP
+    }
+    
+    doc_ref = db.collection('patients').document()
+    doc_ref.set(patient_data)
+    
+    return jsonify({"id": doc_ref.id}), 201
+
+@app.get("/api/patients/mine")  
 @csrf.exempt
 def api_list_my_patients():
     uid = get_uid_from_request()
     if not uid:
         return jsonify({"error": "unauthorized"}), 401
-    return jsonify(list_patients_for_owner(uid))
+
+    # Get user profile and determine data scope
+    profile = _profile_by_uid(uid)
+    if not profile:
+        return jsonify({"error": "profile_not_found"}), 401
+        
+    scope = get_user_data_scope(profile)
+    
+    try:
+        query = db.collection('patients')
+        
+        if scope['role'] == 'institute_admin':
+            # Admin sees all patients in their institute
+            if scope['institute_id']:
+                query = query.where('institute_id', '==', scope['institute_id'])
+        else:
+            # Both institute_physio and individual see only their own patients
+            query = query.where('owner_uid', '==', uid)
+        
+        patients = []
+        for doc in query.stream():
+            patient_data = doc.to_dict() or {}
+            patient_data['id'] = doc.id
+            patients.append(patient_data)
+        
+        return jsonify(patients)
+        
+    except Exception as e:
+        return jsonify({"error": "failed to list patients"}), 500
+    
 
 @app.patch("/api/patients/<patient_id>")
 @csrf.exempt
@@ -895,35 +949,7 @@ def api_list_followups(patient_id):
         return jsonify({"error": "unauthorized"}), 401
     return jsonify(list_followups_for_patient(patient_id))
 
-@app.post("/api/individual/register")
-@csrf.exempt
-def api_individual_register():
-    """
-    JSON: { "email": "...", "password": "...", "name": "..." }
-    Creates Firebase Auth user and a Firestore profile (role='individual', approved=1).
-    """
-    data = request.get_json(silent=True) or {}
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password") or ""
-    name = (data.get("name") or "").strip()
 
-    if not email or not password:
-        return jsonify({"ok": False, "error": "EMAIL_PASSWORD_REQUIRED"}), 400
-    if len(password) < 6:
-        return jsonify({"ok": False, "error": "WEAK_PASSWORD_MIN_6"}), 400
-
-    res = _firebase_signup(email, password)
-    if "error" in res:
-        return jsonify({"ok": False, "error": res["error"].get("message", "SIGNUP_FAILED")}), 400
-
-    uid = res.get("localId")
-    if not uid:
-        return jsonify({"ok": False, "error": "NO_UID"}), 500
-
-    _ensure_individual_profile(email=email, uid=uid, name=name)
-    prof = db.collection('users').document(email).get().to_dict()
-
-    return jsonify({"ok": True, "uid": uid, "profile": prof}), 201
 @app.post("/api/institute/physio/login")
 @csrf.exempt
 def api_institute_physio_login():
@@ -1044,16 +1070,14 @@ def api_login_unified():
     profile = doc.to_dict() or {}
 
     def normalize_role(input_role):
-        s = str(input_role or '').strip().lower().replace('-', '_')
-        if s == 'super_admin':
-            return 'super_admin'
-        if s == 'admin':
-            return 'admin'
-        if s in ('institute_admin', 'admin_institute'):
+        s = str(input_role or '').strip().lower()
+
+        if s in ('institute_admin', 'admin'):
             return 'institute_admin'
-        if s in ('institute_physio', 'physio'):
+        elif s in ('institute_physio', 'physio'):
             return 'institute_physio'
-        return 'individual'
+        else:
+            return 'individual'
 
     raw_role = profile.get("role", "")
     print(f"[DEBUG] Raw role from Firestore: '{raw_role}'")
@@ -1179,18 +1203,22 @@ def api_individual_login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
-        # Show only approved institutes to join
+        # Show approved institutes for institute_physio option
         institutes = [
             {**d.to_dict(), 'id': d.id}
             for d in db.collection('institutes').where('status', '==', 'approved').stream()
         ]
         return render_template('register.html', institutes=institutes)
 
-    # POST: store a registration request (no Auth user yet)
+    # POST: process registration
     form = request.form
-    role = (form.get('role') or '').strip()  # individual | institute_admin | institute_physio
+    role = (form.get('role') or '').strip()
+    
+    # Use the exact role values from your HTML form
+    if role not in ['individual', 'institute_admin', 'institute_physio']:
+        flash('Invalid role selection.', 'danger')
+        return redirect(url_for('register'))
 
-    # Basic fields
     payload = {
         'name': (form.get('name') or '').strip(),
         'age': (form.get('age') or '').strip(),
@@ -1199,7 +1227,7 @@ def register():
         'credentials': (form.get('credentials') or '').strip(),
         'email': (form.get('email') or '').strip().lower(),
         'phone': (form.get('phone') or '').strip(),
-        'role': role,
+        'role': role,  # Store exact role from form
         'status': 'pending',
         'created_at': datetime.now(timezone.utc).isoformat(),
         'updated_at': datetime.now(timezone.utc).isoformat(),
@@ -1218,12 +1246,10 @@ def register():
             flash('Please select an institute to join.', 'danger')
             return redirect(url_for('register'))
 
-    # Save request for super admin approval
+    # Save registration request
     db.collection('registration_requests').add(payload)
-
-    flash('Thanks! Your registration request was submitted. You can log in after approval.', 'success')
+    flash('Registration request submitted. You will be contacted after approval.', 'success')
     return redirect(url_for('login'))
-
 
 
 
@@ -1334,14 +1360,16 @@ def superadmin_approve(req_id):
     req_ref = db.collection('registration_requests').document(req_id)
     snap = req_ref.get()
     if not snap.exists:
-        flash('Request not found', 'error'); return redirect(url_for('superadmin_home'))
+        flash('Request not found', 'error')
+        return redirect(url_for('superadmin_home'))
+    
     r = snap.to_dict()
-
     email = (r.get('email') or '').lower()
     if not email:
-        flash('Request missing email', 'error'); return redirect(url_for('superadmin_home'))
+        flash('Request missing email', 'error')
+        return redirect(url_for('superadmin_home'))
 
-    # 1) Ensure a Firebase Auth user exists (for mobile login etc.)
+    # Create Firebase Auth user
     try:
         user_rec = fb_auth.get_user_by_email(email)
     except Exception:
@@ -1354,9 +1382,10 @@ def superadmin_approve(req_id):
         )
     uid = user_rec.uid
 
-    # 2) Institute handling
+    # Handle institute creation/assignment
     institute_id = None
     if r.get('role') == 'institute_admin':
+        # Create new institute
         inst = {
             'name': r.get('institute_name'),
             'admin_uid': uid,
@@ -1365,37 +1394,37 @@ def superadmin_approve(req_id):
             'created_at': now_ts().isoformat(),
             'updated_at': now_ts().isoformat(),
         }
-        institute_id = db.collection('institutes').add(inst)[1].id
+        _, institute_ref = db.collection('institutes').add(inst)
+        institute_id = institute_ref.id
     elif r.get('role') == 'institute_physio':
         institute_id = r.get('institute_id')
 
-    # 3) Upsert the user profile **keyed by email** (your current schema)
+    # Create standardized user profile
     user_doc = {
         'uid': uid,
         'email': email,
         'name': r.get('name'),
         'phone': r.get('phone'),
-        'role': r.get('role') or 'individual',
-        'approved': 1,          # <- your style
-        'active': 1,            # <- optional but matches your docs
-        'is_admin': 1 if (r.get('role') in ('admin', 'institute_admin')) else 0,
-        # Preserve existing super-admins; don't accidentally demote them
-        'is_super_admin': 1 if r.get('role') == 'super_admin' else None,
+        'role': r.get('role'),  # Already standardized from registration
+        'approved': 1,
+        'active': 1,
+        'is_admin': 1 if r.get('role') == 'institute_admin' else 0,
         'area_of_practice': r.get('area_of_practice'),
         'credentials': r.get('credentials'),
         'sex': r.get('sex'),
         'age': r.get('age'),
         'institute_id': institute_id,
+        'institute': r.get('institute_name') if r.get('role') == 'institute_admin' else None,
         'updated_at': now_ts().isoformat(),
+        'created_at': now_ts().isoformat(),
     }
-    # prune None so we don't overwrite existing is_super_admin=1
-    user_doc = {k: v for k, v in user_doc.items() if v is not None}
-    db.collection('users').document(email).set(user_doc, merge=True)
+    
+    db.collection('users').document(email).set(user_doc)
 
-    # 4) Close the request
+    # Close the request
     req_ref.update({'status': 'approved', 'approved_at': now_ts().isoformat()})
 
-    flash('Approved. User can log in now (use Forgot Password to set password).', 'success')
+    flash('User approved. They can log in now (use Forgot Password to set password).', 'success')
     return redirect(url_for('superadmin_home'))
 
 @app.post('/superadmin/reject/<req_id>')
@@ -1541,46 +1570,7 @@ def view_patients():
 #   INSTITUTE: ADMIN AUTH (API)
 # ------------------------------
 
-@app.post("/api/institute/admin/register")
-@csrf.exempt
-def api_institute_admin_register():
-    """
-    JSON: { "name": "...", "email": "...", "password": "...", "institute": "..." }
-    Creates a Firebase Auth user, upserts users/{email} as institute_admin (approved=1).
-    """
-    d = request.get_json(silent=True) or {}
-    name = (d.get("name") or "").strip()
-    email = (d.get("email") or "").strip().lower()
-    password = d.get("password") or ""
-    institute = (d.get("institute") or "").strip()
 
-    if not (name and email and password and institute):
-        return jsonify({"ok": False, "error": "REQUIRED_FIELDS"}), 400
-    if len(password) < 6:
-        return jsonify({"ok": False, "error": "WEAK_PASSWORD_MIN_6"}), 400
-
-    res = _firebase_signup(email, password)
-    if "error" in res:
-        return jsonify({"ok": False, "error": res["error"].get("message", "SIGNUP_FAILED")}), 400
-
-    uid = res.get("localId")
-    if not uid:
-        return jsonify({"ok": False, "error": "NO_UID"}), 500
-
-    _ensure_institute_admin_profile(email=email, uid=uid, name=name, institute=institute)
-
-    # Optional: create / upsert institutes collection
-    db.collection("institutes").add({
-        "name": institute,
-        "admin_uid": uid,
-        "admin_email": email,
-        "status": "approved",
-        "created_at": SERVER_TIMESTAMP,
-        "updated_at": SERVER_TIMESTAMP,
-    })
-
-    profile = db.collection("users").document(email).get().to_dict()
-    return jsonify({"ok": True, "uid": uid, "profile": profile}), 201
 
 
 @app.post("/api/institute/admin/login")
@@ -1638,33 +1628,7 @@ def api_institute_admin_login():
 #   INSTITUTE: PHYSIO REG + APPROVAL
 # -------------------------------------
 
-@app.post("/api/institute/physio/register")
-@csrf.exempt
-def api_institute_physio_register():
-    """
-    JSON: { "name": "...", "email": "...", "password": "...", "institute": "...", "institute_id": "..."? }
-    Creates Firebase Auth user and a users/{email} with role=institute_physio, approved=0 (pending).
-    """
-    d = request.get_json(silent=True) or {}
-    name = (d.get("name") or "").strip()
-    email = (d.get("email") or "").strip().lower()
-    password = d.get("password") or ""
-    institute = (d.get("institute") or "").strip()
-    institute_id = (d.get("institute_id") or "").strip() or None
 
-    if not (name and email and password and institute):
-        return jsonify({"ok": False, "error": "REQUIRED_FIELDS"}), 400
-
-    res = _firebase_signup(email, password)
-    if "error" in res:
-        return jsonify({"ok": False, "error": res["error"].get("message", "SIGNUP_FAILED")}), 400
-
-    uid = res.get("localId")
-    if not uid:
-        return jsonify({"ok": False, "error": "NO_UID"}), 500
-
-    _ensure_institute_physio_profile_pending(email=email, uid=uid, name=name, institute=institute, institute_id=institute_id)
-    return jsonify({"ok": True, "status": "PENDING_APPROVAL"}), 201
 
 
 @app.get("/api/institute/physios/pending")
@@ -1714,54 +1678,7 @@ def api_institute_approve_physio():
     return jsonify({"ok": True})
 
 
-@app.route('/register_institute', methods=['GET', 'POST'])
-def register_institute():
-    if request.method == 'POST':
-        name = request.form['name'].strip()
-        email = request.form['email'].strip().lower()
-        phone = request.form['phone'].strip()
-        password = request.form['password']
-        institute = request.form['institute'].strip()
 
-        try:
-            # Firebase Auth: Create user
-            payload = {
-                'email': email,
-                'password': password,
-                'returnSecureToken': True
-            }
-            r = requests.post(
-                f'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}',
-                json=payload
-            )
-            result = r.json()
-
-            if 'error' in result:
-                flash('Registration failed: ' + result['error']['message'], 'danger')
-                return redirect('/register_institute')
-
-            # Firestore: Save admin user
-            db.collection('users').document(email).set({
-                'name': name,
-                'email': email,
-                'phone': phone,
-                'institute': institute,
-                'role': 'institute_admin',
-                'approved': 1,
-                'active': 1,
-                'is_admin': 1,
-                'created_at': SERVER_TIMESTAMP
-            })
-
-            flash('Institute admin registered successfully. You can now log in.', 'success')
-            return redirect('/login_institute')
-
-        except Exception as e:
-            print("Register institute error:", e)
-            flash("Something went wrong. Please try again.", "danger")
-            return redirect('/register_institute')
-
-    return render_template('register_institute.html')
 
 @app.route('/login_institute', methods=['GET', 'POST'])
 def login_institute():
@@ -1818,58 +1735,7 @@ def login_institute():
     return render_template('login_institute.html')
 
 
-@app.route('/register_with_institute', methods=['GET', 'POST'])
-def register_with_institute():
-    if request.method == 'POST':
-        name = request.form['name'].strip()
-        email = request.form['email'].strip().lower()
-        phone = request.form['phone'].strip()
-        password = request.form['password']
-        institute = request.form['institute'].strip()
 
-        try:
-            # Firebase Auth: Create account
-            payload = {
-                'email': email,
-                'password': password,
-                'returnSecureToken': True
-            }
-            r = requests.post(
-                f'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}',
-                json=payload
-            )
-            result = r.json()
-
-            if 'error' in result:
-                flash('Registration failed: ' + result['error']['message'], 'danger')
-                return redirect('/register_with_institute')
-
-            # Save as unapproved institute physio
-            db.collection('users').document(email).set({
-                'name': name,
-                'email': email,
-                'phone': phone,
-                'institute': institute,
-                'role': 'institute_physio',
-                'approved': 0,
-                'active': 1,
-                'is_admin': 0,
-                'created_at': SERVER_TIMESTAMP
-            })
-
-            flash('Registration request submitted. Please wait for admin approval.', 'info')
-            return redirect('/login_institute')
-
-        except Exception as e:
-            print("Register with institute error:", e)
-            flash("Something went wrong. Please try again.", 'danger')
-            return redirect('/register_with_institute')
-
-    # Dropdown list: Get all institute names from approved admins
-    institute_admins = db.collection('users').where('is_admin', '==', 1).stream()
-    institutes = [{'institute': admin.to_dict().get('institute')} for admin in institute_admins]
-
-    return render_template('register_with_institute.html', institutes=institutes)
 
     
 
