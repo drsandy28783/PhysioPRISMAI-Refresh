@@ -2,7 +2,8 @@
 {% block title %}Follow-Up Sessions – Physiologic PRISM{% endblock %}
 
 {% block content %}
-  <div class="container">
+  <!-- data-screen lets main.js attach the AI handler -->
+  <div class="container" data-screen="followup">
     <h2>Follow-Up History for {{ patient.name }} (ID: {{ patient.patient_id }})</h2>
 
     {% if followups %}
@@ -25,7 +26,7 @@
               <td>{{ f.grade }}</td>
               <td>{{ f.perception or f.belief_treatment }}</td>
               <td>{{ f.feedback or f.belief_feedback }}</td>
-              <td>{{ f.treatment_plan }}</td>
+              <td style="white-space: pre-wrap">{{ f.treatment_plan }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -34,15 +35,27 @@
       <p>No follow-up records found for this patient.</p>
     {% endif %}
 
-    <h3>Add New Follow-Up</h3>
+    <h3 style="margin-top: 1rem;">Add New Follow-Up</h3>
     <form method="POST" action="{{ url_for('follow_ups', patient_id=patient.patient_id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <label>Session Number:</label>
-      <input type="number" name="session_number" class="input-field" value="{{ followups|length + 1 }}" readonly>
+      <input
+        type="number"
+        name="session_number"
+        class="input-field"
+        value="{{ followups|length + 1 }}"
+        readonly
+      >
 
       <label>Date:</label>
-      <input type="date" name="session_date" class="input-field" required>
+      <input
+        type="date"
+        name="session_date"
+        class="input-field"
+        required
+        value="{{ request.form.get('session_date','') }}"
+      >
 
       <label>Grade of Achievement:</label>
       <select name="grade" class="input-field" required>
@@ -61,26 +74,38 @@
       </select>
 
       <label>Feedback:</label>
-      <textarea name="belief_feedback" class="input-field" rows="3" placeholder="Enter feedback..."></textarea>
+      <textarea
+        name="belief_feedback"
+        class="input-field"
+        rows="3"
+        placeholder="Enter feedback..."
+      >{{ request.form.get('belief_feedback','') }}</textarea>
 
       <label>Plan for Next Treatment:</label>
       <div class="field-block control-group">
+        <!-- Keep id=plan_next for your JS popup lookup; name must match backend -->
         <textarea
           id="plan_next"
-          name="plan_next"
+          name="treatment_plan"
           class="input-field"
           rows="3"
           placeholder="Describe treatment strategy…"
-        >{{ request.form.plan_next or '' }}</textarea>
+        >{{ request.form.get('treatment_plan','') }}</textarea>
+
         <button
           type="button"
           class="ai-btn"
-          title="Ask AI for next‑session plan"
+          title="Ask AI for next-session plan"
         >🧠</button>
       </div>
+
+      <!-- Must match textarea.id + '_popup' -->
       <div id="plan_next_popup" class="ai-popup"></div>
 
-      <div id="ai_summary" class="ai-popup" style="white-space: pre-wrap; background: #f0f0f0; padding: 8px; border-radius: 4px; margin-top: 8px;"></div>
+      <!-- Optional area if you also show an AI summary elsewhere -->
+      <div id="ai_summary"
+           class="ai-popup"
+           style="white-space: pre-wrap; background: #f0f0f0; padding: 8px; border-radius: 4px; margin-top: 8px;"></div>
 
       <div style="margin-top:16px; display:flex; gap:12px;">
         <button type="submit" class="button">Save Follow-Up</button>
@@ -88,5 +113,9 @@
       </div>
     </form>
   </div>
-{% endblock %}
 
+  <!-- Expose patientId for main.js fetch(`/ai_followup_suggestion/${window.patientId}`) -->
+  <script>
+    window.patientId = "{{ patient.patient_id }}";
+  </script>
+{% endblock %}
