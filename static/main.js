@@ -49,6 +49,88 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  
+// ---- 1.5 Subjective Examination Screen ----
+if (document.getElementById('subjective-form')) {
+  const form = document.getElementById('subjective-form');
+
+  const ageSex   = form.querySelector('input[name="age_sex"]')?.value.trim() || '';
+  const present  = form.querySelector('input[name="present_history"]')?.value.trim() || '';
+  const past     = form.querySelector('input[name="past_history"]')?.value.trim() || '';
+
+  const subjectiveFieldIds = [
+    'body_structure',
+    'body_function',
+    'activity_performance',
+    'activity_capacity',
+    'contextual_environmental',
+    'contextual_personal'
+  ];
+
+  function collectInputs() {
+    const inputs = {};
+    subjectiveFieldIds.forEach(id => {
+      const el = document.getElementById(id);
+      inputs[id] = (el?.value || '').trim();
+    });
+    return inputs;
+  }
+
+  // Per-field 🧠 buttons -> /ai_suggestion/subjective/<field>
+  document.querySelectorAll('#subjective-form .ai-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const field  = btn.dataset.field;              // matches data-field in HTML
+      const inputs = collectInputs();                // send all fields so backend can summarize "other findings"
+      try {
+        const res = await fetch(`/ai_suggestion/subjective/${field}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            age_sex: ageSex,
+            present_history: present,
+            past_history: past,
+            inputs
+          })
+        });
+        const { suggestion, error } = await res.json();
+        if (error) throw new Error(error);
+
+        const pop = document.getElementById(`${field}_popup`);
+        if (pop) {
+          pop.textContent = suggestion || 'No suggestion';
+          pop.style.display = 'block';
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+        console.error(e);
+      }
+    });
+  });
+
+  // 🩺 stethoscope -> /ai_suggestion/subjective_diagnosis
+  document.getElementById('gen_subjective_dx')?.addEventListener('click', async () => {
+    const inputs = collectInputs();
+    try {
+      const res = await fetch('/ai_suggestion/subjective_diagnosis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          age_sex: ageSex,
+          present_history: present,
+          past_history: past,
+          inputs
+        })
+      });
+      const { suggestion, error } = await res.json();
+      if (error) throw new Error(error);
+      alert('Provisional impressions:\n\n' + (suggestion || 'No output'));
+    } catch (e) {
+      alert('Error: ' + e.message);
+      console.error(e);
+    }
+  });
+}
+
 
   // ---- 2. Subjective/Patient Perspectives Screen ----
   if (document.getElementById('perspectives-form')) {

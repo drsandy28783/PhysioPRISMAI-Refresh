@@ -21,6 +21,8 @@ from firestore_helpers import (upsert_user_profile, create_patient, list_patient
 from google.cloud.firestore_v1.base_query import FieldFilter
 from google.cloud import firestore
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
+
 
 import openai
 # some versions of the OpenAI pip package don’t expose openai.error
@@ -181,6 +183,14 @@ def role_required(*roles):
 def now_ts():
     return datetime.now(timezone.utc)
 
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}},
+    supports_credentials=False,  # we're using Authorization header, not cookies
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Authorization"],
+    methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+)
 
 AI_REQUEST_TIMEOUT = int(os.getenv("AI_REQUEST_TIMEOUT", "18"))
 
@@ -327,6 +337,15 @@ def firestore_ping():
     )
     return jsonify({"ok": True})
 
+
+@app.before_request
+def _cors_preflight():
+    if request.method == "OPTIONS":
+        resp = make_response("", 204)
+        resp.headers.setdefault("Access-Control-Allow-Origin", "*")
+        resp.headers.setdefault("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        resp.headers.setdefault("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+        return resp
 
 # ─────────────────────────────────────────────────────────────────────────────
 # API HELPERS: token-auth admin check + profile lookup by UID
@@ -864,12 +883,14 @@ def api_create_patient():
         
     data = request.get_json() or {}
     
-    # Add owner and institute info
+    # IMPORTANT: Use created_by instead of owner_uid to match Firebase rules
     patient_data = {
-        'owner_uid': uid,
+        'created_by': uid,  # Changed from owner_uid to created_by
+        'owner_uid': uid,   # Keep this for backward compatibility
         'institute_id': profile.get('institute_id'),
         **data,
-        'created_at': SERVER_TIMESTAMP
+        'created_at': SERVER_TIMESTAMP,
+        'updatedAt': SERVER_TIMESTAMP
     }
     
     doc_ref = db.collection('patients').document()
