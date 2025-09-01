@@ -44,3 +44,4 @@ google-api-core
 sift-stack-py
 gunicorn
 ruff
+Flask-Cors==4.0.0

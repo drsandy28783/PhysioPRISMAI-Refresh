@@ -183,14 +183,7 @@ def role_required(*roles):
 def now_ts():
     return datetime.now(timezone.utc)
 
-CORS(
-    app,
-    resources={r"/api/*": {"origins": "*"}},
-    supports_credentials=False,  # we're using Authorization header, not cookies
-    allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["Authorization"],
-    methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
-)
+
 
 AI_REQUEST_TIMEOUT = int(os.getenv("AI_REQUEST_TIMEOUT", "18"))
 
@@ -303,6 +296,15 @@ logger = logging.getLogger(__name__)
 # make sure you set a secret key for sessions + CSRF 
 # initialize CSRF protection on *all* POST routes by default
 csrf = CSRFProtect(app)
+
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}},
+    supports_credentials=False,  # we're using Authorization header, not cookies
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Authorization"],
+    methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+)
 
 
 # ─── CSRF ERROR HANDLING ────────────────────────────
