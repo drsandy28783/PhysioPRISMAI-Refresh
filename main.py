@@ -2112,36 +2112,85 @@ def treatment_plan(patient_id):
         return redirect('/dashboard')
     return render_template('treatment_plan.html', patient_id=patient_id)
 
+from datetime import datetime, timezone
+from google.cloud import firestore  # for Query.ASCENDING
+
 @app.route('/follow_ups/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 @patient_access_required
 def follow_ups(patient_id):
-    patient = g.patient
-    if request.method == 'POST':
-        entry = {
-            'patient_id':      patient_id,
-            'session_number':  int(request.form['session_number']),
-            'session_date':    request.form['session_date'],
-            'grade':           request.form['grade'],
-            'perception':      request.form['belief_treatment'],
-            'feedback':        request.form['belief_feedback'],
-            'treatment_plan':  request.form['treatment_plan'],
-            'timestamp':       SERVER_TIMESTAMP
-        }
-        db.collection('follow_ups').add(entry)
-        log_action(session['user_id'], 'Add Follow-Up',
-                   f"Follow-up #{entry['session_number']} for {patient_id}")
-        return redirect(f'/follow_ups/{patient_id}')
+    patient = g.patient  # set by @patient_access_required
 
-    # 3) on GET, pull all existing
-    docs = (db.collection('follow_ups')
+    try:
+        if request.method == 'POST':
+            # --- 1) Normalize and validate form fields ---
+            # session_number: must be int and >= 1
+            try:
+                session_number = int(request.form.get('session_number', '').strip())
+                if session_number < 1:
+                    raise ValueError
+            except Exception:
+                flash('Invalid session number.', 'error')
+                return redirect(f'/follow_ups/{patient_id}')
+
+            # session_date: parse ISO yyyy-mm-dd to timezone-aware datetime
+            date_str = (request.form.get('session_date') or '').strip()
+            try:
+                # html <input type="date"> gives 'YYYY-MM-DD'
+                session_date = datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
+            except Exception:
+                flash('Invalid session date.', 'error')
+                return redirect(f'/follow_ups/{patient_id}')
+
+            grade            = (request.form.get('grade') or '').strip()
+            belief_treatment = (request.form.get('belief_treatment') or '').strip()
+            belief_feedback  = (request.form.get('belief_feedback') or '').strip()
+            treatment_plan   = (request.form.get('treatment_plan') or '').strip()
+
+            # --- 2) Build the document to write (consistent types) ---
+            entry = {
+                'patient_id'    : patient_id,            # Firestore doc ID of patient
+                'owner_uid'     : session.get('user_id'),# helpful for scoping later
+                'session_number': session_number,        # INT (not string!)
+                'session_date'  : session_date,          # DATETIME (not string!)
+                'grade'         : grade,
+                'perception'    : belief_treatment,      # keep both keys if you use them elsewhere
+                'feedback'      : belief_feedback,
+                'belief_treatment': belief_treatment,    # preserve original field names used in JS
+                'belief_feedback' : belief_feedback,
+                'treatment_plan': treatment_plan,
+                'timestamp'     : SERVER_TIMESTAMP,      # server write time
+            }
+
+            db.collection('follow_ups').add(entry)
+            log_action(
+                session['user_id'],
+                'Add Follow-Up',
+                f"Follow-up #{session_number} for {patient_id}"
+            )
+            return redirect(f'/follow_ups/{patient_id}')
+
+        # --- 3) On GET, read all existing follow-ups (uniform types so order_by works) ---
+        docs = (
+            db.collection('follow_ups')
               .where('patient_id', '==', patient_id)
-              .order_by('session_number')
-              .stream())
-    followups = [d.to_dict() for d in docs]
+              .order_by('session_number', direction=firestore.Query.ASCENDING)
+              .stream()
+        )
+        followups = [d.to_dict() for d in docs]
 
-    return render_template('follow_ups.html',                       patient=patient, patient_id=patient_id,
-                           followups=followups)
+        return render_template(
+            'follow_ups.html',
+            patient=patient,
+            patient_id=patient_id,
+            followups=followups
+        )
+
+    except Exception as e:
+        app.logger.exception('Error in follow_ups route')
+        # Avoid leaking details to users, but make it obvious in logs
+        return make_response('Internal Server Error in follow_ups', 500)
+
 
 # ─── VIEW FOLLOW-UPS ROUTE ─────────────────────────────────────────────
 @app.route('/view_follow_ups/<path:patient_id>')
