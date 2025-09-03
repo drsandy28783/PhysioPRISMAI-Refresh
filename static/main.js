@@ -555,10 +555,13 @@ if (document.getElementById('subjective-form')) {
     }
   });
 
-  // ---- 10. Global: Hide popups when clicking outside ----
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.control-group') && !e.target.closest('.field-block')) {
-      document.querySelectorAll('.ai-popup').forEach(p => p.style.display = 'none');
-    }
-  });
+  /// ---- 10. Global: Hide popups when clicking anywhere outside ----
+document.addEventListener('click', e => {
+  // Do not hide if clicking inside a popup or on a brain icon
+  if (!e.target.closest('.ai-popup') && !e.target.closest('.ai-btn')) {
+    document.querySelectorAll('.ai-popup').forEach(p => {
+      p.style.display = 'none';
+    });
+  }
 });
+        });
