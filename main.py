@@ -392,6 +392,22 @@ CORS(
 )
 
 
+ALLOWED_ORIGINS = [
+    "https://physiologicprism.com",
+    "https://www.physiologicprism.com",
+    # keep the Render URL during transition/tests:
+    "https://physioprismai-refresh-1.onrender.com",
+    # (optional) local dev:
+    "http://localhost:3000", "http://127.0.0.1:3000"
+]
+
+CORS(
+    app,
+    supports_credentials=True,            # needed if you use cookies/sessions
+    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
+    expose_headers=["Content-Disposition"],  # useful for file downloads
+)
+
 # ─── CSRF ERROR HANDLING ────────────────────────────
 @app.errorhandler(CSRFError)
 def handle_csrf_error(error):
@@ -424,7 +440,6 @@ def firestore_ping():
     )
     return jsonify({"ok": True})
 
-
 @app.before_request
 def _cors_preflight():
     if request.method == "OPTIONS":
@@ -433,6 +448,27 @@ def _cors_preflight():
         resp.headers.setdefault("Access-Control-Allow-Headers", "Content-Type, Authorization")
         resp.headers.setdefault("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
         return resp
+
+
+@app.before_request
+def enforce_custom_domain():
+    host = request.headers.get("Host", "")
+    # If someone visits the Render subdomain, redirect to your main domain
+    if host.endswith("onrender.com"):
+        # keep the full path/query string
+        return redirect(
+            request.url.replace(host, "physiologicprism.com", 1),
+            code=301
+        )
+
+
+
+@app.before_request
+def redirect_to_non_www():
+    host = request.headers.get("Host", "")
+    if host.startswith("www."):
+        return redirect(request.url.replace("//www.", "//", 1), code=301)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # API HELPERS: token-auth admin check + profile lookup by UID
