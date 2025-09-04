@@ -451,11 +451,6 @@ def enforce_custom_domain():
 
 
 
-@app.before_request
-def redirect_to_non_www():
-    host = request.headers.get("Host", "")
-    if host.startswith("www."):
-        return redirect(request.url.replace("//www.", "//", 1), code=301)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
