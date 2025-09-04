@@ -2470,31 +2470,7 @@ def ai_past_questions():
 
 
 
-@app.route('/ai_suggestion/provisional_diagnosis', methods=['POST'])
-@csrf.exempt
-@login_required()
-def ai_provisional_diagnosis():
-    data = request.get_json() or {}
-    age_sex = _age_sex_from(data)
-    present_hist = data.get('present_history', '').strip()
-    past_hist    = data.get('past_history', '').strip()
 
-    prompt = (
-        "Given the following patient case (no names or identifying details):\n"
-        f"Age/Sex: {age_sex}\n"
-        f"Present history: {present_hist}\n"
-        f"Past history: {past_hist}\n"
-        "List up to two likely provisional diagnoses for physiotherapy with a brief rationale for each. "
-         "Format as a numbered list."
-    )
-
-    try:
-        suggestion = get_ai_suggestion(prompt)
-        return jsonify({'suggestion': suggestion})
-    except OpenAIError:
-        return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
-    except Exception:
-        return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 
 
