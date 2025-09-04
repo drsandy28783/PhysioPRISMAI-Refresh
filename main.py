@@ -23,6 +23,13 @@ from google.cloud import firestore
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 
+ALLOWED_ORIGINS = [
+    "https://physiologicprism.com",
+    "https://www.physiologicprism.com",
+    "https://physioprismai-refresh-1.onrender.com",  # keep during transition
+    "http://localhost:3000", "http://127.0.0.1:3000"  # local dev
+]
+
 
 import openai
 # some versions of the OpenAI pip package don’t expose openai.error
@@ -381,31 +388,13 @@ logger = logging.getLogger(__name__)
 # make sure you set a secret key for sessions + CSRF 
 # initialize CSRF protection on *all* POST routes by default
 csrf = CSRFProtect(app)
-
 CORS(
     app,
-    resources={r"/api/*": {"origins": "*"}},
+    resources={r"/api/*": {"origins": ALLOWED_ORIGINS}},
     supports_credentials=False,  # we're using Authorization header, not cookies
     allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["Authorization"],
+    expose_headers=["Authorization", "Content-Disposition"],
     methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
-)
-
-
-ALLOWED_ORIGINS = [
-    "https://physiologicprism.com",
-    "https://www.physiologicprism.com",
-    # keep the Render URL during transition/tests:
-    "https://physioprismai-refresh-1.onrender.com",
-    # (optional) local dev:
-    "http://localhost:3000", "http://127.0.0.1:3000"
-]
-
-CORS(
-    app,
-    supports_credentials=True,            # needed if you use cookies/sessions
-    resources={r"/*": {"origins": ALLOWED_ORIGINS}},
-    expose_headers=["Content-Disposition"],  # useful for file downloads
 )
 
 # ─── CSRF ERROR HANDLING ────────────────────────────
@@ -453,11 +442,10 @@ def _cors_preflight():
 @app.before_request
 def enforce_custom_domain():
     host = request.headers.get("Host", "")
-    # If someone visits the Render subdomain, redirect to your main domain
-    if host.endswith("onrender.com"):
-        # keep the full path/query string
+    # If someone visits the Render subdomain or apex, redirect to www
+    if host.endswith("onrender.com") or host == "physiologicprism.com":
         return redirect(
-            request.url.replace(host, "physiologicprism.com", 1),
+            request.url.replace(host, "www.physiologicprism.com", 1),
             code=301
         )
 
