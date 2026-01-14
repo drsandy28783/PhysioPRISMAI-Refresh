@@ -818,7 +818,7 @@ csp = {
     ],
     'script-src': [
         "'self'",
-        "'unsafe-inline'",  # Required for inline scripts (minimize usage)
+        # NOTE: 'unsafe-inline' removed - we use nonces instead for better security
         'https://www.gstatic.com',  # Firebase
         'https://www.googletagmanager.com',  # Google Analytics
         'https://checkout.razorpay.com',  # Razorpay payment checkout
