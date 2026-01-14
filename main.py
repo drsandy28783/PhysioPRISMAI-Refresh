@@ -3804,7 +3804,7 @@ def my_invoices():
         user_email = session.get('user_id')
 
         # Get all invoices for this user
-        invoices = db.collection('invoices').where('user_id', '==', user_email).order_by('invoice_date', direction=firestore.Query.DESCENDING).stream()
+        invoices = db.collection('invoices').where('user_id', '==', user_email).order_by('invoice_date', direction='DESCENDING').stream()
 
         invoices_list = []
         for invoice_doc in invoices:
@@ -4372,9 +4372,9 @@ def admin_dashboard():
     users_ref = db.collection('users')
     docs = (
         users_ref
-        .where(filter=FieldFilter('is_admin',   '==', 0))
-        .where(filter=FieldFilter('approved',   '==', 0))
-        .where(filter=FieldFilter('institute',  '==', session.get('institute')))
+        .where('is_admin', '==', 0)
+        .where('approved', '==', 0)
+        .where('institute', '==', session.get('institute'))
         .stream()
     )
 
@@ -5514,7 +5514,7 @@ def view_follow_ups(patient_id):
 
     docs = (db.collection('follow_ups')
               .where('patient_id', '==', patient_id)
-              .order_by('session_date', direction=firestore.Query.DESCENDING)
+              .order_by('session_date', direction='DESCENDING')
               .stream())
     followups = [d.to_dict() for d in docs]
 
@@ -6859,7 +6859,7 @@ def provisional_diagnosis_suggest(patient_id):
                 def fetch_latest(collection_name):
                     coll = db.collection(collection_name) \
                             .where('patient_id', '==', patient_id) \
-                            .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+                            .order_by('timestamp', direction='DESCENDING') \
                             .limit(1) \
                             .get()
                     return coll[0].to_dict() if coll else {}
@@ -7021,7 +7021,7 @@ def treatment_plan_suggest(field):
     def fetch_latest(collection_name):
         coll = db.collection(collection_name) \
                 .where('patient_id', '==', patient_id) \
-                .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+                .order_by('timestamp', direction='DESCENDING') \
                 .limit(1) \
                 .get()
         return coll[0].to_dict() if coll else {}
@@ -7084,7 +7084,7 @@ def treatment_plan_summary(patient_id):
     def fetch_latest(collection_name):
         coll = db.collection(collection_name) \
                 .where('patient_id', '==', patient_id) \
-                .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+                .order_by('timestamp', direction='DESCENDING') \
                 .limit(1) \
                 .get()
         return coll[0].to_dict() if coll else {}
@@ -7219,7 +7219,7 @@ def ai_followup_suggestion(patient_id):
     past_hist = sanitize_clinical_text(patient.get('past_history', ''))
 
     # Get diagnosis and treatment summary if available
-    prov_dx_doc = db.collection('provisional_diagnosis').where('patient_id', '==', patient_id).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(1).get()
+    prov_dx_doc = db.collection('provisional_diagnosis').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
     diagnosis = sanitize_clinical_text(prov_dx_doc[0].to_dict().get('diagnosis', '') if prov_dx_doc else '')
 
     # Construct followup data from session inputs
@@ -7302,7 +7302,7 @@ def ai_followup_field(field):
     def fetch_latest(collection_name):
         coll = db.collection(collection_name) \
                 .where('patient_id', '==', patient_id) \
-                .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+                .order_by('timestamp', direction='DESCENDING') \
                 .limit(1) \
                 .get()
         return coll[0].to_dict() if coll else {}
@@ -7665,7 +7665,7 @@ def super_admin_audit_logs():
     """View all audit logs across all institutes"""
     try:
         # Get all logs
-        logs_ref = db.collection('audit_logs').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(500).stream()
+        logs_ref = db.collection('audit_logs').order_by('timestamp', direction='DESCENDING').limit(500).stream()
         logs = []
 
         # Create user map for names
@@ -7694,7 +7694,7 @@ def super_admin_audit_logs():
 def super_admin_export_logs():
     """Export all audit logs as CSV"""
     try:
-        logs_ref = db.collection('audit_logs').order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+        logs_ref = db.collection('audit_logs').order_by('timestamp', direction='DESCENDING').stream()
         users_ref = db.collection('users').stream()
         user_map = {u.id: u.to_dict() for u in users_ref}
 
@@ -8464,7 +8464,7 @@ def blog_list():
     try:
         # Get published blog posts, sorted by publish date (newest first)
         # Requires composite index: (status, published_at)
-        posts_ref = db.collection('blog_posts').where(filter=FieldFilter('status', '==', 'published')).order_by('published_at', direction=Query.DESCENDING).limit(50)
+        posts_ref = db.collection('blog_posts').where('status', '==', 'published').order_by('published_at', direction='DESCENDING').limit(50)
         posts_docs = posts_ref.stream()
 
         posts = []
@@ -8529,7 +8529,7 @@ def blog_detail(slug):
     """Display individual blog post by slug"""
     try:
         # Query for post with matching slug
-        posts = db.collection('blog_posts').where(filter=FieldFilter('slug', '==', slug)).limit(1).stream()
+        posts = db.collection('blog_posts').where('slug', '==', slug).limit(1).stream()
         posts_list = list(posts)
 
         if not posts_list:
@@ -8575,7 +8575,7 @@ def blog_admin():
 
     try:
         # Get all blog posts (published and draft)
-        posts_ref = db.collection('blog_posts').order_by('created_at', direction=Query.DESCENDING)
+        posts_ref = db.collection('blog_posts').order_by('created_at', direction='DESCENDING')
         posts_docs = posts_ref.stream()
 
         posts = []
@@ -8621,7 +8621,7 @@ def blog_create():
                 slug = title.lower().replace(' ', '-').replace(',', '').replace('.', '')
 
             # Check if slug already exists
-            existing = db.collection('blog_posts').where(filter=FieldFilter('slug', '==', slug)).limit(1).stream()
+            existing = db.collection('blog_posts').where('slug', '==', slug).limit(1).stream()
             if len(list(existing)) > 0:
                 flash(f'A post with slug "{slug}" already exists. Please choose a different slug.', 'error')
                 return render_template('blog_edit.html', post={'title': title, 'content': content, 'excerpt': excerpt, 'author': author, 'tags': tags, 'slug': slug, 'meta_description': meta_description}, editing=False)
@@ -8691,7 +8691,7 @@ def blog_edit(post_id):
             # Check if slug changed and conflicts
             existing_slug = post_doc.to_dict().get('slug')
             if slug != existing_slug:
-                existing = db.collection('blog_posts').where(filter=FieldFilter('slug', '==', slug)).limit(1).stream()
+                existing = db.collection('blog_posts').where('slug', '==', slug).limit(1).stream()
                 if len(list(existing)) > 0:
                     flash(f'A post with slug "{slug}" already exists. Please choose a different slug.', 'error')
                     post = post_doc.to_dict()
@@ -8760,7 +8760,7 @@ def seed_blog_posts():
 
     try:
         # Check if posts already exist
-        existing_posts_query = db.collection('blog_posts').where(filter=FieldFilter('status', '==', 'published')).limit(1)
+        existing_posts_query = db.collection('blog_posts').where('status', '==', 'published').limit(1)
         existing_posts = list(existing_posts_query.stream())
 
         if len(existing_posts) > 0:
@@ -8793,7 +8793,7 @@ def seed_blog_posts():
         for post_data in blog_posts:
             try:
                 # Check if this specific post already exists by slug
-                existing = db.collection('blog_posts').where(filter=FieldFilter('slug', '==', post_data['slug'])).limit(1).stream()
+                existing = db.collection('blog_posts').where('slug', '==', post_data['slug']).limit(1).stream()
                 if len(list(existing)) > 0:
                     logger.info(f"Post {post_data['slug']} already exists, skipping")
                     continue
