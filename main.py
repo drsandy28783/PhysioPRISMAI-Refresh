@@ -8475,7 +8475,17 @@ def blog_list():
             post_data['id'] = doc.id
             # Format the published_at date for display
             if post_data.get('published_at'):
-                post_data['published_at_formatted'] = post_data['published_at'].strftime('%B %d, %Y')
+                pub_date = post_data['published_at']
+                # Handle both datetime objects and ISO strings
+                if isinstance(pub_date, str):
+                    try:
+                        pub_date = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+                    except:
+                        pub_date = None
+                if pub_date:
+                    post_data['published_at_formatted'] = pub_date.strftime('%B %d, %Y')
+                else:
+                    post_data['published_at_formatted'] = 'Unknown'
             posts.append(post_data)
 
         return render_template('blog_list.html', posts=posts)
@@ -8514,7 +8524,16 @@ def blog_post(post_id):
 
         # Format the published date
         if post.get('published_at'):
-            post['published_at_formatted'] = post['published_at'].strftime('%B %d, %Y')
+            pub_date = post['published_at']
+            if isinstance(pub_date, str):
+                try:
+                    pub_date = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+                except:
+                    pub_date = None
+            if pub_date:
+                post['published_at_formatted'] = pub_date.strftime('%B %d, %Y')
+            else:
+                post['published_at_formatted'] = 'Unknown'
 
         # Increment view count
         post_ref.update({'views': Increment(1)})
@@ -8557,7 +8576,16 @@ def blog_detail(slug):
 
         # Format the published date
         if post.get('published_at'):
-            post['published_at_formatted'] = post['published_at'].strftime('%B %d, %Y')
+            pub_date = post['published_at']
+            if isinstance(pub_date, str):
+                try:
+                    pub_date = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+                except:
+                    pub_date = None
+            if pub_date:
+                post['published_at_formatted'] = pub_date.strftime('%B %d, %Y')
+            else:
+                post['published_at_formatted'] = 'Unknown'
 
         # Increment view count
         post_ref = db.collection('blog_posts').document(post['id'])
@@ -8584,10 +8612,30 @@ def blog_admin():
         for doc in posts_docs:
             post_data = doc.to_dict()
             post_data['id'] = doc.id
+            # Handle created_at date
             if post_data.get('created_at'):
-                post_data['created_at_formatted'] = post_data['created_at'].strftime('%B %d, %Y %I:%M %p')
+                created = post_data['created_at']
+                if isinstance(created, str):
+                    try:
+                        created = datetime.fromisoformat(created.replace('Z', '+00:00'))
+                    except:
+                        created = None
+                if created:
+                    post_data['created_at_formatted'] = created.strftime('%B %d, %Y %I:%M %p')
+                else:
+                    post_data['created_at_formatted'] = 'Unknown'
+            # Handle published_at date
             if post_data.get('published_at'):
-                post_data['published_at_formatted'] = post_data['published_at'].strftime('%B %d, %Y')
+                pub_date = post_data['published_at']
+                if isinstance(pub_date, str):
+                    try:
+                        pub_date = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+                    except:
+                        pub_date = None
+                if pub_date:
+                    post_data['published_at_formatted'] = pub_date.strftime('%B %d, %Y')
+                else:
+                    post_data['published_at_formatted'] = 'Unknown'
             posts.append(post_data)
 
         return render_template('blog_admin.html', posts=posts)
