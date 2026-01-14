@@ -174,6 +174,20 @@ class CosmosDBDocumentReference:
             doc_data = data.copy()
             doc_data['id'] = self.id
 
+            # Handle Increment objects - need to read current value first
+            increment_fields = {k: v for k, v in doc_data.items() if isinstance(v, Increment)}
+            if increment_fields:
+                existing = self.get()
+                if existing.exists:
+                    existing_data = existing.to_dict()
+                    for field, increment_obj in increment_fields.items():
+                        current_value = existing_data.get(field, 0)
+                        doc_data[field] = current_value + increment_obj.value
+                else:
+                    # Document doesn't exist, treat as 0 + increment
+                    for field, increment_obj in increment_fields.items():
+                        doc_data[field] = increment_obj.value
+
             # Handle SERVER_TIMESTAMP
             if 'timestamp' in doc_data and doc_data['timestamp'] == 'SERVER_TIMESTAMP':
                 doc_data['timestamp'] = datetime.now(timezone.utc).isoformat()
@@ -190,6 +204,9 @@ class CosmosDBDocumentReference:
                     merged_data.update(doc_data)
                     doc_data = merged_data
                     doc_data['id'] = self.id
+
+            # Handle DELETE_FIELD (None values) - remove those fields
+            doc_data = {k: v for k, v in doc_data.items() if v is not None}
 
             self.container.upsert_item(body=doc_data)
         except Exception as e:
@@ -349,6 +366,13 @@ class CosmosBatch:
 
 # Constants for Firestore compatibility
 SERVER_TIMESTAMP = 'SERVER_TIMESTAMP'
+DELETE_FIELD = None  # Cosmos DB: setting to None deletes the field
+
+
+class Increment:
+    """Increment a numeric field (Firestore compatibility)"""
+    def __init__(self, value: int = 1):
+        self.value = value
 
 
 # Singleton instance

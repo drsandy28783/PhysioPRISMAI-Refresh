@@ -397,12 +397,9 @@ class AICache:
             # Get all cache hits and misses
             analytics_ref = self.db.collection(self.analytics_collection)
 
-            # Use filter parameter to avoid deprecation warnings
-            from google.cloud.firestore_v1.base_query import FieldFilter
-
             try:
-                hits_query = analytics_ref.where(filter=FieldFilter('event_type', '==', 'cache_hit')).where(filter=FieldFilter('timestamp', '>=', cutoff_date))
-                misses_query = analytics_ref.where(filter=FieldFilter('event_type', '==', 'cache_miss')).where(filter=FieldFilter('timestamp', '>=', cutoff_date))
+                hits_query = analytics_ref.where('event_type', '==', 'cache_hit').where('timestamp', '>=', cutoff_date)
+                misses_query = analytics_ref.where('event_type', '==', 'cache_miss').where('timestamp', '>=', cutoff_date)
                 hits = list(hits_query.stream())
                 misses = list(misses_query.stream())
             except Exception as query_error:
@@ -425,7 +422,7 @@ class AICache:
 
             # Get most used cache entries
             try:
-                cache_entries = self.db.collection(self.cache_collection).order_by('access_count', direction=firestore.Query.DESCENDING).limit(10).stream()
+                cache_entries = self.db.collection(self.cache_collection).order_by('access_count', direction='DESCENDING').limit(10).stream()
                 top_cached = [
                     {
                         'prompt_preview': entry.to_dict().get('prompt', '')[:100],

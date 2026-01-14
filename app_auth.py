@@ -24,6 +24,7 @@ from flask import request, jsonify, g
 import firebase_admin
 from firebase_admin import auth, credentials
 from firebase_admin.exceptions import FirebaseError
+from azure_cosmos_db import get_cosmos_db
 
 logger = logging.getLogger("app.auth")
 
@@ -319,8 +320,7 @@ def require_auth(f):
                     firebase_email = decoded_token.get('email')
 
                     # Try to find user by Firebase UID first, then by email
-                    from firebase_admin import firestore
-                    db = firestore.client()
+                    db = get_cosmos_db()
 
                     user_doc = None
                     # Check if user document exists with firebase_uid field
@@ -333,7 +333,7 @@ def require_auth(f):
                     if not user_doc:
                         user_doc = db.collection('users').document(firebase_email).get()
                         if not user_doc.exists:
-                            logger.warning(f"User not found in Firestore for Firebase UID {firebase_uid}")
+                            logger.warning(f"User not found in Cosmos DB for Firebase UID {firebase_uid}")
                             return jsonify({'error': 'User not found'}), 404
 
                     user_data = user_doc.to_dict()
@@ -379,8 +379,7 @@ def require_auth(f):
             return redirect('/login') if request.accept_mimetypes.accept_html else (jsonify({'error': 'Authentication required'}), 401)
 
         # Validate session
-        from firebase_admin import firestore
-        db = firestore.client()
+        db = get_cosmos_db()
         user_doc = db.collection('users').document(user_id).get()
 
         if not user_doc.exists:

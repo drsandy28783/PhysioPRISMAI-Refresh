@@ -1128,11 +1128,11 @@ def api_ai_followup_field(field):
                 present_hist = sanitize_clinical_text(patient_data.get('present_complaint', '') or patient_data.get('present_history', ''))
                 past_hist = sanitize_clinical_text(patient_data.get('past_history', ''))
 
-            # Fetch related data from Firestore
+            # Fetch related data from Cosmos DB
             def fetch_latest(collection_name):
                 coll = db.collection(collection_name) \
                         .where('patient_id', '==', patient_id) \
-                        .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+                        .order_by('timestamp', direction='DESCENDING') \
                         .limit(1) \
                         .get()
                 return coll[0].to_dict() if coll else {}

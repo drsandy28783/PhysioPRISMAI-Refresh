@@ -185,6 +185,8 @@ from collections import defaultdict
 from azure_cosmos_db import (
     get_cosmos_db,
     SERVER_TIMESTAMP,
+    DELETE_FIELD,
+    Increment,
     CosmosDBDocument,
     CosmosDBQuery
 )
@@ -504,8 +506,8 @@ def clear_reset_token(db, email):
     try:
         user_ref = db.collection('users').document(email)
         user_ref.update({
-            'reset_token': firestore.DELETE_FIELD,
-            'reset_token_expiry': firestore.DELETE_FIELD
+            'reset_token': DELETE_FIELD,
+            'reset_token_expiry': DELETE_FIELD
         })
         logger.info(f"Reset token cleared for {email}")
     except Exception as e:
@@ -8515,7 +8517,7 @@ def blog_post(post_id):
             post['published_at_formatted'] = post['published_at'].strftime('%B %d, %Y')
 
         # Increment view count
-        post_ref.update({'views': firestore.Increment(1)})
+        post_ref.update({'views': Increment(1)})
 
         return render_template('blog_post.html', post=post)
     except Exception as e:
@@ -8559,7 +8561,7 @@ def blog_detail(slug):
 
         # Increment view count
         post_ref = db.collection('blog_posts').document(post['id'])
-        post_ref.update({'views': firestore.Increment(1)})
+        post_ref.update({'views': Increment(1)})
 
         return render_template('blog_post.html', post=post)
     except Exception as e:
@@ -9106,7 +9108,7 @@ def save_draft():
             'form_type': form_type,
             'form_data': form_data,
             'updated_at': SERVER_TIMESTAMP,
-            'created_at': firestore.SERVER_TIMESTAMP if not draft_ref.get().exists else draft_ref.get().to_dict().get('created_at')
+            'created_at': SERVER_TIMESTAMP if not draft_ref.get().exists else draft_ref.get().to_dict().get('created_at')
         }, merge=True)
 
         logger.info(f"Draft saved: {draft_id}")
