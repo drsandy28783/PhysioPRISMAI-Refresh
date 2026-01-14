@@ -8769,26 +8769,233 @@ def seed_blog_posts():
             flash('Blog posts already exist. Use the blog admin interface to manage them.', 'warning')
             return redirect(url_for('blog_admin'))
 
-        # Import the blog post content from publish scripts
-        import sys
-        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if parent_dir not in sys.path:
-            sys.path.insert(0, parent_dir)
+        # Define initial blog posts
+        blog_posts = [
+            {
+                'title': 'Clinical Reasoning Framework for Physiotherapists',
+                'slug': 'clinical-reasoning-framework',
+                'content': '''
+# Clinical Reasoning Framework for Physiotherapists
 
-        try:
-            from publish_blog import blog_post as clinical_reasoning_post
-            from publish_blog_history_taking import blog_post as history_taking_post
-            from publish_blog_objective_assessment import blog_post as objective_assessment_post
+Clinical reasoning is the foundation of effective physiotherapy practice. It's the cognitive process that enables physiotherapists to make sound clinical decisions based on patient assessment, evidence, and clinical experience.
 
-            blog_posts = [
-                clinical_reasoning_post,
-                history_taking_post,
-                objective_assessment_post
-            ]
-        except ImportError as ie:
-            logger.error(f"Failed to import blog post data: {ie}")
-            flash(f'Error importing blog data: {str(ie)}', 'error')
-            return redirect(url_for('blog_admin'))
+## What is Clinical Reasoning?
+
+Clinical reasoning in physiotherapy involves:
+- Gathering and analyzing patient data
+- Identifying patterns and relationships
+- Formulating hypotheses about the patient's condition
+- Making evidence-based treatment decisions
+- Evaluating outcomes and adjusting interventions
+
+## Key Components
+
+### 1. Subjective Assessment
+The subjective examination provides crucial insights into the patient's perspective, including their chief complaint, history, and functional limitations.
+
+### 2. Objective Assessment
+Physical examination findings, measurements, and functional tests provide objective data to support clinical hypotheses.
+
+### 3. Clinical Hypothesis Generation
+Based on subjective and objective findings, physiotherapists generate hypotheses about:
+- Pathophysiology
+- Contributing factors
+- Prognosis
+- Treatment approaches
+
+### 4. Treatment Planning
+Evidence-based interventions are selected based on:
+- Clinical reasoning
+- Patient preferences
+- Best available evidence
+- Clinical expertise
+
+## The PRISM Approach
+
+PhysiologicPRISM supports clinical reasoning through:
+- **Structured documentation** that guides systematic assessment
+- **AI-assisted suggestions** based on clinical patterns
+- **Evidence integration** linking assessment to treatment
+- **Outcome tracking** to evaluate clinical decisions
+
+## Conclusion
+
+Strong clinical reasoning skills develop over time through practice, reflection, and continuous learning. PhysiologicPRISM is designed to support this process by providing structure and evidence-based guidance.
+                ''',
+                'excerpt': 'Learn about the clinical reasoning process in physiotherapy and how structured documentation supports better clinical decision-making.',
+                'author': 'Dr. Sandeep Rao',
+                'tags': ['Clinical Reasoning', 'Evidence-Based Practice', 'Assessment'],
+                'status': 'published',
+                'meta_description': 'Clinical reasoning framework for physiotherapists - learn how to make better clinical decisions through structured assessment and evidence-based practice.',
+                'created_at': datetime.now(),
+                'updated_at': datetime.now(),
+                'published_at': datetime.now(),
+                'views': 0
+            },
+            {
+                'title': 'Comprehensive History Taking in Physiotherapy',
+                'slug': 'history-taking-physiotherapy',
+                'content': '''
+# Comprehensive History Taking in Physiotherapy
+
+A thorough patient history is the cornerstone of effective physiotherapy assessment and treatment planning.
+
+## Why History Taking Matters
+
+The subjective examination often provides 80% of the information needed for diagnosis. It helps physiotherapists:
+- Understand the patient's presenting complaint
+- Identify red flags and contraindications
+- Establish treatment goals
+- Build therapeutic rapport
+
+## Key Elements of History Taking
+
+### 1. Chief Complaint
+- What brought the patient to physiotherapy?
+- Current symptoms and their impact on function
+- Patient's primary concerns and goals
+
+### 2. History of Present Complaint
+- Onset and mechanism of injury
+- Progression of symptoms
+- Aggravating and easing factors
+- Previous treatments and their outcomes
+- 24-hour symptom behavior
+
+### 3. Past Medical History
+- Previous injuries or surgeries
+- Chronic conditions
+- Medications
+- Relevant family history
+
+### 4. Functional Impact
+- Activities of daily living
+- Work-related tasks
+- Recreational activities
+- Sleep quality
+
+### 5. Red Flags
+- Serious pathology indicators
+- Systemic symptoms
+- Progressive neurological deficits
+- Contraindications to treatment
+
+## Documentation Best Practices
+
+PhysiologicPRISM structures history taking to ensure:
+- **Completeness**: No critical information is missed
+- **Consistency**: Standardized approach across patients
+- **Efficiency**: AI-assisted documentation reduces time
+- **Evidence**: Digital records support clinical reasoning
+
+## Conclusion
+
+Mastering history taking is essential for every physiotherapist. Structured documentation tools like PhysiologicPRISM help ensure comprehensive, consistent patient assessment.
+                ''',
+                'excerpt': 'Master the art of patient history taking with this comprehensive guide for physiotherapists.',
+                'author': 'Dr. Sandeep Rao',
+                'tags': ['Assessment', 'Patient History', 'Documentation'],
+                'status': 'published',
+                'meta_description': 'Learn comprehensive history taking techniques for physiotherapy practice - structured approach to patient assessment and documentation.',
+                'created_at': datetime.now(),
+                'updated_at': datetime.now(),
+                'published_at': datetime.now(),
+                'views': 0
+            },
+            {
+                'title': 'Objective Assessment Guide for Physiotherapists',
+                'slug': 'objective-assessment-guide',
+                'content': '''
+# Objective Assessment Guide for Physiotherapists
+
+The objective examination provides measurable, reproducible data to support clinical decision-making and track patient progress.
+
+## Components of Objective Assessment
+
+### 1. Observation
+- Posture and alignment
+- Gait analysis
+- Movement patterns
+- Muscle atrophy or swelling
+- Skin changes
+
+### 2. Palpation
+- Tissue texture and temperature
+- Muscle tone and trigger points
+- Joint alignment
+- Areas of tenderness
+
+### 3. Range of Motion (ROM)
+- Active and passive ROM
+- End-feel assessment
+- Painful arc identification
+- Comparison with contralateral side
+
+### 4. Muscle Testing
+- Manual muscle testing (MMT)
+- Functional strength assessment
+- Endurance testing
+- Movement quality
+
+### 5. Special Tests
+- Joint stability tests
+- Neurological examination
+- Functional tests
+- Outcome measures
+
+### 6. Functional Assessment
+- Activities of daily living
+- Work-related tasks
+- Sport-specific movements
+- Balance and coordination
+
+## Documentation and Measurement
+
+### Standardized Outcome Measures
+Using validated outcome measures provides:
+- Objective baseline data
+- Progress tracking
+- Treatment effectiveness evaluation
+- Evidence for decision-making
+
+### Digital Documentation
+PhysiologicPRISM streamlines objective assessment by:
+- **Structured templates** for consistency
+- **Automated calculations** for scores and measurements
+- **Visual documentation** with diagrams
+- **Trend analysis** over time
+
+## Clinical Integration
+
+Objective findings should be:
+1. Compared with subjective reports
+2. Analyzed for patterns and relationships
+3. Used to confirm or refute clinical hypotheses
+4. Integrated into treatment planning
+
+## Best Practices
+
+- Use standardized, validated tests
+- Document measurements accurately
+- Compare with normative data
+- Track changes over time
+- Integrate with subjective findings
+
+## Conclusion
+
+Systematic objective assessment provides the evidence base for clinical reasoning. PhysiologicPRISM supports comprehensive, efficient documentation of objective findings.
+                ''',
+                'excerpt': 'A systematic guide to objective assessment in physiotherapy practice with evidence-based measurement tools.',
+                'author': 'Dr. Sandeep Rao',
+                'tags': ['Objective Assessment', 'Clinical Measurement', 'Outcome Measures'],
+                'status': 'published',
+                'meta_description': 'Comprehensive guide to objective assessment for physiotherapists - learn systematic examination techniques and outcome measures.',
+                'created_at': datetime.now(),
+                'updated_at': datetime.now(),
+                'published_at': datetime.now(),
+                'views': 0
+            }
+        ]
 
         # Create the three blog posts
         posts_created = 0
