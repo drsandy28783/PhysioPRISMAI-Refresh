@@ -11,10 +11,10 @@
       </p>
     </div>
     <div style="display: flex; gap: 12px;">
-      <button onclick="acceptCookies()" class="button" style="background-color: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; white-space: nowrap;">
+      <button id="acceptAllBtn" class="button" style="background-color: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; white-space: nowrap;">
         Accept All
       </button>
-      <button onclick="acceptCookies()" class="button" style="background-color: #7f8c8d; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; white-space: nowrap;">
+      <button id="acceptEssentialBtn" class="button" style="background-color: #7f8c8d; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; white-space: nowrap;">
         Accept Essential Only
       </button>
     </div>
@@ -45,10 +45,21 @@
     document.getElementById('cookieConsentBanner').style.display = 'none';
   }
 
-  // Show banner if consent not given
+  // Show banner if consent not given and attach event listeners
   window.addEventListener('DOMContentLoaded', function() {
     if (!getCookie('cookie_consent')) {
       document.getElementById('cookieConsentBanner').style.display = 'block';
+    }
+
+    // Attach event listeners to cookie consent buttons
+    const acceptAllBtn = document.getElementById('acceptAllBtn');
+    const acceptEssentialBtn = document.getElementById('acceptEssentialBtn');
+
+    if (acceptAllBtn) {
+      acceptAllBtn.addEventListener('click', acceptCookies);
+    }
+    if (acceptEssentialBtn) {
+      acceptEssentialBtn.addEventListener('click', acceptCookies);
     }
   });
 </script>
