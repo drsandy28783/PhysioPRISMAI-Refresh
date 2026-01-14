@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+
+{% block title %}My Subscription - Physio PRISM{% endblock %}
+
+{% block head %}
+<style>
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .dashboard-header h1 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .card h2 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-size: 1.5em;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+    }
+
+    .plan-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .status-active {
+        color: #27ae60;
+        font-weight: bold;
+    }
+
+    .status-expired {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+
+    .status-cancelled {
+        color: #95a5a6;
+        font-weight: bold;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: #7f8c8d;
+        font-weight: 500;
+    }
+
+    .info-value {
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .usage-item {
+        margin: 20px 0;
+    }
+
+    .usage-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .usage-label {
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .usage-stats {
+        color: #7f8c8d;
+        font-size: 0.9em;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 24px;
+        background: #ecf0f1;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3498db 0%, #2ecc71 100%);
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 8px;
+        color: white;
+        font-size: 0.85em;
+        font-weight: bold;
+    }
+
+    .progress-fill.warning {
+        background: linear-gradient(90deg, #f39c12 0%, #e67e22 100%);
+    }
+
+    .progress-fill.danger {
+        background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .action-btn {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin: 8px;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2980b9;
+    }
+
+    .btn-success {
+        background: #27ae60;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #229954;
+    }
+
+    .btn-danger {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c0392b;
+    }
+
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #7f8c8d;
+    }
+
+    .actions-card {
+        text-align: center;
+    }
+
+    .token-balance {
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        margin: 15px 0;
+    }
+
+    .token-balance-amount {
+        font-size: 3em;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+
+    .token-balance-label {
+        font-size: 1.1em;
+        opacity: 0.9;
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .alert-warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    .alert-info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #7f8c8d;
+    }
+
+    .error-message {
+        background: #e74c3c;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-btn {
+            width: 100%;
+            margin: 8px 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>My Subscription</h1>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+
+    <div id="loadingState" class="loading">
+        <p>Loading your subscription details...</p>
+    </div>
+
+    <div id="dashboardContent" style="display: none;">
+        <!-- Subscription Details Card -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>Current Plan</h2>
+                <div id="planDetails">
+                    <span class="plan-badge" id="planName">Loading...</span>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value status-active" id="planStatus">Active</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Started:</span>
+                        <span class="info-value" id="planStarted">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Renews:</span>
+                        <span class="info-value" id="planRenews">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Price:</span>
+                        <span class="info-value" id="planPrice">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage Stats Card -->
+            <div class="card">
+                <h2>Usage This Month</h2>
+                <div id="usageDetails">
+                    <div class="usage-item">
+                        <div class="usage-header">
+                            <span class="usage-label">Patients</span>
+                            <span class="usage-stats" id="patientsStats">0/0</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="patientsProgress" style="width: 0%">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="usage-item">
+                        <div class="usage-header">
+                            <span class="usage-label">AI Suggestions</span>
+                            <span class="usage-stats" id="aiCallsStats">0/0</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="aiCallsProgress" style="width: 0%">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="token-balance">
+                        <div class="token-balance-label">AI Tokens Balance</div>
+                        <div class="token-balance-amount" id="tokenBalance">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div id="alertsContainer"></div>
+
+        <!-- Actions Card -->
+        <div class="card actions-card">
+            <h2>Manage Subscription</h2>
+            <button class="action-btn btn-primary" onclick="window.location.href='/pricing'">
+                View All Plans
+            </button>
+            <button class="action-btn btn-success" onclick="window.location.href='/checkout?type=tokens&package=popular'">
+                Buy AI Tokens
+            </button>
+            <button class="action-btn btn-danger" onclick="cancelSubscription()" id="cancelBtn">
+                Cancel Subscription
+            </button>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+let subscriptionData = null;
+
+async function loadDashboard() {
+    try {
+        const response = await fetch('/api/subscription', {
+            headers: {
+                'Authorization': 'Bearer ' + (localStorage.getItem('idToken') || '')
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load subscription data');
+        }
+
+        const data = await response.json();
+        subscriptionData = data;
+
+        displaySubscription(data.subscription, data.usage);
+
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+    } catch (error) {
+        showError('Failed to load subscription: ' + error.message);
+        document.getElementById('loadingState').innerHTML = '<p style="color: #e74c3c;">Failed to load subscription data. Please refresh the page.</p>';
+    }
+}
+
+function displaySubscription(subscription, usage) {
+    // Plan details
+    document.getElementById('planName').textContent = subscription.plan_name || subscription.plan_type.replace('_', ' ').toUpperCase();
+
+    // Status
+    const statusElement = document.getElementById('planStatus');
+    statusElement.textContent = subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1);
+    statusElement.className = 'info-value status-' + subscription.status;
+
+    // Dates
+    if (subscription.started_at) {
+        const startDate = new Date(subscription.started_at._seconds * 1000);
+        document.getElementById('planStarted').textContent = startDate.toLocaleDateString();
+    }
+
+    if (subscription.expires_at) {
+        const expiryDate = new Date(subscription.expires_at._seconds * 1000);
+        document.getElementById('planRenews').textContent = expiryDate.toLocaleDateString();
+
+        // Show warning if expiring soon (within 7 days)
+        const daysUntilExpiry = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+        if (daysUntilExpiry <= 7 && daysUntilExpiry > 0) {
+            showAlert('warning', `Your subscription expires in ${daysUntilExpiry} days. Please renew to continue using all features.`);
+        }
+    }
+
+    // Price
+    document.getElementById('planPrice').textContent = subscription.price ? `₹${subscription.price.toLocaleString()}/month` : 'Free';
+
+    // Usage stats
+    displayUsage(usage);
+
+    // Hide cancel button for free trial or expired subscriptions
+    if (subscription.plan_type === 'free_trial' || subscription.status !== 'active') {
+        document.getElementById('cancelBtn').style.display = 'none';
+    }
+}
+
+function displayUsage(usage) {
+    // Patients usage
+    const patientsUsed = usage.patients_used || 0;
+    const patientsLimit = usage.patients_limit === -1 ? 'Unlimited' : usage.patients_limit;
+    const patientsPercent = usage.patients_percent || 0;
+
+    document.getElementById('patientsStats').textContent = `${patientsUsed}/${patientsLimit}`;
+    const patientsProgressBar = document.getElementById('patientsProgress');
+    patientsProgressBar.style.width = Math.min(patientsPercent, 100) + '%';
+    patientsProgressBar.textContent = Math.round(patientsPercent) + '%';
+
+    if (patientsPercent >= 90) {
+        patientsProgressBar.classList.add('danger');
+        showAlert('warning', `You've used ${Math.round(patientsPercent)}% of your patient quota. Consider upgrading your plan.`);
+    } else if (patientsPercent >= 80) {
+        patientsProgressBar.classList.add('warning');
+    }
+
+    // AI Calls usage
+    const aiCallsUsed = usage.ai_calls_used || 0;
+    const aiCallsLimit = usage.ai_calls_limit === -1 ? 'Unlimited' : usage.ai_calls_limit;
+    const aiCallsPercent = usage.ai_calls_percent || 0;
+
+    document.getElementById('aiCallsStats').textContent = `${aiCallsUsed}/${aiCallsLimit}`;
+    const aiCallsProgressBar = document.getElementById('aiCallsProgress');
+    aiCallsProgressBar.style.width = Math.min(aiCallsPercent, 100) + '%';
+    aiCallsProgressBar.textContent = Math.round(aiCallsPercent) + '%';
+
+    if (aiCallsPercent >= 90) {
+        aiCallsProgressBar.classList.add('danger');
+        showAlert('warning', `You've used ${Math.round(aiCallsPercent)}% of your AI quota. Buy tokens or upgrade to continue using AI features.`);
+    } else if (aiCallsPercent >= 80) {
+        aiCallsProgressBar.classList.add('warning');
+    }
+
+    // Token balance
+    document.getElementById('tokenBalance').textContent = usage.tokens_balance || 0;
+}
+
+function showAlert(type, message) {
+    const alertsContainer = document.getElementById('alertsContainer');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.textContent = message;
+    alertsContainer.appendChild(alertDiv);
+}
+
+async function cancelSubscription() {
+    if (!confirm('Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing period.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/subscription/cancel', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + (localStorage.getItem('idToken') || ''),
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert(data.message || 'Subscription cancelled successfully');
+            loadDashboard(); // Reload to show updated status
+        } else {
+            throw new Error(data.error || 'Failed to cancel subscription');
+        }
+    } catch (error) {
+        showError('Failed to cancel subscription: ' + error.message);
+    }
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    setTimeout(() => errorDiv.style.display = 'none', 5000);
+}
+
+// Load dashboard on page load
+loadDashboard();
+</script>
+{% endblock %}

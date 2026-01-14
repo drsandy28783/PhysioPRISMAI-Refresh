@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile – Physiologic PRISM{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 0 auto;">
+  <h2>Edit My Profile</h2>
+  <p style="color: #7f8c8d;">Update your personal information (GDPR Right to Rectification)</p>
+
+  <form method="POST" action="{{ url_for('edit_profile') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field-block">
+      <label for="name" style="display: block; margin-bottom: 8px; font-weight: bold;">Full Name</label>
+      <input class="input-field" type="text" id="name" name="name" value="{{ user.name }}" required>
+    </div>
+
+    <div class="field-block">
+      <label for="email" style="display: block; margin-bottom: 8px; font-weight: bold;">Email</label>
+      <input class="input-field" type="email" id="email" value="{{ user.email }}" disabled
+             style="background-color: #e9ecef; cursor: not-allowed;">
+      <p style="font-size: 12px; color: #7f8c8d; margin-top: 4px;">
+        Email cannot be changed as it's your account identifier. Contact admin for email changes.
+      </p>
+    </div>
+
+    <div class="field-block">
+      <label for="phone" style="display: block; margin-bottom: 8px; font-weight: bold;">Phone Number</label>
+      <input class="input-field" type="text" id="phone" name="phone" value="{{ user.phone }}" required>
+    </div>
+
+    <div class="field-block">
+      <label for="institute" style="display: block; margin-bottom: 8px; font-weight: bold;">Institute/Organization</label>
+      <input class="input-field" type="text" id="institute" value="{{ user.institute }}" disabled
+             style="background-color: #e9ecef; cursor: not-allowed;">
+      <p style="font-size: 12px; color: #7f8c8d; margin-top: 4px;">
+        Institute cannot be changed. Contact admin for institute transfers.
+      </p>
+    </div>
+
+    <!-- GDPR Consent Management -->
+    <div style="margin-top: 24px; padding: 16px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+      <h3 style="margin-top: 0; font-size: 16px;">Data Processing Consent</h3>
+
+      <div style="margin-bottom: 12px;">
+        <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+          <input type="checkbox" name="consent_ai" {{ 'checked' if user.consent_ai else '' }} style="margin-top: 4px;">
+          <span style="font-size: 14px;">
+            I consent to anonymized patient data being sent to OpenAI for AI-powered suggestions.
+            <br><small style="color: #7f8c8d;">(You can change this at any time)</small>
+          </span>
+        </label>
+      </div>
+
+      <p style="font-size: 12px; color: #7f8c8d; margin-bottom: 0;">
+        Your core consents (data processing, terms of service) cannot be withdrawn while using the service.
+        To withdraw all consents, please <a href="{{ url_for('request_data_deletion') }}" style="color: #e74c3c;">delete your account</a>.
+      </p>
+    </div>
+
+    <!-- Change Password Section -->
+    <div style="margin-top: 24px; padding: 16px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+      <h3 style="margin-top: 0; font-size: 16px;">Change Password (Optional)</h3>
+      <p style="font-size: 14px; margin-bottom: 12px;">Leave blank to keep your current password.</p>
+
+      <div class="field-block">
+        <label for="current_password" style="display: block; margin-bottom: 8px; font-weight: bold;">Current Password</label>
+        <input class="input-field" type="password" id="current_password" name="current_password" placeholder="Enter current password">
+      </div>
+
+      <div class="field-block">
+        <label for="new_password" style="display: block; margin-bottom: 8px; font-weight: bold;">New Password</label>
+        <input class="input-field" type="password" id="new_password" name="new_password" placeholder="Enter new password (min 8 characters)" minlength="8">
+      </div>
+
+      <div class="field-block">
+        <label for="confirm_password" style="display: block; margin-bottom: 8px; font-weight: bold;">Confirm New Password</label>
+        <input class="input-field" type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password">
+      </div>
+    </div>
+
+    <div style="margin-top: 24px; display: flex; gap: 12px;">
+      <button type="submit" class="button">Save Changes</button>
+      <a href="{{ url_for('dashboard') }}"><button type="button" class="button" style="background-color: #7f8c8d;">Cancel</button></a>
+    </div>
+  </form>
+
+  <!-- Danger Zone -->
+  <div style="margin-top: 40px; padding: 16px; background-color: #ffebee; border: 2px solid #e74c3c; border-radius: 4px;">
+    <h3 style="margin-top: 0; color: #e74c3c;">Danger Zone</h3>
+    <p style="font-size: 14px; margin-bottom: 12px;">
+      These actions are permanent and cannot be undone.
+    </p>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="{{ url_for('export_data_page') }}">
+        <button type="button" class="button" style="background-color: #3498db;">Download My Data</button>
+      </a>
+      <a href="{{ url_for('request_data_deletion') }}">
+        <button type="button" class="button" style="background-color: #e74c3c;">Delete My Account</button>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

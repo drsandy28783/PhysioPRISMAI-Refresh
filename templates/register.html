@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Register – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* Hide navbar on registration page */
+  body > .navbar { display: none !important; }
+  .container { max-width: 400px; margin: 80px auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Individual Physiotherapist Registration</h2>
+    <form method="POST" action="{{ url_for('register') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field-block">
+        <input class="input-field" type="text" name="name" placeholder="Full Name" required>
+      </div>
+
+      <div class="field-block">
+        <input class="input-field" type="email" name="email" placeholder="Email" required>
+      </div>
+
+      <div class="field-block">
+        <input class="input-field" type="text" name="phone" placeholder="Phone Number" required>
+      </div>
+
+      <div class="field-block">
+        <input class="input-field" type="text" name="institute" placeholder="Institute/Organization Name" required>
+      </div>
+
+      <div class="field-block">
+        <input class="input-field" type="password" name="password" placeholder="Password (min 8 characters)" required minlength="8">
+      </div>
+
+      <!-- GDPR Consent Section -->
+      <div style="margin-top: 24px; padding: 16px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+        <h3 style="margin-top: 0; font-size: 16px;">Data Processing Consent (Required)</h3>
+
+        <div style="margin-bottom: 12px;">
+          <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+            <input type="checkbox" name="consent_data_processing" required style="margin-top: 4px;">
+            <span style="font-size: 14px;">
+              I consent to the processing of my personal data as described in the
+              <a href="{{ url_for('privacy_policy') }}" target="_blank" style="color: #3498db;">Privacy Policy</a>.
+              This includes storing my account information, patient records, and usage logs.
+            </span>
+          </label>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+            <input type="checkbox" name="consent_terms" required style="margin-top: 4px;">
+            <span style="font-size: 14px;">
+              I agree to the <a href="{{ url_for('terms_of_service') }}" target="_blank" style="color: #3498db;">Terms of Service</a>
+              and confirm that I am a licensed healthcare professional.
+            </span>
+          </label>
+        </div>
+
+        <div style="margin-bottom: 0;">
+          <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+            <input type="checkbox" name="consent_ai" style="margin-top: 4px;">
+            <span style="font-size: 14px;">
+              <strong>(Optional)</strong> I consent to anonymized patient data being sent to OpenAI for AI-powered suggestions.
+              If unchecked, AI features will be disabled for your account.
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div style="margin-top:24px; display:flex; gap:12px; align-items:center;">
+        <button type="submit" class="button">Register</button>
+        <a href="{{ url_for('login') }}" class="button" style="background:#ccc; color:#000;">Already registered? Login</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

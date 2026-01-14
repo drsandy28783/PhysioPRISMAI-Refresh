@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}500 - Internal Server Error{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 80px auto; text-align: center;">
+  <div style="margin-bottom: 40px;">
+    <svg style="width: 120px; height: 120px; color: #e74c3c;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+    </svg>
+  </div>
+
+  <h1 style="font-size: 72px; font-weight: bold; color: #2c3e50; margin: 0;">500</h1>
+  <h2 style="font-size: 24px; color: #e74c3c; margin: 16px 0;">Internal Server Error</h2>
+
+  <p style="color: #95a5a6; margin-bottom: 40px; font-size: 16px;">
+    Oops! Something went wrong on our end. Our team has been notified and we're working to fix it.
+  </p>
+
+  <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; margin-bottom: 32px; border-left: 4px solid #e74c3c;">
+    <h3 style="margin-top: 0; color: #c62828; font-size: 18px;">What happened?</h3>
+    <p style="color: #555; margin: 0; text-align: left;">
+      The server encountered an unexpected condition that prevented it from fulfilling your request.
+      This could be due to a temporary issue with our systems.
+    </p>
+  </div>
+
+  <div style="background-color: #ecf0f1; padding: 20px; border-radius: 8px; margin-bottom: 32px;">
+    <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">What can you do?</h3>
+    <ul style="list-style: none; padding: 0; margin: 0; text-align: left;">
+      <li style="margin: 12px 0;">
+        ✓ <strong>Wait a moment</strong> and try refreshing the page
+      </li>
+      <li style="margin: 12px 0;">
+        ✓ <strong>Check your internet connection</strong>
+      </li>
+      <li style="margin: 12px 0;">
+        ✓ <strong>Try again</strong> in a few minutes
+      </li>
+      <li style="margin: 12px 0;">
+        ✓ <strong>Clear your browser cache</strong> and cookies
+      </li>
+    </ul>
+  </div>
+
+  <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 32px;">
+    <a href="javascript:location.reload()">
+      <button class="button" style="background-color: #3498db;">
+        🔄 Refresh Page
+      </button>
+    </a>
+    <a href="{{ url_for('dashboard') }}">
+      <button class="button" style="background-color: #27ae60;">
+        🏠 Go to Dashboard
+      </button>
+    </a>
+  </div>
+
+  <div style="margin-top: 32px; padding: 16px; background-color: #fff3cd; border-radius: 8px; text-align: left; border-left: 4px solid #ffc107;">
+    <h4 style="margin-top: 0; color: #856404;">Still Having Issues?</h4>
+    <p style="margin-bottom: 8px; color: #555;">If the problem persists, please contact our support team:</p>
+    <p style="margin: 8px 0;">
+      <strong>Email:</strong>
+      <a href="mailto:support@physiologicprism.com" style="color: #856404; text-decoration: none;">
+        support@physiologicprism.com
+      </a>
+    </p>
+    <p style="margin: 8px 0; font-size: 14px; color: #666;">
+      Please include the time this error occurred and what you were trying to do.
+    </p>
+  </div>
+
+  <p style="margin-top: 32px; color: #95a5a6; font-size: 14px;">
+    Error Code: 500 | Timestamp: {{ timestamp }}
+  </p>
+</div>
+{% endblock %}

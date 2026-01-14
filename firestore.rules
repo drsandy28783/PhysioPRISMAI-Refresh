@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection - allow registration and backend access
+    match /users/{userId} {
+      // Allow anyone to create their own user document (registration)
+      allow create: if true;
+
+      // Allow backend (Admin SDK) to read/write all user documents
+      // This works because Admin SDK bypasses security rules
+      allow read, write: if false;  // Client SDKs blocked, only Admin SDK allowed
+    }
+
+    // Patients collection - backend only
+    match /patients/{patientId} {
+      // Only backend (Admin SDK) can access
+      allow read, write: if false;
+    }
+
+    // Subjective examination data - backend only
+    match /subjective_examination/{docId} {
+      allow read, write: if false;
+    }
+
+    // Patient perspectives - backend only
+    match /patient_perspectives/{docId} {
+      allow read, write: if false;
+    }
+
+    // Initial plan - backend only
+    match /initial_plan/{docId} {
+      allow read, write: if false;
+    }
+
+    // Pathophysiological mechanism - backend only
+    match /patho_mechanism/{docId} {
+      allow read, write: if false;
+    }
+
+    // Chronic diseases - backend only
+    match /chronic_diseases/{docId} {
+      allow read, write: if false;
+    }
+
+    // Clinical flags - backend only
+    match /clinical_flags/{docId} {
+      allow read, write: if false;
+    }
+
+    // Objective assessments - backend only
+    match /objective_assessments/{docId} {
+      allow read, write: if false;
+    }
+
+    // Provisional diagnosis - backend only
+    match /provisional_diagnosis/{docId} {
+      allow read, write: if false;
+    }
+
+    // SMART goals - backend only
+    match /smart_goals/{docId} {
+      allow read, write: if false;
+    }
+
+    // Treatment plan - backend only
+    match /treatment_plan/{docId} {
+      allow read, write: if false;
+    }
+
+    // Follow-ups - backend only
+    match /follow_ups/{docId} {
+      allow read, write: if false;
+    }
+
+    // Audit logs - backend only
+    match /audit_logs/{logId} {
+      allow read, write: if false;
+    }
+
+    // Patient counters - backend only
+    match /patient_counters/{counterId} {
+      allow read, write: if false;
+    }
+
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Super Admin Dashboard – Physiologic PRISM{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Super Admin Dashboard</h2>
+    <p><strong>Welcome, {{ name }}</strong> (Super Administrator)</p>
+
+    <!-- Global Statistics -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0;">
+      <div style="background-color: #f0f8ff; padding: 20px; border-radius: 8px; text-align: center;">
+        <h3 style="margin: 0; font-size: 2em; color: #2c3e50;">{{ total_users }}</h3>
+        <p style="margin: 8px 0 0 0; color: #7f8c8d;">Total Users</p>
+      </div>
+      <div style="background-color: #f0fff0; padding: 20px; border-radius: 8px; text-align: center;">
+        <h3 style="margin: 0; font-size: 2em; color: #2c3e50;">{{ total_institutes }}</h3>
+        <p style="margin: 8px 0 0 0; color: #7f8c8d;">Total Institutes</p>
+      </div>
+      <div style="background-color: #fff8f0; padding: 20px; border-radius: 8px; text-align: center;">
+        <h3 style="margin: 0; font-size: 2em; color: #2c3e50;">{{ total_patients }}</h3>
+        <p style="margin: 8px 0 0 0; color: #7f8c8d;">Total Patients</p>
+      </div>
+    </div>
+
+    <!-- Pending Approvals -->
+    {% if pending_users %}
+    <div style="margin-top: 32px;">
+      <h3>Pending User Approvals</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Institute</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in pending_users %}
+          <tr>
+            <td>{{ user.name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.institute }}</td>
+            <td>
+              <form action="{{ url_for('super_admin_approve_user', user_email=user.email) }}"
+                    method="post" style="display:inline; margin-right: 8px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="button" style="background-color: #27ae60;">✓ Approve</button>
+              </form>
+              <button type="button" class="button" style="background-color: #e74c3c;"
+                      onclick="showRejectDialog('{{ user.email }}', '{{ user.name }}')">✗ Reject</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Institutes Overview -->
+    {% if institutes %}
+    <div style="margin-top: 32px;">
+      <h3>Institutes Overview</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Institute Name</th>
+            <th>Admins</th>
+            <th>Users</th>
+            <th>Patients</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inst in institutes %}
+          <tr>
+            <td>{{ inst.name }}</td>
+            <td>{{ inst.admin_count }}</td>
+            <td>{{ inst.user_count }}</td>
+            <td>{{ inst.patient_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 32px;">
+      <a href="{{ url_for('super_admin_users') }}">
+        <button class="button">Manage All Users</button>
+      </a>
+
+      <a href="{{ url_for('super_admin_deletion_requests') }}">
+        <button class="button" style="background-color: #e74c3c;">🗑️ Account Deletion Requests (GDPR)</button>
+      </a>
+
+      <a href="{{ url_for('super_admin_audit_logs') }}">
+        <button class="button">View Global Audit Logs</button>
+      </a>
+
+      <a href="{{ url_for('ai_cache_statistics') }}">
+        <button class="button">AI Cache & Training Data</button>
+      </a>
+
+      <a href="{{ url_for('blog_admin') }}">
+        <button class="button">Manage Blog Posts</button>
+      </a>
+
+      <a href="{{ url_for('seed_blog_posts') }}">
+        <button class="button" style="background-color: #3498db;">📝 Seed Blog Posts (Initial Setup)</button>
+      </a>
+
+      <a href="{{ url_for('dashboard') }}">
+        <button class="button">Go to Main Dashboard</button>
+      </a>
+
+      <a href="{{ url_for('logout') }}">
+        <button class="button">Logout</button>
+      </a>
+    </div>
+  </div>
+
+  <!-- Reject User Dialog -->
+  <div id="rejectDialog" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
+      <h3 style="margin-top: 0; color: #e74c3c;">Reject User Registration</h3>
+      <p>Are you sure you want to reject <strong id="rejectUserName"></strong>?</p>
+      <p style="color: #7f8c8d; font-size: 14px;">This will:</p>
+      <ul style="color: #7f8c8d; font-size: 14px; margin: 10px 0 20px 20px;">
+        <li>Send a rejection notification email to the user</li>
+        <li>Delete their account from the system</li>
+        <li>Remove their Firebase authentication (if exists)</li>
+      </ul>
+
+      <form id="rejectForm" method="post" style="margin-top: 20px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="rejectReason" style="display: block; margin-bottom: 8px; font-weight: bold;">Reason (Optional):</label>
+        <textarea id="rejectReason" name="reason" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Provide a reason for rejection (will be included in the email to the user)"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="button" style="background-color: #e74c3c; flex: 1;">Reject User</button>
+          <button type="button" class="button" style="background-color: #95a5a6; flex: 1;" onclick="hideRejectDialog()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+    function showRejectDialog(email, name) {
+      const dialog = document.getElementById('rejectDialog');
+      const form = document.getElementById('rejectForm');
+      const userName = document.getElementById('rejectUserName');
+
+      userName.textContent = name + ' (' + email + ')';
+      form.action = '/super_admin/reject_user/' + encodeURIComponent(email);
+      dialog.style.display = 'flex';
+    }
+
+    function hideRejectDialog() {
+      const dialog = document.getElementById('rejectDialog');
+      const reason = document.getElementById('rejectReason');
+      dialog.style.display = 'none';
+      reason.value = '';
+    }
+
+    // Close dialog when clicking outside
+    document.getElementById('rejectDialog').addEventListener('click', function(e) {
+      if (e.target === this) {
+        hideRejectDialog();
+      }
+    });
+
+    // Close dialog with Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        hideRejectDialog();
+      }
+    });
+  </script>
+{% endblock %}

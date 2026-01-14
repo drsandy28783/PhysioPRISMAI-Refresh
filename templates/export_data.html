@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Export My Data – Physiologic PRISM{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+  <h2>Export My Data</h2>
+  <p style="color: #7f8c8d;">Download your data in various formats (GDPR Right to Data Portability)</p>
+
+  <!-- Full Data Export Section -->
+  <div style="margin-top: 30px; padding: 20px; background-color: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px;">
+    <h3 style="margin-top: 0; color: #1976d2;">
+      <svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/>
+      </svg>
+      Complete Data Export
+    </h3>
+    <p style="margin-bottom: 16px;">Export all your data including profile, patients, and audit logs in a single file.</p>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="{{ url_for('export_my_data') }}">
+        <button type="button" class="button" style="background-color: #1976d2;">
+          Download as JSON
+        </button>
+      </a>
+    </div>
+    <p style="font-size: 12px; color: #555; margin-top: 12px; margin-bottom: 0;">
+      <strong>Recommended:</strong> JSON format contains all your data in a structured format. Best for complete backups.
+    </p>
+  </div>
+
+  <!-- Patients Data Export Section -->
+  <div style="margin-top: 24px; padding: 20px; background-color: #f3e5f5; border: 2px solid #9c27b0; border-radius: 8px;">
+    <h3 style="margin-top: 0; color: #7b1fa2;">
+      <svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+      </svg>
+      Patient Records Export
+    </h3>
+    <p style="margin-bottom: 16px;">Export all your patient records in spreadsheet or document format.</p>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="{{ url_for('export_patients_csv') }}">
+        <button type="button" class="button" style="background-color: #388e3c;">
+          Download as CSV
+        </button>
+      </a>
+      <a href="{{ url_for('export_patients_pdf') }}">
+        <button type="button" class="button" style="background-color: #d32f2f;">
+          Download as PDF
+        </button>
+      </a>
+    </div>
+    <p style="font-size: 12px; color: #555; margin-top: 12px; margin-bottom: 0;">
+      <strong>CSV:</strong> Open in Excel/Google Sheets for analysis. <strong>PDF:</strong> Print-friendly format.
+    </p>
+  </div>
+
+  <!-- Audit Logs Export Section -->
+  <div style="margin-top: 24px; padding: 20px; background-color: #fff3e0; border: 2px solid #ff9800; border-radius: 8px;">
+    <h3 style="margin-top: 0; color: #f57c00;">
+      <svg style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+      </svg>
+      Activity & Audit Logs
+    </h3>
+    <p style="margin-bottom: 16px;">Export your account activity history and audit trail.</p>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="{{ url_for('export_my_audit_logs_csv') }}">
+        <button type="button" class="button" style="background-color: #f57c00;">
+          Download as CSV
+        </button>
+      </a>
+    </div>
+    <p style="font-size: 12px; color: #555; margin-top: 12px; margin-bottom: 0;">
+      Includes up to 5,000 most recent activity records.
+    </p>
+  </div>
+
+  <!-- Information Box -->
+  <div style="margin-top: 30px; padding: 16px; background-color: #f8f9fa; border-left: 4px solid #3498db; border-radius: 4px;">
+    <h4 style="margin-top: 0; color: #2c3e50;">About Data Exports</h4>
+    <ul style="margin-bottom: 0; padding-left: 20px; color: #555;">
+      <li>All exports are generated in real-time and include your latest data</li>
+      <li>Exports are private and only accessible to you</li>
+      <li>No data is stored on servers during export - files are generated on-demand</li>
+      <li>You can export your data as many times as needed</li>
+      <li>Each export is logged in your audit trail for security</li>
+    </ul>
+  </div>
+
+  <!-- GDPR Information -->
+  <div style="margin-top: 24px; padding: 16px; background-color: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px;">
+    <h4 style="margin-top: 0; color: #2e7d32;">Your Data Rights (GDPR)</h4>
+    <p style="margin-bottom: 8px; color: #555;">Under GDPR Article 20, you have the right to:</p>
+    <ul style="margin-bottom: 0; padding-left: 20px; color: #555;">
+      <li><strong>Data Portability:</strong> Receive your personal data in a structured, commonly used format</li>
+      <li><strong>Data Transfer:</strong> Transfer your data to another service provider</li>
+      <li><strong>Data Access:</strong> Access all data we hold about you at any time</li>
+    </ul>
+  </div>
+
+  <!-- Back Button -->
+  <div style="margin-top: 30px; margin-bottom: 30px;">
+    <a href="{{ url_for('edit_profile') }}">
+      <button type="button" class="button" style="background-color: #7f8c8d;">
+        <svg style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+        </svg>
+        Back to Profile
+      </button>
+    </a>
+  </div>
+</div>
+{% endblock %}

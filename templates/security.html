@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security & Compliance - PhysiologicPRISM</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #F8F9FA;
+        }
+
+        /* Hide app navbar on marketing pages */
+        body > .navbar {
+            display: none !important;
+        }
+
+        /* Marketing Navbar */
+        .homepage-navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .homepage-navbar .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: #1a5f5a;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .homepage-navbar .logo img {
+            height: 40px;
+            width: auto;
+        }
+
+        .homepage-navbar .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .homepage-navbar .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .homepage-navbar .nav-links a:hover {
+            color: #1a5f5a;
+        }
+
+        .homepage-navbar .cta-btn {
+            background: linear-gradient(135deg, #1a5f5a 0%, #2d8b7f 100%);
+            color: white !important;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .homepage-navbar .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(26, 95, 90, 0.3);
+        }
+
+        /* Hero Section */
+        .security-hero {
+            background: linear-gradient(135deg, #f8fffe 0%, #e6f7f5 100%);
+            padding: 5rem 2rem 4rem;
+            text-align: center;
+        }
+
+        .security-hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1a5f5a;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .security-hero .subtitle {
+            font-size: 1.25rem;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+
+        .security-hero .trust-badges {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .trust-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .trust-badge-icon {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .trust-badge span {
+            font-weight: 600;
+            color: #1a5f5a;
+            font-size: 0.9rem;
+        }
+
+        /* Content Container */
+        .content-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        /* Section Styles */
+        .security-section {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        }
+
+        .security-section h2 {
+            font-size: 2rem;
+            color: #1a5f5a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .security-section h2::before {
+            content: '';
+            width: 4px;
+            height: 2rem;
+            background: linear-gradient(180deg, #1a5f5a 0%, #2d8b7f 100%);
+            border-radius: 2px;
+        }
+
+        .security-section p {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: #f8fffe;
+            border: 2px solid #e6f7f5;
+            border-radius: 12px;
+            padding: 2rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(26, 95, 90, 0.15);
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            color: #1a5f5a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .feature-icon {
+            font-size: 1.8rem;
+        }
+
+        .feature-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-card li {
+            padding: 0.5rem 0;
+            color: #555;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .feature-card li::before {
+            content: '✓';
+            color: #1a5f5a;
+            font-weight: 700;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        /* Compliance Section */
+        .compliance-badges {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .compliance-badge {
+            background: white;
+            border: 3px solid #1a5f5a;
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .compliance-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .compliance-badge-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .compliance-badge h3 {
+            font-size: 1.5rem;
+            color: #1a5f5a;
+            margin-bottom: 0.5rem;
+        }
+
+        .compliance-badge p {
+            color: #666;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* CTA Section */
+        .security-cta {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 4rem;
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+        }
+
+        .security-cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .security-cta h2::before {
+            display: none;
+        }
+
+        .security-cta p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+            color: white;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #764ba2;
+            padding: 1rem 3rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+        }
+
+        /* Footer */
+        .security-footer {
+            background: #1a5f5a;
+            color: white;
+            padding: 4rem 2rem 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #a8e6cf;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-section a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .homepage-navbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .homepage-navbar .nav-links {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .security-hero h1 {
+                font-size: 2rem;
+            }
+
+            .security-hero .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .security-section {
+                padding: 2rem 1.5rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .security-cta {
+                padding: 3rem 2rem;
+            }
+
+            .security-cta h2 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Marketing Navbar -->
+    <nav class="homepage-navbar">
+        <a href="{{ url_for('homepage') }}" class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM">
+            <span>PhysiologicPRISM</span>
+        </a>
+        <div class="nav-links">
+            <a href="{{ url_for('homepage') }}">Home</a>
+            <a href="{{ url_for('homepage') }}#how-it-works">How it works</a>
+            <a href="{{ url_for('pilot_program') }}">Pilot Program</a>
+            <a href="{{ url_for('security_page') }}">Security</a>
+            <a href="{{ url_for('blog_list') }}">Blog</a>
+            <a href="{{ url_for('request_access') }}" class="cta-btn">Request early access</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="security-hero">
+        <h1>Enterprise-Grade Security & Compliance</h1>
+        <p class="subtitle">
+            PhysiologicPRISM is built on a foundation of trust, with enterprise-grade infrastructure designed to protect patient data and meet the highest standards of healthcare compliance.
+        </p>
+        <div class="trust-badges">
+            <div class="trust-badge">
+                <div class="trust-badge-icon">🔒</div>
+                <span>HIPAA Compliant</span>
+            </div>
+            <div class="trust-badge">
+                <div class="trust-badge-icon">🛡️</div>
+                <span>GDPR Ready</span>
+            </div>
+            <div class="trust-badge">
+                <div class="trust-badge-icon">☁️</div>
+                <span>Google Cloud</span>
+            </div>
+            <div class="trust-badge">
+                <div class="trust-badge-icon">🔐</div>
+                <span>End-to-End Encrypted</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="content-container">
+        <!-- Data Security Section -->
+        <section class="security-section">
+            <h2>Data Security & Encryption</h2>
+            <p>
+                Every piece of patient data is protected with military-grade encryption, both in transit and at rest. We use industry-standard protocols to ensure your data remains confidential and secure.
+            </p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3><span class="feature-icon">🔐</span> Encryption at Rest</h3>
+                    <ul>
+                        <li>AES-256 encryption for all stored data</li>
+                        <li>Encrypted database backups</li>
+                        <li>Secure key management with Google Cloud KMS</li>
+                        <li>Regular security audits</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="feature-icon">🌐</span> Encryption in Transit</h3>
+                    <ul>
+                        <li>TLS 1.3 for all data transmission</li>
+                        <li>HTTPS-only connections</li>
+                        <li>Certificate pinning for mobile apps</li>
+                        <li>Secure API endpoints</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="feature-icon">🔑</span> Access Controls</h3>
+                    <ul>
+                        <li>Multi-factor authentication (MFA)</li>
+                        <li>Role-based access control (RBAC)</li>
+                        <li>Session timeout and secure logout</li>
+                        <li>IP whitelisting available</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compliance Section -->
+        <section class="security-section">
+            <h2>Healthcare Compliance</h2>
+            <p>
+                PhysiologicPRISM is designed from the ground up to meet international healthcare data protection standards, ensuring your practice stays compliant.
+            </p>
+            <div class="compliance-badges">
+                <div class="compliance-badge">
+                    <div class="compliance-badge-icon">🏥</div>
+                    <h3>HIPAA Compliant</h3>
+                    <p>
+                        Full compliance with Health Insurance Portability and Accountability Act requirements for protecting patient health information.
+                    </p>
+                </div>
+                <div class="compliance-badge">
+                    <div class="compliance-badge-icon">🇪🇺</div>
+                    <h3>GDPR Ready</h3>
+                    <p>
+                        Compliant with General Data Protection Regulation for handling personal data of EU citizens with proper consent and data rights.
+                    </p>
+                </div>
+                <div class="compliance-badge">
+                    <div class="compliance-badge-icon">📋</div>
+                    <h3>Audit Logs</h3>
+                    <p>
+                        Comprehensive audit trails tracking all data access and modifications for complete accountability and compliance reporting.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Infrastructure Section -->
+        <section class="security-section">
+            <h2>Cloud Infrastructure & Reliability</h2>
+            <p>
+                Hosted on Google Cloud Platform, PhysiologicPRISM benefits from world-class infrastructure with 99.95% uptime SLA and global redundancy.
+            </p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3><span class="feature-icon">☁️</span> Google Cloud Platform</h3>
+                    <ul>
+                        <li>Enterprise-grade infrastructure</li>
+                        <li>Global content delivery network (CDN)</li>
+                        <li>99.95% uptime guarantee</li>
+                        <li>ISO 27001, SOC 2/3 certified</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="feature-icon">💾</span> Data Backup & Recovery</h3>
+                    <ul>
+                        <li>Automated daily backups</li>
+                        <li>30-day backup retention</li>
+                        <li>Point-in-time recovery</li>
+                        <li>Geo-redundant storage</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="feature-icon">⚡</span> Performance & Availability</h3>
+                    <ul>
+                        <li>Auto-scaling infrastructure</li>
+                        <li>Load balancing across regions</li>
+                        <li>DDoS protection</li>
+                        <li>24/7 monitoring and alerts</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Privacy Section -->
+        <section class="security-section">
+            <h2>Privacy & Data Ownership</h2>
+            <p>
+                Your data belongs to you. We maintain strict privacy standards and give you complete control over your patient information.
+            </p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3><span class="feature-icon">👤</span> Data Ownership</h3>
+                    <ul>
+                        <li>You own 100% of your patient data</li>
+                        <li>Export your data anytime in standard formats</li>
+                        <li>No vendor lock-in</li>
+                        <li>Right to data deletion</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="feature-icon">🚫</span> Zero Third-Party Sharing</h3>
+                    <ul>
+                        <li>We never sell your data</li>
+                        <li>No advertising or tracking pixels</li>
+                        <li>Minimal third-party integrations</li>
+                        <li>Transparent data usage policies</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="feature-icon">📊</span> Patient Consent</h3>
+                    <ul>
+                        <li>Built-in consent management</li>
+                        <li>Granular permission controls</li>
+                        <li>Patient data access requests</li>
+                        <li>Audit trail of all consents</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Development & Maintenance Section -->
+        <section class="security-section">
+            <h2>Secure Development & Maintenance</h2>
+            <p>
+                Security is embedded in every stage of our development lifecycle, from code to deployment.
+            </p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3><span class="feature-icon">🔍</span> Security Testing</h3>
+                    <ul>
+                        <li>Regular penetration testing</li>
+                        <li>Automated vulnerability scanning</li>
+                        <li>Code security reviews</li>
+                        <li>Third-party security audits</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="feature-icon">🔄</span> Continuous Updates</h3>
+                    <ul>
+                        <li>Regular security patches</li>
+                        <li>Zero-downtime deployments</li>
+                        <li>Dependency monitoring</li>
+                        <li>Incident response plan</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h3><span class="feature-icon">👥</span> Team Training</h3>
+                    <ul>
+                        <li>HIPAA compliance training</li>
+                        <li>Secure coding practices</li>
+                        <li>Background checks</li>
+                        <li>Confidentiality agreements</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <div class="security-cta">
+            <h2>Ready to Experience Secure Clinical Reasoning?</h2>
+            <p>Join leading physiotherapy clinics using PhysiologicPRISM's secure platform</p>
+            <a href="{{ url_for('request_access') }}" class="cta-button">Request Early Access</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="security-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Product</h3>
+                <ul>
+                    <li><a href="{{ url_for('homepage') }}">Home</a></li>
+                    <li><a href="{{ url_for('homepage') }}#how-it-works">How it works</a></li>
+                    <li><a href="{{ url_for('pilot_program') }}">Pilot Program</a></li>
+                    <li><a href="{{ url_for('pricing') }}">Pricing</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <ul>
+                    <li><a href="{{ url_for('blog_list') }}">Blog</a></li>
+                    <li><a href="{{ url_for('security_page') }}">Security</a></li>
+                    <li><a href="mailto:contact@physioprism.com">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="{{ url_for('privacy_policy') }}">Privacy Policy</a></li>
+                    <li><a href="{{ url_for('terms_of_service') }}">Terms of Service</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Get Started</h3>
+                <ul>
+                    <li><a href="{{ url_for('request_access') }}">Request early access</a></li>
+                    <li><a href="{{ url_for('login') }}">Sign in</a></li>
+                    <li><a href="{{ url_for('pilot_program') }}">Pilot program</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 PhysiologicPRISM by Physiologic Prism. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

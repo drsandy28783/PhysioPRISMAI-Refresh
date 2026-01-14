@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Manage Users – Super Admin – Physiologic PRISM{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Global User Management</h2>
+    <p>Manage all users across all institutes</p>
+
+    <!-- Search/Filter Section -->
+    <div style="margin: 20px 0;">
+      <input type="text" id="searchInput" placeholder="Search by name, email, or institute..."
+             style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+
+    <!-- Users Table -->
+    <table class="data-table" id="usersTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Institute</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.institute }}</td>
+          <td>
+            {% if user.is_super_admin == 1 %}
+              <span style="color: #e74c3c; font-weight: bold;">Super Admin</span>
+            {% elif user.is_admin == 1 %}
+              <span style="color: #3498db; font-weight: bold;">Admin</span>
+            {% else %}
+              Physiotherapist
+            {% endif %}
+          </td>
+          <td>
+            {% if user.approved == 1 and user.active == 1 %}
+              <span style="color: #27ae60;">Active</span>
+            {% elif user.approved == 0 %}
+              <span style="color: #f39c12;">Pending Approval</span>
+            {% else %}
+              <span style="color: #e74c3c;">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if user.is_super_admin != 1 %}
+              {% if user.approved == 0 %}
+                <form action="{{ url_for('super_admin_approve_user', user_email=user.email) }}"
+                      method="post" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="button" style="padding: 4px 8px; font-size: 12px;">
+                    Approve
+                  </button>
+                </form>
+              {% endif %}
+
+              {% if user.active == 1 %}
+                <form action="{{ url_for('super_admin_deactivate_user', user_email=user.email) }}"
+                      method="post" style="display:inline; margin-left: 4px;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="button"
+                          style="padding: 4px 8px; font-size: 12px; background-color: #e74c3c;"
+                          onclick="return confirm('Deactivate user {{ user.name }}?');">
+                    Deactivate
+                  </button>
+                </form>
+              {% else %}
+                <form action="{{ url_for('super_admin_reactivate_user', user_email=user.email) }}"
+                      method="post" style="display:inline; margin-left: 4px;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="button"
+                          style="padding: 4px 8px; font-size: 12px; background-color: #27ae60;">
+                    Reactivate
+                  </button>
+                </form>
+              {% endif %}
+            {% else %}
+              <span style="color: #95a5a6; font-style: italic;">Protected</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <br>
+
+    <a href="{{ url_for('super_admin_dashboard') }}">
+      <button class="button">Back to Super Admin Dashboard</button>
+    </a>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+    // Simple search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+      const searchTerm = this.value.toLowerCase();
+      const table = document.getElementById('usersTable');
+      const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const text = row.textContent.toLowerCase();
+
+        if (text.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      }
+    });
+  </script>
+{% endblock %}

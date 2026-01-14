@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accept Updated Terms of Service – Physiologic PRISM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Hide navbar on this page */
+        body > .navbar { display: none !important; }
+        .container { max-width: 600px; margin: 60px auto; padding: 0 20px; }
+        .error-message {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .success-message {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .info-box {
+            background-color: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #1565c0;
+        }
+        .tos-summary {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .tos-summary h4 {
+            margin-top: 0;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .version-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Updated Terms of Service</h2>
+
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+
+        <div class="info-box">
+            <h3>Important Notice</h3>
+            <p>Our Terms of Service have been updated. To continue using Physiologic PRISM, please review and accept the updated terms.</p>
+            <p class="version-info">
+                <strong>Version:</strong> {{ tos_version }}<br>
+                <strong>Last Updated:</strong> {{ tos_last_updated }}
+            </p>
+        </div>
+
+        <div class="tos-summary">
+            <h4>Key Updates</h4>
+            <p>Please review the full Terms of Service for complete details. Key areas covered include:</p>
+            <ul>
+                <li>Service usage and acceptable use policies</li>
+                <li>Data processing and privacy practices</li>
+                <li>Subscription and billing terms</li>
+                <li>Intellectual property rights</li>
+                <li>Limitation of liability</li>
+            </ul>
+            <p>
+                <a href="{{ url_for('terms_of_service') }}" target="_blank" style="color: #3498db;">
+                    Read Full Terms of Service
+                </a>
+            </p>
+        </div>
+
+        <form id="accept-form">
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="accept_tos" name="accept_tos" required style="margin-top: 4px;">
+                    <span style="font-size: 14px;">
+                        I have read and agree to the updated
+                        <a href="{{ url_for('terms_of_service') }}" target="_blank" style="color: #3498db;">Terms of Service</a>
+                        (Version {{ tos_version }})
+                    </span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button type="submit" class="button" id="accept-button">Accept and Continue</button>
+                <a href="{{ url_for('login') }}" class="button" style="background: #ccc; color: #000;">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Firebase Initialization -->
+    <script type="module" nonce="{{ csp_nonce() }}">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAI2QaNaJuA6cV_KSJlgsyus11-GKzxee8",
+            authDomain: "physiologicprism-474610.firebaseapp.com",
+            projectId: "physiologicprism-474610",
+            storageBucket: "physiologicprism-474610.firebasestorage.app",
+            messagingSenderId: "292385113403",
+            appId: "1:292385113403:web:02abf02787ba4e02cba31e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        window.__FIREBASE_APP__ = app;
+        window.__FIREBASE_AUTH__ = auth;
+    </script>
+
+    <!-- Acceptance Logic -->
+    <script type="module" nonce="{{ csp_nonce() }}">
+        import { waitForAuth } from '{{ url_for("static", filename="auth.js") }}';
+
+        const acceptForm = document.getElementById('accept-form');
+        const acceptButton = document.getElementById('accept-button');
+        const errorDiv = document.getElementById('error-message');
+        const successDiv = document.getElementById('success-message');
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            successDiv.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+        }
+
+        function hideMessages() {
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+        }
+
+        // Check if user is signed in with Firebase
+        waitForAuth().then(user => {
+            if (!user) {
+                showError('You must be signed in to accept the Terms of Service. Please log in first.');
+                acceptButton.disabled = true;
+            }
+        });
+
+        // Handle form submission
+        acceptForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessages();
+
+            const acceptCheckbox = document.getElementById('accept_tos');
+            if (!acceptCheckbox.checked) {
+                showError('You must accept the Terms of Service to continue');
+                return;
+            }
+
+            // Show loading state
+            acceptButton.textContent = 'Processing...';
+            acceptButton.disabled = true;
+            acceptForm.classList.add('loading');
+
+            try {
+                // Get current user
+                const user = window.__FIREBASE_AUTH__.currentUser;
+                if (!user) {
+                    showError('You must be signed in. Please log in first.');
+                    window.location.href = '/login/firebase';
+                    return;
+                }
+
+                // Get ID token
+                const idToken = await user.getIdToken();
+
+                // Submit acceptance to backend
+                const response = await fetch('/api/accept-updated-tos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({
+                        accept_tos: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.error || 'Failed to accept Terms of Service');
+                    return;
+                }
+
+                // Success
+                showSuccess('Terms of Service accepted! Redirecting to login...');
+                setTimeout(() => {
+                    window.location.href = data.redirect || '/login/firebase';
+                }, 1500);
+
+            } catch (error) {
+                console.error('Error accepting ToS:', error);
+                showError('An unexpected error occurred. Please try again.');
+            } finally {
+                acceptButton.textContent = 'Accept and Continue';
+                acceptButton.disabled = false;
+                acceptForm.classList.remove('loading');
+            }
+        });
+    </script>
+</body>
+</html>

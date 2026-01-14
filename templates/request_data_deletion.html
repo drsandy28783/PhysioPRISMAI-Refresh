@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Request Data Deletion – Physiologic PRISM{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px; margin: 0 auto;">
+  <h2>Request Account Deletion</h2>
+  <p style="color: #e74c3c; font-weight: bold;">⚠️ Warning: This action is permanent and cannot be undone!</p>
+
+  <div style="background-color: #ffebee; padding: 20px; border-radius: 4px; border: 2px solid #e74c3c; margin: 20px 0;">
+    <h3 style="margin-top: 0; color: #e74c3c;">What Happens When You Delete Your Account?</h3>
+
+    <h4 style="margin-top: 16px;">✅ Will Be Deleted:</h4>
+    <ul>
+      <li>Your account credentials (email, password)</li>
+      <li>Your personal profile information (name, phone)</li>
+      <li>Your login and session data</li>
+      <li>Access to the system will be immediately revoked</li>
+    </ul>
+
+    <h4 style="margin-top: 16px;">⚠️ Will Be Retained (Legal Requirement):</h4>
+    <ul>
+      <li><strong>Patient Records:</strong> Kept for 7 years (healthcare legal requirement)</li>
+      <li><strong>Audit Logs:</strong> Kept for 6 years (compliance requirement)</li>
+      <li>Patient records will be anonymized (your name replaced with "Deleted User")</li>
+      <li>These records are necessary for medical-legal compliance and cannot be deleted</li>
+    </ul>
+
+    <h4 style="margin-top: 16px;">📅 Timeline:</h4>
+    <ul>
+      <li><strong>Immediate:</strong> Account access is revoked</li>
+      <li><strong>Within 30 days:</strong> Personal account data is deleted</li>
+      <li><strong>After 7 years:</strong> Patient records are deleted</li>
+      <li><strong>After 6 years:</strong> Audit logs are deleted</li>
+    </ul>
+  </div>
+
+  <div style="background-color: #e3f2fd; padding: 16px; border-radius: 4px; margin: 20px 0;">
+    <h3 style="margin-top: 0;">Before You Delete...</h3>
+    <p>Consider these alternatives:</p>
+    <ul>
+      <li><strong>Download Your Data:</strong> <a href="{{ url_for('export_my_data') }}" style="color: #3498db;">Export your data</a> before deleting</li>
+      <li><strong>Contact Support:</strong> Email <a href="mailto:support@your-domain.com">support@your-domain.com</a> if you have issues</li>
+      <li><strong>Update Your Profile:</strong> <a href="{{ url_for('edit_profile') }}" style="color: #3498db;">Edit your information</a> instead of deleting</li>
+    </ul>
+  </div>
+
+  {% if not deletion_pending %}
+  <!-- Deletion Request Form -->
+  <form method="POST" action="{{ url_for('request_data_deletion') }}" onsubmit="return confirmDeletion();">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field-block">
+      <label for="confirm_email" style="display: block; margin-bottom: 8px; font-weight: bold;">
+        Confirm Your Email to Proceed
+      </label>
+      <input class="input-field" type="email" id="confirm_email" name="confirm_email"
+             placeholder="Enter your email: {{ session.user_id }}" required>
+      <p style="font-size: 12px; color: #7f8c8d; margin-top: 4px;">
+        Type your email exactly as: <strong>{{ session.user_id }}</strong>
+      </p>
+    </div>
+
+    <div class="field-block">
+      <label for="password" style="display: block; margin-bottom: 8px; font-weight: bold;">
+        Enter Your Password
+      </label>
+      <input class="input-field" type="password" id="password" name="password"
+             placeholder="Enter your password" required>
+    </div>
+
+    <div class="field-block">
+      <label for="deletion_reason" style="display: block; margin-bottom: 8px; font-weight: bold;">
+        Reason for Deletion (Optional)
+      </label>
+      <textarea class="input-field" id="deletion_reason" name="deletion_reason"
+                rows="4" placeholder="Help us improve by telling us why you're leaving (optional)"
+                style="resize: vertical; font-family: inherit;"></textarea>
+    </div>
+
+    <div style="margin: 20px 0;">
+      <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="confirm_understanding" required style="margin-top: 4px;">
+        <span style="font-size: 14px;">
+          I understand that this action is permanent and that patient records will be retained for legal compliance.
+          I have downloaded my data if needed.
+        </span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 24px;">
+      <button type="submit" class="button" style="background-color: #e74c3c;">
+        Delete My Account Permanently
+      </button>
+      <a href="{{ url_for('dashboard') }}">
+        <button type="button" class="button" style="background-color: #7f8c8d;">Cancel</button>
+      </a>
+    </div>
+  </form>
+  {% else %}
+  <!-- Deletion Pending Message -->
+  <div style="background-color: #fff3cd; padding: 20px; border-radius: 4px; border: 2px solid #ffc107;">
+    <h3 style="margin-top: 0;">⏳ Deletion Request Pending</h3>
+    <p>Your account deletion request has been submitted and is being processed.</p>
+    <p><strong>Request Date:</strong> {{ deletion_request_date }}</p>
+    <p>Your account will be permanently deleted within 30 days. You will receive a confirmation email once completed.</p>
+
+    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #ffc107;">
+      <h4 style="margin-top: 0;">Changed Your Mind?</h4>
+      <p>You can cancel your deletion request during the 30-day grace period.</p>
+
+      <form method="POST" action="{{ url_for('cancel_data_deletion') }}" onsubmit="return confirmCancellation();">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="button" style="background-color: #27ae60;">
+          ✅ Cancel Deletion Request & Restore Account
+        </button>
+      </form>
+
+      <p style="font-size: 12px; color: #7f8c8d; margin-top: 12px;">
+        Or contact <a href="mailto:support@physiologicprism.com">support@physiologicprism.com</a> for assistance.
+      </p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  function confirmDeletion() {
+    const userEmail = "{{ session.user_id }}";
+    const inputEmail = document.getElementById('confirm_email').value.trim().toLowerCase();
+
+    if (inputEmail !== userEmail.toLowerCase()) {
+      alert('❌ Email does not match. Please enter your email exactly as shown.');
+      return false;
+    }
+
+    const confirmation = confirm(
+      '⚠️ FINAL WARNING ⚠️\n\n' +
+      'This will PERMANENTLY DELETE your account.\n\n' +
+      '• Your access will be immediately revoked\n' +
+      '• Your personal data will be deleted within 30 days\n' +
+      '• Patient records will be anonymized and retained for legal compliance\n\n' +
+      'Are you absolutely sure you want to proceed?'
+    );
+
+    return confirmation;
+  }
+
+  function confirmCancellation() {
+    const confirmation = confirm(
+      '✅ Cancel Deletion Request\n\n' +
+      'This will restore your account and cancel the deletion request.\n\n' +
+      '• Your account will be reactivated immediately\n' +
+      '• You will regain full access to your data\n' +
+      '• The deletion will not proceed\n\n' +
+      'Do you want to cancel the deletion and restore your account?'
+    );
+
+    return confirmation;
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Plans - Physio PRISM{% endblock %}
+
+{% block head %}
+<style>
+    /* Hide the navbar on marketing pages */
+    body > .navbar { display: none !important; }
+
+    /* Reset container */
+    .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Marketing navbar */
+    .homepage-navbar {
+        background: #1a5f5a;
+        padding: 16px 24px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .homepage-navbar .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: white;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .homepage-navbar .logo img {
+        height: 40px;
+    }
+
+    .homepage-navbar .nav-links {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+    }
+
+    .homepage-navbar .nav-links a {
+        color: white;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: 500;
+        transition: opacity 0.2s;
+    }
+
+    .homepage-navbar .nav-links a:hover {
+        opacity: 0.8;
+    }
+
+    .homepage-navbar .cta-btn {
+        background: white;
+        color: #1a5f5a;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .pricing-container {
+        max-width: 1400px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .pricing-header {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+
+    .pricing-header h1 {
+        font-size: 2.5em;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .pricing-header p {
+        font-size: 1.2em;
+        color: #7f8c8d;
+    }
+
+    .pricing-subtitle {
+        font-size: 1.3em;
+        color: #27ae60;
+        font-weight: bold;
+        margin-top: 15px;
+    }
+
+    .plans-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+
+    .plan-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: 2px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .plan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    }
+
+    .plan-card.featured {
+        border-color: #3498db;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .plan-card.featured .plan-name,
+    .plan-card.featured .plan-price,
+    .plan-card.featured .feature-item {
+        color: white;
+    }
+
+    .plan-badge {
+        background: #e74c3c;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        display: inline-block;
+        margin-bottom: 15px;
+        font-weight: bold;
+    }
+
+    .plan-name {
+        font-size: 1.8em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .plan-price {
+        font-size: 2.5em;
+        font-weight: bold;
+        margin: 20px 0;
+        color: #27ae60;
+    }
+
+    .plan-price small {
+        font-size: 0.4em;
+        color: #7f8c8d;
+        font-weight: normal;
+    }
+
+    .per-user-cost {
+        font-size: 0.9em;
+        color: #7f8c8d;
+        margin-top: -15px;
+        margin-bottom: 15px;
+    }
+
+    .unlimited-badge {
+        background: linear-gradient(90deg, #f39c12, #e67e22);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 0.9em;
+        font-weight: bold;
+        display: inline-block;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 20px 0;
+        flex-grow: 1;
+    }
+
+    .feature-item {
+        padding: 10px 0;
+        color: #34495e;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .feature-item:before {
+        content: "✓ ";
+        color: #27ae60;
+        font-weight: bold;
+        margin-right: 8px;
+    }
+
+    .feature-item.highlight {
+        font-weight: bold;
+        color: #27ae60;
+        font-size: 1.1em;
+    }
+
+    .plan-card.featured .feature-item:before {
+        color: #fff;
+    }
+
+    .subscribe-btn {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+        margin-top: auto;
+    }
+
+    .subscribe-btn:hover {
+        background: #2980b9;
+    }
+
+    .plan-card.featured .subscribe-btn {
+        background: white;
+        color: #667eea;
+    }
+
+    .plan-card.featured .subscribe-btn:hover {
+        background: #f8f9fa;
+    }
+
+    .subscribe-btn:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+    }
+
+    .current-plan-badge {
+        background: #27ae60;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    .ai-calls-section {
+        max-width: 1000px;
+        margin: 60px auto;
+        padding: 30px;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+
+    .ai-calls-section h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .ai-calls-section .subtitle {
+        text-align: center;
+        color: #7f8c8d;
+        margin-bottom: 30px;
+        font-size: 1.1em;
+    }
+
+    .ai-calls-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+    }
+
+    .ai-call-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+        position: relative;
+    }
+
+    .ai-call-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .ai-call-card.popular {
+        border: 2px solid #e74c3c;
+    }
+
+    .savings-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: #e74c3c;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+
+    .ai-call-amount {
+        font-size: 2em;
+        font-weight: bold;
+        color: #3498db;
+        margin: 10px 0;
+    }
+
+    .ai-call-price {
+        font-size: 1.5em;
+        color: #27ae60;
+        margin: 10px 0;
+    }
+
+    .ai-call-per {
+        font-size: 0.9em;
+        color: #7f8c8d;
+    }
+
+    .buy-ai-call-btn {
+        background: #27ae60;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background 0.3s;
+        width: 100%;
+    }
+
+    .buy-ai-call-btn:hover {
+        background: #229954;
+    }
+
+    @media (max-width: 768px) {
+        .plans-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pricing-header h1 {
+            font-size: 2em;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Marketing Navbar -->
+<nav class="homepage-navbar">
+  <a href="{{ url_for('homepage') }}" class="logo" style="text-decoration: none;">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM">
+    <span>PhysiologicPRISM</span>
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('homepage') }}">Home</a>
+    <a href="{{ url_for('homepage') }}#how-it-works">How it works</a>
+    <a href="{{ url_for('pilot_program') }}">Pilot Program</a>
+    <a href="{{ url_for('security_page') }}">Security</a>
+    <a href="{{ url_for('blog_list') }}">Blog</a>
+    <a href="{{ url_for('login') }}">Sign in</a>
+  </div>
+</nav>
+
+<div class="pricing-container">
+    <div class="pricing-header">
+        <h1>Simple, Transparent Pricing</h1>
+        <p>No complicated tiers. No patient limits. Just choose your team size.</p>
+        <p class="pricing-subtitle">✨ UNLIMITED Patient Storage on All Paid Plans ✨</p>
+        {% if current_subscription %}
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('subscription_dashboard') }}" style="color: #3498db; text-decoration: none; font-weight: bold;">
+                View My Subscription →
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Free Trial Info -->
+    <div style="text-align: center; margin: 40px auto; max-width: 600px; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+        <h3 style="margin: 0 0 10px 0; font-size: 1.5em;">🎁 Start Your Free Trial</h3>
+        <p style="margin: 0; font-size: 1.1em;">14 days free • 10 patients • 25 AI calls • All features</p>
+        <p style="margin: 10px 0 0 0; font-size: 0.9em; opacity: 0.9;">No credit card required</p>
+    </div>
+
+    <!-- Solo Professional Plan -->
+    <div style="text-align: center; margin: 50px 0 30px 0;">
+        <h2 style="color: #2c3e50; font-size: 2em;">For Solo Practitioners</h2>
+    </div>
+
+    <div class="plans-grid" style="max-width: 400px; margin: 0 auto 60px auto;">
+        <div class="plan-card">
+            <div class="plan-name">Solo Professional</div>
+            <div class="plan-price">
+                ₹899
+                <small>/month</small>
+            </div>
+            <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
+            <ul class="plan-features">
+                <li class="feature-item highlight">Store unlimited patients</li>
+                <li class="feature-item">100 AI calls/month</li>
+                <li class="feature-item">Single user</li>
+                <li class="feature-item">All workflows</li>
+                <li class="feature-item">PDF reports</li>
+                <li class="feature-item">Priority email support</li>
+                <li class="feature-item">Usage analytics</li>
+            </ul>
+            {% if current_subscription and current_subscription.plan_type == 'solo' %}
+                <div class="current-plan-badge">Current Plan</div>
+            {% else %}
+                <button class="subscribe-btn" onclick="subscribeToPlan('solo')">
+                    Start Free Trial
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Team Plans Section -->
+    <div style="text-align: center; margin: 60px 0 30px 0;">
+        <h2 style="color: #2c3e50; font-size: 2em;">For Teams & Clinics</h2>
+        <p style="color: #7f8c8d; font-size: 1.1em;">Scale easily as your practice grows</p>
+    </div>
+
+    <div class="plans-grid">
+        <!-- Team 5 Users (Featured) -->
+        <div class="plan-card featured">
+            <span class="plan-badge">MOST POPULAR</span>
+            <div class="plan-name">Team (5 Users)</div>
+            <div class="plan-price">
+                ₹3,999
+                <small>/month</small>
+            </div>
+            <div class="per-user-cost" style="color: rgba(255,255,255,0.8);">₹799 per user/month</div>
+            <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
+            <ul class="plan-features">
+                <li class="feature-item">Store unlimited patients</li>
+                <li class="feature-item">500 AI calls/month</li>
+                <li class="feature-item">Up to 5 users</li>
+                <li class="feature-item">All workflows</li>
+                <li class="feature-item">PDF reports</li>
+                <li class="feature-item">Priority support</li>
+                <li class="feature-item">Usage analytics</li>
+                <li class="feature-item">Team dashboard</li>
+            </ul>
+            {% if current_subscription and current_subscription.plan_type == 'team_5' %}
+                <div class="current-plan-badge">Current Plan</div>
+            {% else %}
+                <button class="subscribe-btn" onclick="subscribeToPlan('team_5')">
+                    Start Free Trial
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- Team 10 Users -->
+        <div class="plan-card">
+            <div class="plan-name">Team Pro (10 Users)</div>
+            <div class="plan-price">
+                ₹7,499
+                <small>/month</small>
+            </div>
+            <div class="per-user-cost">₹749 per user/month</div>
+            <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
+            <ul class="plan-features">
+                <li class="feature-item">Store unlimited patients</li>
+                <li class="feature-item">1,000 AI calls/month</li>
+                <li class="feature-item">Up to 10 users</li>
+                <li class="feature-item">All workflows</li>
+                <li class="feature-item">Advanced analytics</li>
+                <li class="feature-item">Custom branding</li>
+                <li class="feature-item">Dedicated account manager</li>
+            </ul>
+            {% if current_subscription and current_subscription.plan_type == 'team_10' %}
+                <div class="current-plan-badge">Current Plan</div>
+            {% else %}
+                <button class="subscribe-btn" onclick="subscribeToPlan('team_10')">
+                    Start Free Trial
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Institute Plans Section -->
+    <div style="text-align: center; margin: 60px 0 30px 0;">
+        <h2 style="color: #2c3e50; font-size: 2em;">For Institutes & Hospitals</h2>
+        <p style="color: #7f8c8d; font-size: 1.1em;">Enterprise features for large organizations</p>
+    </div>
+
+    <div class="plans-grid">
+        <!-- Institute 15 Users -->
+        <div class="plan-card">
+            <div class="plan-name">Institute (15 Users)</div>
+            <div class="plan-price">
+                ₹10,999
+                <small>/month</small>
+            </div>
+            <div class="per-user-cost">₹733 per user/month</div>
+            <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
+            <ul class="plan-features">
+                <li class="feature-item">Store unlimited patients</li>
+                <li class="feature-item">1,500 AI calls/month</li>
+                <li class="feature-item">Up to 15 users</li>
+                <li class="feature-item">All workflows</li>
+                <li class="feature-item">API access</li>
+                <li class="feature-item">White-label options</li>
+                <li class="feature-item">Priority phone support</li>
+            </ul>
+            {% if current_subscription and current_subscription.plan_type == 'institute_15' %}
+                <div class="current-plan-badge">Current Plan</div>
+            {% else %}
+                <button class="subscribe-btn" onclick="subscribeToPlan('institute_15')">
+                    Contact Sales
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- Institute 20 Users -->
+        <div class="plan-card">
+            <div class="plan-name">Institute Plus (20 Users)</div>
+            <div class="plan-price">
+                ₹14,499
+                <small>/month</small>
+            </div>
+            <div class="per-user-cost">₹724 per user/month</div>
+            <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
+            <ul class="plan-features">
+                <li class="feature-item">Store unlimited patients</li>
+                <li class="feature-item">2,000 AI calls/month</li>
+                <li class="feature-item">Up to 20 users</li>
+                <li class="feature-item">All workflows</li>
+                <li class="feature-item">Custom integrations</li>
+                <li class="feature-item">Onboarding support</li>
+                <li class="feature-item">SLA guarantees</li>
+            </ul>
+            {% if current_subscription and current_subscription.plan_type == 'institute_20' %}
+                <div class="current-plan-badge">Current Plan</div>
+            {% else %}
+                <button class="subscribe-btn" onclick="subscribeToPlan('institute_20')">
+                    Contact Sales
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- Enterprise Custom -->
+        <div class="plan-card" style="border: 2px solid #3498db;">
+            <div class="plan-name">Custom Enterprise</div>
+            <div class="plan-price" style="font-size: 1.8em;">
+                Contact Us
+            </div>
+            <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
+            <ul class="plan-features">
+                <li class="feature-item">Store unlimited patients</li>
+                <li class="feature-item">Custom AI call allocation</li>
+                <li class="feature-item">25+ users</li>
+                <li class="feature-item">Custom development</li>
+                <li class="feature-item">Dedicated infrastructure</li>
+                <li class="feature-item">24/7 support</li>
+                <li class="feature-item">Custom contract terms</li>
+            </ul>
+            <button class="subscribe-btn" onclick="window.location.href='mailto:support@physioprism.com'">
+                Contact Sales
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Call Packs Section -->
+    <div class="ai-calls-section">
+        <h2>💎 Need Extra AI Calls?</h2>
+        <p class="subtitle">
+            Purchase AI Call Packs anytime. Valid for 6 months.
+        </p>
+
+        <div class="ai-calls-grid">
+            <div class="ai-call-card">
+                <div class="ai-call-amount">25</div>
+                <div style="color: #7f8c8d;">AI Calls</div>
+                <div class="ai-call-price">₹325</div>
+                <div class="ai-call-per">₹13.00/call</div>
+                <button class="buy-ai-call-btn" onclick="buyAICalls('starter')">Buy Now</button>
+            </div>
+
+            <div class="ai-call-card">
+                <div class="savings-badge">Save 8%</div>
+                <div class="ai-call-amount">50</div>
+                <div style="color: #7f8c8d;">AI Calls</div>
+                <div class="ai-call-price">₹599</div>
+                <div class="ai-call-per">₹11.98/call</div>
+                <button class="buy-ai-call-btn" onclick="buyAICalls('regular')">Buy Now</button>
+            </div>
+
+            <div class="ai-call-card popular">
+                <span class="plan-badge" style="margin: 0 0 10px 0;">MOST POPULAR</span>
+                <div class="savings-badge">Save 15%</div>
+                <div class="ai-call-amount">100</div>
+                <div style="color: #7f8c8d;">AI Calls</div>
+                <div class="ai-call-price">₹1,099</div>
+                <div class="ai-call-per">₹10.99/call</div>
+                <button class="buy-ai-call-btn" onclick="buyAICalls('popular')">Buy Now</button>
+            </div>
+
+            <div class="ai-call-card">
+                <div class="savings-badge">Save 23%</div>
+                <div class="ai-call-amount">250</div>
+                <div style="color: #7f8c8d;">AI Calls</div>
+                <div class="ai-call-price">₹2,499</div>
+                <div class="ai-call-per">₹9.99/call</div>
+                <button class="buy-ai-call-btn" onclick="buyAICalls('professional')">Buy Now</button>
+            </div>
+
+            <div class="ai-call-card">
+                <div class="savings-badge">Save 31%</div>
+                <div class="ai-call-amount">500</div>
+                <div style="color: #7f8c8d;">AI Calls</div>
+                <div class="ai-call-price">₹4,499</div>
+                <div class="ai-call-per">₹8.99/call</div>
+                <button class="buy-ai-call-btn" onclick="buyAICalls('enterprise')">Buy Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div style="max-width: 800px; margin: 60px auto; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+        <h2 style="text-align: center; color: #2c3e50; margin-bottom: 30px;">Frequently Asked Questions</h2>
+
+        <div style="margin-bottom: 20px;">
+            <h4 style="color: #3498db; margin-bottom: 10px;">❓ What happens when I run out of AI calls?</h4>
+            <p style="color: #7f8c8d; margin: 0;">You can purchase AI Call Packs anytime. We'll notify you at 80% usage so you never run out.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4 style="color: #3498db; margin-bottom: 10px;">❓ Can I change plans anytime?</h4>
+            <p style="color: #7f8c8d; margin: 0;">Yes! Upgrade instantly, downgrade at next billing cycle. No questions asked.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4 style="color: #3498db; margin-bottom: 10px;">❓ What's included in "unlimited patients"?</h4>
+            <p style="color: #7f8c8d; margin: 0;">Store as many patient records as you need. No restrictions, no counting, no extra charges.</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4 style="color: #3498db; margin-bottom: 10px;">❓ Do unused AI calls roll over?</h4>
+            <p style="color: #7f8c8d; margin: 0;">Monthly quota resets each month. But AI Call Packs you purchase are valid for 6 months!</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <h4 style="color: #3498db; margin-bottom: 10px;">❓ Is there a free trial?</h4>
+            <p style="color: #7f8c8d; margin: 0;">Yes! 14 days free on all plans. 10 patients, 25 AI calls, all features. No credit card required.</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js" nonce="{{ csp_nonce() }}"></script>
+<script nonce="{{ csp_nonce() }}">
+function subscribeToPlan(planType) {
+    // Redirect to checkout page
+    window.location.href = `/checkout?plan=${planType}&type=subscription`;
+}
+
+function buyAICalls(packageName) {
+    // Redirect to checkout page
+    window.location.href = `/checkout?package=${packageName}&type=ai_calls`;
+}
+</script>
+{% endblock %}

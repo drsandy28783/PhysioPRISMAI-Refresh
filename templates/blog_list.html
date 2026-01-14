@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Blog – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* Hide the navbar on marketing pages */
+  body > .navbar { display: none !important; }
+
+  /* Reset container */
+  .container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Marketing navbar */
+  .homepage-navbar {
+    background: #1a5f5a;
+    padding: 16px 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .homepage-navbar .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .homepage-navbar .logo img {
+    height: 40px;
+  }
+
+  .homepage-navbar .nav-links {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .homepage-navbar .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+
+  .homepage-navbar .nav-links a:hover {
+    opacity: 0.8;
+  }
+
+  .homepage-navbar .cta-btn {
+    background: white;
+    color: #1a5f5a;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  .blog-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .blog-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .blog-header h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+  }
+
+  .blog-header p {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+  }
+
+  .blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .blog-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .blog-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+
+  .blog-card-content {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .blog-card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
+
+  .blog-card-excerpt {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    flex: 1;
+  }
+
+  .blog-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    padding-top: 1rem;
+    border-top: 1px solid #ecf0f1;
+  }
+
+  .blog-card-author {
+    font-weight: 500;
+  }
+
+  .blog-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .blog-tag {
+    background: #ecf0f1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: #555;
+  }
+
+  .blog-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #7f8c8d;
+  }
+
+  .blog-empty h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .blog-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .blog-header h1 {
+      font-size: 2rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Marketing Navbar -->
+<nav class="homepage-navbar">
+  <a href="{{ url_for('homepage') }}" class="logo" style="text-decoration: none;">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM">
+    <span>PhysiologicPRISM</span>
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('homepage') }}">Home</a>
+    <a href="{{ url_for('homepage') }}#how-it-works">How it works</a>
+    <a href="{{ url_for('pilot_program') }}">Pilot Program</a>
+    <a href="{{ url_for('security_page') }}">Security</a>
+    <a href="{{ url_for('blog_list') }}">Blog</a>
+    <a href="{{ url_for('login') }}">Sign in</a>
+  </div>
+</nav>
+
+<div class="blog-container">
+  <div class="blog-header">
+    <h1>PhysiologicPRISM Blog</h1>
+    <p>Insights, tips, and best practices for physiotherapy professionals</p>
+  </div>
+
+  {% if posts %}
+    <div class="blog-grid">
+      {% for post in posts %}
+        <a href="{{ url_for('blog_post', post_id=post.id) }}" class="blog-card">
+          <div class="blog-card-content">
+            <h2 class="blog-card-title">{{ post.title }}</h2>
+            <p class="blog-card-excerpt">{{ post.excerpt }}</p>
+
+            {% if post.tags %}
+              <div class="blog-tags">
+                {% for tag in post.tags %}
+                  <span class="blog-tag">{{ tag }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="blog-card-meta">
+              <span class="blog-card-author">{{ post.author }}</span>
+              <span class="blog-card-date">{{ post.published_at_formatted }}</span>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="blog-empty">
+      <h2>No posts yet</h2>
+      <p>Check back soon for new content!</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

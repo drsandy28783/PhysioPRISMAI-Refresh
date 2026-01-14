@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  .analytics-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #3498db;
+  }
+
+  .stat-card.warning { border-left-color: #f39c12; }
+  .stat-card.danger { border-left-color: #e74c3c; }
+  .stat-card.success { border-left-color: #27ae60; }
+
+  .stat-label {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 4px;
+  }
+
+  .stat-subtext {
+    font-size: 12px;
+    color: #95a5a6;
+  }
+
+  .progress-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .progress-item {
+    margin-bottom: 24px;
+  }
+
+  .progress-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .progress-label {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .progress-value {
+    font-weight: 600;
+    color: #7f8c8d;
+  }
+
+  .progress-bar-container {
+    height: 12px;
+    background-color: #ecf0f1;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background-color: #3498db;
+    transition: width 0.3s ease;
+  }
+
+  .progress-bar.warning { background-color: #f39c12; }
+  .progress-bar.danger { background-color: #e74c3c; }
+  .progress-bar.success { background-color: #27ae60; }
+
+  .alert-box {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .alert-box.warning {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    color: #856404;
+  }
+
+  .alert-box.info {
+    background-color: #d1ecf1;
+    border-left: 4px solid #17a2b8;
+    color: #0c5460;
+  }
+
+  .alert-box.success {
+    background-color: #d4edda;
+    border-left: 4px solid #28a745;
+    color: #155724;
+  }
+
+  .quick-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+  }
+
+  .action-btn {
+    background: #3498db;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+
+  .action-btn:hover {
+    background: #2980b9;
+  }
+
+  .action-btn.secondary {
+    background: #95a5a6;
+  }
+
+  .action-btn.secondary:hover {
+    background: #7f8c8d;
+  }
+
+  .section-header {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 30px 0 16px 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-dashboard">
+  <!-- Welcome Header -->
+  <div style="margin-bottom: 30px;">
+    <h1 style="color: #2c3e50; margin-bottom: 8px;">Welcome back, {{ name }}! 👋</h1>
+    <p style="color: #7f8c8d; font-size: 16px;">Here's your account overview and usage statistics</p>
+  </div>
+
+  {% if analytics %}
+    <!-- Renewal Warning -->
+    {% if analytics.show_renewal_warning and analytics.days_until_renewal %}
+      <div class="alert-box warning">
+        <span style="font-size: 24px;">⚠️</span>
+        <div>
+          <strong>Subscription {% if analytics.plan_type == 'free_trial' %}Trial {% endif %}Expiring Soon!</strong><br>
+          Your {{ analytics.plan_info.name or 'subscription' }} {% if analytics.plan_type == 'free_trial' %}trial {% endif %}expires in <strong>{{ analytics.days_until_renewal }} day{{ 's' if analytics.days_until_renewal != 1 else '' }}</strong>.
+          {% if analytics.plan_type == 'free_trial' %}
+            <a href="{{ url_for('pricing') }}" style="color: #856404; text-decoration: underline; font-weight: 600;">Upgrade now to continue using all features</a>
+          {% else %}
+            Your subscription will auto-renew.
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Incomplete Assessments Alert -->
+    {% if analytics.patients_list %}
+    <div id="incomplete-assessments-alert"></div>
+    <script nonce="{{ csp_nonce() }}">
+      (function() {
+        const patients = {{ analytics.patients_list | tojson }};
+        const incompletePatients = patients.filter(p => !isAssessmentComplete(p));
+
+        if (incompletePatients.length > 0) {
+          const alertDiv = document.getElementById('incomplete-assessments-alert');
+          alertDiv.innerHTML = `
+            <div class="incomplete-alert">
+              <div class="incomplete-alert-header">
+                <div class="incomplete-alert-title-container">
+                  <i class="fas fa-exclamation-triangle incomplete-alert-icon"></i>
+                  <h3 class="incomplete-alert-title">Incomplete Assessments</h3>
+                </div>
+                <span class="incomplete-alert-badge">${incompletePatients.length}</span>
+              </div>
+              <p class="incomplete-alert-text">
+                You have ${incompletePatients.length} patient${incompletePatients.length !== 1 ? 's' : ''} with incomplete assessments.
+                Continue where you left off to complete their assessment workflow.
+              </p>
+              <a href="{{ url_for('view_patients') }}" class="incomplete-alert-button">
+                View Patient List
+              </a>
+            </div>
+          `;
+        }
+      })();
+    </script>
+    {% endif %}
+
+    <!-- Quick Stats Cards -->
+    <div class="stats-grid">
+      <!-- Current Plan -->
+      <div class="stat-card">
+        <div class="stat-label">Current Plan</div>
+        <div class="stat-value" style="font-size: 24px;">{{ analytics.plan_info.name or 'Free Trial' }}</div>
+        <div class="stat-subtext">
+          {% if analytics.usage_stats.status == 'active' %}
+            ✅ Active
+          {% elif analytics.usage_stats.status == 'trial' %}
+            🎁 Trial
+          {% else %}
+            ⚠️ {{ analytics.usage_stats.status|title }}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Total Patients -->
+      <div class="stat-card success">
+        <div class="stat-label">Total Patients</div>
+        <div class="stat-value">{{ analytics.total_patients }}</div>
+        <div class="stat-subtext">
+          {{ analytics.recent_patients }} added in last 30 days
+        </div>
+      </div>
+
+      <!-- Patients Quota -->
+      <div class="stat-card {{ analytics.patients_status }}">
+        <div class="stat-label">Patients This Month</div>
+        <div class="stat-value" style="font-size: 24px;">
+          {% if analytics.usage_stats.patients_limit == -1 %}
+            {{ analytics.usage_stats.patients_used }}/<strong style="color: #f39c12;">UNLIMITED</strong>
+          {% else %}
+            {{ analytics.usage_stats.patients_used }}/{{ analytics.usage_stats.patients_limit }}
+          {% endif %}
+        </div>
+        <div class="stat-subtext">
+          {% if analytics.usage_stats.patients_limit == -1 %}
+            ∞ Unlimited patient storage
+          {% else %}
+            {{ analytics.usage_stats.patients_percent }}% used
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- AI Calls Quota -->
+      <div class="stat-card {{ analytics.ai_status }}">
+        <div class="stat-label">AI Calls</div>
+        <div class="stat-value" style="font-size: 24px;">
+          {{ analytics.usage_stats.ai_calls_used }}/{{ analytics.usage_stats.ai_calls_limit }}
+        </div>
+        <div class="stat-subtext">
+          {{ analytics.usage_stats.ai_percent }}% used
+          {% if analytics.usage_stats.tokens_balance > 0 %}
+            + {{ analytics.usage_stats.tokens_balance }} AI calls
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Cache Savings (Super Admin Only) -->
+      {% if session.is_super_admin == 1 and analytics.cache_hit_rate > 0 %}
+      <div class="stat-card success">
+        <div class="stat-label">AI Cost Savings</div>
+        <div class="stat-value" style="font-size: 24px;">${{ "%.2f"|format(analytics.cache_savings_usd) }}</div>
+        <div class="stat-subtext">
+          {{ analytics.cache_hit_rate }}% cache hit rate
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Renewal Date -->
+      {% if analytics.renewal_date %}
+      <div class="stat-card">
+        <div class="stat-label">
+          {% if analytics.plan_type == 'free_trial' %}Trial Ends{% else %}Renews On{% endif %}
+        </div>
+        <div class="stat-value" style="font-size: 20px;">
+          {{ analytics.renewal_date.strftime('%d %b %Y') if analytics.renewal_date is not string else 'N/A' }}
+        </div>
+        <div class="stat-subtext">
+          {% if analytics.days_until_renewal %}
+            {{ analytics.days_until_renewal }} days remaining
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Usage Progress Bars -->
+    <div class="progress-section">
+      <h3 class="section-header">Monthly Quota Usage</h3>
+
+      <div class="progress-item">
+        <div class="progress-header">
+          <span class="progress-label">Patients Created</span>
+          <span class="progress-value">
+            {% if analytics.usage_stats.patients_limit == -1 %}
+              {{ analytics.usage_stats.patients_used }} / <strong style="color: #f39c12;">UNLIMITED</strong>
+            {% else %}
+              {{ analytics.usage_stats.patients_used }} / {{ analytics.usage_stats.patients_limit }}
+            {% endif %}
+          </span>
+        </div>
+        {% if analytics.usage_stats.patients_limit != -1 %}
+        <div class="progress-bar-container">
+          <div class="progress-bar {{ analytics.patients_status }}"
+               style="width: {{ [analytics.usage_stats.patients_percent, 100]|min }}%"></div>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 8px; color: #f39c12; font-weight: 600;">
+          ∞ Unlimited patient storage
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="progress-item">
+        <div class="progress-header">
+          <span class="progress-label">AI Calls Used</span>
+          <span class="progress-value">{{ analytics.usage_stats.ai_calls_used }} / {{ analytics.usage_stats.ai_calls_limit }}</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar {{ analytics.ai_status }}"
+               style="width: {{ [analytics.usage_stats.ai_percent, 100]|min }}%"></div>
+        </div>
+      </div>
+
+      {% if analytics.usage_stats.tokens_balance > 0 %}
+      <div class="alert-box info" style="margin-top: 16px;">
+        <span style="font-size: 20px;">ℹ️</span>
+        <div>
+          <strong>AI Call Balance:</strong> You have <strong>{{ analytics.usage_stats.tokens_balance }} AI calls</strong> available.
+          These will be used automatically when your monthly quota is exhausted.
+        </div>
+      </div>
+      {% endif %}
+
+      {% if analytics.usage_stats.ai_percent > 80 %}
+      <div class="alert-box warning" style="margin-top: 16px;">
+        <span style="font-size: 20px;">⚠️</span>
+        <div>
+          <strong>Quota Alert:</strong> You've used {{ analytics.usage_stats.ai_percent }}% of your AI quota.
+          <a href="{{ url_for('pricing') }}" style="color: #856404; text-decoration: underline; font-weight: 600;">Consider upgrading</a>
+          or
+          <a href="{{ url_for('pricing') }}" style="color: #856404; text-decoration: underline; font-weight: 600;">purchase AI call packs</a>
+          to continue using AI features.
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Cache Performance (Super Admin Only) -->
+    {% if session.is_super_admin == 1 and analytics.cache_stats and analytics.cache_hit_rate > 0 %}
+    <div class="progress-section">
+      <h3 class="section-header">AI Cache Performance</h3>
+      <p style="color: #7f8c8d; margin-bottom: 16px;">
+        Cache optimization reduces AI costs and improves response times for similar clinical scenarios.
+      </p>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="stat-card success">
+          <div class="stat-label">Cache Hit Rate</div>
+          <div class="stat-value" style="font-size: 28px;">{{ analytics.cache_hit_rate }}%</div>
+          <div class="stat-subtext">Last 30 days</div>
+        </div>
+
+        <div class="stat-card success">
+          <div class="stat-label">Total Savings</div>
+          <div class="stat-value" style="font-size: 28px;">${{ "%.2f"|format(analytics.cache_savings_usd) }}</div>
+          <div class="stat-subtext">Saved API costs</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Cache Hits</div>
+          <div class="stat-value" style="font-size: 28px;">{{ analytics.cache_stats.cache_hits or 0 }}</div>
+          <div class="stat-subtext">Responses from cache</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  {% endif %}
+
+  <!-- Upcoming Follow-ups -->
+  <div class="progress-section" id="upcoming-followups-section">
+    <h3 class="section-header">📅 Upcoming Follow-ups</h3>
+    <div id="upcoming-followups-loading" style="text-align: center; padding: 20px; color: #7f8c8d;">
+      Loading upcoming follow-ups...
+    </div>
+    <div id="upcoming-followups-content" style="display: none;"></div>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+    // Fetch and display upcoming follow-ups
+    (async function() {
+      try {
+        const response = await fetch('/api/upcoming_followups?days=7');
+        const data = await response.json();
+
+        const loadingDiv = document.getElementById('upcoming-followups-loading');
+        const contentDiv = document.getElementById('upcoming-followups-content');
+
+        if (data.ok && data.upcoming_followups && data.upcoming_followups.length > 0) {
+          let html = '<div style="overflow-x: auto;"><table class="data-table"><thead><tr>';
+          html += '<th>Patient Name</th>';
+          html += '<th>Contact</th>';
+          html += '<th>Follow-up Date</th>';
+          html += '<th>Days Until</th>';
+          html += '<th>Status</th>';
+          html += '<th>Actions</th>';
+          html += '</tr></thead><tbody>';
+
+          data.upcoming_followups.forEach(followup => {
+            let statusBadge = '';
+            let statusClass = '';
+
+            if (followup.is_today) {
+              statusBadge = '<span style="background: #e74c3c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Today</span>';
+            } else if (followup.days_until === 1) {
+              statusBadge = '<span style="background: #f39c12; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Tomorrow</span>';
+            } else {
+              statusBadge = `<span style="background: #3498db; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${followup.days_until} days</span>`;
+            }
+
+            let notifiedBadge = followup.followup_notified
+              ? '<span style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Notified</span>'
+              : '<span style="background: #95a5a6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Not Notified</span>';
+
+            html += '<tr>';
+            html += `<td><strong>${followup.patient_name}</strong></td>`;
+            html += `<td>${followup.contact || 'N/A'}</td>`;
+            html += `<td>${followup.next_followup_date}</td>`;
+            html += `<td>${statusBadge}</td>`;
+            html += `<td>${notifiedBadge}</td>`;
+            html += `<td style="display: flex; gap: 8px;">`;
+            html += `<a href="/view_follow_ups/${followup.patient_id}" class="button" style="font-size: 12px; padding: 6px 12px;">View</a>`;
+
+            if (!followup.followup_notified) {
+              html += `<button onclick="markAsNotified('${followup.patient_id}')" class="button" style="background: #27ae60; font-size: 12px; padding: 6px 12px;">Mark Notified</button>`;
+            }
+
+            html += '</td>';
+            html += '</tr>';
+          });
+
+          html += '</tbody></table></div>';
+
+          contentDiv.innerHTML = html;
+          contentDiv.style.display = 'block';
+          loadingDiv.style.display = 'none';
+        } else {
+          contentDiv.innerHTML = '<p style="text-align: center; padding: 20px; color: #7f8c8d;">No upcoming follow-ups in the next 7 days.</p>';
+          contentDiv.style.display = 'block';
+          loadingDiv.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error loading upcoming follow-ups:', error);
+        document.getElementById('upcoming-followups-loading').innerHTML = '<p style="color: #e74c3c;">Error loading follow-ups</p>';
+      }
+    })();
+
+    async function markAsNotified(patientId) {
+      try {
+        const response = await fetch(`/api/patient/${patientId}/mark_followup_notified`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+          alert('Patient marked as notified!');
+          location.reload(); // Reload to update the table
+        } else {
+          alert('Error: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error marking as notified:', error);
+        alert('Error marking patient as notified');
+      }
+    }
+  </script>
+
+  <!-- Quick Actions -->
+  <h3 class="section-header">Quick Actions</h3>
+  <div class="quick-actions">
+    <a href="{{ url_for('add_patient') }}" class="action-btn">
+      <span>➕</span> Add New Patient
+    </a>
+    <a href="{{ url_for('view_patients') }}" class="action-btn">
+      <span>📁</span> View All Patients
+    </a>
+    <a href="{{ url_for('pricing') }}" class="action-btn secondary">
+      <span>💳</span> Manage Subscription
+    </a>
+    <a href="{{ url_for('my_invoices') }}" class="action-btn secondary">
+      <span>📄</span> View Invoices
+    </a>
+    <a href="{{ url_for('edit_profile') }}" class="action-btn secondary">
+      <span>⚙️</span> Account Settings
+    </a>
+  </div>
+
+</div>
+{% endblock %}

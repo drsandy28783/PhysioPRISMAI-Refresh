@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Verification Failed – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* Hide navbar on verification pages */
+  body > .navbar { display: none !important; }
+  .container { max-width: 500px; margin: 80px auto; text-align: center; }
+  .error-icon {
+    font-size: 64px;
+    color: #f44336;
+    margin-bottom: 20px;
+  }
+  .error-message {
+    font-size: 24px;
+    font-weight: bold;
+    color: #d32f2f;
+    margin-bottom: 16px;
+  }
+  .error-description {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="error-icon">✗</div>
+    <h2 class="error-message">Verification Failed</h2>
+    <p class="error-description">
+      {{ error }}
+    </p>
+
+    <div style="margin-top: 32px; display: flex; gap: 12px; justify-content: center;">
+      <a href="{{ url_for('web_resend_verification') }}?email={{ email }}" class="button" style="display: inline-block; padding: 12px 24px;">
+        Resend Verification Email
+      </a>
+      <a href="{{ url_for('login') }}" class="button" style="display: inline-block; padding: 12px 24px; background: #ccc; color: #000;">
+        Go to Login
+      </a>
+    </div>
+
+    <p style="margin-top: 24px; color: #999; font-size: 14px;">
+      Need help? Contact <a href="mailto:support@physiologicprism.com">support@physiologicprism.com</a>
+    </p>
+  </div>
+{% endblock %}

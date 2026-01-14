@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Account Deletion Requests – Super Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2 style="margin: 0;">Account Deletion Requests</h2>
+    <a href="{{ url_for('super_admin_dashboard') }}">
+      <button class="button" style="background-color: #7f8c8d;">← Back to Admin Dashboard</button>
+    </a>
+  </div>
+
+  <div style="background-color: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #2196f3;">
+    <h3 style="margin-top: 0; color: #1976d2;">GDPR Compliance - Right to Erasure (Article 17)</h3>
+    <p style="margin-bottom: 8px;">This dashboard shows all pending account deletion requests.</p>
+    <ul style="margin-bottom: 0; padding-left: 20px;">
+      <li><strong>Grace Period:</strong> 30 days from request date</li>
+      <li><strong>User Data:</strong> Deleted from system</li>
+      <li><strong>Patient Records:</strong> Anonymized and retained for 7 years (legal requirement)</li>
+      <li><strong>Audit Logs:</strong> Retained for 6 years (compliance requirement)</li>
+    </ul>
+  </div>
+
+  {% if deletion_requests %}
+  <div style="background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead style="background-color: #2c3e50; color: white;">
+        <tr>
+          <th style="padding: 16px; text-align: left;">User Email</th>
+          <th style="padding: 16px; text-align: left;">Name</th>
+          <th style="padding: 16px; text-align: left;">Request Date</th>
+          <th style="padding: 16px; text-align: left;">Scheduled Date</th>
+          <th style="padding: 16px; text-align: center;">Days Remaining</th>
+          <th style="padding: 16px; text-align: left;">Reason</th>
+          <th style="padding: 16px; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in deletion_requests %}
+        <tr style="border-bottom: 1px solid #ecf0f1; {% if request.is_overdue %}background-color: #ffebee;{% endif %}">
+          <td style="padding: 16px;">
+            <strong>{{ request.email }}</strong>
+          </td>
+          <td style="padding: 16px;">
+            {{ request.name or 'N/A' }}
+          </td>
+          <td style="padding: 16px;">
+            {% if request.deletion_request_date %}
+              {{ request.deletion_request_date.strftime('%Y-%m-%d %H:%M') if request.deletion_request_date else 'N/A' }}
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
+          <td style="padding: 16px;">
+            {% if request.scheduled_deletion_date %}
+              {{ request.scheduled_deletion_date.strftime('%Y-%m-%d') if hasattr(request.scheduled_deletion_date, 'strftime') else 'N/A' }}
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
+          <td style="padding: 16px; text-align: center;">
+            {% if request.is_overdue %}
+              <span style="background-color: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">
+                OVERDUE
+              </span>
+            {% elif request.days_remaining == 'N/A' %}
+              N/A
+            {% elif request.days_remaining <= 7 %}
+              <span style="background-color: #f39c12; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">
+                {{ request.days_remaining }} days
+              </span>
+            {% else %}
+              <span style="background-color: #95a5a6; color: white; padding: 4px 12px; border-radius: 4px;">
+                {{ request.days_remaining }} days
+              </span>
+            {% endif %}
+          </td>
+          <td style="padding: 16px; max-width: 200px;">
+            <div style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;" title="{{ request.deletion_reason or 'No reason provided' }}">
+              {{ request.deletion_reason or 'No reason provided' }}
+            </div>
+          </td>
+          <td style="padding: 16px; text-align: center;">
+            <button
+              onclick="processDeletion('{{ request.email }}', '{{ request.name }}')"
+              class="button"
+              style="background-color: #e74c3c; padding: 8px 16px; font-size: 14px;">
+              🗑️ Execute Deletion
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top: 16px; padding: 12px; background-color: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+    <strong>⚠️ Important:</strong>
+    <ul style="margin: 8px 0 0 20px;">
+      <li>Review each request carefully before executing deletion</li>
+      <li>Deletion is permanent and cannot be undone</li>
+      <li>Patient records will be anonymized (not deleted) for legal compliance</li>
+      <li>Overdue requests should be processed immediately</li>
+    </ul>
+  </div>
+
+  {% else %}
+  <div style="background-color: #e8f5e9; padding: 40px; text-align: center; border-radius: 8px; border: 2px dashed #4caf50;">
+    <h3 style="color: #2e7d32; margin-top: 0;">✅ No Pending Deletion Requests</h3>
+    <p style="color: #555; margin-bottom: 0;">All account deletion requests have been processed.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+async function processDeletion(userEmail, userName) {
+  const confirmation = confirm(
+    `⚠️ CONFIRM ACCOUNT DELETION ⚠️\n\n` +
+    `User: ${userName}\n` +
+    `Email: ${userEmail}\n\n` +
+    `This action will:\n` +
+    `• Permanently delete user account and authentication\n` +
+    `• Delete all personal data\n` +
+    `• Anonymize patient records (retained for 7 years)\n` +
+    `• Create compliance record in deleted_users collection\n\n` +
+    `This action CANNOT be undone.\n\n` +
+    `Are you absolutely sure you want to proceed?`
+  );
+
+  if (!confirmation) {
+    return;
+  }
+
+  // Second confirmation
+  const finalConfirmation = confirm(
+    `FINAL CONFIRMATION\n\n` +
+    `Type "DELETE" in the next prompt to confirm deletion of ${userEmail}`
+  );
+
+  if (!finalConfirmation) {
+    return;
+  }
+
+  const userInput = prompt('Type "DELETE" to confirm (case sensitive):');
+  if (userInput !== 'DELETE') {
+    alert('❌ Deletion cancelled. You must type "DELETE" exactly.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/super_admin/process_deletion/${encodeURIComponent(userEmail)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      }
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      alert(`✅ Success: ${data.message}`);
+      window.location.reload();
+    } else {
+      alert(`❌ Error: ${data.error || 'Failed to process deletion'}`);
+    }
+  } catch (error) {
+    console.error('Error processing deletion:', error);
+    alert('❌ Network error. Please try again.');
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}503 - Service Unavailable{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 80px auto; text-align: center;">
+  <div style="margin-bottom: 40px;">
+    <svg style="width: 120px; height: 120px; color: #f39c12;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+  </div>
+
+  <h1 style="font-size: 72px; font-weight: bold; color: #2c3e50; margin: 0;">503</h1>
+  <h2 style="font-size: 24px; color: #f39c12; margin: 16px 0;">Service Temporarily Unavailable</h2>
+
+  <p style="color: #95a5a6; margin-bottom: 40px; font-size: 16px;">
+    We're performing scheduled maintenance or experiencing high traffic. We'll be back shortly!
+  </p>
+
+  <div style="background-color: #fff3e0; padding: 20px; border-radius: 8px; margin-bottom: 32px; border-left: 4px solid #f39c12;">
+    <h3 style="margin-top: 0; color: #e65100; font-size: 18px;">What's happening?</h3>
+    <p style="color: #555; margin: 0; text-align: left;">
+      Our service is temporarily unavailable due to:
+    </p>
+    <ul style="text-align: left; color: #555; margin: 12px 0 0 20px;">
+      <li>Scheduled maintenance (planned upgrades)</li>
+      <li>Temporary server overload</li>
+      <li>Deployment of new features</li>
+    </ul>
+  </div>
+
+  <div style="background-color: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 32px; border-left: 4px solid #4caf50;">
+    <h3 style="margin-top: 0; color: #2e7d32; font-size: 18px;">What can you do?</h3>
+    <ul style="list-style: none; padding: 0; margin: 0; text-align: left;">
+      <li style="margin: 12px 0;">
+        ⏱️ <strong>Wait a few minutes</strong> and try again
+      </li>
+      <li style="margin: 12px 0;">
+        🔄 <strong>Refresh this page</strong> periodically
+      </li>
+      <li style="margin: 12px 0;">
+        ☕ <strong>Take a short break</strong> - we'll be back soon
+      </li>
+      <li style="margin: 12px 0;">
+        📧 <strong>Check your email</strong> for maintenance notifications
+      </li>
+    </ul>
+  </div>
+
+  <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 32px;">
+    <button onclick="location.reload()" class="button" style="background-color: #3498db;">
+      🔄 Try Again
+    </button>
+    <a href="{{ url_for('index') }}">
+      <button class="button" style="background-color: #95a5a6;">
+        🏠 Go to Home
+      </button>
+    </a>
+  </div>
+
+  <div style="margin-top: 32px; padding: 16px; background-color: #e3f2fd; border-radius: 8px; text-align: left;">
+    <h4 style="margin-top: 0; color: #1976d2;">System Status</h4>
+    <p style="margin-bottom: 8px; color: #555;">
+      For real-time system status and maintenance updates:
+    </p>
+    <p style="margin: 8px 0;">
+      <a href="mailto:support@physiologicprism.com" style="color: #1976d2; text-decoration: none;">
+        Contact Support: support@physiologicprism.com
+      </a>
+    </p>
+  </div>
+
+  <div style="margin-top: 32px; padding: 16px; background-color: #f5f5f5; border-radius: 8px;">
+    <p style="margin: 0; color: #666; font-size: 14px;">
+      <strong>Expected Resolution Time:</strong> Usually within 15-30 minutes
+    </p>
+    <p style="margin: 8px 0 0 0; color: #95a5a6; font-size: 14px;">
+      Error Code: 503 | Timestamp: {{ timestamp }}
+    </p>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  // Auto-refresh after 30 seconds
+  setTimeout(function() {
+    const autoRefresh = confirm('Service is still unavailable. Would you like to refresh the page?');
+    if (autoRefresh) {
+      location.reload();
+    }
+  }, 30000);
+</script>
+{% endblock %}

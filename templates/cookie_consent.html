@@ -1,0 +1,54 @@
+<!-- Cookie Consent Banner -->
+<div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background-color: #2c3e50; color: white; padding: 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); z-index: 9999;">
+  <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 300px;">
+      <h3 style="margin: 0 0 8px 0; font-size: 18px;">🍪 We Use Cookies</h3>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5;">
+        This website uses strictly necessary cookies for authentication and security (session cookies and CSRF tokens).
+        These cookies are essential for the service to function and cannot be disabled.
+        By continuing to use this site, you consent to our use of cookies.
+        <a href="{{ url_for('privacy_policy') }}" style="color: #3498db; text-decoration: underline;">Learn more</a>
+      </p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button onclick="acceptCookies()" class="button" style="background-color: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; white-space: nowrap;">
+        Accept All
+      </button>
+      <button onclick="acceptCookies()" class="button" style="background-color: #7f8c8d; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; white-space: nowrap;">
+        Accept Essential Only
+      </button>
+    </div>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  // Cookie consent management
+  function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/;SameSite=Lax';
+  }
+
+  function getCookie(name) {
+    const nameEQ = name + '=';
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+  }
+
+  function acceptCookies() {
+    setCookie('cookie_consent', 'accepted', 365);
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+  }
+
+  // Show banner if consent not given
+  window.addEventListener('DOMContentLoaded', function() {
+    if (!getCookie('cookie_consent')) {
+      document.getElementById('cookieConsentBanner').style.display = 'block';
+    }
+  });
+</script>

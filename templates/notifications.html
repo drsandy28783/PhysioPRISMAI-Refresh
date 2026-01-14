@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% block title %}Notifications – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  .notifications-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .mark-all-read-btn {
+    background: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .mark-all-read-btn:hover {
+    background: #2980b9;
+  }
+
+  .notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notification-item {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #3498db;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    transition: all 0.2s;
+  }
+
+  .notification-item.unread {
+    background: #f0f8ff;
+    border-left-width: 6px;
+  }
+
+  .notification-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .notification-item.info {
+    border-left-color: #3498db;
+  }
+
+  .notification-item.success {
+    border-left-color: #27ae60;
+  }
+
+  .notification-item.warning {
+    border-left-color: #f39c12;
+  }
+
+  .notification-item.error {
+    border-left-color: #e74c3c;
+  }
+
+  .notification-icon {
+    font-size: 32px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .notification-content {
+    flex: 1;
+  }
+
+  .notification-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .notification-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0;
+  }
+
+  .notification-category {
+    display: inline-block;
+    background: #e0e7ef;
+    color: #2c3e50;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 12px;
+  }
+
+  .notification-message {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .notification-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #95a5a6;
+  }
+
+  .notification-timestamp {
+    font-style: italic;
+  }
+
+  .notification-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .notification-action-btn {
+    background: none;
+    border: none;
+    color: #3498db;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 8px;
+    text-decoration: underline;
+  }
+
+  .notification-action-btn:hover {
+    color: #2980b9;
+  }
+
+  .notification-action-btn.delete {
+    color: #e74c3c;
+  }
+
+  .notification-action-btn.delete:hover {
+    color: #c0392b;
+  }
+
+  .notification-action-link {
+    background: #3498db;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .notification-action-link:hover {
+    background: #2980b9;
+  }
+
+  .unread-badge {
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+    margin-left: 8px;
+  }
+
+  .empty-notifications {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+  }
+
+  .empty-notifications-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+
+  .empty-notifications-text {
+    font-size: 18px;
+    color: #95a5a6;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notifications-container">
+  <div class="notifications-header">
+    <h2>
+      Notifications
+      {% if notifications %}
+        {% set unread_count = notifications | selectattr('read', 'equalto', False) | list | length %}
+        {% if unread_count > 0 %}
+          <span class="unread-badge">{{ unread_count }} new</span>
+        {% endif %}
+      {% endif %}
+    </h2>
+
+    {% if notifications and (notifications | selectattr('read', 'equalto', False) | list | length > 0) %}
+      <button class="mark-all-read-btn" onclick="markAllAsRead()">
+        ✓ Mark All as Read
+      </button>
+    {% endif %}
+  </div>
+
+  {% if notifications and notifications | length > 0 %}
+    <div class="notification-list">
+      {% for notification in notifications %}
+        <div class="notification-item {{ notification.type }} {% if not notification.read %}unread{% endif %}"
+             id="notification-{{ notification.id }}">
+          <div class="notification-icon">
+            {% if notification.type == 'success' %}✅
+            {% elif notification.type == 'warning' %}⚠️
+            {% elif notification.type == 'error' %}❌
+            {% else %}ℹ️
+            {% endif %}
+          </div>
+
+          <div class="notification-content">
+            <div class="notification-header-row">
+              <div>
+                <h3 class="notification-title">
+                  {{ notification.title }}
+                  <span class="notification-category">{{ notification.category }}</span>
+                </h3>
+              </div>
+            </div>
+
+            <p class="notification-message">{{ notification.message }}</p>
+
+            <div class="notification-footer">
+              <span class="notification-timestamp">
+                {% if notification.created_at %}
+                  {{ notification.created_at.strftime('%b %d, %Y at %I:%M %p') if notification.created_at is not string else notification.created_at }}
+                {% else %}
+                  Just now
+                {% endif %}
+              </span>
+
+              {% if notification.action_url %}
+                <a href="{{ notification.action_url }}" class="notification-action-link">
+                  Take Action →
+                </a>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="notification-actions">
+            {% if not notification.read %}
+              <button class="notification-action-btn"
+                      onclick="markAsRead('{{ notification.id }}')">
+                Mark as Read
+              </button>
+            {% endif %}
+            <button class="notification-action-btn delete"
+                    onclick="deleteNotification('{{ notification.id }}')">
+              Delete
+            </button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-notifications">
+      <div class="empty-notifications-icon">🔔</div>
+      <p class="empty-notifications-text">No notifications yet</p>
+      <p style="color: #bdc3c7; font-size: 14px;">You'll see important updates and alerts here</p>
+    </div>
+  {% endif %}
+
+  <div style="margin-top: 24px;">
+    <a href="{{ url_for('dashboard') }}" class="button">← Back to Dashboard</a>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+async function markAsRead(notificationId) {
+  try {
+    const response = await fetch(`/api/notifications/${notificationId}/read`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const notificationElement = document.getElementById(`notification-${notificationId}`);
+      notificationElement.classList.remove('unread');
+
+      // Remove the "Mark as Read" button
+      const markBtn = notificationElement.querySelector('.notification-action-btn:not(.delete)');
+      if (markBtn) markBtn.remove();
+
+      // Update unread badge
+      updateUnreadBadge();
+    } else {
+      alert('Failed to mark notification as read');
+    }
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    alert('An error occurred');
+  }
+}
+
+async function markAllAsRead() {
+  if (!confirm('Mark all notifications as read?')) return;
+
+  try {
+    const response = await fetch('/api/notifications/read-all', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      location.reload();
+    } else {
+      alert('Failed to mark all notifications as read');
+    }
+  } catch (error) {
+    console.error('Error marking all as read:', error);
+    alert('An error occurred');
+  }
+}
+
+async function deleteNotification(notificationId) {
+  if (!confirm('Delete this notification?')) return;
+
+  try {
+    const response = await fetch(`/api/notifications/${notificationId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const notificationElement = document.getElementById(`notification-${notificationId}`);
+      notificationElement.style.opacity = '0';
+      notificationElement.style.transform = 'translateX(-20px)';
+
+      setTimeout(() => {
+        notificationElement.remove();
+
+        // Check if no notifications left
+        const remainingNotifications = document.querySelectorAll('.notification-item');
+        if (remainingNotifications.length === 0) {
+          location.reload();
+        }
+      }, 300);
+    } else {
+      alert('Failed to delete notification');
+    }
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    alert('An error occurred');
+  }
+}
+
+function updateUnreadBadge() {
+  const unreadNotifications = document.querySelectorAll('.notification-item.unread');
+  const badge = document.querySelector('.unread-badge');
+  const markAllBtn = document.querySelector('.mark-all-read-btn');
+
+  if (unreadNotifications.length === 0) {
+    if (badge) badge.remove();
+    if (markAllBtn) markAllBtn.remove();
+  } else if (badge) {
+    badge.textContent = `${unreadNotifications.length} new`;
+  }
+}
+</script>
+{% endblock %}

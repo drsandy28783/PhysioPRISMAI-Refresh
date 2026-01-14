@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Physio PRISM{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MTYYB60PT" nonce="{{ csp_nonce() }}"></script>
+    <script nonce="{{ csp_nonce() }}">
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-6MTYYB60PT');
+    </script>
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- NO navbar for public pages - each page defines its own header -->
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+
+    <!-- NO Firebase initialization on public pages -->
+    <!-- NO authentication checks -->
+    <!-- NO notification polling -->
+    <!-- NO service worker registration (not needed for marketing) -->
+
+    <!-- Cookie Consent Banner -->
+    {% include 'cookie_consent.html' %}
+</body>
+</html>

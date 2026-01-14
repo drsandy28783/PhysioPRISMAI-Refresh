@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% block title %}Request Early Access – PhysiologicPRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* Hide the app navbar on marketing pages */
+  body > .navbar { display: none !important; }
+
+  /* Reset container */
+  .container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Marketing Navbar */
+  .marketing-navbar {
+    background: #1a5f5a;
+    padding: 16px 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .marketing-navbar .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .marketing-navbar .logo img {
+    height: 40px;
+  }
+
+  .marketing-navbar .nav-links {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .marketing-navbar .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+
+  .marketing-navbar .nav-links a:hover {
+    opacity: 0.8;
+  }
+
+  .marketing-navbar .cta-btn {
+    background: white;
+    color: #1a5f5a;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  /* Page Container */
+  .page-container {
+    background: linear-gradient(180deg, #f8fffe 0%, #e6f7f5 50%, #F8F9FA 100%);
+    min-height: calc(100vh - 72px);
+    padding: 60px 24px;
+  }
+
+  .form-wrapper {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  /* Page Header */
+  .page-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .page-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 20px;
+  }
+
+  .page-intro {
+    font-size: 18px;
+    color: #333;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* Form Card */
+  .form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 48px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+  }
+
+  /* Form Elements */
+  .form-group {
+    margin-bottom: 24px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+  }
+
+  .form-label.required:after {
+    content: " *";
+    color: #e74c3c;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 16px;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #ffffff;
+    transition: all 0.2s;
+    box-sizing: border-box;
+  }
+
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus {
+    outline: none;
+    border-color: #1a5f5a;
+    box-shadow: 0 0 0 3px rgba(26, 95, 90, 0.1);
+  }
+
+  .form-textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    padding-right: 40px;
+  }
+
+  /* Checkbox */
+  .checkbox-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .form-checkbox {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: #1a5f5a;
+  }
+
+  .checkbox-label {
+    font-size: 16px;
+    color: #333;
+    line-height: 1.5;
+    cursor: pointer;
+  }
+
+  /* Submit Button */
+  .submit-btn {
+    width: 100%;
+    background: #1a5f5a;
+    color: white;
+    padding: 18px 32px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(26, 95, 90, 0.2);
+    transition: all 0.3s;
+  }
+
+  .submit-btn:hover {
+    background: #005f56;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(26, 95, 90, 0.3);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Reassurance Note */
+  .reassurance-note {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 16px;
+    border-radius: 8px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 32px;
+    }
+
+    .form-card {
+      padding: 32px 24px;
+    }
+
+    .marketing-navbar {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .marketing-navbar .nav-links {
+      flex-direction: column;
+      gap: 12px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Marketing Navbar -->
+<nav class="marketing-navbar">
+  <a href="{{ url_for('homepage') }}" class="logo">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM">
+    <span>PhysiologicPRISM</span>
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('homepage') }}">Home</a>
+    <a href="{{ url_for('homepage') }}#how-it-works">How it works</a>
+    <a href="{{ url_for('pilot_program') }}">Pilot Program</a>
+    <a href="{{ url_for('security_page') }}">Security</a>
+    <a href="{{ url_for('blog_list') }}">Blog</a>
+    <a href="{{ url_for('login') }}">Sign in</a>
+  </div>
+</nav>
+
+<!-- Page Content -->
+<div class="page-container">
+  <div class="form-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">Request Early Access to PhysiologicPRISM</h1>
+      <p class="page-intro">
+        PhysiologicPRISM is currently in early access with selected clinics, universities, and physiotherapy professionals.
+        <br><br>
+        If you'd like to try the platform, run a pilot, or explore a collaboration, share a few details below and we'll get back to you shortly.
+      </p>
+    </div>
+
+    <!-- Form Card -->
+    <form class="form-card" action="{{ url_for('submit_access_request') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <!-- Full Name -->
+      <div class="form-group">
+        <label class="form-label required" for="full_name">Full name</label>
+        <input
+          type="text"
+          id="full_name"
+          name="full_name"
+          class="form-input"
+          placeholder="Enter your full name"
+          required
+        >
+      </div>
+
+      <!-- Email Address -->
+      <div class="form-group">
+        <label class="form-label required" for="email">Email address</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          class="form-input"
+          placeholder="you@example.com"
+          required
+        >
+      </div>
+
+      <!-- Role -->
+      <div class="form-group">
+        <label class="form-label required" for="role">Role</label>
+        <select id="role" name="role" class="form-select" required>
+          <option value="">Select your role</option>
+          <option value="clinician">Clinician / Physiotherapist</option>
+          <option value="owner">Clinic / Hospital Owner</option>
+          <option value="educator">University / Educator</option>
+          <option value="student">Student / New Graduate</option>
+          <option value="researcher">Researcher</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <!-- Organisation -->
+      <div class="form-group">
+        <label class="form-label required" for="organisation">Organisation / Institution</label>
+        <input
+          type="text"
+          id="organisation"
+          name="organisation"
+          class="form-input"
+          placeholder="Name of your clinic, hospital, university, or organisation"
+          required
+        >
+      </div>
+
+      <!-- Country -->
+      <div class="form-group">
+        <label class="form-label required" for="country">Country</label>
+        <input
+          type="text"
+          id="country"
+          name="country"
+          class="form-input"
+          placeholder="Where are you based?"
+          required
+        >
+      </div>
+
+      <!-- Use Case -->
+      <div class="form-group">
+        <label class="form-label required" for="use_case">How do you plan to use PhysiologicPRISM?</label>
+        <textarea
+          id="use_case"
+          name="use_case"
+          class="form-textarea"
+          placeholder="Tell us briefly how you'd like to use the platform (e.g. in your clinic, teaching, research, or pilot study)."
+          required
+        ></textarea>
+      </div>
+
+      <!-- Pilot Program Checkbox -->
+      <div class="checkbox-group">
+        <input
+          type="checkbox"
+          id="pilot_interest"
+          name="pilot_interest"
+          class="form-checkbox"
+          value="yes"
+        >
+        <label for="pilot_interest" class="checkbox-label">
+          I'd like to discuss a structured pilot program (e.g. with 30 users over 30 days).
+        </label>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="submit-btn">Request early access</button>
+    </form>
+
+    <!-- Reassurance Note -->
+    <div class="reassurance-note">
+      We'll review your request and get back to you by email.<br>
+      Your details are used only to contact you about PhysiologicPRISM and are never sold or shared.
+    </div>
+  </div>
+</div>
+{% endblock %}

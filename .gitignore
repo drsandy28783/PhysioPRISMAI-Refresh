@@ -1,0 +1,128 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Environment Variables & Secrets - ALL ENV FILES
+.env
+.env.local
+.env.*.local
+.env.*
+*.key
+*.pem
+
+# Vertex AI Credentials & Client (DEPRECATED - migrated to Azure OpenAI)
+vertex-ai-key.json
+vertex-ai-key-*.json
+vertex_ai_client.py
+firebase-key.json
+google-credentials.json
+google-services.json
+*-credentials.json
+# Firebase service account keys
+*firebase-adminsdk*.json
+physiologicprism-*-firebase-adminsdk-*.json
+
+# Backups
+*.backup
+*.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.pdf
+
+# Database
+*.db
+*.sqlite
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Temporary files
+tmp/
+temp/
+nul
+
+# Replit & Local State
+.local/
+.replit
+
+# Claude Code
+.claude/
+
+# Maintenance & Diagnostic Scripts (may contain sensitive data)
+create_super_admin_firestore.py
+migrate_to_firestore.py
+migrate_existing_users_email_verified.py
+fix_email_verified_approved_users.py
+check_super_admin.py
+verify_razorpay_setup.py
+create_super_admin_cosmos.py
+check_user_cosmos.py
+list_all_users_cosmos.py
+show_full_user_document.py
+check_partition_key.py
+fix_user_partition_key.py
+test_cosmos_wrapper.py
+cleanup_ai_cache.py
+
+# Deployment Scripts
+*.ps1
+*.sh
+deploy*.py
+update_*.py
+
+# Development Documentation (keep only README.md)
+*.md
+!README.md
+*.pdf
+readme.txt
+license.txt
+
+# Screenshots
+screenshots/
+Screenshot*.png
+*.png
+*.jpg
+*.jpeg
+# Allow static images
+!static/**/*.png
+!static/**/*.jpg
+!static/**/*.jpeg
+!generated-icon.png
+
+# YAML files
+*.yaml
+
+# JSON config backups
+azure_models.json
+gpt_models.json
+
+# n8n Workflows
+n8n_workflows/
+
+# Update scripts
+ai_cache_updates.py
+main_py_updates.py
+mobile_api_ai_updates.py

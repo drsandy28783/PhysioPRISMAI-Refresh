@@ -1,0 +1,1127 @@
+// ================================================================
+// Firebase Authentication - Bearer Token Integration
+// ================================================================
+// This wrapper automatically adds Firebase ID tokens to all API calls
+// Import Firebase Auth (assumes Firebase is already initialized in your HTML)
+
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+// Wait for Firebase Auth to be ready
+let firebaseAuthReady = false;
+let currentAuthUser = null;
+
+// Listen for auth state changes
+const auth = getAuth();
+onAuthStateChanged(auth, (user) => {
+  firebaseAuthReady = true;
+  currentAuthUser = user;
+  if (!user) {
+    console.warn('Firebase Auth: User not signed in');
+  } else {
+    console.log('Firebase Auth: User authenticated:', user.email);
+  }
+});
+
+// Helper to wait for auth to be ready
+async function waitForAuth() {
+  return new Promise((resolve) => {
+    if (firebaseAuthReady) {
+      resolve(currentAuthUser);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe();
+      firebaseAuthReady = true;
+      currentAuthUser = user;
+      resolve(user);
+    });
+  });
+}
+
+// Global fetch wrapper to automatically add Firebase ID token
+const originalFetch = window.fetch;
+window.fetch = async function(url, options) {
+  // Only add auth to API endpoints (not for static resources or external URLs)
+  const isAPIEndpoint = typeof url === 'string' &&
+                        (url.startsWith('/api/ai_suggestion/') ||
+                         url.startsWith('/api/') ||
+                         url.startsWith('/provisional_diagnosis_suggest/') ||
+                         url.startsWith('/ai/followup_suggestion/'));
+
+  if (isAPIEndpoint) {
+    try {
+      // Wait for Firebase Auth to be ready
+      const user = await waitForAuth();
+
+      if (!user) {
+        // User not signed in - redirect to login
+        alert('Your session has expired. Please sign in again.');
+        window.location.href = '/login';
+        throw new Error('User not authenticated');
+      }
+
+      // Get fresh ID token
+      const idToken = await user.getIdToken();
+
+      // Add Authorization header with Bearer token
+      options = options || {};
+      options.headers = options.headers || {};
+
+      if (typeof options.headers.set === 'function') {
+        // Headers is a Headers object
+        options.headers.set('Authorization', `Bearer ${idToken}`);
+      } else {
+        // Headers is a plain object
+        options.headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+    } catch (error) {
+      console.error('Firebase Auth error:', error);
+      throw error;
+    }
+  }
+
+  // Call original fetch
+  return originalFetch.call(this, url, options);
+};
+
+// ================================================================
+// AI Suggestion Modal Functions
+// ================================================================
+
+const AIModal = {
+  modal: null,
+  titleEl: null,
+  bodyEl: null,
+  copyBtn: null,
+  dismissBtn: null,
+  closeBtn: null,
+  currentSuggestion: '',
+
+  init() {
+    this.modal = document.getElementById('ai-suggestion-modal');
+    this.titleEl = document.getElementById('ai-modal-title');
+    this.bodyEl = document.getElementById('ai-modal-body');
+    this.copyBtn = document.getElementById('ai-modal-copy');
+    this.dismissBtn = document.getElementById('ai-modal-dismiss');
+    this.closeBtn = document.getElementById('ai-modal-close');
+
+    // Event listeners
+    this.dismissBtn?.addEventListener('click', () => this.hide());
+    this.closeBtn?.addEventListener('click', () => this.hide());
+    this.copyBtn?.addEventListener('click', () => this.copyToClipboard());
+
+    // Close on overlay click
+    this.modal?.querySelector('.ai-modal-overlay')?.addEventListener('click', () => this.hide());
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modal?.classList.contains('active')) {
+        this.hide();
+      }
+    });
+  },
+
+  show(title = 'AI Suggestions') {
+    if (!this.modal) this.init();
+    this.titleEl.textContent = title;
+    this.showLoading();
+    this.modal.classList.add('active');
+    this.modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
+  },
+
+  hide() {
+    this.modal?.classList.remove('active');
+    setTimeout(() => {
+      if (this.modal) this.modal.style.display = 'none';
+    }, 300);
+    document.body.style.overflow = ''; // Restore scroll
+  },
+
+  showLoading() {
+    this.bodyEl.innerHTML = `
+      <div class="ai-loading">
+        <div class="ai-spinner"></div>
+        <p>Generating suggestions...</p>
+      </div>
+    `;
+  },
+
+  showContent(content) {
+    this.currentSuggestion = content;
+
+    // Convert plain text to HTML with preserved formatting
+    let htmlContent = content
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+
+    // If content has numbered lists (1. 2. 3.), convert to <ol>
+    if (/^\d+\.\s/.test(content)) {
+      const items = content.split(/\n(?=\d+\.\s)/)
+        .map(item => item.replace(/^\d+\.\s/, '').trim())
+        .filter(item => item.length > 0);
+      htmlContent = '<ol>' + items.map(item => `<li>${item}</li>`).join('') + '</ol>';
+    }
+
+    this.bodyEl.innerHTML = htmlContent.startsWith('<ol>') || htmlContent.startsWith('<p>')
+      ? htmlContent
+      : `<p>${htmlContent}</p>`;
+  },
+
+  showError(message) {
+    this.bodyEl.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: #d32f2f;">
+        <p style="font-size: 18px; margin-bottom: 8px;">⚠️ Error</p>
+        <p>${message}</p>
+      </div>
+    `;
+  },
+
+  copyToClipboard() {
+    if (!this.currentSuggestion) return;
+
+    navigator.clipboard.writeText(this.currentSuggestion)
+      .then(() => {
+        const originalText = this.copyBtn.textContent;
+        this.copyBtn.textContent = 'Copied!';
+        this.copyBtn.style.backgroundColor = '#4caf50';
+        setTimeout(() => {
+          this.copyBtn.textContent = originalText;
+          this.copyBtn.style.backgroundColor = '';
+        }, 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard');
+      });
+  }
+};
+
+// Initialize modal when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  AIModal.init();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const ageSexInput      = document.querySelector('input[name="age_sex"]');
+  const presentTextarea  = document.querySelector('textarea[name="present_history"]');
+  const pastTextarea     = document.getElementById('past_history');
+  const aiResponseDiv    = document.getElementById('ai_response');
+
+  // 1) Suggest past-history questions
+  document.getElementById('suggest_questions')?.addEventListener('click', async () => {
+    const payload = {
+      age_sex:         ageSexInput?.value.trim() || '',
+      present_history: presentTextarea?.value.trim() || ''
+    };
+
+    AIModal.show('Past History Questions');
+
+    try {
+      const res  = await fetch('/api/ai_suggestion/past_questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      AIModal.showContent(data.suggestion);
+    } catch (err) {
+      AIModal.showError(err.message);
+    }
+  });
+
+  // 2) Generate provisional diagnoses
+  document.getElementById('gen_diagnosis')?.addEventListener('click', async () => {
+    const payload = {
+      previous: {
+        age_sex:         ageSexInput?.value.trim() || '',
+        present_history: presentTextarea?.value.trim() || '',
+        past_history:    pastTextarea?.value.trim() || ''
+      }
+    };
+
+    AIModal.show('Provisional Diagnosis');
+
+    try {
+      const res  = await fetch('/api/ai_suggestion/provisional_diagnosis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      AIModal.showContent(data.suggestion);
+    } catch (err) {
+      AIModal.showError(err.message);
+    }
+  });
+});
+document.addEventListener('DOMContentLoaded', () => {
+  // Only run on subjective examination page
+  const subjectiveForm = document.getElementById('subjective-form');
+  if (!subjectiveForm) return;
+
+  const ageSexInput     = document.querySelector('[name="age_sex"]');
+  const presentInput    = document.querySelector('[name="present_history"]');
+  const pastInput       = document.querySelector('[name="past_history"]');
+  const fieldBtns       = subjectiveForm.querySelectorAll('.ai-btn[data-field]');
+  const genDxBtn        = document.getElementById('gen_subjective_dx');
+
+  fieldBtns.forEach(btn => {
+    let isRequesting = false; // Additional flag to prevent race conditions
+
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation(); // Prevent other listeners on same element
+
+      // Prevent multiple clicks and race conditions
+      if (btn.disabled || isRequesting) {
+        console.log('Button click ignored - already processing');
+        return;
+      }
+
+      isRequesting = true;
+      btn.disabled = true;
+
+      const field = btn.dataset.field;
+
+      // Skip if no field specified
+      if (!field) {
+        btn.disabled = false;
+        isRequesting = false;
+        return;
+      }
+
+      const inputs = {};
+      document.querySelectorAll('.input-field')
+              .forEach(el => inputs[el.name] = el.value.trim());
+
+      const payload = {
+        age_sex:         ageSexInput?.value.trim() || '',
+        present_history: presentInput?.value.trim() || '',
+        past_history:    pastInput?.value.trim() || '',
+        inputs
+      };
+
+      // Show modal with field-specific title
+      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+      console.log(`[AI Request] Starting request for field: ${field}`);
+
+      try {
+        const res = await fetch(`/api/ai_suggestion/subjective/${field}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        const { suggestion, error } = await res.json();
+        if (error) throw new Error(error);
+
+        console.log(`[AI Response] Received response for field: ${field}`, suggestion?.substring(0, 100) + '...');
+        AIModal.showContent(suggestion);
+      } catch (e) {
+        console.error(`[AI Error] Error for field: ${field}`, e);
+        AIModal.showError(e.message);
+      } finally {
+        console.log(`[AI Complete] Request complete for field: ${field}`);
+        btn.disabled = false;
+        isRequesting = false; // Reset request flag
+      }
+    });
+  });
+
+  genDxBtn?.addEventListener('click', async () => {
+    const inputs = {};
+    document.querySelectorAll('.input-field')
+            .forEach(el => inputs[el.name] = el.value.trim());
+
+    const payload = {
+      age_sex:         ageSexInput?.value.trim() || '',
+      present_history: presentInput?.value.trim() || '',
+      past_history:    pastInput?.value.trim() || '',
+      inputs
+    };
+
+    AIModal.show('Subjective Diagnosis');
+
+    try {
+      const res = await fetch('/api/ai_suggestion/subjective_diagnosis', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const { suggestion, error } = await res.json();
+      if (error) throw new Error(error);
+      AIModal.showContent(suggestion);
+    } catch (e) {
+      AIModal.showError(e.message);
+    }
+  });
+});
+// ——— AI on Patient Perspectives screen ———
+// Only run this block if we're on the Perspectives page
+if (document.getElementById('perspectives-form')) {
+  // Get current patient ID from the page
+  const currentPatientId = window.currentPatientId || '';
+  console.log('[Perspectives AI] Current patient ID:', currentPatientId);
+
+  // Load prior data - PATIENT-SPECIFIC keys
+  const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)     || '{}');
+  const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)    || '{}');
+  let   prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`) || '{}');
+
+  console.log('[Perspectives AI] Loaded patient data:', {
+    present_history: prevAdd.present_history?.substring(0, 50) + '...',
+    past_history: prevAdd.past_history?.substring(0, 50) + '...',
+    subjective: Object.keys(prevSubj).length + ' fields',
+    perspectives: Object.keys(prevPersp).length + ' fields'
+  });
+
+  // Build a single "previous" object for the server
+  const allPrev = {
+    age_sex:         prevAdd.age_sex || '',
+    present_history: prevAdd.present_history || '',
+    past_history:    prevAdd.past_history || '',
+    subjective:      prevSubj,
+    perspectives:    prevPersp
+  };
+
+  // Attach click listeners to each 🧠 button (ONLY on perspectives page)
+  if (document.getElementById('perspectives-form')) {
+    document.querySelectorAll('.ai-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Prevent multiple clicks
+        if (btn.disabled) return;
+        btn.disabled = true;
+
+        const field = btn.dataset.field;
+        const fieldEl = document.getElementById(field);
+      if (!fieldEl) {
+        console.warn(`Field element '${field}' not found`);
+        btn.disabled = false;
+        return;
+      }
+      const value = fieldEl.value.trim();
+      // update local cache - PATIENT-SPECIFIC
+      prevPersp[field] = value;
+      localStorage.setItem(`perspectives_inputs_${currentPatientId}`, JSON.stringify(prevPersp));
+
+      // Show modal with field-specific title
+      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+      try {
+        const res = await fetch(`/api/ai_suggestion/perspectives/${field}`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ previous: allPrev, inputs: { [field]: value } })
+        });
+        const { suggestion, error } = await res.json();
+        if (error) throw new Error(error);
+        AIModal.showContent(suggestion);
+      } catch (e) {
+        AIModal.showError(e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+  } // Close if (perspectives-form check)
+
+  // Provisional diagnosis button 🩺
+  document.getElementById('gen_perspectives_dx')?.addEventListener('click', async () => {
+    // gather all perspective values
+    const inputs = {};
+    ['knowledge','attribution','expectation','consequences_awareness','locus_of_control','affective_aspect']
+      .forEach(name => {
+        const el = document.getElementById(name);
+        inputs[name] = el ? el.value.trim() : '';
+      });
+
+    AIModal.show('Provisional Impressions');
+
+    try {
+      // FIX: Use provisional_diagnosis endpoint instead of patient_perspectives
+      // to generate diagnosis (not questions)
+      const res = await fetch('/api/ai_suggestion/provisional_diagnosis', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          previous: {
+            ...allPrev,
+            perspectives: inputs  // Include the just-entered perspective values
+          }
+        })
+      });
+      const { suggestion, error } = await res.json();
+      if (error) throw new Error(error);
+      AIModal.showContent(suggestion);
+    } catch (e) {
+      AIModal.showError(e.message);
+    }
+  });
+}
+  // ——— AI on Initial Plan screen ———
+  if (document.getElementById('initial-plan-form')) {
+    // Get patient-specific localStorage keys
+    const currentPatientId = window.currentPatientId || '';
+
+    // load up prior stages with patient-specific keys
+    const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
+    const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
+    const prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
+
+    // **Here's the key** for Initial Plan data:
+    let prevAssess = JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`) || '{}');
+
+    console.log('[Initial Plan AI] Current patient ID:', currentPatientId);
+
+    // Build the “previous” object we send to every AI call
+    const allPrev = {
+      age_sex:         prevAdd.age_sex        || '',
+      present_history: prevAdd.present_history|| '',
+      past_history:    prevAdd.past_history   || '',
+      subjective:      prevSubj,
+      perspectives:    prevPersp,
+      assessments:     prevAssess
+    };
+
+    // Per-field test suggestions (ONLY on initial plan page)
+    if (document.getElementById('initial-plan-form')) {
+      document.querySelectorAll('.ai-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Prevent multiple clicks
+          if (btn.disabled) return;
+          btn.disabled = true;
+
+          const field     = btn.dataset.field;                   // e.g. 'active_movements'
+          const fieldEl = document.getElementById(field);
+        if (!fieldEl) {
+          console.warn(`Field element '${field}' not found`);
+          btn.disabled = false;
+          return;
+        }
+        const selection = fieldEl.value.trim();
+        // **Save** the choice into our local cache
+        prevAssess[field] = { choice: selection };
+        localStorage.setItem(`initial_plan_assessments_${currentPatientId}`, JSON.stringify(prevAssess));
+
+        // Show modal with field-specific title
+        const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+        try {
+          const res = await fetch(`/api/ai_suggestion/initial_plan/${field}`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ previous: allPrev, selection })
+          });
+          const { suggestion, error } = await res.json();
+          if (error) throw new Error(error);
+          AIModal.showContent(suggestion);
+        } catch (err) {
+          AIModal.showError(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+    } // Close if (initial-plan-form check)
+
+    // Full summary + provisional dx
+    document.getElementById('gen_initial_summary')?.addEventListener('click', async () => {
+      // ensure details from each field are also saved
+      ['active_movements','passive_movements','passive_over_pressure',
+       'resisted_movements','combined_movements','special_tests','neurodynamic']
+        .forEach(f => {
+          const details = (document.getElementById(f + '_details')?.value||'').trim();
+          prevAssess[f] = {
+            choice:  prevAssess[f]?.choice || '',
+            details
+          };
+        });
+      // persist again
+      localStorage.setItem(`initial_plan_assessments_${currentPatientId}`, JSON.stringify(prevAssess));
+
+      AIModal.show('Assessment Summary & Provisional Dx');
+
+      try {
+        const res = await fetch('/api/ai_suggestion/initial_plan_summary', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ previous: allPrev, inputs: prevAssess })
+        });
+        const { summary, error } = await res.json();
+        if (error) throw new Error(error);
+        AIModal.showContent(summary);
+      } catch (e) {
+        AIModal.showError(e.message);
+      }
+    });
+  }
+
+
+// ——— AI on Pathophysiological Mechanism screen ———
+if (document.querySelector('select#possible_source')) {
+  // Get patient-specific localStorage keys
+  const currentPatientId = window.currentPatientId || '';
+
+  // load up all prior data with patient-specific keys
+  const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
+  const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
+  const prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
+  const assessments = JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`)|| '{}');
+
+  console.log('[Pathophysiology AI] Current patient ID:', currentPatientId);
+  const allPrev = {
+    age_sex:         prevAdd.age_sex||'',
+    present_history: prevAdd.present_history||'',
+    past_history:    prevAdd.past_history||'',
+    subjective:      prevSubj,
+    perspectives:    prevPersp,
+    assessments     // your key under which you stored the initial plan choices
+  };
+
+  // ONLY attach on pathophysiology page
+  if (document.getElementById('patho-form') || document.querySelector('[name="possible_source"]')) {
+    document.querySelectorAll('.ai-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Prevent multiple clicks
+        if (btn.disabled) return;
+        btn.disabled = true;
+
+        const field     = btn.dataset.field;               // "possible_source"
+        const fieldEl = document.getElementById(field);
+      if (!fieldEl) {
+        console.warn(`Field element '${field}' not found`);
+        btn.disabled = false;
+        return;
+      }
+      const selection = fieldEl.value.trim();
+
+      // Show modal with field-specific title
+      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+      try {
+        const res = await fetch('/api/ai_suggestion/patho/possible_source', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ previous: allPrev, selection })
+        });
+        const { suggestion, error } = await res.json();
+        if (error) throw new Error(error);
+        AIModal.showContent(suggestion);
+      } catch (e) {
+        AIModal.showError(e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+  } // Close if (patho-form check)
+}
+// ——— AI on Chronic Disease Factors screen ———
+if (document.getElementById('specific_factors')) {
+  // Get patient-specific localStorage keys
+  const currentPatientId = window.currentPatientId || '';
+
+  // load all prior data with patient-specific keys
+  const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
+  const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
+  const prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
+  const assessments = JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`)|| '{}');
+
+  console.log('[Chronic Disease AI] Current patient ID:', currentPatientId);
+  const allPrev = {
+    age_sex:         prevAdd.age_sex||'',
+    present_history: prevAdd.present_history||'',
+    past_history:    prevAdd.past_history||'',
+    subjective:      prevSubj,
+    perspectives:    prevPersp,
+    assessments
+  };
+
+  // Chronic factors follow-ups
+  document.querySelector('.ai-btn')?.addEventListener('click', async e => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const btn    = e.currentTarget;
+
+    // Prevent multiple clicks
+    if (btn.disabled) return;
+    btn.disabled = true;
+
+    const field  = btn.dataset.field;               // "specific_factors"
+    const fieldEl = document.getElementById(field);
+    if (!fieldEl) {
+      console.warn(`Field element '${field}' not found`);
+      btn.disabled = false;
+      return;
+    }
+    const text   = fieldEl.value.trim();
+    // gather checked causes
+    const causes = Array.from(document.querySelectorAll('input[name="maintenance_causes"]:checked'))
+                        .map(cb => cb.value);
+
+    // Show modal
+    const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+    try {
+      const res = await fetch('/api/ai_suggestion/chronic/specific_factors', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          previous: allPrev,
+          input: text,
+          causes
+        })
+      });
+      const { suggestion, error } = await res.json();
+      if (error) throw new Error(error);
+      AIModal.showContent(suggestion);
+    } catch (err) {
+      AIModal.showError(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+// ——— AI on Clinical Flags screen ———
+if (document.getElementById('clinical-flags-form')) {
+  // Get patient-specific localStorage keys
+  const currentPatientId = window.currentPatientId || '';
+
+  const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
+  const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
+  const prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
+  const prevAssess= JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`)|| '{}');
+
+  console.log('[Clinical Flags AI] Current patient ID:', currentPatientId);
+
+  const allPrev = {
+    age_sex:         prevAdd.age_sex||'',
+    present_history: prevAdd.present_history||'',
+    past_history:    prevAdd.past_history||'',
+    subjective:      prevSubj,
+    perspectives:    prevPersp,
+    assessments:     prevAssess
+  };
+
+  // On page load: highlight relevant flags
+  const highlights = [];
+  if (allPrev.subjective.pain_irritability === 'Present') {
+    highlights.push('yellow_flags');
+  }
+  if (allPrev.assessments.special_tests?.choice === 'Absolutely Contraindicated') {
+    highlights.push('black_flags');
+  }
+  highlights.forEach(id => {
+    const el = document.getElementById(id + '_block');
+    if (el) el.classList.add('highlight');
+  });
+
+  // Wire up AI buttons (ONLY on clinical flags page)
+  if (document.getElementById('flags-form') || document.querySelector('[name="red_flags"]')) {
+    document.querySelectorAll('.ai-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const field = btn.dataset.field;
+        const fieldEl = document.getElementById(field);
+        if (!fieldEl) {
+          console.warn(`Field element '${field}' not found`);
+          return;
+        }
+        const text  = fieldEl.value.trim();
+
+      // Show modal
+      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+      try {
+        const res = await fetch(
+          `/api/ai_suggestion/clinical_flags/${window.patientId || 'unknown'}/suggest`,
+          {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ previous: allPrev, field, text })
+          }
+        );
+        const { suggestions, error } = await res.json();
+        if (error) throw new Error(error);
+        AIModal.showContent(suggestions);
+      } catch (e) {
+        AIModal.showError(e.message);
+      }
+    });
+  });
+  } // Close if (flags-form check)
+}
+// ——— AI on Objective Assessment screen ———
+if (document.getElementById('objective-assessment-form')) {
+  // Get patient-specific localStorage keys
+  const currentPatientId = window.currentPatientId || '';
+
+  // load prior stages with patient-specific keys
+  const prevAdd    = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
+  const prevSubj   = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
+  const prevPersp  = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
+  const prevAssess = JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`)|| '{}');
+
+  console.log('[Objective Assessment AI] Current patient ID:', currentPatientId);
+
+  const allPrev = {
+    age_sex:         prevAdd.age_sex         || '',
+    present_history: prevAdd.present_history || '',
+    past_history:    prevAdd.past_history    || '',
+    subjective:      prevSubj,
+    perspectives:    prevPersp,
+    assessments:     prevAssess
+  };
+
+  // per-field AI helpers
+  document.querySelectorAll('#objective-assessment-form .ai-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const field = btn.dataset.field;          // "plan"
+
+      // update local prevAssess so later provisional DX has this choice
+      const fieldEl = document.getElementById(field);
+      if (!fieldEl) {
+        console.warn(`Field element '${field}' not found`);
+        return;
+      }
+      allPrev.assessments[field] = {
+        choice: fieldEl.value
+      };
+      localStorage.setItem(`initial_plan_assessments_${currentPatientId}`,
+                           JSON.stringify(allPrev.assessments));
+
+      // Show modal
+      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+      try {
+        const res = await fetch(
+          `/api/ai_suggestion/objective_assessment/${field}`,
+          {
+            method: 'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ previous: allPrev, value: allPrev.assessments[field].choice })
+          }
+        );
+        const { suggestion, error } = await res.json();
+        if (error) throw new Error(error);
+        AIModal.showContent(suggestion.trim());
+      } catch (err) {
+        AIModal.showError(err.message);
+        console.error(err);
+      }
+    });
+  });
+
+  // provisional DX button
+  document.getElementById('gen_provisional_dx')?.addEventListener('click', async () => {
+    try {
+      // also grab details text
+      const planDetailsEl = document.getElementById('plan_details');
+      if (planDetailsEl) {
+        allPrev.assessments.plan.details = planDetailsEl.value.trim();
+      }
+      localStorage.setItem(`initial_plan_assessments_${currentPatientId}`,
+                           JSON.stringify(allPrev.assessments));
+
+      AIModal.show('Provisional Diagnosis');
+
+      const res = await fetch(
+        `/api/ai_suggestion/provisional_diagnosis`,
+        {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ previous: allPrev })
+        }
+      );
+      const { diagnosis, error } = await res.json();
+      if (error) throw new Error(error);
+      AIModal.showContent(diagnosis.trim());
+    } catch (err) {
+      AIModal.showError(err.message);
+      console.error(err);
+    }
+  });
+}
+// ——— Provisional Diagnosis AI Suggestions ———
+document.addEventListener('DOMContentLoaded', () => {
+  // ONLY attach on provisional diagnosis page
+  if (document.getElementById('provisional-diagnosis-form') || document.querySelector('[name="provisional_diagnosis"]')) {
+    document.querySelectorAll('.ai-btn[data-field]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const field = btn.dataset.field;
+
+        // Show modal
+        const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+      try {
+        // Get patient-specific localStorage keys
+        const currentPatientId = window.currentPatientId || '';
+        console.log('[Provisional Diagnosis AI] Current patient ID:', currentPatientId);
+
+        // Get patient data from localStorage for context with patient-specific keys
+        const patientData = {
+          previous: {
+            age_sex: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').age_sex || '',
+            present_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').present_history || '',
+            past_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').past_history || '',
+            subjective: JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`) || '{}'),
+            perspectives: JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`) || '{}'),
+            assessments: JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`) || '{}')
+          }
+        };
+
+        const res = await fetch(
+          `/provisional_diagnosis_suggest/${window.patientId}?field=${field}`,
+          {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(patientData)
+          }
+        );
+        const { suggestion } = await res.json();
+        AIModal.showContent(suggestion || 'No suggestion available.');
+      } catch (err) {
+        console.error(err);
+        AIModal.showError('Error fetching suggestion');
+      }
+    });
+  });
+  } // Close if (provisional-diagnosis-form check)
+});
+
+// SMART Goals suggestions
+document.querySelectorAll('.ai-btn[data-screen="smart_goals"]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const field = btn.dataset.field;                   // e.g. "patient_goal"
+    const input = document.getElementById(field);
+
+    // Skip if input doesn't exist on this page
+    if (!input) {
+      console.warn(`Required elements for '${field}' not found on this page`);
+      return;
+    }
+
+    // Show modal
+    const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+    try {
+      // Get patient-specific localStorage keys
+      const currentPatientId = window.currentPatientId || '';
+      console.log('[SMART Goals AI] Current patient ID:', currentPatientId);
+
+      const resp = await fetch(`/api/ai_suggestion/smart_goals/${field}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patient_id: window.patientId,
+          previous: {
+            age_sex: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').age_sex || '',
+            present_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').present_history || '',
+            past_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').past_history || '',
+            subjective: JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`) || '{}'),
+            perspectives: JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`) || '{}'),
+            assessments: JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`) || '{}')
+          },
+          patient_goals: input.value
+        })
+      });
+      const { suggestion, error } = await resp.json();
+      if (error) {
+        AIModal.showError(error);
+      } else {
+        AIModal.showContent(suggestion);
+      }
+    } catch (err) {
+      console.error(err);
+      AIModal.showError('Error fetching suggestion');
+    }
+  });
+});
+// ----------------------------------------------------------------
+// Treatment Plan screen:
+// ----------------------------------------------------------------
+// ONLY attach on treatment plan page
+if (document.getElementById('treatment-plan-form') || document.querySelector('[name="treatment_plan"]')) {
+  document.querySelectorAll('.ai-btn[data-field]').forEach(btn => {
+    // Only attach to buttons with data-field attribute (treatment_plan, etc.)
+    btn.addEventListener('click', async () => {
+      const field = btn.dataset.field;
+      const inputField = document.getElementById(field);
+
+      // Skip if input field doesn't exist on this page
+      if (!inputField) {
+        console.warn(`Input field '${field}' not found on this page`);
+        return;
+      }
+
+    // Show modal
+    const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+    try {
+      // Get patient-specific localStorage keys
+      const currentPatientId = window.currentPatientId || '';
+      console.log('[Treatment Plan AI] Current patient ID:', currentPatientId);
+
+      // Build comprehensive previous data from localStorage with patient-specific keys
+      const addPatientData = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}');
+      const resp = await fetch(
+        `/api/ai_suggestion/treatment_plan/${field}`,
+        {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            patient_id: window.patientId,
+            previous: {
+              age_sex: addPatientData.age_sex || '',
+              present_history: addPatientData.present_history || '',
+              past_history: addPatientData.past_history || '',
+              provisional_diagnosis: addPatientData.provisional_diagnosis || '',
+              subjective: JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`) || '{}'),
+              perspectives: JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`) || '{}'),
+              assessments: JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`) || '{}'),
+              smart_goals: JSON.parse(localStorage.getItem(`smart_goals_${currentPatientId}`) || '{}')
+            },
+            input: inputField.value
+          })
+        }
+      );
+      const data = await resp.json();
+      if (data.error) {
+        AIModal.showError(data.error);
+      } else {
+        AIModal.showContent(data.suggestion || 'No suggestion');
+      }
+    } catch (err) {
+      AIModal.showError('Error fetching suggestion');
+      console.error(err);
+    }
+  });
+});
+} // Close if (treatment-plan-form check)
+
+// Generate full treatment summary:
+const genBtn = document.getElementById('gen_summary');
+if (genBtn) {
+  genBtn.addEventListener('click', async () => {
+    AIModal.show('Treatment Summary');
+
+    try {
+      const resp = await fetch(
+        `/api/ai_suggestion/treatment_plan_summary/${window.patientId}`
+      );
+      const data = await resp.json();
+      if (data.error) {
+        AIModal.showError(data.error);
+      } else {
+        AIModal.showContent(data.summary);
+      }
+    } catch (err) {
+      console.error(err);
+      AIModal.showError('Error generating summary');
+    }
+  });
+}
+
+// Follow-up session AI suggestions (already correctly scoped)
+if (document.getElementById('followup-form')) {
+  document.querySelectorAll('.ai-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const textarea = btn.previousElementSibling;
+      const field    = textarea?.id || 'followup';
+
+      // Show modal
+      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      AIModal.show(`AI Suggestions: ${fieldTitle}`);
+
+      try {
+        const resp = await fetch(`/ai/followup_suggestion/${window.patientId}`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            session_number: document.querySelector('input[name="session_number"]')?.value || '',
+            session_date:   document.querySelector('input[name="session_date"]')?.value || '',
+            grade:          document.querySelector('select[name="grade"]')?.value || '',
+            perception:     document.querySelector('select[name="belief_treatment"]')?.value || '',
+            feedback:       document.querySelector('textarea[name="belief_feedback"]')?.value || ''
+          })
+        });
+        const data = await resp.json();
+        if (data.error) {
+          AIModal.showError(data.error);
+        } else {
+          AIModal.showContent(data.suggestion || 'No suggestion available');
+        }
+      } catch(err) {
+        console.error(err);
+        AIModal.showError('Error fetching suggestion');
+      }
+    });
+  });
+}
+
+
+// -------------------------------------------------------------
+// Logout redirect handler (CSP-safe, externalized)
+// -------------------------------------------------------------
+if (window.location.pathname === '/logout') {
+  (async function() {
+    try {
+      // Step 1: Sign out from Firebase Auth FIRST (important for persistence)
+      console.log('[Logout] Signing out from Firebase Auth...');
+      try {
+        const { signOut } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
+        const auth = getAuth();
+        await signOut(auth);
+        console.log('[Logout] Firebase Auth sign out successful.');
+      } catch (firebaseError) {
+        console.warn('[Logout] Firebase sign out failed (non-critical):', firebaseError);
+      }
+
+      // Step 2: Clear all client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      console.log('[Logout] Cleared local and session storage.');
+
+      // Step 3: Redirect to login after short delay
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1000);
+    } catch (err) {
+      console.error('[Logout] Error during logout cleanup:', err);
+      // fallback redirect immediately
+      window.location.href = '/login';
+    }
+  })();
+}

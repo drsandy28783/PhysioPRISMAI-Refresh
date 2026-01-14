@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Resend Verification Email – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* Hide navbar on verification pages */
+  body > .navbar { display: none !important; }
+  .container { max-width: 450px; margin: 80px auto; }
+  .info-box {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196F3;
+    padding: 16px;
+    margin-bottom: 24px;
+    border-radius: 4px;
+  }
+  .info-box p {
+    margin: 0;
+    color: #1565c0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Resend Verification Email</h2>
+
+    <div class="info-box">
+      <p>
+        <strong>Didn't receive the verification email?</strong>
+        <br>Enter your email address below and we'll send you a new verification link.
+      </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('web_resend_verification') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field-block">
+        <label for="email" style="display: block; margin-bottom: 8px; font-weight: 600;">Email Address</label>
+        <input
+          class="input-field"
+          type="email"
+          name="email"
+          id="email"
+          placeholder="your.email@example.com"
+          value="{{ request.args.get('email', '') }}"
+          required
+        >
+      </div>
+
+      <div style="margin-top: 24px; display: flex; gap: 12px;">
+        <button type="submit" class="button">Send Verification Email</button>
+        <a href="{{ url_for('login') }}" class="button" style="background: #ccc; color: #000;">Back to Login</a>
+      </div>
+    </form>
+
+    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e0e0e0;">
+      <p style="font-size: 14px; color: #666; margin: 0;">
+        <strong>Tips:</strong>
+      </p>
+      <ul style="font-size: 14px; color: #666; margin-top: 8px; padding-left: 20px;">
+        <li>Check your spam/junk folder</li>
+        <li>Make sure you're using the email address you registered with</li>
+        <li>Verification links expire after 24 hours</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Global Audit Logs – Super Admin – Physiologic PRISM{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Global Audit Trail Logs</h2>
+    <p>View audit logs from all users across all institutes</p>
+
+    <!-- Export Button -->
+    <div style="margin: 20px 0;">
+      <a href="{{ url_for('super_admin_export_logs') }}">
+        <button class="button">Download All Logs (CSV)</button>
+      </a>
+    </div>
+
+    <!-- Filter Section -->
+    <div style="margin: 20px 0;">
+      <input type="text" id="searchInput" placeholder="Filter by user, action, or details..."
+             style="width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+
+    <!-- Info Banner -->
+    <div style="background-color: #e3f2fd; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+      <p style="margin: 0; color: #1976d2;">
+        Showing the 500 most recent audit log entries. Use the CSV export for complete historical data.
+      </p>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <table class="data-table" id="auditTable">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Institute</th>
+          <th>Action</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.timestamp }}</td>
+          <td>{{ log.user_name }}</td>
+          <td>{{ log.institute }}</td>
+          <td>
+            <span style="font-weight: bold;
+                         {% if 'Login' in log.action %}color: #27ae60;
+                         {% elif 'Logout' in log.action %}color: #95a5a6;
+                         {% elif 'Approve' in log.action %}color: #3498db;
+                         {% elif 'Deactivate' in log.action or 'Delete' in log.action %}color: #e74c3c;
+                         {% else %}color: #34495e;
+                         {% endif %}">
+              {{ log.action }}
+            </span>
+          </td>
+          <td>{{ log.details }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <br>
+
+    <a href="{{ url_for('super_admin_dashboard') }}">
+      <button class="button">Back to Super Admin Dashboard</button>
+    </a>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+    // Simple filter functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+      const searchTerm = this.value.toLowerCase();
+      const table = document.getElementById('auditTable');
+      const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const text = row.textContent.toLowerCase();
+
+        if (text.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      }
+    });
+  </script>
+{% endblock %}

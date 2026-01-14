@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Email Verified – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* Hide navbar on verification pages */
+  body > .navbar { display: none !important; }
+  .container { max-width: 500px; margin: 80px auto; text-align: center; }
+  .success-icon {
+    font-size: 64px;
+    color: #4CAF50;
+    margin-bottom: 20px;
+  }
+  .success-message {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1a5f5a;
+    margin-bottom: 16px;
+  }
+  .success-description {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="success-icon">✓</div>
+    <h2 class="success-message">Email Verified Successfully!</h2>
+    <p class="success-description">
+      Your email address <strong>{{ email }}</strong> has been verified.
+      <br>You can now log in to your account.
+    </p>
+
+    <div style="margin-top: 32px;">
+      <a href="{{ url_for('login') }}" class="button" style="display: inline-block; padding: 12px 24px;">
+        Go to Login
+      </a>
+    </div>
+
+    <p style="margin-top: 24px; color: #999; font-size: 14px;">
+      Your account is pending admin approval. You will receive an email once approved.
+    </p>
+  </div>
+{% endblock %}

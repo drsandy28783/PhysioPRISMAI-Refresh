@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Verify Two-Factor Authentication - Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  .verify-container {
+    max-width: 400px;
+    margin: 60px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .verify-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .verify-header h2 {
+    color: #2c3e50;
+    margin-bottom: 8px;
+  }
+  .verify-header p {
+    color: #7f8c8d;
+    font-size: 14px;
+  }
+  .lock-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+  .verify-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
+  }
+  .verify-form input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 18px;
+    text-align: center;
+    letter-spacing: 4px;
+    box-sizing: border-box;
+  }
+  .verify-form input:focus {
+    outline: none;
+    border-color: #3498db;
+  }
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+  }
+  .btn-primary:hover {
+    background: #2980b9;
+  }
+  .divider {
+    text-align: center;
+    margin: 20px 0;
+    color: #95a5a6;
+    font-size: 13px;
+  }
+  .backup-section {
+    margin-top: 16px;
+  }
+  .backup-toggle {
+    color: #3498db;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: center;
+    display: block;
+  }
+  .backup-toggle:hover {
+    text-decoration: underline;
+  }
+  .backup-form {
+    display: none;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+  }
+  .backup-form.active {
+    display: block;
+  }
+  .backup-form label {
+    font-size: 14px;
+  }
+  .backup-form input {
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+  .cancel-link {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    color: #95a5a6;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  .cancel-link:hover {
+    color: #7f8c8d;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="verify-container">
+  <div class="verify-header">
+    <div class="lock-icon">&#128274;</div>
+    <h2>Two-Factor Authentication</h2>
+    <p>Enter the code from your authenticator app</p>
+  </div>
+
+  <form method="POST" class="verify-form" id="totpForm">
+    <label for="code">6-digit verification code:</label>
+    <input type="text" id="code" name="code" maxlength="6" pattern="[0-9]{6}" required
+           placeholder="000000" autocomplete="off" autofocus>
+    <input type="hidden" name="use_backup" value="0">
+    <button type="submit" class="btn-primary">Verify</button>
+  </form>
+
+  <div class="backup-section">
+    <span class="backup-toggle" onclick="toggleBackupForm()">
+      Lost your phone? Use a backup code
+    </span>
+
+    <form method="POST" class="backup-form" id="backupForm">
+      <label for="backup_code">Backup code:</label>
+      <input type="text" id="backup_code" name="code" maxlength="8" required
+             placeholder="XXXXXXXX" autocomplete="off" style="text-transform: uppercase;">
+      <input type="hidden" name="use_backup" value="1">
+      <button type="submit" class="btn-primary">Use Backup Code</button>
+    </form>
+  </div>
+
+  <a href="{{ url_for('login') }}" class="cancel-link" onclick="clearSession()">Cancel and return to login</a>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+function toggleBackupForm() {
+  const backupForm = document.getElementById('backupForm');
+  backupForm.classList.toggle('active');
+  if (backupForm.classList.contains('active')) {
+    document.getElementById('backup_code').focus();
+  }
+}
+
+function clearSession() {
+  // Clear any pending 2FA session
+  fetch('/api/cancel-2fa', { method: 'POST' }).catch(() => {});
+}
+
+// Auto-submit when 6 digits entered
+document.getElementById('code').addEventListener('input', function(e) {
+  if (e.target.value.length === 6) {
+    document.getElementById('totpForm').submit();
+  }
+});
+</script>
+{% endblock %}

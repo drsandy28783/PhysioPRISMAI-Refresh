@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Add Patient – Physiologic PRISM{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Add New Patient</h2>
+    <form method="POST" id="add-patient-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label for="name">Patient Name:</label>
+            <input
+                class="input-field"
+                type="text"
+                id="name"
+                name="name"
+                required
+                minlength="2"
+                maxlength="100"
+                placeholder="Enter full name"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="age_sex">Age / Sex:</label>
+            <input
+                class="input-field"
+                type="text"
+                id="age_sex"
+                name="age_sex"
+                required
+                maxlength="20"
+                placeholder="e.g. 45/M or 32/F"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="contact">Contact Details:</label>
+            <input
+                class="input-field"
+                type="tel"
+                id="contact"
+                name="contact"
+                required
+                maxlength="20"
+                placeholder="Phone number"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="present_history">Present History:</label>
+            <textarea
+                class="input-field"
+                id="present_history"
+                name="present_history"
+                rows="3"
+                required
+                placeholder="Brief description of current complaint"
+            >{{ request.form.present_history or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="past_history">Past History:</label>
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <textarea
+                    class="input-field"
+                    id="past_history"
+                    name="past_history"
+                    rows="3"
+                    required
+                    placeholder="Enter any past medical or surgical history"
+                    style="flex: 1;"
+                >{{ request.form.past_history or '' }}</textarea>
+                <button
+                    type="button"
+                    id="suggest_questions"
+                    class="ai-btn"
+                    title="Suggest follow-up questions"
+                    style="background:none; border:none; font-size:1.2em; cursor:pointer; flex-shrink:0; margin-top:0.5rem;"
+                >🧠</button>
+            </div>
+        </div>
+
+        <div class="form-group" style="display: flex; gap:12px; align-items: center; flex-wrap: wrap;">
+            <button type="submit" class="button">Save Patient & Next</button>
+            <button
+                type="button"
+                id="gen_diagnosis"
+                class="button"
+                title="Generate provisional diagnosis"
+            >🩺 Generate Diagnosis</button>
+            <a href="{{ url_for('dashboard') }}" class="button" style="background:#ccc; color:#000;">Back to Dashboard</a>
+        </div>
+    </form>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  let draftAutoSave;
+  let isNavigating = false;  // Flag to prevent beforeunload warnings
+
+  // Completely disable ALL beforeunload warnings globally
+  function disableBeforeUnload() {
+    window.onbeforeunload = null;
+    // Remove all existing beforeunload listeners
+    const oldBeforeUnload = window.onbeforeunload;
+    window.onbeforeunload = null;
+  }
+
+  // Call immediately
+  disableBeforeUnload();
+
+  // Override any attempts to set beforeunload
+  Object.defineProperty(window, 'onbeforeunload', {
+    configurable: true,
+    enumerable: true,
+    get: function() { return null; },
+    set: function(value) {
+      // Silently ignore any attempts to set beforeunload
+      if (!isNavigating) {
+        console.log('[Add Patient] Blocked attempt to set beforeunload handler');
+      }
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // For new patient form, use 'new_patient' as the patient ID
+    draftAutoSave = new DraftAutoSave('add_patient', 'new_patient', {
+      saveDelay: 2000,
+      onRestore: function(data) {
+        console.log('Draft restored for new patient:', data);
+      }
+    });
+    console.log('Draft auto-save initialized for add patient form');
+
+    // FIX: Prevent "Leave site?" popup by handling form submission via AJAX
+    const form = document.getElementById('add-patient-form');
+    if (form) {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault(); // Stop default POST behavior
+        e.stopImmediatePropagation(); // Stop all other listeners
+        console.log('[Add Patient] Intercepting form submission');
+
+        // Set navigation flag
+        isNavigating = true;
+
+        // Disable all possible beforeunload handlers
+        disableBeforeUnload();
+
+        // Delete draft immediately to clear any pending operations
+        if (draftAutoSave) {
+          try {
+            await draftAutoSave.deleteDraft();
+          } catch (err) {
+            console.log('[Add Patient] Draft deletion error (non-critical):', err);
+          }
+        }
+
+        // Submit via FormData (works with existing Flask POST handler)
+        const formData = new FormData(form);
+
+        try {
+          const response = await fetch(form.action || window.location.pathname, {
+            method: 'POST',
+            body: formData
+          });
+
+          // Check if redirect (Flask redirects return HTML of the target page)
+          if (response.ok) {
+            // Get the redirect URL from response headers or parse from response
+            const responseUrl = response.url;
+            console.log('[Add Patient] Success, navigating to:', responseUrl);
+
+            // Final beforeunload disable right before navigation
+            disableBeforeUnload();
+
+            // Use replace instead of href to avoid history issues
+            window.location.replace(responseUrl);
+          } else {
+            // Handle error
+            isNavigating = false;
+            console.error('[Add Patient] Submission failed');
+            alert('Failed to save patient. Please try again.');
+          }
+        } catch (error) {
+          isNavigating = false;
+          console.error('[Add Patient] Error:', error);
+          alert('An error occurred. Please try again.');
+        }
+      }, { capture: true });
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% block title %}Patient List – Physiologic PRISM{% endblock %}
+
+<!-- Force cache refresh v4 -->
+
+{% block head %}
+<style>
+  .filter-form {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .filter-input-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .filter-input-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 6px;
+  }
+  .filter-input-group input,
+  .filter-input-group select {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .filter-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .filter-stats {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    color: #2c3e50;
+    font-size: 14px;
+  }
+  .clear-filters-btn {
+    background: #95a5a6;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .clear-filters-btn:hover {
+    background: #7f8c8d;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .status-active { background: #d4edda; color: #155724; }
+  .status-completed { background: #cce5ff; color: #004085; }
+  .status-archived { background: #f8d7da; color: #721c24; }
+  .tag-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 2px;
+    border-radius: 3px;
+    font-size: 11px;
+    background: #e9ecef;
+    color: #495057;
+  }
+  .tags-select {
+    min-height: 80px;
+  }
+  .simple-status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-success {
+    background: #d4edda;
+    color: #155724;
+  }
+  .badge-warning {
+    background: #fff3cd;
+    color: #856404;
+  }
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 20px 0;
+  }
+  .pagination a, .pagination span {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #2c3e50;
+  }
+  .pagination a:hover {
+    background: #f8f9fa;
+  }
+  .pagination .current {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Patient List</h2>
+
+    <!-- Filter Stats -->
+    {% if total_count is defined %}
+    <div class="filter-stats">
+      📊 Showing <strong>{{ filtered_count }}</strong> of <strong>{{ total_count }}</strong> patients
+      {% if filtered_count < total_count %}
+        ({{ total_count - filtered_count }} filtered out)
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Advanced Filter Form -->
+    <form method="GET" class="filter-form">
+      <h3 style="margin-top: 0; margin-bottom: 16px; color: #2c3e50;">🔍 Search & Filter Patients</h3>
+
+      <div class="filter-grid">
+        <div class="filter-input-group">
+          <label>Patient Name:</label>
+          <input type="text" name="name" placeholder="Search by name" value="{{ request.args.get('name', '') }}">
+        </div>
+
+        <div class="filter-input-group">
+          <label>Patient ID:</label>
+          <input type="text" name="patient_id" placeholder="Search by ID" value="{{ request.args.get('patient_id', '') }}">
+        </div>
+
+        <div class="filter-input-group">
+          <label>Contact Number:</label>
+          <input type="text" name="contact" placeholder="Search by contact" value="{{ request.args.get('contact', '') }}">
+        </div>
+
+        <div class="filter-input-group">
+          <label>Chief Complaint:</label>
+          <input type="text" name="complaint" placeholder="Search complaint" value="{{ request.args.get('complaint', '') }}">
+        </div>
+
+        <div class="filter-input-group">
+          <label>Date From:</label>
+          <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}">
+        </div>
+
+        <div class="filter-input-group">
+          <label>Date To:</label>
+          <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}">
+        </div>
+
+        <div class="filter-input-group">
+          <label>Sort By:</label>
+          <select name="sort">
+            <option value="newest" {% if request.args.get('sort', 'newest') == 'newest' %}selected{% endif %}>Newest First</option>
+            <option value="oldest" {% if request.args.get('sort', 'newest') == 'oldest' %}selected{% endif %}>Oldest First</option>
+            <option value="name_asc" {% if request.args.get('sort', 'newest') == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+            <option value="name_desc" {% if request.args.get('sort', 'newest') == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+          </select>
+        </div>
+
+        <div class="filter-input-group">
+          <label>Status:</label>
+          <select name="status">
+            <option value="">All Statuses</option>
+            <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
+            <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="archived" {% if current_status == 'archived' %}selected{% endif %}>Archived</option>
+          </select>
+        </div>
+
+        {% if all_tags %}
+        <div class="filter-input-group">
+          <label>Tags:</label>
+          <select name="tags" multiple class="tags-select">
+            {% for tag in all_tags %}
+            <option value="{{ tag }}" {% if tag in current_tags %}selected{% endif %}>{{ tag }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="button">🔍 Apply Filters</button>
+        <a href="{{ url_for('view_patients') }}" class="clear-filters-btn">✕ Clear All Filters</a>
+      </div>
+    </form>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Patient Name</th>
+          <th>Age/Sex</th>
+          <th>Contact</th>
+          <th>Status</th>
+          <th>Assessment Progress</th>
+          <th>Tags</th>
+          <th>Date Added</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for patient in patients %}
+        <tr>
+          <td>{{ patient.patient_id }}</td>
+          <td>{{ patient.name }}</td>
+          <td>{{ patient.age_sex }}</td>
+          <td>{{ patient.contact }}</td>
+          <td>
+            <span class="status-badge status-{{ patient.status|default('active') }}">
+              {{ patient.status|default('active')|title }}
+            </span>
+          </td>
+          <td>
+            <div class="simple-status">
+              {% if patient.treatment_plan %}
+                <span class="badge badge-success">✓ Complete</span>
+              {% else %}
+                <span class="badge badge-warning">In Progress</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            {% for tag in patient.tags|default([]) %}
+              <span class="tag-badge">{{ tag }}</span>
+            {% endfor %}
+          </td>
+          <td>{{ patient.created_at.strftime('%Y-%m-%d') if patient.created_at else 'N/A' }}</td>
+          <td style="display: flex; flex-direction: column; gap: 4px;">
+            <a href="{{ url_for('edit_patient', patient_id=patient.patient_id) }}" class="button">Edit</a>
+            <a href="{{ url_for('follow_ups', patient_id=patient.patient_id) }}" class="button green">Add Follow-Up</a>
+            <a href="{{ url_for('view_follow_ups', patient_id=patient.patient_id) }}" class="button green">View Follow-Ups</a>
+            <a href="{{ url_for('patient_report', patient_id=patient.patient_id) }}" class="button">Report</a>
+            <a href="{{ url_for('download_report', patient_id=patient.patient_id) }}" class="button">PDF</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}
+        <a href="{{ url_for('view_patients', page=page-1, name=request.args.get('name', ''), patient_id=request.args.get('patient_id', ''), contact=request.args.get('contact', ''), complaint=request.args.get('complaint', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', ''), sort=request.args.get('sort', 'newest'), status=request.args.get('status', '')) }}">&laquo; Previous</a>
+      {% endif %}
+
+      <span class="current">Page {{ page }} of {{ total_pages }}</span>
+
+      {% if page < total_pages %}
+        <a href="{{ url_for('view_patients', page=page+1, name=request.args.get('name', ''), patient_id=request.args.get('patient_id', ''), contact=request.args.get('contact', ''), complaint=request.args.get('complaint', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', ''), sort=request.args.get('sort', 'newest'), status=request.args.get('status', '')) }}">Next &raquo;</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 24px;">
+      <a href="{{ url_for('dashboard') }}" class="button">&larr; Back to Dashboard</a>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register – Physiologic PRISM</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Hide navbar on registration page */
+        body > .navbar { display: none !important; }
+        .container { max-width: 450px; margin: 60px auto; }
+        .error-message {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .success-message {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Individual Physiotherapist Registration</h2>
+
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+
+        <form id="register-form">
+            <div class="field-block">
+                <input class="input-field" type="text" id="name" name="name" placeholder="Full Name" required>
+            </div>
+
+            <div class="field-block">
+                <input class="input-field" type="email" id="email" name="email" placeholder="Email" required>
+            </div>
+
+            <div class="field-block">
+                <input class="input-field" type="text" id="phone" name="phone" placeholder="Phone Number" required>
+            </div>
+
+            <div class="field-block">
+                <input class="input-field" type="text" id="institute" name="institute" placeholder="Institute/Organization Name" required>
+            </div>
+
+            <div class="field-block">
+                <input class="input-field" type="password" id="password" name="password" placeholder="Password (min 8 characters)" required minlength="8">
+            </div>
+
+            <!-- GDPR Consent Section -->
+            <div style="margin-top: 24px; padding: 16px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
+                <h3 style="margin-top: 0; font-size: 16px;">Data Processing Consent (Required)</h3>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="consent_data_processing" name="consent_data_processing" required style="margin-top: 4px;">
+                        <span style="font-size: 14px;">
+                            I consent to the processing of my personal data as described in the
+                            <a href="{{ url_for('privacy_policy') }}" target="_blank" style="color: #3498db;">Privacy Policy</a>.
+                            This includes storing my account information, patient records, and usage logs.
+                        </span>
+                    </label>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="consent_terms" name="consent_terms" required style="margin-top: 4px;">
+                        <span style="font-size: 14px;">
+                            I agree to the <a href="{{ url_for('terms_of_service') }}" target="_blank" style="color: #3498db;">Terms of Service</a>
+                            and confirm that I am a licensed healthcare professional.
+                        </span>
+                    </label>
+                </div>
+
+                <div style="margin-bottom: 0;">
+                    <label style="display: flex; align-items: start; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="consent_ai" name="consent_ai" style="margin-top: 4px;">
+                        <span style="font-size: 14px;">
+                            <strong>(Optional)</strong> I consent to anonymized patient data being sent to OpenAI for AI-powered suggestions.
+                            If unchecked, AI features will be disabled for your account.
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <button type="submit" class="button" id="register-button">Register</button>
+                <a href="{{ url_for('login') }}" class="button" style="background:#ccc; color:#000;">Already registered? Login</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Firebase Initialization -->
+    <script type="module" nonce="{{ csp_nonce() }}">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAI2QaNaJuA6cV_KSJlgsyus11-GKzxee8",
+            authDomain: "physiologicprism-474610.firebaseapp.com",
+            projectId: "physiologicprism-474610",
+            storageBucket: "physiologicprism-474610.firebasestorage.app",
+            messagingSenderId: "292385113403",
+            appId: "1:292385113403:web:02abf02787ba4e02cba31e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        window.__FIREBASE_APP__ = app;
+        window.__FIREBASE_AUTH__ = auth;
+    </script>
+
+    <!-- Registration Logic -->
+    <script type="module" nonce="{{ csp_nonce() }}">
+        import { register, syncUserToFirestore } from '{{ url_for("static", filename="auth.js") }}';
+
+        const registerForm = document.getElementById('register-form');
+        const registerButton = document.getElementById('register-button');
+        const errorDiv = document.getElementById('error-message');
+        const successDiv = document.getElementById('success-message');
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            successDiv.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+        }
+
+        function hideMessages() {
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+        }
+
+        // Handle registration form submission
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessages();
+
+            // Get form values
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const institute = document.getElementById('institute').value.trim();
+            const password = document.getElementById('password').value;
+            const consentDataProcessing = document.getElementById('consent_data_processing').checked;
+            const consentTerms = document.getElementById('consent_terms').checked;
+            const consentAi = document.getElementById('consent_ai').checked;
+
+            // Validate inputs
+            if (!name || !email || !phone || !institute || !password) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            if (!consentDataProcessing || !consentTerms) {
+                showError('You must accept the required consents to register');
+                return;
+            }
+
+            // Show loading state
+            registerButton.textContent = 'Creating account...';
+            registerButton.disabled = true;
+            registerForm.classList.add('loading');
+
+            try {
+                // Step 1: Create Firebase Auth account
+                const authResult = await register(email, password, { name });
+
+                if (!authResult.success) {
+                    showError(authResult.error);
+                    return;
+                }
+
+                registerButton.textContent = 'Syncing user data...';
+
+                // Step 2: Sync user data to Firestore
+                const userData = {
+                    name,
+                    email,
+                    phone,
+                    institute,
+                    consent_data_processing: consentDataProcessing,
+                    consent_terms: consentTerms,
+                    consent_ai: consentAi,
+                    is_admin: 0,  // Regular user
+                    is_super_admin: 0,
+                    approved: 0,  // Pending approval
+                    active: 1
+                };
+
+                const syncResult = await syncUserToFirestore(authResult.user, userData);
+
+                if (!syncResult.success) {
+                    showError('Account created but data sync failed: ' + syncResult.error);
+                    // Still show partial success
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 3000);
+                    return;
+                }
+
+                // Success!
+                showSuccess('Registration successful! Your account is pending admin approval. Redirecting to login...');
+
+                // Sign out and redirect to login
+                await window.__FIREBASE_AUTH__.signOut();
+
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Registration error:', error);
+                showError('An unexpected error occurred. Please try again.');
+            } finally {
+                registerButton.textContent = 'Register';
+                registerButton.disabled = false;
+                registerForm.classList.remove('loading');
+            }
+        });
+    </script>
+</body>
+</html>

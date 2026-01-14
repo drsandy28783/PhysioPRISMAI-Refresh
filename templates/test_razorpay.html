@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Razorpay Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Razorpay Configuration Test</h1>
+
+    <div class="test-section">
+        <h2>1. Environment Variables Check</h2>
+        <button onclick="checkEnvVars()">Check Environment Variables</button>
+        <div id="envResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. API Connection Test</h2>
+        <button onclick="testApiConnection()">Test Razorpay API Connection</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Subscription Plans Test</h2>
+        <button onclick="testPlans()">Load Subscription Plans</button>
+        <div id="plansResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Checkout Test (Requires Login)</h2>
+        <button onclick="testCheckout()">Test Checkout Creation</button>
+        <div id="checkoutResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Razorpay Test Mode Setup Checklist</h2>
+        <ul>
+            <li><strong>Test API Keys:</strong> Use keys starting with <code>rzp_test_</code></li>
+            <li><strong>Create Plans in Razorpay Dashboard:</strong>
+                <ol>
+                    <li>Go to <a href="https://dashboard.razorpay.com/app/subscriptions/plans" target="_blank">Razorpay Subscriptions</a></li>
+                    <li>Create plans for: Starter, Professional, Clinic, Institute (5, 10, 15 users)</li>
+                    <li>Note down each Plan ID (starts with <code>plan_</code>)</li>
+                </ol>
+            </li>
+            <li><strong>Set Environment Variables:</strong>
+                <pre>RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxx
+RAZORPAY_KEY_SECRET=your_test_secret
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+RAZORPAY_PLAN_STARTER=plan_xxxxx
+RAZORPAY_PLAN_PROFESSIONAL=plan_xxxxx
+RAZORPAY_PLAN_CLINIC=plan_xxxxx
+RAZORPAY_PLAN_INSTITUTE_5=plan_xxxxx
+RAZORPAY_PLAN_INSTITUTE_10=plan_xxxxx
+RAZORPAY_PLAN_INSTITUTE_15=plan_xxxxx</pre>
+            </li>
+        </ul>
+    </div>
+
+    <script nonce="{{ csp_nonce() }}">
+        async function checkEnvVars() {
+            const result = document.getElementById('envResult');
+            result.innerHTML = '<p>Checking...</p>';
+
+            try {
+                const response = await fetch('/api/test/razorpay-config');
+                const data = await response.json();
+
+                let html = '<h3>Results:</h3><ul>';
+                for (const [key, value] of Object.entries(data)) {
+                    const status = value ? '<span class="success">✓ Set</span>' : '<span class="error">✗ Missing</span>';
+                    html += `<li><strong>${key}:</strong> ${status}</li>`;
+                }
+                html += '</ul>';
+
+                result.innerHTML = html;
+            } catch (error) {
+                result.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testApiConnection() {
+            const result = document.getElementById('apiResult');
+            result.innerHTML = '<p>Testing...</p>';
+
+            try {
+                const response = await fetch('/api/test/razorpay-connection');
+                const data = await response.json();
+
+                if (data.success) {
+                    result.innerHTML = `<p class="success">✓ Razorpay API connection successful!</p>`;
+                } else {
+                    result.innerHTML = `<p class="error">✗ ${data.error}</p>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testPlans() {
+            const result = document.getElementById('plansResult');
+            result.innerHTML = '<p>Loading...</p>';
+
+            try {
+                const response = await fetch('/api/subscription/plans');
+                const data = await response.json();
+
+                let html = '<h3>Available Plans:</h3><ul>';
+                for (const [key, plan] of Object.entries(data.plans)) {
+                    html += `<li><strong>${plan.name}</strong> - ₹${plan.price}/month</li>`;
+                }
+                html += '</ul>';
+
+                result.innerHTML = html;
+            } catch (error) {
+                result.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testCheckout() {
+            const result = document.getElementById('checkoutResult');
+            result.innerHTML = '<p>Testing...</p>';
+
+            try {
+                const response = await fetch('/api/subscription/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plan_type: 'starter' })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.innerHTML = `<p class="success">✓ Checkout creation successful!</p>
+                                      <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    result.innerHTML = `<p class="error">✗ ${data.error}</p>`;
+                    if (response.status === 401 || response.status === 403) {
+                        result.innerHTML += `<p><a href="/login/firebase">Please login first</a></p>`;
+                    }
+                }
+            } catch (error) {
+                result.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

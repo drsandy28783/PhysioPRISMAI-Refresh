@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logging Out - Physio PRISM</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='logout.css') }}">
+</head>
+<body>
+  <div class="logout-message">
+    <h2>Logging out...</h2>
+    <p>Please wait while we securely log you out.</p>
+  </div>
+
+  <!-- Firebase Initialization - MUST load before main.js -->
+  <script type="module" nonce="{{ csp_nonce() }}">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+    import { getAuth } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAI2QaNaJuA6cV_KSJlgsyus11-GKzxee8",
+      authDomain: "physiologicprism-474610.firebaseapp.com",
+      projectId: "physiologicprism-474610",
+      storageBucket: "physiologicprism-474610.firebasestorage.app",
+      messagingSenderId: "292385113403",
+      appId: "1:292385113403:web:02abf02787ba4e02cba31e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    window.__FIREBASE_READY__ = true;
+  </script>
+
+  <!-- Main.js loaded as ES module -->
+  <script type="module" src="{{ url_for('static', filename='main.js') }}" nonce="{{ csp_nonce() }}"></script>
+</body>
+</html>

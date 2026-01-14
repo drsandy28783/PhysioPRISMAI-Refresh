@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}AI Cache Statistics - Super Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>🧠 AI Cache & Training Data Statistics</h2>
+    <p>Monitor AI response caching performance and training data collection.</p>
+
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('super_admin_dashboard') }}" class="button" style="background:#6c757d;">← Back to Dashboard</a>
+        <a href="{{ url_for('export_training_data', format='jsonl') }}" class="button" style="background:#28a745;">📥 Export Training Data (JSONL)</a>
+        <button onclick="clearExpiredCache()" class="button" style="background:#dc3545;">🗑️ Clear Expired Cache</button>
+    </div>
+
+    <!-- 7 Days Statistics -->
+    <div class="stats-card">
+        <h3>📊 Last 7 Days</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total Requests</div>
+                <div class="stat-value">{{ stats_7d.total_requests }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Cache Hits</div>
+                <div class="stat-value" style="color: #28a745;">{{ stats_7d.cache_hits }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Cache Misses</div>
+                <div class="stat-value" style="color: #dc3545;">{{ stats_7d.cache_misses }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Hit Rate</div>
+                <div class="stat-value">{{ stats_7d.hit_rate_percent }}%</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Savings</div>
+                <div class="stat-value" style="color: #28a745;">${{ "%.4f"|format(stats_7d.total_savings_usd) }}</div>
+            </div>
+        </div>
+
+        {% if stats_7d.top_cached_responses %}
+        <h4>Top Cached Responses (Last 7 Days)</h4>
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th>Prompt Preview</th>
+                    <th>Access Count</th>
+                    <th>Savings</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in stats_7d.top_cached_responses %}
+                <tr>
+                    <td>{{ item.prompt_preview }}...</td>
+                    <td>{{ item.access_count }}</td>
+                    <td>${{ "%.4f"|format(item.savings) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- 30 Days Statistics -->
+    <div class="stats-card" style="margin-top: 30px;">
+        <h3>📊 Last 30 Days</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total Requests</div>
+                <div class="stat-value">{{ stats_30d.total_requests }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Cache Hits</div>
+                <div class="stat-value" style="color: #28a745;">{{ stats_30d.cache_hits }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Cache Misses</div>
+                <div class="stat-value" style="color: #dc3545;">{{ stats_30d.cache_misses }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Hit Rate</div>
+                <div class="stat-value">{{ stats_30d.hit_rate_percent }}%</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Savings</div>
+                <div class="stat-value" style="color: #28a745;">${{ "%.4f"|format(stats_30d.total_savings_usd) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 90 Days Statistics -->
+    <div class="stats-card" style="margin-top: 30px;">
+        <h3>📊 Last 90 Days</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total Requests</div>
+                <div class="stat-value">{{ stats_90d.total_requests }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Cache Hits</div>
+                <div class="stat-value" style="color: #28a745;">{{ stats_90d.cache_hits }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Cache Misses</div>
+                <div class="stat-value" style="color: #dc3545;">{{ stats_90d.cache_misses }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Hit Rate</div>
+                <div class="stat-value">{{ stats_90d.hit_rate_percent }}%</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Savings</div>
+                <div class="stat-value" style="color: #28a745;">${{ "%.4f"|format(stats_90d.total_savings_usd) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="stats-card" style="margin-top: 30px;">
+        <h3>📥 Export Training Data</h3>
+        <p>Download collected AI training data for fine-tuning or analysis.</p>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <a href="{{ url_for('export_training_data', format='jsonl') }}" class="button">JSONL (OpenAI Format)</a>
+            <a href="{{ url_for('export_training_data', format='json') }}" class="button">JSON (General)</a>
+            <a href="{{ url_for('export_training_data', format='csv') }}" class="button">CSV (Spreadsheet)</a>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <h4>Filter by Category:</h4>
+            <a href="{{ url_for('export_training_data', format='jsonl', tag='diagnosis') }}" class="button" style="background:#007bff;">Diagnosis Only</a>
+            <a href="{{ url_for('export_training_data', format='jsonl', tag='treatment_plan') }}" class="button" style="background:#007bff;">Treatment Plans Only</a>
+            <a href="{{ url_for('export_training_data', format='jsonl', tag='subjective_examination') }}" class="button" style="background:#007bff;">Functioning Assessment Only</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.stats-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #212529;
+}
+
+.audit-table {
+    width: 100%;
+    margin-top: 15px;
+    border-collapse: collapse;
+}
+
+.audit-table th {
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
+
+.audit-table td {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.audit-table tr:hover {
+    background: #f1f3f5;
+}
+</style>
+
+<script nonce="{{ csp_nonce() }}">
+function clearExpiredCache() {
+    if (!confirm('Clear expired cache entries? This cannot be undone.')) {
+        return;
+    }
+
+    fetch('/super_admin/clear_expired_cache', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Success! Cleared ${data.deleted_count} expired cache entries.`);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error clearing cache: ' + error);
+    });
+}
+</script>
+{% endblock %}

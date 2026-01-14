@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}My Invoices – Physiologic PRISM{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin: 40px auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <h2 style="color: #2c3e50; margin: 0;">My Invoices</h2>
+    <a href="{{ url_for('edit_profile') }}" class="button" style="background-color: #95a5a6;">
+      ← Back to Profile
+    </a>
+  </div>
+
+  <div style="background-color: #e8f5e9; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+    <p style="margin: 0;">
+      <strong>📄 GST Tax Invoices:</strong> All your payment invoices are listed below. You can view and download them as PDF for your records and tax filing purposes.
+    </p>
+  </div>
+
+  {% if invoices %}
+    <div style="background-color: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: #3498db; color: white;">
+            <th style="padding: 16px; text-align: left; font-weight: 600;">Invoice Number</th>
+            <th style="padding: 16px; text-align: left; font-weight: 600;">Date</th>
+            <th style="padding: 16px; text-align: left; font-weight: 600;">Description</th>
+            <th style="padding: 16px; text-align: right; font-weight: 600;">Amount</th>
+            <th style="padding: 16px; text-align: center; font-weight: 600;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invoice in invoices %}
+            <tr style="border-bottom: 1px solid #ecf0f1;">
+              <td style="padding: 16px;">
+                <strong style="color: #2c3e50;">{{ invoice.invoice_number }}</strong>
+              </td>
+              <td style="padding: 16px; color: #7f8c8d;">
+                {% if invoice.invoice_date %}
+                  {{ invoice.invoice_date.strftime('%d %b %Y') if invoice.invoice_date is not string else 'N/A' }}
+                {% else %}
+                  N/A
+                {% endif %}
+              </td>
+              <td style="padding: 16px; color: #2c3e50;">
+                {{ invoice.description or 'Subscription Payment' }}
+                <br>
+                <small style="color: #95a5a6;">Payment ID: {{ invoice.payment_id }}</small>
+              </td>
+              <td style="padding: 16px; text-align: right; font-weight: 600; color: #27ae60;">
+                ₹{{ "%.2f"|format(invoice.total_amount) }}
+              </td>
+              <td style="padding: 16px; text-align: center;">
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                  <a href="{{ url_for('view_invoice', invoice_id=invoice.invoice_id) }}"
+                     class="button"
+                     style="background-color: #3498db; padding: 8px 16px; font-size: 14px;">
+                    <span style="margin-right: 4px;">👁️</span> View
+                  </a>
+                  <a href="{{ url_for('download_invoice', invoice_id=invoice.invoice_id) }}"
+                     class="button"
+                     style="background-color: #27ae60; padding: 8px 16px; font-size: 14px;">
+                    <span style="margin-right: 4px;">📥</span> Download PDF
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 24px; padding: 16px; background-color: #fff3cd; border-radius: 8px;">
+      <p style="margin: 0; color: #856404;">
+        <strong>ℹ️ Note:</strong> Keep these invoices for your tax records. All amounts are inclusive of 18% GST (CGST + SGST or IGST).
+      </p>
+    </div>
+
+  {% else %}
+    <div style="text-align: center; padding: 60px 20px; background-color: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <div style="font-size: 64px; margin-bottom: 16px;">📄</div>
+      <h3 style="color: #7f8c8d; margin-bottom: 8px;">No Invoices Yet</h3>
+      <p style="color: #95a5a6;">Your payment invoices will appear here after successful transactions.</p>
+      <a href="{{ url_for('pricing') }}" class="button" style="margin-top: 16px; background-color: #3498db;">
+        View Pricing Plans
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

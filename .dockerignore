@@ -1,0 +1,152 @@
+# Version Control
+.git
+.gitignore
+
+# Development Documentation & Guides (all in parent dev-docs folder)
+../dev-docs/
+*.md
+README.md
+AUTHENTICATION_ISSUES_FIX_GUIDE.md
+DEPLOY_FIREBASE_CREDENTIALS_AZURE.md
+AZURE_*.md
+MIGRATION_*.md
+COMPLETE_CODE_AUDIT_REPORT.md
+HIPAA_COMPLIANCE_DOCUMENTATION.md
+SESSION_SUMMARY_*.md
+SESSION_SYNTAX_ERRORS_FIX_*.md
+
+# PDF Documentation
+*.pdf
+Logs.pdf
+
+# Deployment & Setup Scripts (development only)
+deploy.ps1
+deploy_to_cloud_run.ps1
+update_cloud_run_env.ps1
+update_cloud_run_env.sh
+verify_razorpay_setup.py
+set_env_vars.ps1
+fix_email_verified_approved_users.py
+create_super_admin_firestore.py
+migrate_to_firestore.py
+migrate_existing_users_email_verified.py
+check_super_admin.py
+update_azure_imports.ps1
+
+# Cosmos DB Diagnostic Scripts (development only - created 2026-01-14)
+create_super_admin_cosmos.py
+check_user_cosmos.py
+list_all_users_cosmos.py
+show_full_user_document.py
+check_partition_key.py
+fix_user_partition_key.py
+test_cosmos_wrapper.py
+
+# Kubernetes/Cloud Run YAML (not needed for Container Apps)
+*.yaml
+!firestore.indexes.json
+
+# Claude Code Configuration
+.claude/
+
+# Database Files (Firestore only, no local DBs)
+*.db
+*.sqlite
+
+# Python Cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+
+# Environment Files
+.env
+.env.*
+
+# Node Modules (if any)
+node_modules
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Replit Specific
+.replit
+
+# Local Development
+.local/
+.local/**
+venv/
+env/
+**/.local/
+**/__pycache__/
+
+# Firebase Hosting (deployed separately)
+public/
+.firebase/
+.firebaserc
+
+# Backup Files
+*.backup
+*.bak
+*.tmp
+*.backup_*
+main.py.backup
+ai_cache.py.backup
+email_verification.py.backup
+invoice_generator.py.backup
+mobile_api.py.backup
+mobile_api_ai.py.backup
+notification_service.py.backup
+razorpay_integration.py.backup
+subscription_manager.py.backup
+
+# JSON backup/model files (not needed in production)
+azure_models.json
+gpt_models.json
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Screenshots and Images (for docs only)
+screenshots/
+*.png
+*.jpg
+*.jpeg
+!static/**/*.png
+!static/**/*.jpg
+!static/**/*.jpeg
+Screenshot*.png
+
+# Firebase Service Account Keys (NEVER deploy these!)
+*firebase*.json
+!firebase.json
+!firestore.*.json
+physiologicprism-*-firebase-adminsdk-*.json
+
+# n8n Workflow Files (development reference only)
+n8n_workflows/
+
+# Additional Development Files
+*.lock
+uv.lock
+Pipfile.lock
+poetry.lock
+
+# Text Files (development docs)
+readme.txt
+license.txt
+
+# Backup Files
+*.backup_*
+main.py.backup*

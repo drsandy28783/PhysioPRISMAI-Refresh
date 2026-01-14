@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Edit Patient Details – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  .field-block { margin-top: 20px; }
+  .field-block label { display: block; font-weight: 500; margin-bottom: 4px; }
+  .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+  .button-group { display: flex; gap: 12px; margin-top: 24px; }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>Edit Patient Details – {{ patient['patient_id'] }}</h2>
+    <form method="POST" action="{{ url_for('edit_patient', patient_id=patient['patient_id']) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="field-block">
+        <label for="name">Name:</label>
+        <input id="name" type="text" name="name" class="input-field" value="{{ patient['name'] }}" required/>
+      </div>
+
+      <div class="field-block">
+        <label for="age_sex">Age / Sex:</label>
+        <input id="age_sex" type="text" name="age_sex" class="input-field" value="{{ patient['age_sex'] }}" required/>
+      </div>
+
+      <div class="field-block">
+        <label for="contact">Contact:</label>
+        <input id="contact" type="text" name="contact" class="input-field" value="{{ patient['contact'] }}" required/>
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="button">Update Patient</button>
+        <a href="{{ url_for('dashboard') }}" class="button" style="background:#ccc; color:#000;">Cancel</a>
+      </div>
+    </form>
+
+    <!-- Continue Assessment Workflow -->
+    <div style="margin-top: 40px; padding: 24px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+      <h3 style="margin-top: 0; color: #007bff;">📋 Continue Assessment Workflow</h3>
+      <p style="color: #666; margin-bottom: 20px;">Continue patient assessment from where you left off</p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+        <a href="{{ url_for('subjective', patient_id=patient['patient_id']) }}" class="button" style="background: #28a745;">
+          📝 Functioning Assessment
+        </a>
+        <a href="{{ url_for('perspectives', patient_id=patient['patient_id']) }}" class="button" style="background: #17a2b8;">
+          💭 Patient Perspectives
+        </a>
+        <a href="{{ url_for('objective_assessment', patient_id=patient['patient_id']) }}" class="button" style="background: #ffc107; color: #000;">
+          🔍 Objective Assessment
+        </a>
+        <a href="{{ url_for('provisional_diagnosis', patient_id=patient['patient_id']) }}" class="button" style="background: #dc3545;">
+          🩺 Provisional Diagnosis
+        </a>
+        <a href="{{ url_for('initial_plan', patient_id=patient['patient_id']) }}" class="button" style="background: #6f42c1;">
+          📋 Initial Plan
+        </a>
+        <a href="{{ url_for('smart_goals', patient_id=patient['patient_id']) }}" class="button" style="background: #fd7e14;">
+          🎯 SMART Goals
+        </a>
+        <a href="{{ url_for('treatment_plan', patient_id=patient['patient_id']) }}" class="button" style="background: #20c997;">
+          💊 Treatment Plan
+        </a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

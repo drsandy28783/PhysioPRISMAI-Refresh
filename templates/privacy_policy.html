@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy – Physiologic PRISM{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 0 auto;">
+  <h1>Privacy Policy</h1>
+  <p style="color: #7f8c8d; font-style: italic;">
+    <strong>Version 1.0</strong> | Last Updated: January 13, 2025
+  </p>
+
+  <div style="background-color: #e8f5e9; padding: 16px; border-radius: 4px; margin: 20px 0;">
+    <p style="margin: 0;"><strong>GDPR & HIPAA Compliant:</strong> This application is designed to comply with the General Data Protection Regulation (GDPR) and Health Insurance Portability and Accountability Act (HIPAA).</p>
+  </div>
+
+  <h2>1. Data Controller</h2>
+  <p><strong>PhysiologicPRISM</strong><br>
+  Email: <a href="mailto:security@physiologicprism.com">security@physiologicprism.com</a></p>
+
+  <h2>2. What Data We Collect</h2>
+
+  <h3>2.1 Personal Information</h3>
+  <ul>
+    <li><strong>User Account Data:</strong> Name, email address, institute affiliation, password (hashed)</li>
+    <li><strong>Patient Health Information (PHI):</strong> Patient names, age, contact information, medical history, assessment records, treatment plans</li>
+    <li><strong>Usage Data:</strong> Login/logout times, actions performed, IP addresses (for security)</li>
+  </ul>
+
+  <h3>2.2 Technical Data</h3>
+  <ul>
+    <li><strong>Cookies:</strong> Session cookies (required for authentication), CSRF tokens (required for security)</li>
+    <li><strong>Logs:</strong> Audit trail logs of all user actions for security and compliance</li>
+  </ul>
+
+  <h2>3. Legal Basis for Processing (GDPR)</h2>
+  <p>We process your personal data based on:</p>
+  <ul>
+    <li><strong>Consent:</strong> You provide explicit consent during registration</li>
+    <li><strong>Contractual Necessity:</strong> Required to provide physiotherapy services</li>
+    <li><strong>Legal Obligation:</strong> Required for healthcare compliance (HIPAA, medical record keeping)</li>
+    <li><strong>Legitimate Interest:</strong> Fraud prevention, security monitoring, system improvement</li>
+  </ul>
+
+  <h2>4. How We Use Your Data</h2>
+  <ul>
+    <li><strong>Service Delivery:</strong> Provide physiotherapy assessment and treatment planning tools</li>
+    <li><strong>Security:</strong> Monitor for unauthorized access, prevent fraud, maintain audit logs</li>
+    <li><strong>Communication:</strong> Send account-related notifications (approval status, security alerts)</li>
+    <li><strong>Compliance:</strong> Meet legal obligations for healthcare data retention and audit trails</li>
+  </ul>
+
+  <h2>5. Data Sharing</h2>
+  <p>We do <strong>NOT</strong> sell your personal data. We share data only in these circumstances:</p>
+  <ul>
+    <li><strong>Within Your Institute:</strong> Your institute administrators can view your activity logs</li>
+    <li><strong>Service Providers:</strong> Google Cloud Platform (Firestore hosting), OpenAI (only if AI features enabled and you consent)</li>
+    <li><strong>Legal Requirements:</strong> When required by law or to protect legal rights</li>
+  </ul>
+
+  <h3>5.1 Third-Party Services</h3>
+  <ul>
+    <li><strong>Google Cloud Firestore:</strong> Database hosting (BAA signed for HIPAA compliance)</li>
+    <li><strong>OpenAI API:</strong> AI-powered suggestions (only if enabled; BAA required; data is anonymized)</li>
+  </ul>
+
+  <h2>6. Your Rights Under GDPR</h2>
+  <p>As a data subject, you have the following rights:</p>
+
+  <h3>6.1 Right to Access</h3>
+  <p>Request a copy of all personal data we hold about you.</p>
+  <p><a href="{{ url_for('export_my_data') }}"><button class="button">Download My Data</button></a></p>
+
+  <h3>6.2 Right to Rectification</h3>
+  <p>Correct inaccurate or incomplete personal data.</p>
+  <p><a href="{{ url_for('edit_profile') }}"><button class="button">Edit My Profile</button></a></p>
+
+  <h3>6.3 Right to Erasure ("Right to be Forgotten")</h3>
+  <p>Request deletion of your personal data (subject to legal retention requirements).</p>
+  <p><a href="{{ url_for('request_data_deletion') }}"><button class="button" style="background-color: #e74c3c;">Request Data Deletion</button></a></p>
+
+  <h3>6.4 Right to Data Portability</h3>
+  <p>Receive your data in a structured, machine-readable format (JSON).</p>
+  <p><a href="{{ url_for('export_my_data') }}"><button class="button">Export Data (JSON)</button></a></p>
+
+  <h3>6.5 Right to Withdraw Consent</h3>
+  <p>You can withdraw consent for data processing at any time by deleting your account.</p>
+
+  <h3>6.6 Right to Object</h3>
+  <p>Object to processing based on legitimate interests (contact us at privacy@your-domain.com).</p>
+
+  <h3>6.7 Right to Lodge a Complaint</h3>
+  <p>You can file a complaint with your local data protection authority if you believe we violated GDPR.</p>
+
+  <h2>7. Data Retention</h2>
+  <ul>
+    <li><strong>User Accounts:</strong> Retained while account is active; deleted 30 days after account deletion request</li>
+    <li><strong>Patient Records:</strong> Retained for 7 years after last treatment (legal requirement for medical records)</li>
+    <li><strong>Audit Logs:</strong> Retained for 6 years (compliance requirement)</li>
+    <li><strong>Session Data:</strong> Deleted after 8 hours of inactivity</li>
+  </ul>
+
+  <h2>8. Data Security</h2>
+  <p>We implement industry-standard security measures:</p>
+  <ul>
+    <li><strong>Encryption:</strong> All data encrypted in transit (TLS/HTTPS) and at rest (Firestore encryption)</li>
+    <li><strong>Access Control:</strong> Role-based permissions, admin approval required for new users</li>
+    <li><strong>Authentication:</strong> Secure password hashing (Werkzeug), session timeouts</li>
+    <li><strong>Monitoring:</strong> Comprehensive audit logging, failed login tracking, IP blocking</li>
+    <li><strong>CSRF Protection:</strong> All forms protected against cross-site request forgery</li>
+    <li><strong>Security Headers:</strong> Content Security Policy, X-Frame-Options, HSTS</li>
+  </ul>
+
+  <h2>9. Cookies Policy</h2>
+  <p>We use the following cookies:</p>
+  <table class="data-table" style="margin: 16px 0;">
+    <thead>
+      <tr>
+        <th>Cookie Name</th>
+        <th>Purpose</th>
+        <th>Expiry</th>
+        <th>Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>session</td>
+        <td>User authentication</td>
+        <td>8 hours</td>
+        <td>Strictly Necessary</td>
+      </tr>
+      <tr>
+        <td>csrf_token</td>
+        <td>Security (prevent CSRF attacks)</td>
+        <td>1 hour</td>
+        <td>Strictly Necessary</td>
+      </tr>
+      <tr>
+        <td>cookie_consent</td>
+        <td>Remember your cookie preferences</td>
+        <td>1 year</td>
+        <td>Functional</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>Note:</strong> All cookies are strictly necessary for the service to function. Disabling cookies will prevent login.</p>
+
+  <h2>10. International Data Transfers</h2>
+  <p>Your data is stored in Google Cloud Platform data centers located in <strong>Asia South 1 (Mumbai)</strong>. If you access the service from outside India, your data may be transferred internationally. Google Cloud has appropriate safeguards in place (Standard Contractual Clauses).</p>
+
+  <h2>11. Children's Privacy</h2>
+  <p>This service is not intended for individuals under 18 years of age. We do not knowingly collect data from children.</p>
+
+  <h2>12. Data Breach Notification</h2>
+  <p>In the event of a data breach involving personal data, we will:</p>
+  <ul>
+    <li>Notify affected users within <strong>72 hours</strong></li>
+    <li>Notify relevant data protection authorities as required by law</li>
+    <li>Provide details of the breach, affected data, and remediation steps</li>
+  </ul>
+
+  <h2>13. Contact Us</h2>
+  <p>For any privacy-related questions or to exercise your GDPR rights, contact:</p>
+  <p>
+    <strong>Data Protection Officer</strong><br>
+    Email: <a href="mailto:security@physiologicprism.com">security@physiologicprism.com</a><br>
+    Response time: Within 30 days (as required by GDPR)
+  </p>
+
+  <h2>14. Changes to This Policy</h2>
+  <p>We may update this Privacy Policy from time to time. You will be notified of significant changes via email or upon login. Continued use of the service after changes constitutes acceptance of the updated policy.</p>
+
+  <hr style="margin: 40px 0; border: none; border-top: 1px solid #ccc;">
+
+  <p style="text-align: center; color: #7f8c8d;">
+    <a href="{{ url_for('terms_of_service') }}">Terms of Service</a> |
+    <a href="{{ url_for('index') }}">Back to Home</a>
+  </p>
+</div>
+{% endblock %}

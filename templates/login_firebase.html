@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login – Physiologic PRISM</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Hide navbar on login page */
+        body > .navbar { display: none !important; }
+        .container { max-width: 400px; margin: 80px auto; }
+        .error-message {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .success-message {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Individual Physiotherapist Login</h2>
+
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+
+        <form id="login-form">
+            <div class="field-block">
+                <input class="input-field" type="email" id="email" name="email" placeholder="Email" required>
+            </div>
+
+            <div class="field-block">
+                <input class="input-field" type="password" id="password" name="password" placeholder="Password" required minlength="8">
+            </div>
+
+            <div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <button type="submit" class="button" id="login-button">Login</button>
+                <a href="{{ url_for('register') }}" class="button" style="background:#ccc; color:#000;">Not registered? Sign up</a>
+            </div>
+
+            <div style="margin-top:16px;">
+                <a href="#" id="forgot-password" style="color:#3498db; font-size:14px;">Forgot password?</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Firebase Initialization -->
+    <script type="module" nonce="{{ csp_nonce() }}">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAI2QaNaJuA6cV_KSJlgsyus11-GKzxee8",
+            authDomain: "physiologicprism-474610.firebaseapp.com",
+            projectId: "physiologicprism-474610",
+            storageBucket: "physiologicprism-474610.firebasestorage.app",
+            messagingSenderId: "292385113403",
+            appId: "1:292385113403:web:02abf02787ba4e02cba31e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        window.__FIREBASE_APP__ = app;
+        window.__FIREBASE_AUTH__ = auth;
+    </script>
+
+    <!-- Login Logic -->
+    <script type="module" nonce="{{ csp_nonce() }}">
+        import { signIn, resetPassword, waitForAuth, startTokenRefresh } from '{{ url_for("static", filename="auth.js") }}';
+
+        const loginForm = document.getElementById('login-form');
+        const loginButton = document.getElementById('login-button');
+        const errorDiv = document.getElementById('error-message');
+        const successDiv = document.getElementById('success-message');
+        const forgotPasswordLink = document.getElementById('forgot-password');
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            successDiv.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+        }
+
+        function hideMessages() {
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+        }
+
+        // Check if already signed in
+        waitForAuth().then(async user => {
+            if (user) {
+                console.log('User already signed in with Firebase, verifying session...');
+                // Verify backend session is valid
+                try {
+                    const idToken = await user.getIdToken();
+                    const response = await fetch('/api/verify-login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const redirectUrl = data.redirect || '/dashboard';
+                        console.log('Session verified, redirecting to:', redirectUrl);
+                        window.location.href = redirectUrl;
+                    } else {
+                        // Session not valid, show login form
+                        console.log('Session verification failed, showing login form');
+                    }
+                } catch (error) {
+                    console.error('Error verifying session:', error);
+                    // Show login form on error
+                }
+            }
+        });
+
+        // Handle login form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessages();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Validate inputs
+            if (!email || !password) {
+                showError('Please enter both email and password');
+                return;
+            }
+
+            // Show loading state
+            loginButton.textContent = 'Signing in...';
+            loginButton.disabled = true;
+            loginForm.classList.add('loading');
+
+            try {
+                // Sign in with Firebase Auth
+                const result = await signIn(email, password);
+
+                if (!result.success) {
+                    showError(result.error);
+                    return;
+                }
+
+                // Success! Start token refresh
+                startTokenRefresh();
+
+                // Get ID token
+                const idToken = await result.user.getIdToken();
+
+                // Verify with backend (check approval status, etc.)
+                const response = await fetch('/api/verify-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({
+                        email: email
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+
+                    // Check for ToS update required
+                    if (error.error === 'TOS_UPDATE_REQUIRED') {
+                        showError('Terms of Service have been updated. Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = error.redirect || '/accept-updated-tos';
+                        }, 1500);
+                        return;
+                    }
+
+                    // Check for email not verified
+                    if (error.error === 'EMAIL_NOT_VERIFIED') {
+                        showError(error.message || 'Please verify your email address first');
+                        await window.__FIREBASE_AUTH__.signOut();
+                        return;
+                    }
+
+                    showError(error.error || 'Login verification failed');
+
+                    // Sign out from Firebase if backend rejects
+                    await window.__FIREBASE_AUTH__.signOut();
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Check approval status (backend should handle this, but double-check)
+                if (data.user && data.user.approved !== 1) {
+                    showError('Your account is pending admin approval');
+                    await window.__FIREBASE_AUTH__.signOut();
+                    return;
+                }
+
+                if (data.user && data.user.active !== 1) {
+                    showError('Your account has been deactivated');
+                    await window.__FIREBASE_AUTH__.signOut();
+                    return;
+                }
+
+                // Success - redirect to appropriate dashboard based on role
+                const redirectUrl = data.redirect || '/dashboard';
+                showSuccess('Login successful! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 1000);
+
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('An unexpected error occurred. Please try again.');
+            } finally {
+                loginButton.textContent = 'Login';
+                loginButton.disabled = false;
+                loginForm.classList.remove('loading');
+            }
+        });
+
+        // Handle forgot password
+        forgotPasswordLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            hideMessages();
+
+            const email = document.getElementById('email').value.trim();
+
+            if (!email) {
+                showError('Please enter your email address first');
+                return;
+            }
+
+            if (!confirm(`Send password reset email to ${email}?`)) {
+                return;
+            }
+
+            const result = await resetPassword(email);
+
+            if (result.success) {
+                showSuccess('Password reset email sent! Check your inbox.');
+            } else {
+                showError(result.error);
+            }
+        });
+    </script>
+</body>
+</html>

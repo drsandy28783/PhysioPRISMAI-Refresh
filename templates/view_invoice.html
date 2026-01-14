@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ invoice.invoice_number }} – Physiologic PRISM{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 40px auto;">
+  <!-- Header Actions -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <h2 style="color: #2c3e50; margin: 0;">Invoice {{ invoice.invoice_number }}</h2>
+    <div style="display: flex; gap: 12px;">
+      <a href="{{ url_for('download_invoice', invoice_id=invoice.invoice_id) }}"
+         class="button"
+         style="background-color: #27ae60;">
+        📥 Download PDF
+      </a>
+      <a href="{{ url_for('my_invoices') }}" class="button" style="background-color: #95a5a6;">
+        ← Back to Invoices
+      </a>
+    </div>
+  </div>
+
+  <!-- Invoice Container -->
+  <div style="background-color: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); padding: 40px;">
+
+    <!-- Header -->
+    <div style="text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 20px; margin-bottom: 30px;">
+      <h1 style="color: #3498db; margin: 0 0 10px 0;">TAX INVOICE</h1>
+      <p style="margin: 5px 0; color: #7f8c8d;">{{ invoice.business_name or 'PhysiologicPRISM' }}</p>
+      <p style="margin: 5px 0; color: #7f8c8d;">{{ invoice.business_address or 'India' }}</p>
+      <p style="margin: 5px 0; color: #7f8c8d;">
+        GSTIN: {{ invoice.business_gstin or 'N/A' }} | PAN: {{ invoice.business_pan or 'N/A' }}
+      </p>
+      <p style="margin: 5px 0; color: #7f8c8d;">
+        Email: {{ invoice.business_email or 'support@physiologicprism.com' }} |
+        Phone: {{ invoice.business_phone or 'N/A' }}
+      </p>
+    </div>
+
+    <!-- Invoice Details -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+      <!-- Bill To -->
+      <div>
+        <h3 style="color: #2c3e50; margin: 0 0 12px 0; font-size: 16px;">Bill To:</h3>
+        <p style="margin: 5px 0;"><strong>{{ invoice.customer_name or 'N/A' }}</strong></p>
+        <p style="margin: 5px 0;">{{ invoice.customer_institute or 'N/A' }}</p>
+        <p style="margin: 5px 0;">Email: {{ invoice.customer_email or 'N/A' }}</p>
+        <p style="margin: 5px 0;">Phone: {{ invoice.customer_phone or 'N/A' }}</p>
+      </div>
+
+      <!-- Invoice Info -->
+      <div style="text-align: right;">
+        <p style="margin: 5px 0;"><strong>Invoice Number:</strong> {{ invoice.invoice_number }}</p>
+        <p style="margin: 5px 0;">
+          <strong>Invoice Date:</strong>
+          {% if invoice.invoice_date %}
+            {{ invoice.invoice_date.strftime('%d %B %Y') if invoice.invoice_date is not string else 'N/A' }}
+          {% else %}
+            N/A
+          {% endif %}
+        </p>
+        <p style="margin: 5px 0;"><strong>Payment ID:</strong> {{ invoice.payment_id }}</p>
+        <p style="margin: 5px 0;"><strong>Payment Method:</strong> {{ invoice.payment_method or 'Razorpay' }}</p>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <table style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+      <thead>
+        <tr style="background-color: #3498db; color: white;">
+          <th style="padding: 12px; text-align: left;">Description</th>
+          <th style="padding: 12px; text-align: center;">SAC Code</th>
+          <th style="padding: 12px; text-align: center;">Qty</th>
+          <th style="padding: 12px; text-align: right;">Rate (₹)</th>
+          <th style="padding: 12px; text-align: right;">Amount (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #ecf0f1;">
+          <td style="padding: 12px;">{{ invoice.description or 'Subscription' }}</td>
+          <td style="padding: 12px; text-align: center;">{{ invoice.sac_code or '998314' }}</td>
+          <td style="padding: 12px; text-align: center;">1</td>
+          <td style="padding: 12px; text-align: right;">{{ "%.2f"|format(invoice.base_amount) }}</td>
+          <td style="padding: 12px; text-align: right;">{{ "%.2f"|format(invoice.base_amount) }}</td>
+        </tr>
+        <tr>
+          <td colspan="4" style="padding: 12px; text-align: right;"><strong>Subtotal:</strong></td>
+          <td style="padding: 12px; text-align: right;">₹{{ "%.2f"|format(invoice.base_amount) }}</td>
+        </tr>
+
+        <!-- GST Breakdown -->
+        {% if invoice.igst and invoice.igst > 0 %}
+          <tr>
+            <td colspan="4" style="padding: 12px; text-align: right;">IGST ({{ invoice.gst_rate }}%):</td>
+            <td style="padding: 12px; text-align: right;">₹{{ "%.2f"|format(invoice.igst) }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4" style="padding: 12px; text-align: right;">CGST ({{ (invoice.gst_rate / 2)|int }}%):</td>
+            <td style="padding: 12px; text-align: right;">₹{{ "%.2f"|format(invoice.cgst) }}</td>
+          </tr>
+          <tr>
+            <td colspan="4" style="padding: 12px; text-align: right;">SGST ({{ (invoice.gst_rate / 2)|int }}%):</td>
+            <td style="padding: 12px; text-align: right;">₹{{ "%.2f"|format(invoice.sgst) }}</td>
+          </tr>
+        {% endif %}
+
+        <!-- Total -->
+        <tr style="background-color: #ecf0f1; font-weight: bold;">
+          <td colspan="4" style="padding: 16px; text-align: right; font-size: 16px;"><strong>Total Amount:</strong></td>
+          <td style="padding: 16px; text-align: right; font-size: 16px; color: #27ae60;">
+            <strong>₹{{ "%.2f"|format(invoice.total_amount) }}</strong>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Amount in Words (Approximate) -->
+    <p style="margin: 20px 0;">
+      <strong>Amount in Words:</strong> Rupees {{ "%.0f"|format(invoice.total_amount) }} Only
+    </p>
+
+    <!-- Terms & Conditions -->
+    <div style="margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+      <h4 style="margin: 0 0 12px 0; color: #2c3e50;">Terms & Conditions:</h4>
+      <ol style="margin: 0; padding-left: 20px; color: #7f8c8d;">
+        <li>This is a computer-generated invoice and does not require a physical signature.</li>
+        <li>Payment is non-refundable except as per our refund policy.</li>
+        <li>For any queries, please contact {{ invoice.business_email or 'support@physiologicprism.com' }}</li>
+      </ol>
+    </div>
+
+    <!-- Digital Stamp -->
+    <div style="text-align: right; margin-top: 40px;">
+      <p><strong>For {{ invoice.business_name or 'PhysiologicPRISM' }}</strong></p>
+      <p style="margin-top: 40px;">___________________</p>
+      <p>Authorized Signatory</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ecf0f1; text-align: center; color: #95a5a6; font-size: 12px;">
+      <p style="margin: 5px 0;">This is a computer-generated invoice. No signature required.</p>
+      <p style="margin: 5px 0;">Status: <span style="color: #27ae60; font-weight: 600;">PAID</span></p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

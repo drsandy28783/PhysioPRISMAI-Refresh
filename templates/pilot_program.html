@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+{% block title %}Pilot Program – PhysiologicPRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* Hide the app navbar on marketing pages */
+  body > .navbar { display: none !important; }
+
+  /* Reset container */
+  .container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Marketing Navbar */
+  .marketing-navbar {
+    background: #1a5f5a;
+    padding: 16px 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .marketing-navbar .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .marketing-navbar .logo img {
+    height: 40px;
+  }
+
+  .marketing-navbar .nav-links {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .marketing-navbar .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+
+  .marketing-navbar .nav-links a:hover {
+    opacity: 0.8;
+  }
+
+  .marketing-navbar .cta-btn {
+    background: white;
+    color: #1a5f5a;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  /* Page Styles */
+  .page-wrapper {
+    background: linear-gradient(180deg, #f8fffe 0%, #e6f7f5 50%, #F8F9FA 100%);
+  }
+
+  /* Hero Section */
+  .hero-section {
+    padding: 80px 24px 60px;
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+
+  .hero-subtitle {
+    font-size: 24px;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+
+  .hero-intro {
+    font-size: 18px;
+    color: #333;
+    line-height: 1.6;
+  }
+
+  /* Section */
+  .section {
+    padding: 60px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-alt {
+    background: white;
+  }
+
+  .section-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 24px;
+  }
+
+  .section-text {
+    font-size: 18px;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  /* Bullet Lists */
+  .bullet-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 24px;
+  }
+
+  .bullet-list li {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 16px;
+    padding-left: 32px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .bullet-list li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #27ae60;
+    font-weight: 700;
+    font-size: 20px;
+  }
+
+  /* Grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .info-card {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #1a5f5a;
+  }
+
+  .info-card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 12px;
+  }
+
+  .info-card-text {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  /* Pilot Structure Box */
+  .pilot-structure {
+    background: linear-gradient(135deg, #1a5f5a 0%, #4a7c7a 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 48px;
+    margin-bottom: 32px;
+  }
+
+  .pilot-structure h3 {
+    font-size: 28px;
+    margin-bottom: 24px;
+    font-weight: 700;
+  }
+
+  .pilot-detail {
+    margin-bottom: 20px;
+  }
+
+  .pilot-detail-label {
+    font-size: 16px;
+    font-weight: 700;
+    opacity: 0.9;
+    margin-bottom: 4px;
+  }
+
+  .pilot-detail-value {
+    font-size: 18px;
+    opacity: 0.95;
+    line-height: 1.5;
+  }
+
+  /* Numbered Steps */
+  .steps-list {
+    counter-reset: step-counter;
+    list-style: none;
+    padding: 0;
+    margin-bottom: 32px;
+  }
+
+  .steps-list li {
+    counter-increment: step-counter;
+    margin-bottom: 24px;
+    padding-left: 60px;
+    position: relative;
+    font-size: 18px;
+    color: #333;
+    line-height: 1.6;
+  }
+
+  .steps-list li:before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    background: #1a5f5a;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 20px;
+  }
+
+  .step-title {
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 4px;
+  }
+
+  /* CTA Section */
+  .cta-section {
+    text-align: center;
+    padding: 60px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .cta-title {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .cta-text {
+    font-size: 18px;
+    margin-bottom: 32px;
+    opacity: 0.95;
+    line-height: 1.6;
+  }
+
+  .btn-white {
+    background: white;
+    color: #667eea;
+    padding: 18px 40px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.3);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 32px;
+    }
+
+    .hero-subtitle {
+      font-size: 20px;
+    }
+
+    .section-title {
+      font-size: 26px;
+    }
+
+    .pilot-structure {
+      padding: 32px 24px;
+    }
+
+    .marketing-navbar {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .marketing-navbar .nav-links {
+      flex-direction: column;
+      gap: 12px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Marketing Navbar -->
+<nav class="marketing-navbar">
+  <a href="{{ url_for('homepage') }}" class="logo">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM">
+    <span>PhysiologicPRISM</span>
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('homepage') }}">Home</a>
+    <a href="{{ url_for('homepage') }}#how-it-works">How it works</a>
+    <a href="{{ url_for('pilot_program') }}">Pilot Program</a>
+    <a href="{{ url_for('security_page') }}">Security</a>
+    <a href="{{ url_for('blog_list') }}">Blog</a>
+    <a href="{{ url_for('login') }}">Sign in</a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <h1 class="hero-title">PhysiologicPRISM Pilot Program</h1>
+    <p class="hero-subtitle">Evaluate structured, AI-guided clinical reasoning in your real-world setting.</p>
+    <p class="hero-intro">
+      The PhysiologicPRISM pilot program is designed for clinics, universities, and educational platforms that want to explore how a structured clinical reasoning workflow and AI guidance can improve documentation quality, consistency, and learning outcomes — before committing to a full rollout.
+    </p>
+  </section>
+
+  <!-- Who is this for? -->
+  <section class="section section-alt">
+    <h2 class="section-title">Who is the pilot for?</h2>
+    <ul class="bullet-list">
+      <li>Physiotherapy clinics and hospitals standardising assessment quality</li>
+      <li>Universities and educators teaching ICF, clinical reasoning, and evidence-based practice</li>
+      <li>Platforms like Physiopedia exploring practical tools to complement educational content</li>
+      <li>Research teams studying clinical reasoning, documentation, or outcomes</li>
+    </ul>
+  </section>
+
+  <!-- Pilot Structure at a Glance -->
+  <section class="section">
+    <div class="pilot-structure">
+      <h3>Pilot structure at a glance</h3>
+
+      <div class="pilot-detail">
+        <div class="pilot-detail-label">Duration:</div>
+        <div class="pilot-detail-value">30 days</div>
+      </div>
+
+      <div class="pilot-detail">
+        <div class="pilot-detail-label">Participants:</div>
+        <div class="pilot-detail-value">~30 users</div>
+        <ul style="margin-top: 8px; padding-left: 20px; opacity: 0.95;">
+          <li>10 academic / research users</li>
+          <li>15 clinical practitioners</li>
+          <li>5 new graduates / final-year students</li>
+        </ul>
+      </div>
+
+      <div class="pilot-detail">
+        <div class="pilot-detail-label">Scope:</div>
+        <div class="pilot-detail-value">Full access to PhysiologicPRISM's assessment workflow, AI guidance, and reporting</div>
+      </div>
+
+      <div class="pilot-detail">
+        <div class="pilot-detail-label">Support:</div>
+        <div class="pilot-detail-value">Onboarding resources, email support, and optional weekly check-ins</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- What's Included -->
+  <section class="section section-alt">
+    <h2 class="section-title">What your team gets during the pilot</h2>
+    <ul class="bullet-list">
+      <li>Full access to the PhysiologicPRISM assessment workflow</li>
+      <li>Up to 200 AI-assisted interactions per user per month</li>
+      <li>Structured documentation from history to follow-up</li>
+      <li>Priority support for setup and questions</li>
+      <li>Option to co-design features or integrations based on feedback</li>
+    </ul>
+  </section>
+
+  <!-- What We'll Measure Together -->
+  <section class="section">
+    <h2 class="section-title">What we'll measure together</h2>
+    <p class="section-text">
+      The goal of the pilot is to understand how PhysiologicPRISM affects clinical reasoning, documentation, and user experience — not to force a specific outcome.
+    </p>
+    <ul class="bullet-list">
+      <li>Completeness of assessments</li>
+      <li>Confidence using ICF and clinical reasoning frameworks</li>
+      <li>Perceived usefulness of AI suggestions</li>
+      <li>Perceived improvement in legal/compliance confidence</li>
+      <li>Willingness to keep using PhysiologicPRISM after the pilot</li>
+    </ul>
+    <p class="section-text">
+      Aggregated, anonymised insights can be shared back with you as a report, and used as a foundation for joint case studies or publications if desired.
+    </p>
+  </section>
+
+  <!-- How the Pilot Works -->
+  <section class="section section-alt">
+    <h2 class="section-title">How the pilot works</h2>
+    <ol class="steps-list">
+      <li>
+        <div class="step-title">Intro call</div>
+        We understand your context and goals (clinic, university, or platform).
+      </li>
+      <li>
+        <div class="step-title">Pilot design</div>
+        We confirm the number and type of users, start date, and success metrics.
+      </li>
+      <li>
+        <div class="step-title">Onboarding</div>
+        Users receive access, a short demo video, and quick-start guidance.
+      </li>
+      <li>
+        <div class="step-title">Active use (30 days)</div>
+        Participants use PhysiologicPRISM with real cases in their setting.
+      </li>
+      <li>
+        <div class="step-title">Feedback & review</div>
+        We gather feedback, usage data, and discuss outcomes.
+      </li>
+      <li>
+        <div class="step-title">Next steps</div>
+        If the pilot is successful, we explore a long-term partnership or rollout.
+      </li>
+    </ol>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="cta-section">
+    <h2 class="cta-title">Interested in running a pilot?</h2>
+    <p class="cta-text">
+      If you're a clinic, university, or educational platform and would like to explore a structured pilot with PhysiologicPRISM, we'd be happy to talk.
+    </p>
+    <a href="{{ url_for('request_access') }}" class="btn-white">Request early access</a>
+  </section>
+</div>
+{% endblock %}

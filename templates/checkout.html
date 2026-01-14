@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Physio PRISM{% endblock %}
+
+{% block head %}
+<style>
+    .checkout-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .checkout-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .checkout-header h1 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .plan-details {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+
+    .plan-details h2 {
+        color: #3498db;
+        margin-bottom: 15px;
+        font-size: 1.8em;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+        font-weight: bold;
+        font-size: 1.2em;
+        color: #27ae60;
+        margin-top: 10px;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 15px 0;
+    }
+
+    .feature-list li {
+        padding: 8px 0;
+        color: #34495e;
+    }
+
+    .feature-list li:before {
+        content: "✓ ";
+        color: #27ae60;
+        font-weight: bold;
+        margin-right: 8px;
+    }
+
+    .pay-btn {
+        background: #27ae60;
+        color: white;
+        border: none;
+        padding: 18px 40px;
+        border-radius: 10px;
+        font-size: 1.3em;
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        transition: background 0.3s;
+    }
+
+    .pay-btn:hover {
+        background: #229954;
+    }
+
+    .pay-btn:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+    }
+
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #3498db;
+        text-decoration: none;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+
+    .loading {
+        text-align: center;
+        color: #7f8c8d;
+        margin: 20px 0;
+    }
+
+    .error-message {
+        background: #e74c3c;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    .success-message {
+        background: #27ae60;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <div class="checkout-header">
+        <h1>Complete Your Purchase</h1>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+
+    <div class="plan-details" id="planDetails">
+        <div class="loading">Loading...</div>
+    </div>
+
+    <button id="payBtn" class="pay-btn" onclick="initiatePayment()" disabled>
+        Proceed to Payment
+    </button>
+
+    <a href="{{ url_for('pricing') }}" class="back-link">← Back to Plans</a>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js" nonce="{{ csp_nonce() }}"></script>
+<script nonce="{{ csp_nonce() }}">
+const urlParams = new URLSearchParams(window.location.search);
+const planType = urlParams.get('plan');
+const packageName = urlParams.get('package');
+const type = urlParams.get('type'); // 'subscription' or 'ai_calls'
+
+let checkoutData = null;
+
+// Load plan/package details
+async function loadDetails() {
+    try {
+        if (type === 'subscription') {
+            // Fetch all plans
+            const response = await fetch('/api/subscription/plans');
+            const data = await response.json();
+            const plan = data.plans[planType];
+
+            if (!plan) {
+                showError('Invalid plan selected');
+                return;
+            }
+
+            displayPlanDetails(plan);
+        } else if (type === 'ai_calls') {
+            // Fetch AI call packages
+            const response = await fetch('/api/tokens/packages');  // Backend endpoint (will update in main.py)
+            const data = await response.json();
+            const pkg = data.packages[packageName];
+
+            if (!pkg) {
+                showError('Invalid package selected');
+                return;
+            }
+
+            displayAICallDetails(pkg);
+        }
+
+        document.getElementById('payBtn').disabled = false;
+    } catch (error) {
+        showError('Failed to load details: ' + error.message);
+    }
+}
+
+function displayPlanDetails(plan) {
+    const html = `
+        <h2>${plan.name}</h2>
+        <div class="detail-row">
+            <span>Billing Cycle:</span>
+            <span>Monthly</span>
+        </div>
+        <div class="detail-row">
+            <span>Patients:</span>
+            <span>${plan.patients_limit === -1 ? '<strong>UNLIMITED</strong>' : plan.patients_limit + '/month'}</span>
+        </div>
+        <div class="detail-row">
+            <span>AI Calls:</span>
+            <span>${plan.ai_calls_limit}/month</span>
+        </div>
+        ${plan.max_users > 1 ? `
+        <div class="detail-row">
+            <span>Users:</span>
+            <span>Up to ${plan.max_users} users</span>
+        </div>
+        ` : ''}
+        <ul class="feature-list">
+            ${plan.features.map(f => `<li>${f}</li>`).join('')}
+        </ul>
+        <div class="detail-row">
+            <span>Total:</span>
+            <span>₹${plan.price.toLocaleString()}/month</span>
+        </div>
+    `;
+
+    document.getElementById('planDetails').innerHTML = html;
+}
+
+function displayAICallDetails(pkg) {
+    const html = `
+        <h2>${pkg.name || (pkg.calls + ' AI Calls')}</h2>
+        <div class="detail-row">
+            <span>AI Calls:</span>
+            <span>${pkg.calls}</span>
+        </div>
+        <div class="detail-row">
+            <span>Per Call:</span>
+            <span>₹${pkg.per_call.toFixed(2)}</span>
+        </div>
+        ${pkg.savings && pkg.savings !== '0%' ? `
+        <div class="detail-row">
+            <span>Savings:</span>
+            <span style="color: #27ae60; font-weight: bold;">${pkg.savings}</span>
+        </div>
+        ` : ''}
+        <div class="detail-row">
+            <span>Validity:</span>
+            <span>6 months</span>
+        </div>
+        <div class="detail-row">
+            <span>Total:</span>
+            <span>₹${pkg.price.toLocaleString()}</span>
+        </div>
+    `;
+
+    document.getElementById('planDetails').innerHTML = html;
+}
+
+async function initiatePayment() {
+    const payBtn = document.getElementById('payBtn');
+    payBtn.disabled = true;
+    payBtn.textContent = 'Processing...';
+
+    console.log('Initiating payment...');
+    console.log('Type:', type);
+    console.log('Plan Type:', planType);
+    console.log('Package:', packageName);
+
+    try {
+        let endpoint, body;
+
+        if (type === 'subscription') {
+            endpoint = '/api/subscription/checkout';
+            body = { plan_type: planType };
+        } else {
+            endpoint = '/api/tokens/checkout';  // Backend endpoint (will update in main.py)
+            body = { package: packageName };
+        }
+
+        console.log('Calling endpoint:', endpoint);
+        console.log('Request body:', body);
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        console.log('Response status:', response.status);
+        let data = await response.json();
+        console.log('Response data:', data);
+        console.log('razorpay_key:', data.razorpay_key);
+        console.log('subscription_id:', data.subscription_id);
+        console.log('order_id:', data.order_id);
+        console.log('Full data keys:', Object.keys(data));
+
+        // Unwrap checkout_data if it exists (backend might wrap it)
+        if (data.checkout_data) {
+            console.log('Unwrapping checkout_data...');
+            data = data.checkout_data;
+            console.log('Unwrapped data:', data);
+        }
+
+        if (!response.ok) {
+            // Check if user needs to login
+            if (response.status === 401 || response.status === 403) {
+                showError('Please login to continue with payment');
+                setTimeout(() => {
+                    window.location.href = '/login/firebase';
+                }, 2000);
+                return;
+            }
+            throw new Error(data.error || 'Failed to create checkout');
+        }
+
+        checkoutData = data;
+        console.log('Opening Razorpay checkout with data:', data);
+        openRazorpayCheckout(data);
+    } catch (error) {
+        console.error('Payment initiation error:', error);
+        showError(error.message);
+        payBtn.disabled = false;
+        payBtn.textContent = 'Proceed to Payment';
+    }
+}
+function openRazorpayCheckout(data) {
+    console.log('Opening Razorpay checkout...');
+    console.log('Data received:', data);
+    console.log('Data type:', typeof data);
+    console.log('Is data an object?', data !== null && typeof data === 'object');
+
+    // Check if Razorpay is loaded
+    if (typeof Razorpay === 'undefined') {
+        console.error('Razorpay library not loaded!');
+        showError('Payment gateway not loaded. Please refresh the page.');
+        document.getElementById('payBtn').disabled = false;
+        document.getElementById('payBtn').textContent = 'Proceed to Payment';
+        return;
+    }
+
+    // Validate required fields
+    if (!data.razorpay_key) {
+        console.error('MISSING razorpay_key! Data:', JSON.stringify(data));
+        showError('Payment configuration error: Missing API key. Please contact support.');
+        document.getElementById('payBtn').disabled = false;
+        document.getElementById('payBtn').textContent = 'Proceed to Payment';
+        return;
+    }
+
+    if (type === 'subscription' && !data.subscription_id) {
+        console.error('MISSING subscription_id! Data:', JSON.stringify(data));
+        showError('Payment configuration error: Missing subscription ID. Please contact support.');
+        document.getElementById('payBtn').disabled = false;
+        document.getElementById('payBtn').textContent = 'Proceed to Payment';
+        return;
+    }
+
+    const options = {
+        key: data.razorpay_key,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'Physio PRISM',
+        description: data.description,
+        image: '/static/logo.png',
+        handler: function(response) {
+            console.log('Payment successful, verifying...', response);
+            verifyPayment(response);
+        },
+        prefill: {
+            name: data.name || '',
+            email: data.email || '',
+            contact: data.phone || ''
+        },
+        theme: {
+            color: '#3498db'
+        },
+        modal: {
+            ondismiss: function() {
+                console.log('Razorpay modal dismissed');
+                document.getElementById('payBtn').disabled = false;
+                document.getElementById('payBtn').textContent = 'Proceed to Payment';
+            }
+        }
+    };
+
+    // Add subscription_id or order_id
+    if (type === 'subscription') {
+        options.subscription_id = data.subscription_id;
+        console.log('Added subscription_id:', data.subscription_id);
+    } else {
+        options.order_id = data.order_id;
+        console.log('Added order_id:', data.order_id);
+    }
+
+    console.log('Razorpay options:', options);
+
+    try {
+        const rzp = new Razorpay(options);
+        console.log('Razorpay instance created, opening modal...');
+        rzp.open();
+        console.log('Razorpay modal opened');
+    } catch (error) {
+        console.error('Error opening Razorpay:', error);
+        showError('Failed to open payment gateway: ' + error.message);
+        document.getElementById('payBtn').disabled = false;
+        document.getElementById('payBtn').textContent = 'Proceed to Payment';
+    }
+}
+async function verifyPayment(response) {
+    const payBtn = document.getElementById('payBtn');
+    payBtn.textContent = 'Verifying Payment...';
+
+    try {
+        let endpoint, body;
+
+        if (type === 'subscription') {
+            endpoint = '/api/subscription/verify';
+            body = {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_signature: response.razorpay_signature,
+                plan_type: planType
+            };
+        } else {
+            endpoint = '/api/tokens/verify';  // Backend endpoint (will update in main.py)
+            body = {
+                razorpay_order_id: checkoutData.order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                package: packageName
+            };
+        }
+
+        const verifyResponse = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const verifyData = await verifyResponse.json();
+
+        if (verifyResponse.ok) {
+            showSuccess(verifyData.message || 'Payment successful!');
+            setTimeout(() => {
+                window.location.href = '/subscription-dashboard';
+            }, 2000);
+        } else {
+            throw new Error(verifyData.error || 'Payment verification failed');
+        }
+    } catch (error) {
+        showError('Payment verification failed: ' + error.message);
+        payBtn.disabled = false;
+        payBtn.textContent = 'Proceed to Payment';
+    }
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    setTimeout(() => errorDiv.style.display = 'none', 5000);
+}
+
+function showSuccess(message) {
+    const successDiv = document.getElementById('successMessage');
+    successDiv.textContent = message;
+    successDiv.style.display = 'block';
+}
+
+// Check if Razorpay library is loaded
+window.addEventListener('load', function() {
+    console.log('Page loaded');
+    console.log('Razorpay library loaded:', typeof Razorpay !== 'undefined');
+    if (typeof Razorpay === 'undefined') {
+        console.error('Razorpay library failed to load!');
+        showError('Payment gateway library failed to load. Please refresh the page.');
+    }
+});
+
+// Load details on page load
+loadDetails();
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
