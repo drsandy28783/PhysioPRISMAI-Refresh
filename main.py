@@ -4425,6 +4425,21 @@ def view_patients():
 
             # Note: Removed N+1 query problem - assessment status is now loaded on demand via frontend
 
+            # Helper function to parse created_at (stored as ISO string in Cosmos DB)
+            def parse_created_at(patient):
+                """Parse created_at from ISO string to datetime object"""
+                created_at = patient.get('created_at')
+                if not created_at:
+                    return None
+                if isinstance(created_at, str):
+                    try:
+                        # Parse ISO format: "2026-01-18T15:39:55.123456+00:00"
+                        return datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                    except (ValueError, AttributeError):
+                        return None
+                # Already a datetime object
+                return created_at
+
             # 4) Apply client-side filtering (to avoid Firestore query limitations)
             filtered_patients = patients
 
@@ -4459,7 +4474,7 @@ def view_patients():
                 try:
                     from_date = datetime.strptime(date_from, '%Y-%m-%d')
                     filtered_patients = [p for p in filtered_patients
-                                        if p.get('created_at') and p.get('created_at') >= from_date]
+                                        if parse_created_at(p) and parse_created_at(p) >= from_date]
                 except ValueError:
                     pass  # Invalid date format, skip filter
 
@@ -4469,15 +4484,15 @@ def view_patients():
                     # Add 1 day to include the entire end date
                     to_date = to_date + timedelta(days=1)
                     filtered_patients = [p for p in filtered_patients
-                                        if p.get('created_at') and p.get('created_at') < to_date]
+                                        if parse_created_at(p) and parse_created_at(p) < to_date]
                 except ValueError:
                     pass  # Invalid date format, skip filter
 
             # 6) Apply sorting
             if sort_by == 'newest':
-                filtered_patients.sort(key=lambda p: p.get('created_at') or datetime.min, reverse=True)
+                filtered_patients.sort(key=lambda p: parse_created_at(p) or datetime.min, reverse=True)
             elif sort_by == 'oldest':
-                filtered_patients.sort(key=lambda p: p.get('created_at') or datetime.min)
+                filtered_patients.sort(key=lambda p: parse_created_at(p) or datetime.min)
             elif sort_by == 'name_asc':
                 filtered_patients.sort(key=lambda p: (p.get('name') or '').lower())
             elif sort_by == 'name_desc':
