@@ -2709,7 +2709,9 @@ def api_get_dashboard_analytics():
 
         # Get recent patients (last 30 days)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        recent_patients_ref = patients_ref.where('created_at', '>=', thirty_days_ago)
+        # Convert to ISO format string for Cosmos DB query
+        thirty_days_ago_iso = thirty_days_ago.isoformat()
+        recent_patients_ref = patients_ref.where('created_at', '>=', thirty_days_ago_iso)
         recent_patients_count = len(list(recent_patients_ref.stream()))
 
         # Get cache statistics

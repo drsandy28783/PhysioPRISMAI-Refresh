@@ -257,7 +257,9 @@ class NotificationService:
         """
         try:
             cutoff_date = datetime.utcnow() - timedelta(days=days)
-            query = db.collection('notifications').where('created_at', '<', cutoff_date)
+            # Convert to ISO format string for Cosmos DB query
+            cutoff_date_iso = cutoff_date.isoformat()
+            query = db.collection('notifications').where('created_at', '<', cutoff_date_iso)
 
             deleted_count = 0
             for doc in query.stream():

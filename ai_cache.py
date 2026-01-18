@@ -108,8 +108,11 @@ class AICache:
             created_at = cache_data.get('created_at')
             if created_at:
                 try:
-                    # Handle Firestore timestamp conversion
-                    if hasattr(created_at, 'seconds'):
+                    # Handle different timestamp formats
+                    if isinstance(created_at, str):
+                        # Cosmos DB ISO string format
+                        created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                    elif hasattr(created_at, 'seconds'):
                         # Firestore Timestamp object - convert to datetime
                         created_at = datetime.utcfromtimestamp(created_at.seconds)
 
@@ -393,13 +396,15 @@ class AICache:
         """
         try:
             cutoff_date = datetime.utcnow() - timedelta(days=days)
+            # Convert to ISO format string for Cosmos DB query
+            cutoff_date_iso = cutoff_date.isoformat()
 
             # Get all cache hits and misses
             analytics_ref = self.db.collection(self.analytics_collection)
 
             try:
-                hits_query = analytics_ref.where('event_type', '==', 'cache_hit').where('timestamp', '>=', cutoff_date)
-                misses_query = analytics_ref.where('event_type', '==', 'cache_miss').where('timestamp', '>=', cutoff_date)
+                hits_query = analytics_ref.where('event_type', '==', 'cache_hit').where('timestamp', '>=', cutoff_date_iso)
+                misses_query = analytics_ref.where('event_type', '==', 'cache_miss').where('timestamp', '>=', cutoff_date_iso)
                 hits = list(hits_query.stream())
                 misses = list(misses_query.stream())
             except Exception as query_error:
@@ -535,9 +540,11 @@ class AICache:
         """
         try:
             cutoff_date = datetime.utcnow() - timedelta(days=self.cache_ttl_days)
+            # Convert to ISO format string for Cosmos DB query
+            cutoff_date_iso = cutoff_date.isoformat()
 
             # Query expired entries
-            expired_query = self.db.collection(self.cache_collection).where('created_at', '<', cutoff_date)
+            expired_query = self.db.collection(self.cache_collection).where('created_at', '<', cutoff_date_iso)
 
             expired_docs = list(expired_query.stream())
 

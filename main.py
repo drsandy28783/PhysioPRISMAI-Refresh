@@ -4280,16 +4280,30 @@ def dashboard():
         # Get recent patients (last 30 days) - client-side filtering to avoid index requirement
         from datetime import datetime, timedelta, timezone
         thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+
+        # Helper to parse created_at ISO strings from Cosmos DB
+        def parse_created_at_iso(created_at):
+            if not created_at:
+                return None
+            if isinstance(created_at, str):
+                try:
+                    return datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                except (ValueError, AttributeError):
+                    return None
+            return created_at
+
         try:
-            # Try server-side filtering (requires Firestore index)
-            recent_patients_ref = patients_ref.where('created_at', '>=', thirty_days_ago)
+            # Try server-side filtering (requires Cosmos DB index)
+            # Convert datetime to ISO format string for Cosmos DB query
+            thirty_days_ago_iso = thirty_days_ago.isoformat()
+            recent_patients_ref = patients_ref.where('created_at', '>=', thirty_days_ago_iso)
             recent_patients_count = len(list(recent_patients_ref.stream()))
         except Exception as e:
             # Fallback to client-side filtering if index doesn't exist
             logger.warning(f"Error loading dashboard analytics: {e}")
             recent_patients_count = len([
                 p for p in patients_list
-                if p.get('created_at') and p.get('created_at') >= thirty_days_ago
+                if parse_created_at_iso(p.get('created_at')) and parse_created_at_iso(p.get('created_at')) >= thirty_days_ago
             ])
 
         # Get cache statistics (user-specific would be better, but using global for now)
@@ -9511,9 +9525,11 @@ def cleanup_old_drafts():
             return jsonify({'ok': False, 'error': 'Unauthorized'}), 403
 
         cutoff_date = datetime.now() - timedelta(days=30)
+        # Convert to ISO format string for Cosmos DB query
+        cutoff_date_iso = cutoff_date.isoformat()
 
         # Query old drafts
-        old_drafts = db.collection('form_drafts').where('updated_at', '<', cutoff_date).stream()
+        old_drafts = db.collection('form_drafts').where('updated_at', '<', cutoff_date_iso).stream()
 
         deleted_count = 0
         for draft_doc in old_drafts:
