@@ -111,26 +111,29 @@ This information is now prominently displayed in Section 1 of our Terms of Servi
 
 **6. WEBSITE STATUS**
 
-✓ Fully operational and publicly accessible at https://physiologicprism.com
-✓ Active user base with paying subscribers
-✓ Complete SaaS functionality deployed
-✓ All pages live and functional:
+✓ Website is live and publicly accessible at https://physiologicprism.com
+✓ Complete SaaS functionality developed and tested
+✓ All pages operational and accessible:
   - Homepage with product information
   - Pricing page with detailed plans
   - Legal documentation (Terms, Privacy, Refund Policy)
   - User authentication and dashboard
   - Full clinical workflow features
 
+We are in the final stages of preparation for public launch and are setting up international payment infrastructure through Paddle before going fully live to global users.
+
 **7. PAYMENT INFRASTRUCTURE**
 
-Current Payment Processor: Razorpay (India)
-Seeking Paddle Integration For: International expansion and global payment processing
+Current Status: Platform ready for launch
+Seeking Paddle Integration For: International payment processing at launch
 
-We are actively serving Indian customers via Razorpay and now expanding internationally, which is why we need Paddle as our Merchant of Record for:
-- Multi-currency support
-- Global tax compliance
+We are integrating Paddle as our Merchant of Record to enable:
+- Multi-currency support for global markets
+- Automated tax compliance across jurisdictions
 - Simplified international subscription management
-- Localized payment methods
+- Localized payment methods for international customers
+
+Paddle will be our primary payment processor for international markets from day one of our public launch.
 
 **8. REFUND POLICY COMPLIANCE**
 
@@ -147,16 +150,15 @@ The policy emphasizes:
 
 **9. SUMMARY**
 
-PhysiologicPRISM is a fully operational healthcare SaaS platform with:
+PhysiologicPRISM is a production-ready healthcare SaaS platform with:
 ✓ Complete legal entity registration (PHYSIOLOGICPRISM LLP)
 ✓ Transparent pricing and feature documentation
 ✓ Comprehensive legal policies publicly accessible
 ✓ Clear refund policy (no refunds for SaaS subscriptions)
-✓ Active business serving physiotherapy professionals
-✓ Proven track record in the Indian market
-✓ Ready for international expansion via Paddle
+✓ Fully developed platform ready for launch
+✓ International expansion planned with Paddle as payment partner
 
-We have updated all documentation to meet Paddle's requirements and believe we now fully comply with all approval criteria.
+We are preparing for our public launch and need Paddle's payment infrastructure in place before going live to international markets. All documentation has been updated to meet Paddle's requirements, and we believe we now fully comply with all approval criteria.
 
 **CONTACT INFORMATION**
 
