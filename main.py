@@ -3130,6 +3130,12 @@ def terms_of_service():
     return render_template('terms_of_service.html')
 
 
+@app.route('/refund-policy')
+def refund_policy():
+    """Display Refund Policy"""
+    return render_template('refund_policy.html')
+
+
 @app.route('/accept-updated-tos')
 def accept_updated_tos():
     """
