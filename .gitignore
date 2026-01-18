@@ -21,10 +21,9 @@ ENV/
 *.key
 *.pem
 
-# Vertex AI Credentials & Client (DEPRECATED - migrated to Azure OpenAI)
+# Legacy GCP/Vertex AI files (removed - now using Azure OpenAI)
 vertex-ai-key.json
 vertex-ai-key-*.json
-vertex_ai_client.py
 firebase-key.json
 google-credentials.json
 google-services.json
@@ -72,6 +71,7 @@ nul
 .claude/
 
 # Maintenance & Diagnostic Scripts (may contain sensitive data)
+# Legacy Firestore scripts (removed - now using Cosmos DB)
 create_super_admin_firestore.py
 migrate_to_firestore.py
 migrate_existing_users_email_verified.py

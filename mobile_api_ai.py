@@ -228,7 +228,7 @@ def build_patient_context(raw: dict) -> dict:
 def get_ai_suggestion_safe(prompt, metadata=None, patient_context="", user_id=None):
     """
     Safe wrapper for get_ai_suggestion that handles imports and errors.
-    Now uses Claude Sonnet 4.5 on Vertex AI (transparent to mobile app).
+    Now uses GPT-4o on Azure OpenAI (transparent to mobile app).
 
     Args:
         prompt: The AI prompt text
@@ -269,7 +269,7 @@ def get_ai_suggestion_safe(prompt, metadata=None, patient_context="", user_id=No
         # Using Azure OpenAI GPT-4o
         model = "gpt-4o"
 
-        # Use the caching system (works with both OpenAI and Vertex AI)
+        # Use the caching system with Azure OpenAI
         from ai_cache import get_ai_suggestion_with_cache
         response = get_ai_suggestion_with_cache(
             db=db,

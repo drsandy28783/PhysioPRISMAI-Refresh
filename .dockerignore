@@ -44,12 +44,11 @@ test_cosmos_wrapper.py
 
 # Kubernetes/Cloud Run YAML (not needed for Container Apps)
 *.yaml
-!firestore.indexes.json
 
 # Claude Code Configuration
 .claude/
 
-# Database Files (Firestore only, no local DBs)
+# Database Files (Cosmos DB in Azure - no local DBs)
 *.db
 *.sqlite
 

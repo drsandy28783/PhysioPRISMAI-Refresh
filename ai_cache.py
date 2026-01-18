@@ -176,7 +176,7 @@ class AICache:
                 'gpt-4o-mini': {'input': 0.15, 'output': 0.60},
                 'gpt-4': {'input': 30.00, 'output': 60.00},
 
-                # Claude Models on Vertex AI (primary)
+                # Claude Models (reference pricing - not currently used)
                 'claude-sonnet-4-5@20250929': {'input': 3.00, 'output': 15.00},
                 'claude-sonnet-4-5': {'input': 3.00, 'output': 15.00},
                 'claude-opus-4@20250929': {'input': 5.00, 'output': 25.00},
@@ -677,12 +677,12 @@ def get_ai_suggestion_with_cache(
     if cached_response:
         return cached_response
 
-    # Cache miss - call AI API (Vertex AI or OpenAI)
+    # Cache miss - call AI API (Azure OpenAI)
     try:
         if not openai_client:
             return "AI service not configured."
 
-        # Use create_chat_completion for both Vertex AI and OpenAI compatibility
+        # Use create_chat_completion for Azure OpenAI
         resp = openai_client.create_chat_completion(
             model=model,
             messages=[{
