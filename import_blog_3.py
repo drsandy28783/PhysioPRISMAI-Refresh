@@ -29,9 +29,9 @@ blog_post = {
     'category': 'Clinical Practice',
     'featured_image': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&q=80',  # Physiotherapy examination
     'status': 'published',
-    'published_at': datetime.now(),
-    'created_at': datetime.now(),
-    'updated_at': datetime.now(),
+    'published_at': datetime.now().isoformat(),
+    'created_at': datetime.now().isoformat(),
+    'updated_at': datetime.now().isoformat(),
     'content': '''
 <article class="blog-post-content">
     <div class="post-intro">
