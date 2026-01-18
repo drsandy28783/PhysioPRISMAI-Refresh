@@ -34,7 +34,9 @@ FREE_TRIAL_DAYS = int(os.environ.get('FREE_TRIAL_DAYS', '14'))
 FREE_TRIAL_PATIENTS = int(os.environ.get('FREE_TRIAL_PATIENTS', '5'))
 FREE_TRIAL_AI_CALLS = int(os.environ.get('FREE_TRIAL_AI_CALLS', '25'))
 
-# Plan definitions with limits (SIMPLIFIED STRUCTURE - December 2025)
+# Plan definitions with limits (Revised January 2026 - Option B: All plans profitable)
+# Option B: Scale-to-zero infrastructure for small plans + moderate price increases
+# This makes ALL plans profitable: Solo (+25%), Team (5) (+70%), Team Pro (+80%), Institute+ (82-83%)
 PLANS = {
     'free_trial': {
         'name': 'Free Trial',
@@ -54,14 +56,14 @@ PLANS = {
     },
     'solo': {
         'name': 'Solo Professional',
-        'price': 899,
+        'price': 1499,  # Increased from ₹899 (+67%) - now profitable with scale-to-zero
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 100,
+        'ai_calls_limit': 50,  # Reduced from 100 to optimize costs
         'max_users': 1,
         'features': [
             'UNLIMITED patients',
-            '100 AI calls/month',
+            '50 AI calls/month',
             'All workflows',
             'PDF reports',
             'Priority email support',
@@ -70,14 +72,14 @@ PLANS = {
     },
     'team_5': {
         'name': 'Team (5 Users)',
-        'price': 3999,
+        'price': 4999,  # Increased from ₹3,999 (+25%) - now profitable with scale-to-zero
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 500,
+        'ai_calls_limit': 400,  # Reduced from 500 to optimize costs
         'max_users': 5,
         'features': [
             'UNLIMITED patients',
-            '500 AI calls/month',
+            '400 AI calls/month',
             'Up to 5 users',
             'All workflows',
             'PDF reports',
@@ -88,14 +90,14 @@ PLANS = {
     },
     'team_10': {
         'name': 'Team Pro (10 Users)',
-        'price': 7499,
+        'price': 8999,  # Increased from ₹7,499 (+20%) - now highly profitable (80% margin)
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 1000,
+        'ai_calls_limit': 800,  # Reduced from 1,000 to optimize costs
         'max_users': 10,
         'features': [
             'UNLIMITED patients',
-            '1,000 AI calls/month',
+            '800 AI calls/month',
             'Up to 10 users',
             'All workflows',
             'Advanced analytics',
@@ -105,10 +107,10 @@ PLANS = {
     },
     'institute_15': {
         'name': 'Institute (15 Users)',
-        'price': 10999,
+        'price': 12999,  # Increased from ₹10,999 (+18%) - now 82% margin
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 1500,
+        'ai_calls_limit': 1500,  # Kept same - generous for institutes
         'max_users': 15,
         'features': [
             'UNLIMITED patients',
@@ -122,10 +124,10 @@ PLANS = {
     },
     'institute_20': {
         'name': 'Institute Plus (20 Users)',
-        'price': 14499,
+        'price': 16999,  # Increased from ₹14,499 (+17%) - now 83% margin
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 2000,
+        'ai_calls_limit': 2000,  # Kept same - generous for large institutes
         'max_users': 20,
         'features': [
             'UNLIMITED patients',
@@ -139,8 +141,9 @@ PLANS = {
     }
 }
 
-# AI Call Packs (70% profit margin - December 2025)
-# Cost per AI call: ₹3.83 (with 70% cache) → Sell at ₹13/call for 70% margin
+# AI Call Packs (90%+ profit margin - Revised January 2026)
+# Cost per AI call: ₹0.91 (Azure OpenAI GPT-4o with caching) → Sell at ₹8.99-13/call for 90%+ margin
+# These are HIGHLY profitable and should be upsold aggressively
 AI_CALL_PACKS = {
     'starter': {
         'calls': 25,
