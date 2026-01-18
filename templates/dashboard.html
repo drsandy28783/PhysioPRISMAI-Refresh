@@ -298,7 +298,7 @@
           {% if analytics.plan_type == 'free_trial' %}Trial Ends{% else %}Renews On{% endif %}
         </div>
         <div class="stat-value" style="font-size: 20px;">
-          {{ analytics.renewal_date.strftime('%d %b %Y') if analytics.renewal_date is not string else 'N/A' }}
+          {{ analytics.renewal_date|datetimeformat('%d %b %Y') if analytics.renewal_date else 'N/A' }}
         </div>
         <div class="stat-subtext">
           {% if analytics.days_until_renewal %}

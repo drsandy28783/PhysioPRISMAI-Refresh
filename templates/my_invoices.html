@@ -36,7 +36,7 @@
               </td>
               <td style="padding: 16px; color: #7f8c8d;">
                 {% if invoice.invoice_date %}
-                  {{ invoice.invoice_date.strftime('%d %b %Y') if invoice.invoice_date is not string else 'N/A' }}
+                  {{ invoice.invoice_date|datetimeformat('%d %b %Y') }}
                 {% else %}
                   N/A
                 {% endif %}

@@ -46,14 +46,14 @@
           </td>
           <td style="padding: 16px;">
             {% if request.deletion_request_date %}
-              {{ request.deletion_request_date.strftime('%Y-%m-%d %H:%M') if request.deletion_request_date else 'N/A' }}
+              {{ request.deletion_request_date|datetimeformat('%Y-%m-%d %H:%M') }}
             {% else %}
               N/A
             {% endif %}
           </td>
           <td style="padding: 16px;">
             {% if request.scheduled_deletion_date %}
-              {{ request.scheduled_deletion_date.strftime('%Y-%m-%d') if hasattr(request.scheduled_deletion_date, 'strftime') else 'N/A' }}
+              {{ request.scheduled_deletion_date|datetimeformat('%Y-%m-%d') }}
             {% else %}
               N/A
             {% endif %}

@@ -250,7 +250,7 @@
             <div class="notification-footer">
               <span class="notification-timestamp">
                 {% if notification.created_at %}
-                  {{ notification.created_at.strftime('%b %d, %Y at %I:%M %p') if notification.created_at is not string else notification.created_at }}
+                  {{ notification.created_at|datetimeformat('%b %d, %Y at %I:%M %p') }}
                 {% else %}
                   Just now
                 {% endif %}

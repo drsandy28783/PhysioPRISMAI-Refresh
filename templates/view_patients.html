@@ -255,7 +255,7 @@
               <span class="tag-badge">{{ tag }}</span>
             {% endfor %}
           </td>
-          <td>{{ patient.created_at.strftime('%Y-%m-%d') if patient.created_at else 'N/A' }}</td>
+          <td>{{ patient.created_at|datetimeformat('%Y-%m-%d') if patient.created_at else 'N/A' }}</td>
           <td style="display: flex; flex-direction: column; gap: 4px;">
             <a href="{{ url_for('edit_patient', patient_id=patient.patient_id) }}" class="button">Edit</a>
             <a href="{{ url_for('follow_ups', patient_id=patient.patient_id) }}" class="button green">Add Follow-Up</a>

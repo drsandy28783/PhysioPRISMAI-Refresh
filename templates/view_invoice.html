@@ -52,7 +52,7 @@
         <p style="margin: 5px 0;">
           <strong>Invoice Date:</strong>
           {% if invoice.invoice_date %}
-            {{ invoice.invoice_date.strftime('%d %B %Y') if invoice.invoice_date is not string else 'N/A' }}
+            {{ invoice.invoice_date|datetimeformat('%d %B %Y') }}
           {% else %}
             N/A
           {% endif %}
