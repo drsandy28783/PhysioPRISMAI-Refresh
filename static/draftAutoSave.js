@@ -40,35 +40,195 @@ class DraftAutoSave {
       const data = await response.json();
 
       if (data.ok && data.has_draft && data.draft_data) {
-        // Restore form fields
-        Object.entries(data.draft_data).forEach(([fieldName, fieldValue]) => {
-          const field = document.querySelector(`[name="${fieldName}"]`);
+        // Show confirmation modal asking user what to do
+        const userChoice = await this.showDraftConfirmationModal(data.updated_at);
 
-          if (field) {
-            if (field.type === 'checkbox') {
-              field.checked = fieldValue;
-            } else if (field.type === 'radio') {
-              const radioButton = document.querySelector(`[name="${fieldName}"][value="${fieldValue}"]`);
-              if (radioButton) radioButton.checked = true;
-            } else {
-              field.value = fieldValue;
-            }
+        if (userChoice === 'continue') {
+          // User wants to continue with the draft - restore it
+          this.applyDraftToForm(data.draft_data);
+
+          // Show restoration notification
+          this.showNotification('Draft restored from ' + this.formatDate(data.updated_at), 'success');
+
+          // Call callback if provided
+          if (this.onRestore) {
+            this.onRestore(data.draft_data);
           }
-        });
 
-        // Show restoration notification
-        this.showNotification('Draft restored from ' + this.formatDate(data.updated_at), 'success');
-
-        // Call callback if provided
-        if (this.onRestore) {
-          this.onRestore(data.draft_data);
+          console.log('Draft restored:', data.draft_data);
+        } else if (userChoice === 'discard') {
+          // User wants to start fresh - delete the draft
+          await this.deleteDraft();
+          console.log('Draft discarded, starting fresh');
         }
-
-        console.log('Draft restored:', data.draft_data);
+        // If userChoice is null (modal closed), do nothing - leave form empty
       }
     } catch (error) {
       console.error('Error restoring draft:', error);
     }
+  }
+
+  /**
+   * Apply draft data to form fields
+   */
+  applyDraftToForm(draftData) {
+    Object.entries(draftData).forEach(([fieldName, fieldValue]) => {
+      const field = document.querySelector(`[name="${fieldName}"]`);
+
+      if (field) {
+        if (field.type === 'checkbox') {
+          field.checked = fieldValue;
+        } else if (field.type === 'radio') {
+          const radioButton = document.querySelector(`[name="${fieldName}"][value="${fieldValue}"]`);
+          if (radioButton) radioButton.checked = true;
+        } else {
+          field.value = fieldValue;
+        }
+      }
+    });
+  }
+
+  /**
+   * Show modal asking user if they want to continue with draft or start fresh
+   * Returns: 'continue', 'discard', or null (if cancelled)
+   */
+  showDraftConfirmationModal(updatedAt) {
+    return new Promise((resolve) => {
+      // Create modal overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'draft-modal-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100000;
+        animation: fadeIn 0.2s ease;
+      `;
+
+      // Create modal
+      const modal = document.createElement('div');
+      modal.className = 'draft-modal';
+      modal.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+      `;
+
+      const formattedDate = this.formatDate(updatedAt);
+
+      modal.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" style="margin: 0 auto;">
+            <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                  stroke="#17a2b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <h2 style="margin: 0 0 15px 0; color: #333; font-size: 24px; text-align: center;">
+          Draft Found
+        </h2>
+
+        <p style="margin: 0 0 10px 0; color: #666; font-size: 16px; text-align: center;">
+          You have unsaved work from <strong>${formattedDate}</strong>.
+        </p>
+
+        <p style="margin: 0 0 25px 0; color: #666; font-size: 16px; text-align: center;">
+          Would you like to continue where you left off?
+        </p>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="draft-continue-btn" style="
+            flex: 1;
+            padding: 12px 24px;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+          ">
+            Continue with Draft
+          </button>
+
+          <button id="draft-discard-btn" style="
+            flex: 1;
+            padding: 12px 24px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+          ">
+            Start Fresh
+          </button>
+        </div>
+      `;
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      // Add hover effects
+      const continueBtn = modal.querySelector('#draft-continue-btn');
+      const discardBtn = modal.querySelector('#draft-discard-btn');
+
+      continueBtn.addEventListener('mouseenter', () => {
+        continueBtn.style.background = '#138496';
+      });
+      continueBtn.addEventListener('mouseleave', () => {
+        continueBtn.style.background = '#17a2b8';
+      });
+
+      discardBtn.addEventListener('mouseenter', () => {
+        discardBtn.style.background = '#5a6268';
+      });
+      discardBtn.addEventListener('mouseleave', () => {
+        discardBtn.style.background = '#6c757d';
+      });
+
+      // Handle button clicks
+      continueBtn.addEventListener('click', () => {
+        overlay.remove();
+        resolve('continue');
+      });
+
+      discardBtn.addEventListener('click', () => {
+        overlay.remove();
+        resolve('discard');
+      });
+
+      // Close on overlay click
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.remove();
+          resolve(null);
+        }
+      });
+
+      // Close on Escape key
+      const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+          overlay.remove();
+          document.removeEventListener('keydown', escapeHandler);
+          resolve(null);
+        }
+      };
+      document.addEventListener('keydown', escapeHandler);
+    });
   }
 
   /**
