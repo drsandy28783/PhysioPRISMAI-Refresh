@@ -696,7 +696,8 @@ def get_ai_suggestion_with_cache(
             max_tokens=1500  # Increased from 200 to allow complete clinical responses
         )
 
-        response = resp['choices'][0]['message']['content']
+        # Azure OpenAI client returns dict with 'text' field (not 'choices')
+        response = resp.get('text', resp.get('content', [{}])[0].get('text', ''))
 
         # Save to cache for future use
         cache.save_response(prompt, response, model, metadata, patient_context, user_id)

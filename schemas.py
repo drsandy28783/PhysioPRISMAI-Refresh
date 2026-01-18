@@ -871,7 +871,8 @@ class DraftSaveSchema(Schema):
         required=True,
         validate=validate.OneOf([
             'subjective', 'objective', 'assessment', 'plan',
-            'diagnosis', 'goals', 'treatment', 'followup'
+            'diagnosis', 'goals', 'treatment', 'followup',
+            'add_patient'  # Allow draft saving for new patient form
         ])
     )
 
