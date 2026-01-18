@@ -8464,9 +8464,9 @@ def test_razorpay_connection():
 def blog_list():
     """Display list of published blog posts"""
     try:
-        # Get published blog posts, sorted by publish date (newest first)
-        # Requires composite index: (status, published_at)
-        posts_ref = db.collection('blog_posts').where('status', '==', 'published').order_by('published_at', direction='DESCENDING').limit(50)
+        # Get published blog posts
+        # Note: Sorting is done in Python to avoid needing a composite index
+        posts_ref = db.collection('blog_posts').where('status', '==', 'published').limit(100)
         posts_docs = posts_ref.stream()
 
         posts = []
@@ -8480,13 +8480,27 @@ def blog_list():
                 if isinstance(pub_date, str):
                     try:
                         pub_date = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+                        post_data['published_at_datetime'] = pub_date
                     except:
                         pub_date = None
+                        post_data['published_at_datetime'] = datetime.min
+                else:
+                    post_data['published_at_datetime'] = pub_date if pub_date else datetime.min
+
                 if pub_date:
                     post_data['published_at_formatted'] = pub_date.strftime('%B %d, %Y')
                 else:
                     post_data['published_at_formatted'] = 'Unknown'
+            else:
+                post_data['published_at_formatted'] = 'Unknown'
+                post_data['published_at_datetime'] = datetime.min
             posts.append(post_data)
+
+        # Sort by publish date (newest first) in Python
+        posts.sort(key=lambda x: x.get('published_at_datetime', datetime.min), reverse=True)
+
+        # Limit to 50 posts
+        posts = posts[:50]
 
         return render_template('blog_list.html', posts=posts)
     except Exception as e:
@@ -8605,7 +8619,8 @@ def blog_admin():
 
     try:
         # Get all blog posts (published and draft)
-        posts_ref = db.collection('blog_posts').order_by('created_at', direction='DESCENDING')
+        # Note: Sorting is done in Python to avoid needing an index
+        posts_ref = db.collection('blog_posts').limit(200)
         posts_docs = posts_ref.stream()
 
         posts = []
@@ -8618,12 +8633,21 @@ def blog_admin():
                 if isinstance(created, str):
                     try:
                         created = datetime.fromisoformat(created.replace('Z', '+00:00'))
+                        post_data['created_at_datetime'] = created
                     except:
                         created = None
+                        post_data['created_at_datetime'] = datetime.min
+                else:
+                    post_data['created_at_datetime'] = created if created else datetime.min
+
                 if created:
                     post_data['created_at_formatted'] = created.strftime('%B %d, %Y %I:%M %p')
                 else:
                     post_data['created_at_formatted'] = 'Unknown'
+            else:
+                post_data['created_at_formatted'] = 'Unknown'
+                post_data['created_at_datetime'] = datetime.min
+
             # Handle published_at date
             if post_data.get('published_at'):
                 pub_date = post_data['published_at']
@@ -8636,7 +8660,12 @@ def blog_admin():
                     post_data['published_at_formatted'] = pub_date.strftime('%B %d, %Y')
                 else:
                     post_data['published_at_formatted'] = 'Unknown'
+            else:
+                post_data['published_at_formatted'] = 'Unknown'
             posts.append(post_data)
+
+        # Sort by created_at (newest first) in Python
+        posts.sort(key=lambda x: x.get('created_at_datetime', datetime.min), reverse=True)
 
         return render_template('blog_admin.html', posts=posts)
     except Exception as e:
