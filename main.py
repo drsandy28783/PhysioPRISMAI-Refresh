@@ -1043,8 +1043,18 @@ else:
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value, format='%d-%m-%Y'):
+    if not value:
+        return ''
     if isinstance(value, str):
-        value = datetime.fromisoformat(value)
+        try:
+            # Handle Cosmos DB ISO format with 'Z' or '+00:00'
+            value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except (ValueError, AttributeError):
+            # If parsing fails, return the original string
+            return value
+    elif not hasattr(value, 'strftime'):
+        # If it's not a datetime object and not a string, return as-is
+        return str(value)
     return value.strftime(format)
 
 # Security Functions for HIPAA/GDPR Compliance
@@ -4319,18 +4329,36 @@ def dashboard():
         if usage_stats.get('period_end'):
             try:
                 period_end = usage_stats['period_end']
-                if hasattr(period_end, 'timestamp'):
+                # Handle Cosmos DB ISO strings and Firestore timestamps
+                if isinstance(period_end, str):
+                    period_end = datetime.fromisoformat(period_end.replace('Z', '+00:00'))
+                elif hasattr(period_end, 'timestamp'):
+                    # Firestore timestamp - already a datetime-like object
+                    pass
+
+                if period_end:
                     renewal_date = period_end
-                    days_until_renewal = (period_end.replace(tzinfo=None) - datetime.utcnow()).days
+                    # Make timezone-naive for comparison
+                    period_end_naive = period_end.replace(tzinfo=None) if period_end.tzinfo else period_end
+                    days_until_renewal = (period_end_naive - datetime.utcnow()).days
                     show_renewal_warning = days_until_renewal <= 5
             except:
                 pass
         elif usage_stats.get('trial_end'):
             try:
                 trial_end = usage_stats['trial_end']
-                if hasattr(trial_end, 'timestamp'):
+                # Handle Cosmos DB ISO strings and Firestore timestamps
+                if isinstance(trial_end, str):
+                    trial_end = datetime.fromisoformat(trial_end.replace('Z', '+00:00'))
+                elif hasattr(trial_end, 'timestamp'):
+                    # Firestore timestamp - already a datetime-like object
+                    pass
+
+                if trial_end:
                     renewal_date = trial_end
-                    days_until_renewal = (trial_end.replace(tzinfo=None) - datetime.utcnow()).days
+                    # Make timezone-naive for comparison
+                    trial_end_naive = trial_end.replace(tzinfo=None) if trial_end.tzinfo else trial_end
+                    days_until_renewal = (trial_end_naive - datetime.utcnow()).days
                     show_renewal_warning = days_until_renewal <= 3
             except:
                 pass
