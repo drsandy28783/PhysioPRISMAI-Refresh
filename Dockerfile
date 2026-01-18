@@ -19,9 +19,6 @@ COPY static ./static
 # Copy Python application files
 COPY *.py ./
 
-# Copy Firebase config files (google-services.json excluded - not needed for server-side)
-COPY firebase.json firestore.rules firestore.indexes.json ./
-
 # Security: don't ship local sqlite/db/git in image
 RUN rm -f physio.db physio_backup.db || true \
     && rm -rf .git || true
