@@ -870,9 +870,16 @@ class DraftSaveSchema(Schema):
     section = fields.Str(
         required=True,
         validate=validate.OneOf([
+            # Generic form section names
             'subjective', 'objective', 'assessment', 'plan',
             'diagnosis', 'goals', 'treatment', 'followup',
-            'add_patient'  # Allow draft saving for new patient form
+            # Specific form types used in templates
+            'add_patient',           # templates/add_patient.html
+            'initial_plan',          # templates/initial_plan.html
+            'perspectives',          # templates/perspectives.html
+            'provisional_diagnosis', # templates/provisional_diagnosis.html
+            'smart_goals',           # templates/smart_goals.html
+            'treatment_plan'         # templates/treatment_plan.html
         ])
     )
 
