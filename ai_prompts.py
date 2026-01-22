@@ -1,6 +1,6 @@
 """
-Centralized AI Prompts for Physio-Assist
-========================================
+Centralized AI Prompts for PhysiologicPRISM
+============================================
 
 IMPROVED VERSION - More specific clinical reasoning outputs
 

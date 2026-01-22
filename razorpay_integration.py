@@ -1,6 +1,6 @@
 """
-Razorpay Payment Gateway Integration for Physio-Assist
-=======================================================
+Razorpay Payment Gateway Integration for PhysiologicPRISM
+==========================================================
 
 This module handles Razorpay payment integration for:
 - Subscription payments

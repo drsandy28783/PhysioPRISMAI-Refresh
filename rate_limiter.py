@@ -1,5 +1,5 @@
 """
-Redis-based Rate Limiting for Physio-Assist
+Redis-based Rate Limiting for PhysiologicPRISM
 
 This module provides persistent, distributed rate limiting using Redis.
 Falls back to in-memory rate limiting if Redis is unavailable.

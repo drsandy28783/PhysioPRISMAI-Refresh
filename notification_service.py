@@ -1,5 +1,5 @@
 """
-Notification Service for Physio-Assist
+Notification Service for PhysiologicPRISM
 Handles creation, retrieval, and management of user notifications
 """
 

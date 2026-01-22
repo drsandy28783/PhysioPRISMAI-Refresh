@@ -461,6 +461,154 @@
     text-decoration: underline;
   }
 
+  /* Copyrighted Framework Section */
+  .copyright-framework-section {
+    background: linear-gradient(135deg, #1a5f5a 0%, #2d8b7f 100%);
+    padding: 80px 24px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .copyright-framework-section::before {
+    content: '©';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    font-size: 400px;
+    opacity: 0.05;
+    font-weight: bold;
+  }
+
+  .copyright-framework-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .copyright-hero-text {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .copyright-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    letter-spacing: 1px;
+  }
+
+  .copyright-main-title {
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    line-height: 1.2;
+  }
+
+  .copyright-subtitle {
+    font-size: 20px;
+    opacity: 0.9;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .copyright-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+  }
+
+  .copyright-feature-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .copyright-feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .copyright-feature-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  .copyright-feature-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: white;
+  }
+
+  .copyright-feature-text {
+    font-size: 15px;
+    line-height: 1.6;
+    opacity: 0.9;
+  }
+
+  .copyright-highlight-box {
+    background: rgba(255, 255, 255, 0.95);
+    color: #1a5f5a;
+    padding: 40px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .copyright-highlight-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+  }
+
+  .copyright-highlight-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #1a5f5a;
+  }
+
+  .copyright-highlight-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #2c3e50;
+    margin-bottom: 8px;
+  }
+
+  .copyright-legal-text {
+    font-size: 13px;
+    opacity: 0.7;
+    font-style: italic;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .copyright-main-title {
+      font-size: 32px;
+    }
+
+    .copyright-subtitle {
+      font-size: 18px;
+    }
+
+    .copyright-features-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   /* Footer */
   .homepage-footer {
     background: #1a5f5a;
@@ -667,6 +815,68 @@
   </div>
 </section>
 
+<!-- 4.5. Copyrighted Framework & Proprietary Technology -->
+<section class="copyright-framework-section">
+  <div class="copyright-framework-content">
+
+    <!-- Header -->
+    <div class="copyright-hero-text">
+      <div class="copyright-badge">© PROTECTED INTELLECTUAL PROPERTY</div>
+      <h2 class="copyright-main-title">
+        Built on a Copyrighted Clinical Reasoning Framework
+      </h2>
+      <p class="copyright-subtitle">
+        PhysiologicPRISM is not just another EMR. It's a proprietary methodology and application structure developed, refined, and legally protected by a practicing physiotherapist.
+      </p>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="copyright-features-grid">
+
+      <div class="copyright-feature-card">
+        <span class="copyright-feature-icon">📜</span>
+        <h3 class="copyright-feature-title">Copyrighted PRISM Framework</h3>
+        <p class="copyright-feature-text">
+          The PRISM Clinical Reasoning Framework is a registered copyright. This structured, evidence-based methodology represents years of clinical practice, academic research, and iterative refinement.
+        </p>
+      </div>
+
+      <div class="copyright-feature-card">
+        <span class="copyright-feature-icon">🏗️</span>
+        <h3 class="copyright-feature-title">Proprietary App Architecture</h3>
+        <p class="copyright-feature-text">
+          The application's workflow logic, module sequencing, data structures, and documentation assistance patterns are proprietary intellectual property specifically designed for physiotherapy clinical reasoning.
+        </p>
+      </div>
+
+      <div class="copyright-feature-card">
+        <span class="copyright-feature-icon">🔬</span>
+        <h3 class="copyright-feature-title">Evidence-Based Methodology</h3>
+        <p class="copyright-feature-text">
+          Developed by a physiotherapist with years of clinical experience, the framework integrates ICF standards, biopsychosocial models, and contemporary pain science into a cohesive system.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Highlight Box -->
+    <div class="copyright-highlight-box">
+      <div class="copyright-highlight-icon">⚖️</div>
+      <h3 class="copyright-highlight-title">Legal Protection & Intellectual Property</h3>
+      <p class="copyright-highlight-text">
+        <strong>PhysiologicPRISM</strong> and the <strong>PRISM Clinical Reasoning Framework</strong> are protected by copyright law.
+      </p>
+      <p class="copyright-highlight-text">
+        The methodology, workflow structure, module design, clinical prompts, and application logic are the exclusive intellectual property of <strong>PHYSIOLOGICPRISM LLP</strong>.
+      </p>
+      <p class="copyright-legal-text">
+        © 2025 PHYSIOLOGICPRISM LLP. All rights reserved. Unauthorized reproduction, distribution, or derivative works are prohibited.
+      </p>
+    </div>
+
+  </div>
+</section>
+
 <!-- 5. Who It's For -->
 <section class="section section-alt">
   <h2 class="section-title">Built for modern physiotherapy practice.</h2>
@@ -793,7 +1003,16 @@
     </div>
   </div>
   <div class="footer-bottom">
-    <p>&copy; 2025 PhysiologicPRISM. All rights reserved. Built in India for physiotherapists worldwide.</p>
+    <p style="margin-bottom: 8px;">
+      &copy; 2025 PhysiologicPRISM. All rights reserved.
+    </p>
+    <p style="font-size: 0.9em; opacity: 0.85; margin-bottom: 8px;">
+      PhysiologicPRISM is based on the PRISM Clinical Reasoning Framework,<br>
+      a copyrighted methodology developed by a practicing physiotherapist.
+    </p>
+    <p style="font-size: 0.85em; opacity: 0.75;">
+      Built in India for physiotherapists worldwide.
+    </p>
   </div>
 </footer>
 {% endblock %}

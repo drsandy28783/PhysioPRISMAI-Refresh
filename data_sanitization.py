@@ -1,5 +1,5 @@
 """
-Data Sanitization Module - Physio-Assist
+Data Sanitization Module - PhysiologicPRISM
 HIPAA-compliant PHI sanitization for AI prompts and external services
 """
 

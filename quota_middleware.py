@@ -1,6 +1,6 @@
 """
-Quota Enforcement Middleware for Physio-Assist
-===============================================
+Quota Enforcement Middleware for PhysiologicPRISM
+==================================================
 
 This module provides decorators to enforce subscription quotas on:
 - Patient creation

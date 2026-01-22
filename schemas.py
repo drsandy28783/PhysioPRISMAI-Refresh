@@ -1,5 +1,5 @@
 """
-Request/Response Validation Schemas for Physio-Assist
+Request/Response Validation Schemas for PhysiologicPRISM
 Using Marshmallow for comprehensive input validation
 
 This module provides validation schemas for all user inputs to prevent:

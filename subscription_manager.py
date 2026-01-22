@@ -1,6 +1,6 @@
 """
-Subscription Management Module for Physio-Assist
-=================================================
+Subscription Management Module for PhysiologicPRISM
+====================================================
 
 This module handles all subscription-related logic including:
 - Plan management and limits

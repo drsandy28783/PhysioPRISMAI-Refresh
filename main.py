@@ -3714,7 +3714,7 @@ def export_patients_pdf():
             </style>
         </head>
         <body>
-            <h1>Patient Data Export - Physio-Assist</h1>
+            <h1>Patient Data Export - PhysiologicPRISM</h1>
             <div class="export-info">
                 <p><strong>Exported for:</strong> {user_name} ({user_email})</p>
                 <p><strong>Export Date:</strong> {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC</p>
@@ -9727,7 +9727,7 @@ def sentry_test_message():
     """
     if ENVIRONMENT != 'production' and SENTRY_DSN:
         sentry_sdk.capture_message(
-            "Test message from Physio-Assist! 🎉 Sentry is working correctly.",
+            "Test message from PhysiologicPRISM! 🎉 Sentry is working correctly.",
             level="info"
         )
         return jsonify({

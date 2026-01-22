@@ -1,6 +1,6 @@
 """
-Mobile API Endpoints for Physio-Assist
-========================================
+Mobile API Endpoints for PhysiologicPRISM
+==========================================
 
 This module provides REST API endpoints for the mobile app.
 All endpoints use Firebase Bearer token authentication and return JSON responses.

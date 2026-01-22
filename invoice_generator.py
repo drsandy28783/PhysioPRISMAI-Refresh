@@ -1,6 +1,6 @@
 """
-Invoice Generator for Physio-Assist
-====================================
+Invoice Generator for PhysiologicPRISM
+=======================================
 
 GST-compliant invoice generation for Indian tax compliance.
 Automatically generates invoices for all successful payments.
