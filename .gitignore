@@ -87,6 +87,10 @@ fix_user_partition_key.py
 test_cosmos_wrapper.py
 cleanup_ai_cache.py
 
+# Email & Registration Testing Scripts (2026-01-24)
+test_email.py
+check_recent_users.py
+
 # Deployment Scripts
 *.ps1
 *.sh
@@ -99,6 +103,10 @@ update_*.py
 *.pdf
 readme.txt
 license.txt
+
+# Blog Lead Capture Documentation (2026-01-24 - keep locally for reference)
+BLOG_LEAD_CAPTURE_PLAN.md
+BLOG_LEAD_SYSTEM_IMPLEMENTATION.md
 
 # Business Documents & Email Drafts
 PADDLE_REPLY_EMAIL.txt

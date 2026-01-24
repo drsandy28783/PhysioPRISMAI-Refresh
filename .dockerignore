@@ -46,6 +46,10 @@ check_partition_key.py
 fix_user_partition_key.py
 test_cosmos_wrapper.py
 
+# Email & Registration Testing Scripts (2026-01-24)
+test_email.py
+check_recent_users.py
+
 # Kubernetes/Cloud Run YAML (not needed for Container Apps)
 *.yaml
 

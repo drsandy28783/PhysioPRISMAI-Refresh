@@ -1,0 +1,303 @@
+<!-- Newsletter Signup Component -->
+<style>
+    .newsletter-signup {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 40px;
+        margin: 50px 0;
+        color: white;
+        text-align: center;
+    }
+
+    .newsletter-signup h3 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+        color: white;
+    }
+
+    .newsletter-signup .subtitle {
+        font-size: 1.1rem;
+        margin-bottom: 25px;
+        opacity: 0.95;
+    }
+
+    .newsletter-signup .benefits {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+
+    .newsletter-signup .benefit {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+    }
+
+    .newsletter-signup .benefit-icon {
+        width: 20px;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+
+    .newsletter-form {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .newsletter-form .form-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .newsletter-form input {
+        flex: 1;
+        padding: 15px 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        font-size: 1rem;
+        background: rgba(255, 255, 255, 0.95);
+        color: #2c3e50;
+        transition: all 0.3s ease;
+    }
+
+    .newsletter-form input:focus {
+        outline: none;
+        border-color: white;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    }
+
+    .newsletter-form input::placeholder {
+        color: #7f8c8d;
+    }
+
+    .newsletter-form button {
+        width: 100%;
+        padding: 16px 30px;
+        background: white;
+        color: #667eea;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .newsletter-form button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .newsletter-form button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .newsletter-signup .privacy-note {
+        margin-top: 15px;
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+
+    .newsletter-signup .privacy-note a {
+        color: white;
+        text-decoration: underline;
+    }
+
+    .newsletter-success {
+        display: none;
+        background: rgba(46, 204, 113, 0.2);
+        border: 2px solid rgba(46, 204, 113, 0.5);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+
+    .newsletter-success.show {
+        display: block;
+        animation: slideIn 0.5s ease;
+    }
+
+    .newsletter-error {
+        display: none;
+        background: rgba(231, 76, 60, 0.2);
+        border: 2px solid rgba(231, 76, 60, 0.5);
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+        font-size: 0.95rem;
+    }
+
+    .newsletter-error.show {
+        display: block;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 640px) {
+        .newsletter-signup {
+            padding: 30px 20px;
+        }
+
+        .newsletter-signup h3 {
+            font-size: 1.5rem;
+        }
+
+        .newsletter-signup .benefits {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .newsletter-form .form-row {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="newsletter-signup">
+    <h3>📧 Get Weekly Clinical Insights</h3>
+    <p class="subtitle">
+        Join physiotherapists receiving evidence-based insights and AI tips delivered to their inbox
+    </p>
+
+    <div class="benefits">
+        <div class="benefit">
+            <div class="benefit-icon">✓</div>
+            <span>Weekly newsletter</span>
+        </div>
+        <div class="benefit">
+            <div class="benefit-icon">✓</div>
+            <span>Early access to launch</span>
+        </div>
+        <div class="benefit">
+            <div class="benefit-icon">✓</div>
+            <span>Exclusive resources</span>
+        </div>
+    </div>
+
+    <form id="newsletterForm" class="newsletter-form">
+        <div class="form-row">
+            <input
+                type="text"
+                name="name"
+                placeholder="Your Name (Optional)"
+                id="newsletter-name"
+            >
+        </div>
+        <div class="form-row">
+            <input
+                type="email"
+                name="email"
+                placeholder="Your Email Address"
+                required
+                id="newsletter-email"
+            >
+        </div>
+        <button type="submit" id="newsletter-submit">
+            Subscribe to Newsletter
+        </button>
+    </form>
+
+    <div id="newsletter-success" class="newsletter-success">
+        <strong>🎉 Success!</strong><br>
+        You're subscribed! Check your inbox for a welcome email.
+    </div>
+
+    <div id="newsletter-error" class="newsletter-error"></div>
+
+    <p class="privacy-note">
+        ✓ Free forever. Unsubscribe anytime. <a href="/privacy_policy">Privacy Policy</a>
+    </p>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+    (function() {
+        const form = document.getElementById('newsletterForm');
+        if (!form) return;
+
+        const nameInput = document.getElementById('newsletter-name');
+        const emailInput = document.getElementById('newsletter-email');
+        const submitBtn = document.getElementById('newsletter-submit');
+        const successMsg = document.getElementById('newsletter-success');
+        const errorMsg = document.getElementById('newsletter-error');
+
+        // Get post slug from current URL
+        const pathParts = window.location.pathname.split('/');
+        const postSlug = pathParts[pathParts.length - 1] || 'unknown';
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Disable form
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Subscribing...';
+
+            // Hide previous messages
+            successMsg.classList.remove('show');
+            errorMsg.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/blog/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: nameInput.value.trim(),
+                        email: emailInput.value.trim(),
+                        post_slug: postSlug,
+                        source: 'blog_newsletter'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success
+                    successMsg.classList.add('show');
+                    nameInput.value = '';
+                    emailInput.value = '';
+
+                    // Track conversion (optional analytics)
+                    if (window.gtag) {
+                        gtag('event', 'newsletter_signup', {
+                            'post_slug': postSlug,
+                            'source': 'blog_post'
+                        });
+                    }
+                } else {
+                    // Error
+                    errorMsg.textContent = data.message || 'Something went wrong. Please try again.';
+                    errorMsg.classList.add('show');
+                }
+            } catch (error) {
+                errorMsg.textContent = 'Network error. Please check your connection and try again.';
+                errorMsg.classList.add('show');
+            } finally {
+                // Re-enable form
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Subscribe to Newsletter';
+            }
+        });
+    })();
+</script>

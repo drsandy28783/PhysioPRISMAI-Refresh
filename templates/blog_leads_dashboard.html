@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Blog Leads - Physiologic PRISM{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>📧 Blog Leads & Waitlist</h2>
+    <p style="color: #7f8c8d; margin-bottom: 24px;">Manage newsletter subscribers and waitlist signups</p>
+
+    <!-- Statistics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px;">
+        <div style="background-color: #f0f8ff; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; font-size: 2em; color: #667eea;">{{ total_leads }}</h3>
+            <p style="margin: 8px 0 0 0; color: #7f8c8d;">Total Leads</p>
+        </div>
+        <div style="background-color: #f0fff0; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; font-size: 2em; color: #27ae60;">{{ this_week_leads }}</h3>
+            <p style="margin: 8px 0 0 0; color: #7f8c8d;">This Week</p>
+        </div>
+        <div style="background-color: #fff8f0; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; font-size: 2em; color: #f093fb;">{{ waitlist_leads }}</h3>
+            <p style="margin: 8px 0 0 0; color: #7f8c8d;">Waitlist</p>
+        </div>
+        <div style="background-color: #f5f0ff; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; font-size: 2em; color: #e74c3c;">{{ newsletter_leads }}</h3>
+            <p style="margin: 8px 0 0 0; color: #7f8c8d;">Newsletter</p>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div style="margin-bottom: 20px; border-bottom: 2px solid #ecf0f1;">
+        <div style="display: flex; gap: 20px;">
+            <a href="?filter=all" style="padding: 12px 20px; text-decoration: none; color: {% if filter_type == 'all' %}#667eea{% else %}#7f8c8d{% endif %}; border-bottom: {% if filter_type == 'all' %}3px solid #667eea{% else %}none{% endif %}; font-weight: {% if filter_type == 'all' %}600{% else %}normal{% endif %};">
+                All Leads ({{ total_leads }})
+            </a>
+            <a href="?filter=waitlist" style="padding: 12px 20px; text-decoration: none; color: {% if filter_type == 'waitlist' %}#f093fb{% else %}#7f8c8d{% endif %}; border-bottom: {% if filter_type == 'waitlist' %}3px solid #f093fb{% else %}none{% endif %}; font-weight: {% if filter_type == 'waitlist' %}600{% else %}normal{% endif %};">
+                Waitlist ({{ waitlist_leads }})
+            </a>
+            <a href="?filter=newsletter" style="padding: 12px 20px; text-decoration: none; color: {% if filter_type == 'newsletter' %}#667eea{% else %}#7f8c8d{% endif %}; border-bottom: {% if filter_type == 'newsletter' %}3px solid #667eea{% else %}none{% endif %}; font-weight: {% if filter_type == 'newsletter' %}600{% else %}normal{% endif %};">
+                Newsletter ({{ newsletter_leads }})
+            </a>
+        </div>
+    </div>
+
+    <!-- Export Button -->
+    <div style="margin-bottom: 20px; text-align: right;">
+        <a href="{{ url_for('export_blog_leads') }}?filter={{ filter_type }}" class="button" style="background-color: #27ae60;">
+            📥 Export to CSV
+        </a>
+    </div>
+
+    <!-- Leads Table -->
+    {% if leads %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>First Seen</th>
+                    <th>Posts Read</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr>
+                    <td>
+                        {% if 'waitlist' in lead.source %}
+                            <span style="background: #fff0f5; color: #f093fb; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                🚀 Waitlist
+                            </span>
+                        {% elif 'newsletter' in lead.source %}
+                            <span style="background: #f0f4ff; color: #667eea; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                📧 Newsletter
+                            </span>
+                        {% else %}
+                            <span style="background: #f0f0f0; color: #7f8c8d; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                📝 Other
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ lead.email }}</strong></td>
+                    <td>{{ lead.name or '-' }}</td>
+                    <td>{{ lead.first_seen_post.replace('-', ' ').title() if lead.first_seen_post else '-' }}</td>
+                    <td>
+                        {% if lead.posts_read %}
+                            <span style="color: #27ae60; font-weight: 600;">{{ lead.posts_read|length }}</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ lead.created_at_formatted }}</td>
+                    <td>
+                        {% if lead.converted_to_user %}
+                            <span style="background: #e8f5e9; color: #27ae60; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                ✓ Converted
+                            </span>
+                        {% else %}
+                            <span style="background: #fff3cd; color: #f39c12; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                ⏳ New
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="background: #f8f9fa; padding: 60px 40px; border-radius: 10px; text-align: center; color: #7f8c8d;">
+        <div style="font-size: 48px; margin-bottom: 16px;">📧</div>
+        <h3 style="color: #2c3e50; margin-bottom: 8px;">No Leads Yet</h3>
+        <p>Start capturing leads by sharing your blog posts!</p>
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <div style="margin-top: 30px;">
+        <a href="{{ url_for('super_admin_dashboard') }}">
+            <button class="button" style="background-color: #95a5a6;">← Back to Dashboard</button>
+        </a>
+    </div>
+</div>
+
+<style>
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .data-table thead {
+        background: #f8f9fa;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .data-table th {
+        font-weight: 600;
+        color: #2c3e50;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .data-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}

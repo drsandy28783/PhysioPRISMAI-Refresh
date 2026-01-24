@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coming Soon - PhysiologicPRISM</title>
+    <meta name="description" content="PhysiologicPRISM is launching soon! Join our waitlist to get early access to AI-powered clinical reasoning tools for physiotherapists.">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Coming Soon - PhysiologicPRISM">
+    <meta property="og:description" content="AI-powered clinical reasoning platform for physiotherapists. Join the waitlist for early access!">
+    <meta property="og:type" content="website">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            33% { transform: translateY(-30px) translateX(30px); }
+            66% { transform: translateY(30px) translateX(-30px); }
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: #667eea;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .description {
+            font-size: 1rem;
+            color: #5a6c7d;
+            line-height: 1.6;
+            margin-bottom: 35px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .waitlist-form {
+            margin: 35px 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .features {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e6ed;
+        }
+
+        .features h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #5a6c7d;
+            font-size: 0.95rem;
+        }
+
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .success-message {
+            display: none;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: 500;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-message {
+            display: none;
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .privacy-note {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #95a5a6;
+        }
+
+        .privacy-note a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .privacy-note a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            margin-top: 30px;
+        }
+
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: gap 0.3s ease;
+        }
+
+        .back-link a:hover {
+            gap: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .tagline {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background particles -->
+    <div class="particle" style="width: 100px; height: 100px; top: 10%; left: 10%; animation-delay: 0s;"></div>
+    <div class="particle" style="width: 150px; height: 150px; top: 60%; left: 80%; animation-delay: 5s;"></div>
+    <div class="particle" style="width: 80px; height: 80px; top: 80%; left: 20%; animation-delay: 10s;"></div>
+    <div class="particle" style="width: 120px; height: 120px; top: 20%; right: 15%; animation-delay: 15s;"></div>
+
+    <div class="container">
+        <div class="logo">PP</div>
+
+        <h1>PhysiologicPRISM</h1>
+        <p class="tagline">AI-Powered Clinical Reasoning</p>
+
+        <div class="status-badge">🚀 Launching Soon</div>
+
+        <p class="description">
+            We're building the future of physiotherapy practice. PhysiologicPRISM combines
+            AI-powered insights with evidence-based practice to enhance your clinical reasoning
+            and patient outcomes.
+        </p>
+
+        <form id="waitlistForm" class="waitlist-form">
+            <div class="form-group">
+                <input
+                    type="text"
+                    name="name"
+                    class="form-input"
+                    placeholder="Your Name (Optional)"
+                    id="nameInput"
+                >
+            </div>
+            <div class="form-group">
+                <input
+                    type="email"
+                    name="email"
+                    class="form-input"
+                    placeholder="Your Email Address"
+                    required
+                    id="emailInput"
+                >
+            </div>
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Join the Waitlist
+            </button>
+        </form>
+
+        <div id="successMessage" class="success-message">
+            <strong>🎉 You're on the list!</strong><br>
+            Thank you for joining our waitlist. We'll notify you as soon as we launch!
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <div class="features">
+            <h3>What You'll Get:</h3>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>AI-powered clinical reasoning assistance</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Evidence-based treatment recommendations</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Comprehensive patient management tools</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Early access and special launch pricing</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="privacy-note">
+            By joining, you agree to receive occasional updates from PhysiologicPRISM.
+            Unsubscribe anytime. <a href="/privacy_policy">Privacy Policy</a>
+        </p>
+
+        <div class="back-link">
+            <a href="/blog">← Back to Blog</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('waitlistForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            const nameInput = document.getElementById('nameInput');
+            const emailInput = document.getElementById('emailInput');
+
+            // Disable form
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Joining...';
+
+            // Hide previous messages
+            successMsg.classList.remove('show');
+            errorMsg.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/blog/waitlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: nameInput.value.trim(),
+                        email: emailInput.value.trim(),
+                        source: 'coming_soon_page'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success
+                    successMsg.classList.add('show');
+                    nameInput.value = '';
+                    emailInput.value = '';
+
+                    // Track conversion (optional analytics)
+                    if (window.gtag) {
+                        gtag('event', 'waitlist_signup', {
+                            'source': 'coming_soon_page'
+                        });
+                    }
+                } else {
+                    // Error
+                    errorMsg.textContent = data.message || 'Something went wrong. Please try again.';
+                    errorMsg.classList.add('show');
+                }
+            } catch (error) {
+                errorMsg.textContent = 'Network error. Please check your connection and try again.';
+                errorMsg.classList.add('show');
+            } finally {
+                // Re-enable form
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Join the Waitlist';
+            }
+        });
+    </script>
+</body>
+</html>

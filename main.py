@@ -1538,6 +1538,12 @@ def login_firebase():
     return render_template('login_firebase.html')
 
 
+@app.route('/register/choice')
+def register_choice():
+    """Show registration type selection page"""
+    return render_template('register_choice.html')
+
+
 @app.route('/register/firebase')
 def register_firebase():
     """Serve Firebase Auth registration page"""
@@ -1548,9 +1554,16 @@ def register_firebase():
 # LEGACY SESSION-BASED AUTH ROUTES (Backwards compatibility)
 # ═══════════════════════════════════════════════════════════════════════════
 
-@app.route('/register', methods=['GET', 'POST'])
-@csrf.exempt  # Exempt register from CSRF to work with Firebase Hosting proxy
+@app.route('/register', methods=['GET'])
+@csrf.exempt
 def register():
+    """Show registration type choice page"""
+    return render_template('register_choice.html')
+
+
+@app.route('/register/individual', methods=['GET', 'POST'])
+@csrf.exempt  # Exempt register from CSRF to work with Firebase Hosting proxy
+def register_individual():
     # Redirect to Firebase Auth registration for AI features to work
     if request.method == 'GET':
         return redirect('/register/firebase')
@@ -1603,6 +1616,7 @@ def register():
             'approved': 0,  # Security: Require admin approval
             'active': 1,
             'is_admin': 0,
+            'user_type': 'individual',  # Track registration type
             # GDPR Consent fields
             'consent_data_processing': 1,  # Required
             'consent_terms': 1,  # Required
@@ -2808,6 +2822,7 @@ def api_register():
             'approved': 0,  # Pending approval
             'active': 1,
             'is_admin': 0,
+            'user_type': 'individual',  # Track registration type
             'email_verified': False,  # Email verification required
             'consent_data_processing': 1,
             'consent_terms': 1,
@@ -2896,7 +2911,7 @@ def api_register_institute():
         if existing_user.exists:
             return jsonify({'ok': False, 'error': 'EMAIL_EXISTS'}), 409
 
-        # Create institute admin - AUTO-APPROVED
+        # Create institute admin - REQUIRES SUPER ADMIN APPROVAL
         pw_hash = generate_password_hash(password)
         db.collection('users').document(email).set({
             'name': name,
@@ -2905,13 +2920,14 @@ def api_register_institute():
             'institute': institute,
             'password_hash': pw_hash,
             'created_at': SERVER_TIMESTAMP,
-            'approved': 1,  # Auto-approved for institute admins
+            'approved': 0,  # Requires super admin approval
             'active': 1,
-            'is_admin': 1,  # Admin privilege
-            'is_super_admin': 0
+            'is_admin': 1,  # Admin privilege (activated upon approval)
+            'is_super_admin': 0,
+            'user_type': 'institute_admin'  # Track registration type
         })
 
-        log_action(None, 'API Register Institute', f"{name} ({email}) registered as institute admin via mobile")
+        log_action(None, 'API Register Institute', f"{name} ({email}) registered as institute admin via mobile - pending super admin approval")
 
         # Send notification to super admin via n8n
         try:
@@ -2928,7 +2944,7 @@ def api_register_institute():
 
         return jsonify({
             'ok': True,
-            'message': 'Institute admin registration successful. You can now login.'
+            'message': 'Registration successful! Your account is pending super admin approval. You will receive an email once approved.'
         }), 201
 
     except Exception as e:
@@ -2978,14 +2994,29 @@ def api_register_with_institute():
             'institute': institute,
             'password_hash': pw_hash,
             'created_at': SERVER_TIMESTAMP,
-            'approved': 0,  # Pending institute admin approval
+            'approved': 0,  # Pending approval (super admin or institute admin)
             'active': 1,
-            'is_admin': 0
+            'is_admin': 0,
+            'user_type': 'institute_staff'  # Track registration type
         })
 
         log_action(None, 'API Register Staff', f"{name} ({email}) registered as institute staff via mobile - pending approval")
 
-        # Find institute admin email to send notification
+        # Send notification to SUPER ADMIN (for visibility)
+        try:
+            send_registration_notification({
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'institute': institute,
+                'created_at': datetime.now().isoformat(),
+                'user_type': 'institute_staff'
+            })
+        except Exception as email_error:
+            # Log error but don't fail registration
+            logger.error(f"Failed to send staff registration notification to super admin: {email_error}")
+
+        # Also notify institute admin (they can approve)
         try:
             # Query for institute admin
             admins = db.collection('users').where('institute', '==', institute).where('is_admin', '==', 1).limit(1).stream()
@@ -4593,9 +4624,10 @@ def register_institute():
             'password_hash': pwd,
             'institute': inst,
             'is_admin': 1,
-            'approved': 1,
+            'approved': 0,  # Requires super admin approval
             'active': 1,
             'created_at': SERVER_TIMESTAMP,
+            'user_type': 'institute_admin',  # Track registration type
             # GDPR Consent fields
             'consent_data_processing': 1,
             'consent_terms': 1,
@@ -4605,7 +4637,7 @@ def register_institute():
             'tos_accepted_at': SERVER_TIMESTAMP,
             'tos_version': TOS_VERSION,
         })
-        log_action(None, 'Register', f"{name} registered as Institute Admin")
+        log_action(None, 'Register', f"{name} registered as Institute Admin - pending super admin approval")
 
         # Send notification to super admin
         try:
@@ -4620,6 +4652,7 @@ def register_institute():
             # Log error but don't fail registration
             logger.error(f"Failed to send institute admin registration notification for {email}: {email_error}")
 
+        flash("Registration successful! Your account is pending super admin approval. You will receive an email once approved.", "success")
         return redirect('/login_institute')
     return render_template('register_institute.html')
 
@@ -4737,6 +4770,7 @@ def register_with_institute():
             'is_admin': is_admin,
             'approved': approved,
             'active': active,
+            'user_type': 'institute_staff',  # Track registration type
             'created_at': SERVER_TIMESTAMP,
             # GDPR Consent fields
             'consent_data_processing': 1,
@@ -4748,9 +4782,23 @@ def register_with_institute():
             'tos_version': TOS_VERSION,
         })
 
-        log_action(user_id=None, action="Register", details=f"{name} registered as Institute Physio (pending approval)")
+        log_action(user_id=None, action="Register", details=f"{name} registered as Institute Staff (pending approval)")
 
-        # Find institute admin and send notification
+        # Send notification to SUPER ADMIN (so they have visibility)
+        try:
+            send_registration_notification({
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'institute': institute,
+                'created_at': datetime.now().isoformat(),
+                'user_type': 'institute_staff'
+            })
+        except Exception as email_error:
+            # Log error but don't fail registration
+            logger.error(f"Failed to send staff registration notification to super admin for {email}: {email_error}")
+
+        # Also notify institute admin (they can approve)
         try:
             admins = db.collection('users').where('institute', '==', institute).where('is_admin', '==', 1).limit(1).stream()
             admin_email = None
@@ -7423,12 +7471,22 @@ def super_admin_dashboard():
         total_institutes = len(set(u.to_dict().get('institute') for u in db.collection('users').where('is_admin', '==', 1).stream()))
         total_patients = len(list(db.collection('patients').stream()))
 
-        # Get pending approvals across all institutes
-        pending_users = db.collection('users').where('approved', '==', 0).where('is_admin', '==', 0).stream()
+        # Get ALL pending approvals (individuals, institute admins, and staff)
+        pending_users = db.collection('users').where('approved', '==', 0).stream()
         pending_list = []
         for u in pending_users:
             user_data = u.to_dict()
             user_data['email'] = u.id
+            # Add user type label for display
+            if user_data.get('is_admin') == 1:
+                user_data['type_label'] = 'INSTITUTE ADMIN'
+                user_data['type_class'] = 'admin'
+            elif user_data.get('user_type') == 'institute_staff':
+                user_data['type_label'] = 'Institute Staff'
+                user_data['type_class'] = 'staff'
+            else:
+                user_data['type_label'] = 'Individual'
+                user_data['type_class'] = 'individual'
             pending_list.append(user_data)
 
         # Get all institutes
@@ -7467,6 +7525,152 @@ def super_admin_dashboard():
         logger.error(f"Error loading super admin dashboard: {e}", exc_info=True)
         flash("Error loading dashboard data", "error")
         return redirect('/dashboard')
+
+@app.route('/super_admin_dashboard/blog-leads')
+@super_admin_required()
+def blog_leads_dashboard():
+    """Blog leads management dashboard"""
+    try:
+        filter_type = request.args.get('filter', 'all')
+
+        # Get all leads
+        leads_ref = db.collection('blog_leads')
+        all_leads = []
+
+        for doc in leads_ref.stream():
+            lead_data = doc.to_dict()
+            lead_data['email'] = doc.id
+            all_leads.append(lead_data)
+
+        # Filter leads
+        if filter_type == 'waitlist':
+            filtered_leads = [l for l in all_leads if 'waitlist' in l.get('source', '').lower() or 'waitlist' in l.get('tags', [])]
+        elif filter_type == 'newsletter':
+            filtered_leads = [l for l in all_leads if 'newsletter' in l.get('source', '').lower()]
+        else:
+            filtered_leads = all_leads
+
+        # Format dates for display
+        for lead in filtered_leads:
+            created_at = lead.get('created_at')
+            if created_at:
+                if hasattr(created_at, 'isoformat'):
+                    lead['created_at_formatted'] = created_at.strftime('%Y-%m-%d')
+                elif isinstance(created_at, str):
+                    lead['created_at_formatted'] = created_at[:10]
+                else:
+                    lead['created_at_formatted'] = 'Unknown'
+            else:
+                lead['created_at_formatted'] = 'Unknown'
+
+        # Calculate statistics
+        total_leads = len(all_leads)
+        waitlist_leads = len([l for l in all_leads if 'waitlist' in l.get('source', '').lower() or 'waitlist' in l.get('tags', [])])
+        newsletter_leads = len([l for l in all_leads if 'newsletter' in l.get('source', '').lower()])
+
+        # Calculate this week's leads
+        from datetime import datetime, timedelta
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        this_week_leads = 0
+        for lead in all_leads:
+            created_at = lead.get('created_at')
+            if created_at:
+                if hasattr(created_at, 'timestamp'):
+                    if created_at > week_ago:
+                        this_week_leads += 1
+                elif isinstance(created_at, str):
+                    try:
+                        created_dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                        if created_dt > week_ago:
+                            this_week_leads += 1
+                    except:
+                        pass
+
+        # Sort by most recent
+        filtered_leads.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
+        return render_template('blog_leads_dashboard.html',
+            leads=filtered_leads,
+            total_leads=total_leads,
+            this_week_leads=this_week_leads,
+            waitlist_leads=waitlist_leads,
+            newsletter_leads=newsletter_leads,
+            filter_type=filter_type
+        )
+
+    except Exception as e:
+        logger.error(f"Error loading blog leads dashboard: {e}", exc_info=True)
+        flash("Error loading blog leads data", "error")
+        return redirect('/super_admin_dashboard')
+
+
+@app.route('/super_admin_dashboard/blog-leads/export')
+@super_admin_required()
+def export_blog_leads():
+    """Export blog leads to CSV"""
+    try:
+        import csv
+        from io import StringIO
+
+        filter_type = request.args.get('filter', 'all')
+
+        # Get all leads
+        leads_ref = db.collection('blog_leads')
+        all_leads = []
+
+        for doc in leads_ref.stream():
+            lead_data = doc.to_dict()
+            lead_data['email'] = doc.id
+            all_leads.append(lead_data)
+
+        # Filter leads
+        if filter_type == 'waitlist':
+            filtered_leads = [l for l in all_leads if 'waitlist' in l.get('source', '').lower() or 'waitlist' in l.get('tags', [])]
+        elif filter_type == 'newsletter':
+            filtered_leads = [l for l in all_leads if 'newsletter' in l.get('source', '').lower()]
+        else:
+            filtered_leads = all_leads
+
+        # Create CSV
+        output = StringIO()
+        writer = csv.writer(output)
+
+        # Write header
+        writer.writerow(['Email', 'Name', 'Source', 'First Seen Post', 'Posts Read Count', 'Created At', 'Converted'])
+
+        # Write data
+        for lead in filtered_leads:
+            created_at = lead.get('created_at')
+            if hasattr(created_at, 'isoformat'):
+                created_at_str = created_at.isoformat()
+            elif isinstance(created_at, str):
+                created_at_str = created_at
+            else:
+                created_at_str = 'Unknown'
+
+            writer.writerow([
+                lead.get('email', ''),
+                lead.get('name', ''),
+                lead.get('source', ''),
+                lead.get('first_seen_post', ''),
+                len(lead.get('posts_read', [])),
+                created_at_str,
+                'Yes' if lead.get('converted_to_user') else 'No'
+            ])
+
+        # Create response
+        output.seek(0)
+        from flask import make_response
+        response = make_response(output.getvalue())
+        response.headers['Content-Disposition'] = f'attachment; filename=blog_leads_{filter_type}_{datetime.now().strftime("%Y%m%d")}.csv'
+        response.headers['Content-Type'] = 'text/csv'
+        return response
+
+    except Exception as e:
+        logger.error(f"Error exporting blog leads: {e}", exc_info=True)
+        flash("Error exporting blog leads", "error")
+        return redirect(url_for('blog_leads_dashboard'))
+
 
 @app.route('/super_admin/approve_user/<user_email>', methods=['POST'])
 @super_admin_required()
@@ -9745,6 +9949,176 @@ def sentry_test_message():
             'status': 'disabled',
             'message': 'Test endpoints disabled in production'
         }), 403
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# BLOG LEAD CAPTURE & WAITLIST ROUTES
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.route('/coming-soon')
+def coming_soon():
+    """Pre-launch coming soon / waitlist page"""
+    return render_template('coming_soon.html')
+
+
+@app.route('/api/blog/subscribe', methods=['POST'])
+@csrf.exempt
+def blog_subscribe():
+    """
+    Capture newsletter signup from blog posts.
+    Creates a lead in the blog_leads collection.
+    """
+    try:
+        data = request.get_json() or {}
+
+        email = data.get('email', '').strip().lower()
+        name = data.get('name', '').strip()
+        post_slug = data.get('post_slug', 'unknown')
+        source = data.get('source', 'blog_newsletter')
+
+        # Validation
+        if not email:
+            return jsonify({'ok': False, 'message': 'Email is required'}), 400
+
+        # Basic email validation
+        if '@' not in email or '.' not in email:
+            return jsonify({'ok': False, 'message': 'Invalid email address'}), 400
+
+        # Check if lead already exists
+        existing_lead = db.collection('blog_leads').document(email).get()
+
+        if existing_lead.exists:
+            # Update existing lead
+            lead_data = existing_lead.to_dict()
+            posts_read = lead_data.get('posts_read', [])
+            if post_slug not in posts_read:
+                posts_read.append(post_slug)
+
+            db.collection('blog_leads').document(email).update({
+                'last_activity': SERVER_TIMESTAMP,
+                'posts_read': posts_read
+            })
+
+            return jsonify({
+                'ok': True,
+                'message': 'You\'re already subscribed! Thank you for your continued interest.'
+            }), 200
+
+        # Create new lead
+        db.collection('blog_leads').document(email).set({
+            'email': email,
+            'name': name if name else None,
+            'source': source,
+            'first_seen_post': post_slug,
+            'posts_read': [post_slug],
+            'lead_magnet_downloaded': None,
+            'status': 'new',
+            'created_at': SERVER_TIMESTAMP,
+            'last_activity': SERVER_TIMESTAMP,
+            'converted_to_user': False,
+            'user_email': None,
+            'tags': [],
+            'partition_key': email
+        })
+
+        # Send notification to super admin
+        try:
+            from email_service import send_blog_lead_notification
+            send_blog_lead_notification({
+                'email': email,
+                'name': name,
+                'source': source,
+                'post_slug': post_slug,
+                'created_at': datetime.now().isoformat()
+            })
+        except Exception as email_error:
+            logger.error(f"Failed to send blog lead notification: {email_error}")
+
+        # Log the lead capture
+        log_action(None, 'Blog Lead', f"New newsletter subscriber: {email} from {post_slug}")
+
+        return jsonify({
+            'ok': True,
+            'message': 'Success! Check your inbox for a welcome email.'
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Blog subscribe error: {e}", exc_info=True)
+        return jsonify({'ok': False, 'message': 'Something went wrong. Please try again.'}), 500
+
+
+@app.route('/api/blog/waitlist', methods=['POST'])
+@csrf.exempt
+def blog_waitlist():
+    """
+    Capture waitlist signup from coming soon page.
+    Creates a lead in the blog_leads collection.
+    """
+    try:
+        data = request.get_json() or {}
+
+        email = data.get('email', '').strip().lower()
+        name = data.get('name', '').strip()
+        source = data.get('source', 'coming_soon_page')
+
+        # Validation
+        if not email:
+            return jsonify({'ok': False, 'message': 'Email is required'}), 400
+
+        # Basic email validation
+        if '@' not in email or '.' not in email:
+            return jsonify({'ok': False, 'message': 'Invalid email address'}), 400
+
+        # Check if lead already exists
+        existing_lead = db.collection('blog_leads').document(email).get()
+
+        if existing_lead.exists:
+            return jsonify({
+                'ok': True,
+                'message': 'You\'re already on the waitlist! We\'ll notify you at launch.'
+            }), 200
+
+        # Create new lead
+        db.collection('blog_leads').document(email).set({
+            'email': email,
+            'name': name if name else None,
+            'source': source,
+            'first_seen_post': 'waitlist',
+            'posts_read': [],
+            'lead_magnet_downloaded': None,
+            'status': 'new',
+            'created_at': SERVER_TIMESTAMP,
+            'last_activity': SERVER_TIMESTAMP,
+            'converted_to_user': False,
+            'user_email': None,
+            'tags': ['waitlist'],
+            'partition_key': email
+        })
+
+        # Send notification to super admin
+        try:
+            from email_service import send_blog_lead_notification
+            send_blog_lead_notification({
+                'email': email,
+                'name': name,
+                'source': source,
+                'post_slug': 'waitlist',
+                'created_at': datetime.now().isoformat()
+            })
+        except Exception as email_error:
+            logger.error(f"Failed to send waitlist notification: {email_error}")
+
+        # Log the waitlist signup
+        log_action(None, 'Waitlist', f"New waitlist signup: {email}")
+
+        return jsonify({
+            'ok': True,
+            'message': 'Success! You\'re on the waitlist. We\'ll notify you at launch!'
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Waitlist signup error: {e}", exc_info=True)
+        return jsonify({'ok': False, 'message': 'Something went wrong. Please try again.'}), 500
 
 
 if __name__ == '__main__':

@@ -307,10 +307,14 @@
   </div>
 
   <div class="blog-post-footer">
+    <!-- Newsletter Signup -->
+    {% include 'components/newsletter_signup.html' %}
+
+    <!-- Pre-Launch CTA -->
     <div class="blog-post-cta">
-      <h3>Ready to streamline your physiotherapy practice?</h3>
-      <p>Sign up for PhysiologicPRISM and start managing patients more efficiently.</p>
-      <a href="{{ url_for('register') }}" class="button">Get Started Free</a>
+      <h3>🚀 PhysiologicPRISM is Launching Soon!</h3>
+      <p>Be among the first to access AI-powered clinical reasoning tools for physiotherapists.</p>
+      <a href="{{ url_for('coming_soon') }}" class="button">Join the Waitlist</a>
     </div>
   </div>
 </div>

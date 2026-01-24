@@ -26,9 +26,39 @@
     {% if pending_users %}
     <div style="margin-top: 32px;">
       <h3>Pending User Approvals</h3>
+      <p style="color: #7f8c8d; margin-bottom: 16px;">Review and approve all registration requests. Institute admins require special attention as they will have administrative privileges.</p>
+
+      <style>
+        .user-type-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .badge-admin {
+          background-color: #ffebee;
+          color: #e74c3c;
+          border: 1px solid #e74c3c;
+        }
+        .badge-staff {
+          background-color: #e3f2fd;
+          color: #3498db;
+          border: 1px solid #3498db;
+        }
+        .badge-individual {
+          background-color: #f3e5f5;
+          color: #667eea;
+          border: 1px solid #667eea;
+        }
+      </style>
+
       <table class="data-table">
         <thead>
           <tr>
+            <th>Type</th>
             <th>Name</th>
             <th>Email</th>
             <th>Institute</th>
@@ -37,8 +67,13 @@
         </thead>
         <tbody>
           {% for user in pending_users %}
-          <tr>
-            <td>{{ user.name }}</td>
+          <tr style="{% if user.type_class == 'admin' %}background-color: #fff5f5;{% endif %}">
+            <td>
+              <span class="user-type-badge badge-{{ user.type_class }}">
+                {% if user.type_class == 'admin' %}🔐 {{ user.type_label }}{% elif user.type_class == 'staff' %}👥 {{ user.type_label }}{% else %}👤 {{ user.type_label }}{% endif %}
+              </span>
+            </td>
+            <td><strong>{{ user.name }}</strong></td>
             <td>{{ user.email }}</td>
             <td>{{ user.institute }}</td>
             <td>
@@ -88,6 +123,10 @@
     <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 32px;">
       <a href="{{ url_for('super_admin_users') }}">
         <button class="button">Manage All Users</button>
+      </a>
+
+      <a href="{{ url_for('blog_leads_dashboard') }}">
+        <button class="button" style="background-color: #667eea;">📧 Blog Leads & Waitlist</button>
       </a>
 
       <a href="{{ url_for('super_admin_deletion_requests') }}">

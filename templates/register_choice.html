@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - PhysiologicPRISM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .choice-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .choice-card {
+            background: white;
+            border-radius: 15px;
+            padding: 35px 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .choice-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .choice-card .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .choice-card h2 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .choice-card p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .choice-card .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            display: inline-block;
+        }
+
+        .choice-card .button:hover {
+            opacity: 0.9;
+        }
+
+        .choice-card.individual .icon {
+            color: #667eea;
+        }
+
+        .choice-card.admin .icon {
+            color: #e74c3c;
+        }
+
+        .choice-card.admin .button {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .choice-card.staff .icon {
+            color: #3498db;
+        }
+
+        .choice-card.staff .button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.popular {
+            background: #e8f5e9;
+            color: #27ae60;
+        }
+
+        .badge.admin-badge {
+            background: #ffebee;
+            color: #e74c3c;
+        }
+
+        .footer-links {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .choice-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to PhysiologicPRISM</h1>
+            <p>Choose how you'd like to register</p>
+        </div>
+
+        <div class="choice-container">
+            <!-- Individual Physiotherapist -->
+            <a href="/register/firebase" class="choice-card individual">
+                <div class="badge popular">Most Popular</div>
+                <div class="icon">👤</div>
+                <h2>Individual Physiotherapist</h2>
+                <p>Register as an independent practitioner. Perfect for solo practitioners who want to enhance their clinical reasoning with AI-powered tools.</p>
+                <div class="button">Register as Individual</div>
+            </a>
+
+            <!-- Institute Administrator -->
+            <a href="/register_institute" class="choice-card admin">
+                <div class="badge admin-badge">Admin Account</div>
+                <div class="icon">🏥</div>
+                <h2>Institute Administrator</h2>
+                <p>Register as the administrator of your clinic, hospital, or university. Manage your team and access institute-level features.</p>
+                <div class="button">Register as Admin</div>
+            </a>
+
+            <!-- Join Existing Institute -->
+            <a href="/register_with_institute" class="choice-card staff">
+                <div class="icon">👥</div>
+                <h2>Join Your Institute</h2>
+                <p>Join your existing clinic, hospital, or university team. Your institute admin will approve your access.</p>
+                <div class="button">Join My Institute</div>
+            </a>
+        </div>
+
+        <div class="footer-links">
+            <a href="/login">Already have an account? Login</a>
+            <span style="opacity: 0.5;">|</span>
+            <a href="/">Back to Home</a>
+        </div>
+    </div>
+</body>
+</html>

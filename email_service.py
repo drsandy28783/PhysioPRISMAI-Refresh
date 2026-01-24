@@ -68,11 +68,28 @@ def send_registration_notification(user_data: Dict[str, Any]) -> bool:
             - phone: str
             - institute: str
             - created_at: timestamp
+            - user_type: str (optional: 'individual', 'institute_staff')
 
     Returns:
         bool: True if email sent successfully, False otherwise
     """
     try:
+        user_type = user_data.get('user_type', 'individual')
+
+        # Determine user type display
+        type_badge = ""
+        type_description = ""
+        header_color = "#667eea"
+
+        if user_type == 'institute_staff':
+            type_badge = '<div style="background: #3498db; color: white; padding: 10px 20px; border-radius: 5px; text-align: center; margin: 15px 0;"><strong>👥 INSTITUTE STAFF MEMBER</strong></div>'
+            type_description = "This user is registering as a staff member under an existing institute."
+            header_color = "#3498db"
+        else:
+            type_badge = '<div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 5px; text-align: center; margin: 15px 0;"><strong>👤 INDIVIDUAL PHYSIOTHERAPIST</strong></div>'
+            type_description = "This user is registering as an individual practitioner."
+            header_color = "#667eea"
+
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -80,13 +97,13 @@ def send_registration_notification(user_data: Dict[str, Any]) -> bool:
             <style>
                 body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
                 .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .header {{ background: linear-gradient(135deg, {header_color} 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
                 .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
-                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }}
+                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid {header_color}; }}
                 .info-row {{ margin: 10px 0; }}
-                .label {{ font-weight: bold; color: #667eea; }}
+                .label {{ font-weight: bold; color: {header_color}; }}
                 .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
-                .button {{ display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                .button {{ display: inline-block; padding: 12px 30px; background: {header_color}; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
             </style>
         </head>
         <body>
@@ -96,7 +113,10 @@ def send_registration_notification(user_data: Dict[str, Any]) -> bool:
                 </div>
                 <div class="content">
                     <p>Dear {SUPER_ADMIN_NAME},</p>
-                    <p>A new user has registered on {APP_NAME} and is awaiting approval.</p>
+                    <p>A new user has registered on {APP_NAME} and is awaiting your approval.</p>
+
+                    {type_badge}
+                    <p style="color: #666; font-size: 14px; text-align: center;">{type_description}</p>
 
                     <div class="info-box">
                         <div class="info-row"><span class="label">Name:</span> {user_data.get('name', 'N/A')}</div>
@@ -120,9 +140,16 @@ def send_registration_notification(user_data: Dict[str, Any]) -> bool:
         </html>
         """
 
+        # Update subject line to indicate user type
+        subject_prefix = ""
+        if user_type == 'institute_staff':
+            subject_prefix = "👥 Staff - "
+        else:
+            subject_prefix = "👤 Individual - "
+
         return send_email(
             to=SUPER_ADMIN_EMAIL,
-            subject=f"New Registration: {user_data.get('name')} - {APP_NAME}",
+            subject=f"{subject_prefix}New Registration: {user_data.get('name')} - {APP_NAME}",
             html=html
         )
 
@@ -298,6 +325,7 @@ def send_rejection_notification(user_data: Dict[str, Any], reason: Optional[str]
 def send_institute_admin_registration_notification(user_data: Dict[str, Any]) -> bool:
     """
     Send institute admin registration notification to super admin.
+    CRITICAL: This user will have admin privileges - requires approval!
 
     Args:
         user_data: Dictionary containing user information
@@ -313,25 +341,37 @@ def send_institute_admin_registration_notification(user_data: Dict[str, Any]) ->
             <style>
                 body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
                 .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .header {{ background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
                 .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
-                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f093fb; }}
+                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #e74c3c; }}
                 .info-row {{ margin: 10px 0; }}
-                .label {{ font-weight: bold; color: #f093fb; }}
+                .label {{ font-weight: bold; color: #e74c3c; }}
                 .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
-                .button {{ display: inline-block; padding: 12px 30px; background: #f093fb; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                .button {{ display: inline-block; padding: 12px 30px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                .warning-box {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }}
+                .admin-badge {{ background: #e74c3c; color: white; padding: 15px 25px; border-radius: 8px; text-align: center; margin: 20px 0; font-size: 18px; font-weight: bold; }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🏥 New Institute Admin Registration</h1>
+                    <h1>🏥 ADMIN REGISTRATION - REQUIRES APPROVAL</h1>
                 </div>
                 <div class="content">
                     <p>Dear {SUPER_ADMIN_NAME},</p>
-                    <p>A new institute administrator has registered on {APP_NAME} and is awaiting approval.</p>
+
+                    <div class="admin-badge">
+                        🔐 INSTITUTE ADMINISTRATOR REGISTRATION
+                    </div>
+
+                    <p><strong>IMPORTANT:</strong> A new user has requested <strong>administrative privileges</strong> for their institute on {APP_NAME}.</p>
+
+                    <div class="warning-box">
+                        <p style="margin: 0; color: #856404;"><strong>⚠️ Security Notice:</strong> This user will have institute admin permissions if approved. Please verify their identity and authorization before approval.</p>
+                    </div>
 
                     <div class="info-box">
+                        <h3 style="color: #e74c3c; margin-top: 0;">Applicant Information</h3>
                         <div class="info-row"><span class="label">Name:</span> {user_data.get('name', 'N/A')}</div>
                         <div class="info-row"><span class="label">Email:</span> {user_data.get('email', 'N/A')}</div>
                         <div class="info-row"><span class="label">Phone:</span> {user_data.get('phone', 'N/A')}</div>
@@ -339,9 +379,18 @@ def send_institute_admin_registration_notification(user_data: Dict[str, Any]) ->
                         <div class="info-row"><span class="label">Registration Time:</span> {user_data.get('created_at', 'N/A')}</div>
                     </div>
 
-                    <p><strong>Note:</strong> This user will have administrative privileges for their institute.</p>
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                        <p style="margin: 0;"><strong>Admin Privileges Include:</strong></p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Approve/manage staff members for their institute</li>
+                            <li>Access to institute-level data and reports</li>
+                            <li>Full control over institute settings</li>
+                        </ul>
+                    </div>
 
-                    <a href="{APP_URL}/super_admin_dashboard" class="button">Review Application</a>
+                    <p style="text-align: center; margin-top: 30px;">
+                        <a href="{APP_URL}/super_admin_dashboard" class="button">REVIEW & APPROVE/REJECT</a>
+                    </p>
 
                     <div class="footer">
                         <p>This is an automated notification from {APP_NAME}</p>
@@ -355,7 +404,7 @@ def send_institute_admin_registration_notification(user_data: Dict[str, Any]) ->
 
         return send_email(
             to=SUPER_ADMIN_EMAIL,
-            subject=f"New Institute Admin: {user_data.get('institute')} - {APP_NAME}",
+            subject=f"🔐 ADMIN APPROVAL REQUIRED: {user_data.get('name')} - {user_data.get('institute')} - {APP_NAME}",
             html=html
         )
 
@@ -1001,4 +1050,101 @@ def send_invoice_email(invoice_data: Dict[str, Any], pdf_base64: Optional[str] =
 
     except Exception as e:
         logger.error(f"Error in send_invoice_email: {str(e)}")
+        return False
+
+
+def send_blog_lead_notification(lead_data: Dict[str, Any]) -> bool:
+    """
+    Send notification to super admin when new blog lead is captured.
+
+    Args:
+        lead_data: Dictionary containing lead information
+            - email: str
+            - name: str (optional)
+            - source: str (blog_newsletter, coming_soon_page, etc.)
+            - post_slug: str
+            - created_at: timestamp
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        # Determine source label and icon
+        source = lead_data.get('source', 'unknown')
+        source_labels = {
+            'blog_newsletter': ('📧 Newsletter Signup', '#667eea'),
+            'coming_soon_page': ('🚀 Waitlist Signup', '#f093fb'),
+            'blog_download': ('📥 Lead Magnet', '#27ae60'),
+            'blog_trial_cta': ('⚡ Trial CTA Click', '#e74c3c')
+        }
+        source_label, source_color = source_labels.get(source, ('📝 Blog Lead', '#667eea'))
+
+        # Format post title
+        post_slug = lead_data.get('post_slug', 'unknown')
+        post_display = post_slug.replace('-', ' ').title() if post_slug != 'waitlist' else 'Waitlist Page'
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, {source_color} 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .source-badge {{ background: rgba(255, 255, 255, 0.2); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 15px; display: inline-block; }}
+                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid {source_color}; }}
+                .info-row {{ margin: 10px 0; }}
+                .label {{ font-weight: bold; color: {source_color}; }}
+                .stats-box {{ background: #e8f5e9; border-left: 4px solid #27ae60; padding: 15px; border-radius: 8px; margin: 20px 0; }}
+                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                .button {{ display: inline-block; padding: 12px 30px; background: {source_color}; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="source-badge">{source_label}</div>
+                    <h1>New Blog Lead Captured!</h1>
+                </div>
+                <div class="content">
+                    <p>Dear {SUPER_ADMIN_NAME},</p>
+                    <p>Great news! A new lead has been captured from your blog.</p>
+
+                    <div class="info-box">
+                        <h3 style="color: {source_color}; margin-top: 0;">Lead Information</h3>
+                        <div class="info-row"><span class="label">Email:</span> {lead_data.get('email', 'N/A')}</div>
+                        <div class="info-row"><span class="label">Name:</span> {lead_data.get('name') or 'Not provided'}</div>
+                        <div class="info-row"><span class="label">Source:</span> {source_label}</div>
+                        <div class="info-row"><span class="label">First Seen:</span> {post_display}</div>
+                        <div class="info-row"><span class="label">Captured At:</span> {lead_data.get('created_at', 'N/A')}</div>
+                    </div>
+
+                    <div class="stats-box">
+                        <p style="margin: 0; color: #27ae60;"><strong>💡 Quick Tip:</strong></p>
+                        <p style="margin: 5px 0 0 0; color: #2c3e50;">This lead is interested in your content. Follow up within 24 hours for best conversion rates!</p>
+                    </div>
+
+                    <p style="text-align: center;">
+                        <a href="{APP_URL}/super_admin_dashboard/blog-leads" class="button">View All Leads</a>
+                    </p>
+
+                    <div class="footer">
+                        <p>This is an automated notification from {APP_NAME}</p>
+                        <p>Blog Lead Capture System</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return send_email(
+            to=SUPER_ADMIN_EMAIL,
+            subject=f"{source_label}: {lead_data.get('email')} - {APP_NAME}",
+            html=html
+        )
+
+    except Exception as e:
+        logger.error(f"Error in send_blog_lead_notification: {str(e)}")
         return False
