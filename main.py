@@ -7778,7 +7778,7 @@ def super_admin_approve_user(user_email):
 
     except Exception as e:
         logger.error(f"Error approving user {user_email}: {e}", exc_info=True)
-        flash("Error approving user", "error")
+        flash(f"Error approving user: {str(e)}", "error")
 
     return redirect('/super_admin_dashboard')
 
