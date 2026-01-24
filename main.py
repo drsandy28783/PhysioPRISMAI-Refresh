@@ -7755,9 +7755,10 @@ def super_admin_approve_user(user_email):
             (f" and created Firebase Auth account" if temp_password else "")
         )
 
-        # Send approval notification to user via n8n
+        # Send approval notification to user
         try:
-            send_approval_notification(
+            logger.info(f"Sending approval notification to {user_email} with temp_password: {bool(temp_password)}")
+            email_sent = send_approval_notification(
                 user_data={
                     'name': user_name,
                     'email': user_email,
@@ -7765,9 +7766,13 @@ def super_admin_approve_user(user_email):
                 },
                 temp_password=temp_password
             )
+            if email_sent:
+                logger.info(f"Approval notification sent successfully to {user_email}")
+            else:
+                logger.warning(f"Approval notification failed to send to {user_email}")
         except Exception as webhook_error:
             # Log error but don't fail approval
-            logger.error(f"Failed to send approval notification: {webhook_error}")
+            logger.error(f"Failed to send approval notification: {webhook_error}", exc_info=True)
 
         # Send in-app welcome notification
         try:
