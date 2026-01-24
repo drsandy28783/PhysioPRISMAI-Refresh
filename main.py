@@ -100,6 +100,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app_auth import require_firebase_auth, require_firebase_auth_with_rate_limit, require_auth
+from firebase_admin import auth
 from ai_cache import AICache, get_ai_suggestion_with_cache
 from rate_limiter import (
     limiter,
