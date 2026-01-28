@@ -2867,6 +2867,146 @@ def api_get_dashboard_analytics():
         return jsonify({'success': False, 'error': 'Failed to fetch analytics'}), 500
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# DRAFT AUTO-SAVE ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@mobile_api.route('/draft/save', methods=['POST'])
+@require_auth
+def api_save_draft():
+    """
+    Auto-save form draft data for mobile app
+    Stores partial form data so users can resume later
+    """
+    try:
+        data = request.get_json() or {}
+
+        form_type = data.get('form_type')
+        patient_id = data.get('patient_id')
+        form_data = data.get('form_data', {})
+
+        if not form_type or not patient_id:
+            return jsonify({'ok': False, 'error': 'Missing form_type or patient_id'}), 400
+
+        user_email = g.user.get('email')
+
+        # For new patient forms, skip patient verification since patient doesn't exist yet
+        if patient_id != 'new_patient' and form_type != 'add_patient':
+            # Verify user has access to this patient
+            patient_doc = db.collection('patients').document(patient_id).get()
+
+            if not patient_doc.exists:
+                return jsonify({'ok': False, 'error': 'Patient not found'}), 404
+
+            patient = patient_doc.to_dict()
+
+            # Access control
+            if g.user.get('is_admin') != 1 and patient.get('physio_id') != user_email:
+                return jsonify({'ok': False, 'error': 'Access denied'}), 403
+
+        # Create unique draft ID: user_email + patient_id + form_type
+        draft_id = f"{user_email}_{patient_id}_{form_type}"
+
+        # Save or update draft
+        draft_ref = db.collection('form_drafts').document(draft_id)
+        existing_draft = draft_ref.get()
+
+        draft_ref.set({
+            'user_id': user_email,
+            'patient_id': patient_id,
+            'form_type': form_type,
+            'form_data': form_data,
+            'updated_at': SERVER_TIMESTAMP,
+            'created_at': existing_draft.to_dict().get('created_at') if existing_draft.exists else SERVER_TIMESTAMP
+        }, merge=True)
+
+        logger.info(f"Draft saved: {draft_id}")
+
+        return jsonify({
+            'ok': True,
+            'message': 'Draft saved',
+            'draft_id': draft_id
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error saving draft: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@mobile_api.route('/draft/get/<patient_id>/<form_type>', methods=['GET'])
+@require_auth
+def api_get_draft(patient_id, form_type):
+    """
+    Retrieve saved draft for a form
+    """
+    try:
+        user_email = g.user.get('email')
+
+        # For new patient forms, skip patient verification since patient doesn't exist yet
+        if patient_id != 'new_patient' and form_type != 'add_patient':
+            # Verify user has access to this patient
+            patient_doc = db.collection('patients').document(patient_id).get()
+
+            if not patient_doc.exists:
+                return jsonify({'ok': False, 'error': 'Patient not found'}), 404
+
+            patient = patient_doc.to_dict()
+
+            # Access control
+            if g.user.get('is_admin') != 1 and patient.get('physio_id') != user_email:
+                return jsonify({'ok': False, 'error': 'Access denied'}), 403
+
+        # Get draft
+        draft_id = f"{user_email}_{patient_id}_{form_type}"
+        draft_doc = db.collection('form_drafts').document(draft_id).get()
+
+        if not draft_doc.exists:
+            return jsonify({
+                'ok': True,
+                'has_draft': False,
+                'draft_data': None
+            }), 200
+
+        draft = draft_doc.to_dict()
+
+        return jsonify({
+            'ok': True,
+            'has_draft': True,
+            'draft_data': draft.get('form_data', {}),
+            'updated_at': draft.get('updated_at'),
+            'created_at': draft.get('created_at')
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error getting draft: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@mobile_api.route('/draft/delete/<patient_id>/<form_type>', methods=['DELETE'])
+@require_auth
+def api_delete_draft(patient_id, form_type):
+    """
+    Delete a saved draft (after successful form submission)
+    """
+    try:
+        user_email = g.user.get('email')
+
+        # Delete draft
+        draft_id = f"{user_email}_{patient_id}_{form_type}"
+        db.collection('form_drafts').document(draft_id).delete()
+
+        logger.info(f"Draft deleted: {draft_id}")
+
+        return jsonify({
+            'ok': True,
+            'message': 'Draft deleted'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error deleting draft: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 @mobile_api.route('/health', methods=['GET'])
 def api_health():
     """
