@@ -14,9 +14,9 @@ import uuid
 import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, g
-# Firebase removed - using Azure Cosmos DB, auth
 from azure_cosmos_db import get_cosmos_db, SERVER_TIMESTAMP
 from app_auth import require_firebase_auth, require_auth
+from firebase_admin import auth
 from functools import wraps
 from rate_limiter import redis_client, redis_available
 from email_service import (
@@ -70,49 +70,16 @@ db = get_cosmos_db()
 
 
 # Firebase Auth REST API helper
-import requests
+# DEPRECATED: No longer using Firebase REST API for password verification
+# Now using Cosmos DB password_hash verification only (consistent with web app)
+# import requests
 
-def verify_firebase_password(email, password):
-    """
-    Verify user credentials using Firebase Auth REST API.
-    Returns (success: bool, firebase_uid: str or None, error_message: str or None)
-    """
-    try:
-        # Get Firebase API key from environment
-        firebase_api_key = os.environ.get('FIREBASE_API_KEY') or os.environ.get('EXPO_PUBLIC_FIREBASE_API_KEY')
-        
-        if not firebase_api_key:
-            logger.error('Firebase API key not found in environment')
-            return (False, None, 'Configuration error')
-        
-        # Firebase Auth REST API endpoint
-        url = f'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={firebase_api_key}'
-        
-        payload = {
-            'email': email,
-            'password': password,
-            'returnSecureToken': True
-        }
-        
-        response = requests.post(url, json=payload, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            firebase_uid = data.get('localId')
-            logger.info(f'Firebase Auth verification successful for {email}')
-            return (True, firebase_uid, None)
-        else:
-            error_data = response.json()
-            error_message = error_data.get('error', {}).get('message', 'Authentication failed')
-            logger.warning(f'Firebase Auth verification failed for {email}: {error_message}')
-            return (False, None, error_message)
-            
-    except requests.exceptions.Timeout:
-        logger.error(f'Firebase Auth API timeout for {email}')
-        return (False, None, 'Authentication service timeout')
-    except Exception as e:
-        logger.error(f'Firebase Auth API error for {email}: {e}')
-        return (False, None, 'Authentication service error')
+# def verify_firebase_password(email, password):
+#     """
+#     [DEPRECATED] Verify user credentials using Firebase Auth REST API.
+#     This function is no longer used. Password verification now uses Cosmos DB only.
+#     """
+#     pass
 
 
 
@@ -280,31 +247,14 @@ def api_login():
         
         logger.info(f"Login attempt for {email}: password_length={len(password)}, has_password_hash={bool(password_hash)}, has_firebase_uid={bool(firebase_uid)}")
 
-        # Case 1: User has Cosmos DB password hash - try to verify it
+        # Case 1: User has Cosmos DB password hash - verify it (like web app)
         if password_hash:
             if not check_password_hash(password_hash, password):
-                logger.warning(f"Cosmos DB password verification failed for {email}, trying Firebase Auth")
-                
-                # Fallback: Try Firebase Auth REST API verification
-                success, firebase_uid_from_auth, error_msg = verify_firebase_password(email, password)
-                
-                if not success:
-                    logger.warning(f"Failed login attempt for {email} - Both Cosmos DB and Firebase Auth failed")
-                    log_audit('failed_login', {'email': email})
-                    return jsonify({'ok': False, 'error': 'Invalid credentials'}), 401
-                
-                # Firebase Auth succeeded! Update the password_hash in Cosmos DB
-                logger.info(f"Firebase Auth succeeded for {email}, updating password_hash in Cosmos DB")
-                firebase_uid = firebase_uid_from_auth
-                
-                from werkzeug.security import generate_password_hash
-                db.collection('users').document(email).update({
-                    'password_hash': generate_password_hash(password),
-                    'firebase_uid': firebase_uid
-                })
-                logger.info(f"Updated password_hash for {email}")
-            else:
-                logger.info(f"Cosmos DB password verification successful for {email}")
+                logger.warning(f"Password verification failed for {email}")
+                log_audit('failed_login', {'email': email})
+                return jsonify({'ok': False, 'error': 'Invalid credentials'}), 401
+
+            logger.info(f"Cosmos DB password verification successful for {email}")
             
             # Password verified. Get or create Firebase UID
             if not firebase_uid:
@@ -2410,25 +2360,37 @@ def change_user_password():
         if len(new_password) < 8:
             return jsonify({'error': 'New password must be at least 8 characters'}), 400
 
-        # Verify current password using Firebase Auth
-        success, firebase_uid, error_msg = verify_firebase_password(user_email, current_password)
+        # Verify current password using Cosmos DB (like web app)
+        from werkzeug.security import check_password_hash, generate_password_hash
+        user_doc = db.collection('users').document(user_email).get()
 
-        if not success:
+        if not user_doc.exists:
+            return jsonify({'error': 'User not found'}), 404
+
+        user_data = user_doc.to_dict()
+        password_hash = user_data.get('password_hash', '')
+
+        if not password_hash or not check_password_hash(password_hash, current_password):
             return jsonify({'error': 'Current password is incorrect'}), 401
 
-        # Update password in Firebase Auth
-        try:
-            auth.update_user(
-                firebase_uid,
-                password=new_password
-            )
-        except Exception as auth_error:
-            logger.error(f'Firebase Auth password update failed: {auth_error}')
-            return jsonify({'error': 'Failed to update password in authentication system'}), 500
+        # Get Firebase UID for updating Firebase Auth
+        firebase_uid = user_data.get('firebase_uid')
 
-        # Update password_changed_at timestamp in Cosmos DB
+        # Update password in Firebase Auth if user has Firebase UID
+        if firebase_uid:
+            try:
+                auth.update_user(
+                    firebase_uid,
+                    password=new_password
+                )
+            except Exception as auth_error:
+                logger.error(f'Firebase Auth password update failed: {auth_error}')
+                # Continue anyway to update Cosmos DB
+
+        # Update password_hash and timestamp in Cosmos DB
         user_ref = db.collection('users').document(user_email)
         user_ref.update({
+            'password_hash': generate_password_hash(new_password),
             'password_changed_at': SERVER_TIMESTAMP
         })
 
