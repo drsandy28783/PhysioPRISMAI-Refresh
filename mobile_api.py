@@ -1331,12 +1331,16 @@ def api_list_pending_physios():
             return jsonify({'error': 'Admin access required'}), 403
 
         institute = g.user.get('institute', '')
+        is_super_admin = g.user.get('is_super_admin', 0) == 1
 
-        # Get pending users for this institute
-        pending_users = db.collection('users') \
-            .where('institute', '==', institute) \
-            .where('approved', '==', 0) \
-            .stream()
+        # Super admins see ALL pending users, regular admins see only their institute
+        if is_super_admin:
+            pending_users = db.collection('users').where('approved', '==', 0).stream()
+        else:
+            pending_users = db.collection('users') \
+                .where('institute', '==', institute) \
+                .where('approved', '==', 0) \
+                .stream()
 
         users = []
         for user_doc in pending_users:
@@ -1350,10 +1354,25 @@ def api_list_pending_physios():
                 except:
                     pass
 
+            # Add type label for display (like web app)
+            if user_data.get('is_admin') == 1:
+                type_label = 'INSTITUTE ADMIN'
+                type_class = 'admin'
+            elif user_data.get('user_type') == 'institute_staff':
+                type_label = 'Institute Staff'
+                type_class = 'staff'
+            else:
+                type_label = 'Individual'
+                type_class = 'individual'
+
             users.append({
                 'email': user_doc.id,
                 'name': user_data.get('name', ''),
                 'phone': user_data.get('phone', ''),
+                'institute': user_data.get('institute', ''),
+                'role': user_data.get('role', 'individual'),
+                'type_label': type_label,
+                'type_class': type_class,
                 'created_at': user_data.get('created_at', '')
             })
 
@@ -1362,6 +1381,76 @@ def api_list_pending_physios():
     except Exception as e:
         logger.error(f"Error fetching pending users: {e}")
         return jsonify({'error': 'Failed to fetch pending users'}), 500
+
+
+@mobile_api.route('/admin/dashboard/stats', methods=['GET'])
+@require_auth
+def api_admin_dashboard_stats():
+    """Get dashboard statistics for admins and super admins"""
+    try:
+        # Check if user is admin
+        if g.user.get('is_admin', 0) != 1 and g.user.get('is_super_admin', 0) != 1:
+            return jsonify({'error': 'Admin access required'}), 403
+
+        is_super_admin = g.user.get('is_super_admin', 0) == 1
+        institute = g.user.get('institute', '')
+
+        if is_super_admin:
+            # Super admin: global statistics
+            total_users = len(list(db.collection('users').stream()))
+            total_institutes = len(set(u.to_dict().get('institute') for u in db.collection('users').where('is_admin', '==', 1).stream()))
+            total_patients = len(list(db.collection('patients').stream()))
+            pending_count = len(list(db.collection('users').where('approved', '==', 0).stream()))
+
+            # Get institutes summary
+            institutes_ref = db.collection('users').where('is_admin', '==', 1).stream()
+            institutes = {}
+            for inst in institutes_ref:
+                inst_data = inst.to_dict()
+                inst_name = inst_data.get('institute')
+                if inst_name and inst_name not in institutes:
+                    institutes[inst_name] = {
+                        'name': inst_name,
+                        'admin_count': 0,
+                        'user_count': 0,
+                        'patient_count': 0
+                    }
+                if inst_name:
+                    institutes[inst_name]['admin_count'] += 1
+
+            # Count users and patients per institute
+            for inst_name in list(institutes.keys()):
+                users = db.collection('users').where('institute', '==', inst_name).stream()
+                institutes[inst_name]['user_count'] = len(list(users))
+
+                patients = db.collection('patients').where('institute', '==', inst_name).stream()
+                institutes[inst_name]['patient_count'] = len(list(patients))
+
+            return jsonify({
+                'total_users': total_users,
+                'total_institutes': total_institutes,
+                'total_patients': total_patients,
+                'pending_count': pending_count,
+                'institutes': list(institutes.values()),
+                'is_super_admin': True
+            }), 200
+        else:
+            # Regular admin: institute statistics
+            institute_users = len(list(db.collection('users').where('institute', '==', institute).stream()))
+            institute_patients = len(list(db.collection('patients').where('institute', '==', institute).stream()))
+            pending_count = len(list(db.collection('users').where('institute', '==', institute).where('approved', '==', 0).stream()))
+
+            return jsonify({
+                'institute_users': institute_users,
+                'institute_patients': institute_patients,
+                'pending_count': pending_count,
+                'institute': institute,
+                'is_super_admin': False
+            }), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching admin dashboard stats: {e}")
+        return jsonify({'error': 'Failed to fetch dashboard statistics'}), 500
 
 
 @mobile_api.route('/institute/physios/<uid>/approve', methods=['POST'])
