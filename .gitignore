@@ -138,3 +138,16 @@ n8n_workflows/
 ai_cache_updates.py
 main_py_updates.py
 mobile_api_ai_updates.py
+
+# Code Cleanup Patterns (Added 2026-01-30)
+*.backup
+*_backup.py
+*_old.py
+*_updates.py
+check_*.py
+import_blog_*.py
+cleanup_*.py
+migrate_*.py
+fix_*.py
+verify_*.py
+docs_archive/
