@@ -2,16 +2,8 @@
 .git
 .gitignore
 
-# Development Documentation & Guides (all in parent dev-docs folder)
+# Development Documentation & Guides (keep essential, exclude old sessions)
 ../dev-docs/
-*.md
-README.md
-AUTHENTICATION_ISSUES_FIX_GUIDE.md
-DEPLOY_FIREBASE_CREDENTIALS_AZURE.md
-AZURE_*.md
-MIGRATION_*.md
-COMPLETE_CODE_AUDIT_REPORT.md
-HIPAA_COMPLIANCE_DOCUMENTATION.md
 SESSION_SUMMARY_*.md
 SESSION_SYNTAX_ERRORS_FIX_*.md
 
@@ -23,12 +15,10 @@ Logs.pdf
 PADDLE_REPLY_EMAIL.txt
 *_EMAIL.txt
 
-# Deployment & Setup Scripts (development only)
-deploy.ps1
+# Deployment & Setup Scripts (exclude old/temp ones)
 deploy_to_cloud_run.ps1
 update_cloud_run_env.ps1
 update_cloud_run_env.sh
-verify_razorpay_setup.py
 set_env_vars.ps1
 fix_email_verified_approved_users.py
 create_super_admin_firestore.py
@@ -68,6 +58,12 @@ __pycache__/
 *.pyd
 .pytest_cache/
 *.egg-info/
+
+# Test Coverage Reports
+htmlcov/
+.coverage
+.tox/
+coverage.xml
 
 # Environment Files
 .env

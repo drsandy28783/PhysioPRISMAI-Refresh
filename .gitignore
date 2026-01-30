@@ -91,16 +91,14 @@ cleanup_ai_cache.py
 test_email.py
 check_recent_users.py
 
-# Deployment Scripts
-*.ps1
-*.sh
-deploy*.py
-update_*.py
+# Deployment Scripts (keep setup scripts, ignore temporary ones)
+deploy_temp*.ps1
+deploy_temp*.sh
 
-# Development Documentation (keep only README.md)
-*.md
-!README.md
-*.pdf
+# Development Documentation (keep important docs)
+# Remove old session summaries but keep guides
+SESSION_SUMMARY_*.md
+SESSION_SYNTAX_ERRORS_FIX_*.md
 readme.txt
 license.txt
 
@@ -144,10 +142,20 @@ mobile_api_ai_updates.py
 *_backup.py
 *_old.py
 *_updates.py
-check_*.py
 import_blog_*.py
-cleanup_*.py
-migrate_*.py
-fix_*.py
-verify_*.py
 docs_archive/
+
+# Testing (keep test files, ignore test output)
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+coverage.xml
+*.mo
+*.pot
+
+# Keep these test/diagnostic scripts
+!test_sentry.py
+!check_user_cosmos.py
+!list_all_users_cosmos.py

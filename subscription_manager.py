@@ -16,7 +16,7 @@ import os
 import logging
 from datetime import datetime, timedelta, timezone
 # Firebase removed - using Azure Cosmos DB
-from azure_cosmos_db import SERVER_TIMESTAMP
+from azure_cosmos_db import get_cosmos_db, SERVER_TIMESTAMP
 from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger("app.subscription")
