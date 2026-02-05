@@ -35,8 +35,11 @@
     <meta name="keywords" content="physiotherapy, practice management, clinical reasoning, patient management, AI-powered, healthcare">
 
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
     <link rel="stylesheet" href="{{ url_for('static', filename='assessmentProgress.css') }}">
+
+    <!-- Dark Mode Theme Manager (load early to prevent flash) -->
+    <script src="{{ url_for('static', filename='theme.js') }}" nonce="{{ csp_nonce() }}"></script>
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MTYYB60PT" nonce="{{ csp_nonce() }}"></script>
@@ -71,6 +74,12 @@
                     🔔 Notifications
                     <span class="notification-badge" id="notification-badge" style="display: none;">0</span>
                 </a>
+            </li>
+            <li class="theme-toggle-nav-item">
+                <button id="theme-toggle" class="theme-toggle-button" aria-label="Toggle theme">
+                    <span class="theme-icon">🌓</span>
+                    <span class="theme-label">Auto</span>
+                </button>
             </li>
             <li><a href="{{ url_for('logout') }}">Logout</a></li>
         </ul>

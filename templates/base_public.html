@@ -35,7 +35,10 @@
     <meta name="keywords" content="physiotherapy, practice management, clinical reasoning, patient management, AI-powered, healthcare">
 
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
+
+    <!-- Dark Mode Theme Manager (load early to prevent flash) -->
+    <script src="{{ url_for('static', filename='theme.js') }}" nonce="{{ csp_nonce() }}"></script>
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MTYYB60PT" nonce="{{ csp_nonce() }}"></script>
