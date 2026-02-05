@@ -13,6 +13,11 @@ EMAIL_FIX_SUMMARY.md
 IMPLEMENTATION_SUMMARY.md
 PREMIUM_FEATURES_ROADMAP.md
 TWO_TIER_APPROVAL_SYSTEM.md
+PWA_ICON_GUIDE.md
+PWA_IMPLEMENTATION_COMPLETE.md
+
+# PWA Development Tools (not needed in production)
+generate_pwa_icons.py
 
 # PDF Documentation
 *.pdf

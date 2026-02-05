@@ -8711,6 +8711,30 @@ def api_subscription_cancel():
 
 
 # ═══════════════════════════════════════════════════════════════════
+# PWA OFFLINE PAGE & ICON TEST
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/service-worker.js')
+def service_worker():
+    """Serve service worker from root for proper scope"""
+    from flask import send_from_directory
+    response = send_from_directory('static', 'service-worker.js')
+    # Add headers to allow broader scope
+    response.headers['Content-Type'] = 'application/javascript'
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
+
+@app.route('/offline')
+def offline():
+    """Offline fallback page for PWA"""
+    return render_template('offline.html')
+
+@app.route('/icon-test')
+def icon_test():
+    """PWA icon test page (development only)"""
+    return render_template('icon_test.html')
+
+# ═══════════════════════════════════════════════════════════════════
 # PAYMENT & SUBSCRIPTION WEB PAGES
 # ═══════════════════════════════════════════════════════════════════
 

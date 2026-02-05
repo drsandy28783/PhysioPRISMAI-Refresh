@@ -4,7 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Physio PRISM{% endblock %}</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+    <!-- Standard Favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+
+    <!-- PWA Theme Colors -->
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#3b82f6">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1e40af">
+
+    <!-- iOS PWA Support -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PhysioPRISM">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='icons/icon-152x152.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-180x180.png') }}">
+
+    <!-- Windows/Microsoft PWA Support -->
+    <meta name="msapplication-TileColor" content="#3b82f6">
+    <meta name="msapplication-TileImage" content="{{ url_for('static', filename='icons/icon-144x144.png') }}">
+    <meta name="msapplication-config" content="{{ url_for('static', filename='browserconfig.xml') }}">
+
+    <!-- SEO and Description -->
+    <meta name="description" content="AI-Powered Physiotherapy Practice Management System - Clinical reasoning, patient management, and comprehensive assessment tools">
+    <meta name="keywords" content="physiotherapy, practice management, clinical reasoning, patient management, AI-powered, healthcare">
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
 
     <!-- Google Analytics -->
@@ -40,7 +70,29 @@
     <!-- NO Firebase initialization on public pages -->
     <!-- NO authentication checks -->
     <!-- NO notification polling -->
-    <!-- NO service worker registration (not needed for marketing) -->
+
+    <!-- Service Worker Registration for PWA -->
+    <script nonce="{{ csp_nonce() }}">
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+              console.log('[SW] Registered successfully:', registration.scope);
+
+              // Check for updates every 30 minutes
+              setInterval(() => {
+                registration.update();
+              }, 30 * 60 * 1000);
+            })
+            .catch((error) => {
+              console.warn('[SW] Registration failed:', error);
+            });
+        });
+      }
+    </script>
+
+    <!-- PWA Install Prompt -->
+    <script defer src="{{ url_for('static', filename='pwa-install.js') }}" nonce="{{ csp_nonce() }}"></script>
 
     <!-- Copyright Footer for Public Pages -->
     <div style="
