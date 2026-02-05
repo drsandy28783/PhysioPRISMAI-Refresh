@@ -483,6 +483,202 @@ def send_institute_staff_registration_notification(user_data: Dict[str, Any], in
         return False
 
 
+def send_super_admin_staff_registration_notification(user_data: Dict[str, Any], institute_name: str, institute_admin_email: str, current_users: int, max_users: int) -> bool:
+    """
+    Send institute staff registration notification to SUPER ADMIN for tier 2 approval.
+    This is sent AFTER institute admin has approved (tier 1).
+
+    Args:
+        user_data: Dictionary containing user information
+        institute_name: Name of the institute
+        institute_admin_email: Email of the institute admin who will do tier 1 approval
+        current_users: Current number of users in the institute
+        max_users: Maximum users allowed based on plan
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        # Calculate usage percentage
+        usage_percentage = (current_users / max_users * 100) if max_users > 0 else 0
+
+        # Determine warning level
+        warning_badge = ""
+        if usage_percentage >= 90:
+            warning_badge = '<div style="background: #e74c3c; color: white; padding: 10px 20px; border-radius: 5px; text-align: center; margin: 15px 0;"><strong>⚠️ PLAN LIMIT NEARLY REACHED: {}/{} users ({}%)</strong></div>'.format(current_users, max_users, int(usage_percentage))
+        elif usage_percentage >= 80:
+            warning_badge = '<div style="background: #f39c12; color: white; padding: 10px 20px; border-radius: 5px; text-align: center; margin: 15px 0;"><strong>⚡ PLAN USAGE HIGH: {}/{} users ({}%)</strong></div>'.format(current_users, max_users, int(usage_percentage))
+        else:
+            warning_badge = '<div style="background: #27ae60; color: white; padding: 10px 20px; border-radius: 5px; text-align: center; margin: 15px 0;"><strong>✓ PLAN USAGE: {}/{} users ({}%)</strong></div>'.format(current_users, max_users, int(usage_percentage))
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4facfe; }}
+                .info-row {{ margin: 10px 0; }}
+                .label {{ font-weight: bold; color: #4facfe; }}
+                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                .button {{ display: inline-block; padding: 12px 30px; background: #4facfe; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                .tier-badge {{ background: #667eea; color: white; padding: 15px 25px; border-radius: 8px; text-align: center; margin: 20px 0; font-size: 16px; font-weight: bold; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>👥 Staff Registration - Tier 2 Approval Needed</h1>
+                </div>
+                <div class="content">
+                    <p>Dear {SUPER_ADMIN_NAME},</p>
+
+                    <div class="tier-badge">
+                        🔄 TWO-TIER APPROVAL: Institute Admin Review Required First
+                    </div>
+
+                    <p>A new staff member has registered for <strong>{institute_name}</strong> and needs approval from BOTH the institute admin and you.</p>
+
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #27ae60;">
+                        <h4 style="color: #27ae60; margin-top: 0;">📋 Approval Process</h4>
+                        <ol style="margin: 10px 0; padding-left: 20px; color: #2c3e50;">
+                            <li><strong>Tier 1:</strong> Institute Admin ({institute_admin_email}) reviews and approves</li>
+                            <li><strong>Tier 2:</strong> You receive notification and give final approval</li>
+                            <li><strong>Result:</strong> User receives access credentials</li>
+                        </ol>
+                    </div>
+
+                    {warning_badge}
+
+                    <div class="info-box">
+                        <h3 style="color: #4facfe; margin-top: 0;">Staff Member Details</h3>
+                        <div class="info-row"><span class="label">Name:</span> {user_data.get('name', 'N/A')}</div>
+                        <div class="info-row"><span class="label">Email:</span> {user_data.get('email', 'N/A')}</div>
+                        <div class="info-row"><span class="label">Phone:</span> {user_data.get('phone', 'N/A')}</div>
+                        <div class="info-row"><span class="label">Institute:</span> {institute_name}</div>
+                        <div class="info-row"><span class="label">Registration Time:</span> {user_data.get('created_at', 'N/A')}</div>
+                    </div>
+
+                    <div class="info-box">
+                        <h3 style="color: #4facfe; margin-top: 0;">Institute Plan Status</h3>
+                        <div class="info-row"><span class="label">Institute:</span> {institute_name}</div>
+                        <div class="info-row"><span class="label">Institute Admin:</span> {institute_admin_email}</div>
+                        <div class="info-row"><span class="label">Current Users:</span> {current_users}/{max_users} ({int(usage_percentage)}% used)</div>
+                    </div>
+
+                    <p><strong>Note:</strong> This staff member will first be reviewed by the institute admin. You'll receive another notification when the institute admin approves, at which point you can give final approval.</p>
+
+                    <a href="{APP_URL}/super_admin_dashboard" class="button">View All Pending Approvals</a>
+
+                    <div class="footer">
+                        <p>This is an automated notification from {APP_NAME}</p>
+                        <p>Two-Tier Approval System</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return send_email(
+            to=SUPER_ADMIN_EMAIL,
+            subject=f"👥 Staff Registration (Tier 1 Pending): {user_data.get('name')} at {institute_name} - {APP_NAME}",
+            html=html
+        )
+
+    except Exception as e:
+        logger.error(f"Error in send_super_admin_staff_registration_notification: {str(e)}")
+        return False
+
+
+def send_super_admin_tier2_approval_notification(user_data: Dict[str, Any], institute_name: str, institute_admin_email: str, approved_by: str) -> bool:
+    """
+    Send notification to super admin when institute admin approves staff (tier 1 complete).
+    Super admin can now give final approval (tier 2).
+
+    Args:
+        user_data: Dictionary containing user information
+        institute_name: Name of the institute
+        institute_admin_email: Email of the institute admin who approved
+        approved_by: Name of the person who approved at tier 1
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #27ae60 0%, #38ef7d 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #27ae60; }}
+                .info-row {{ margin: 10px 0; }}
+                .label {{ font-weight: bold; color: #27ae60; }}
+                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                .button {{ display: inline-block; padding: 12px 30px; background: #27ae60; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                .tier-badge {{ background: #27ae60; color: white; padding: 15px 25px; border-radius: 8px; text-align: center; margin: 20px 0; font-size: 16px; font-weight: bold; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>✅ Tier 1 Approved - Your Approval Needed</h1>
+                </div>
+                <div class="content">
+                    <p>Dear {SUPER_ADMIN_NAME},</p>
+
+                    <div class="tier-badge">
+                        ✓ TIER 1 COMPLETE → TIER 2 APPROVAL NEEDED
+                    </div>
+
+                    <p>Good news! The institute admin has approved this staff member. Now it's your turn to give final approval.</p>
+
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #27ae60;">
+                        <p style="margin: 0; color: #27ae60;"><strong>✓ Tier 1 Approved By:</strong> {approved_by} ({institute_admin_email})</p>
+                        <p style="margin: 10px 0 0 0; color: #27ae60;"><strong>⏳ Awaiting:</strong> Your final approval (Tier 2)</p>
+                    </div>
+
+                    <div class="info-box">
+                        <h3 style="color: #27ae60; margin-top: 0;">Staff Member Details</h3>
+                        <div class="info-row"><span class="label">Name:</span> {user_data.get('name', 'N/A')}</div>
+                        <div class="info-row"><span class="label">Email:</span> {user_data.get('email', 'N/A')}</div>
+                        <div class="info-row"><span class="label">Phone:</span> {user_data.get('phone', 'N/A')}</div>
+                        <div class="info-row"><span class="label">Institute:</span> {institute_name}</div>
+                        <div class="info-row"><span class="label">Approved By (Tier 1):</span> {approved_by}</div>
+                    </div>
+
+                    <p style="text-align: center; margin-top: 30px;">
+                        <a href="{APP_URL}/super_admin_dashboard" class="button">Approve Now (Final Step)</a>
+                    </p>
+
+                    <div class="footer">
+                        <p>This is an automated notification from {APP_NAME}</p>
+                        <p>Two-Tier Approval System - Tier 2 Pending</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return send_email(
+            to=SUPER_ADMIN_EMAIL,
+            subject=f"✅ Tier 1 Approved - Final Approval Needed: {user_data.get('name')} at {institute_name} - {APP_NAME}",
+            html=html
+        )
+
+    except Exception as e:
+        logger.error(f"Error in send_super_admin_tier2_approval_notification: {str(e)}")
+        return False
+
+
 def send_institute_staff_approval_notification(user_data: Dict[str, Any], institute_name: str, temp_password: Optional[str] = None) -> bool:
     """
     Send staff approval notification to institute staff member.

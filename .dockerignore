@@ -7,6 +7,13 @@
 SESSION_SUMMARY_*.md
 SESSION_SYNTAX_ERRORS_FIX_*.md
 
+# Implementation Documentation (2026-02-05 - local reference only)
+ADMIN_DASHBOARD_PLAN_USAGE.md
+EMAIL_FIX_SUMMARY.md
+IMPLEMENTATION_SUMMARY.md
+PREMIUM_FEATURES_ROADMAP.md
+TWO_TIER_APPROVAL_SYSTEM.md
+
 # PDF Documentation
 *.pdf
 Logs.pdf

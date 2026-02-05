@@ -174,6 +174,8 @@ from email_service import (
     send_institute_admin_registration_notification,
     send_institute_staff_registration_notification,
     send_institute_staff_approval_notification,
+    send_super_admin_staff_registration_notification,
+    send_super_admin_tier2_approval_notification,
     send_password_reset_notification,
     send_email_verification
 )
@@ -2986,59 +2988,81 @@ def api_register_with_institute():
         if list(users):
             return jsonify({'ok': False, 'error': 'PHONE_EXISTS'}), 409
 
-        # Create institute staff member
+        # Find institute admin to check limits
+        admins = db.collection('users').where('institute', '==', institute).where('is_admin', '==', 1).limit(1).stream()
+        admin_email = None
+        admin_name = None
+        for admin_doc in admins:
+            admin_email = admin_doc.id  # Document ID is the email
+            admin_data = admin_doc.to_dict()
+            admin_name = admin_data.get('name', 'Institute Admin')
+            break
+
+        if not admin_email:
+            logger.error(f"No institute admin found for {institute}")
+            return jsonify({'ok': False, 'error': 'NO_INSTITUTE_ADMIN_FOUND'}), 400
+
+        # CHECK USER LIMITS BASED ON PLAN
+        from subscription_manager import check_user_limit
+        can_add, limit_message, current_users, max_users = check_user_limit(admin_email)
+
+        if not can_add:
+            logger.warning(f"User limit reached for {institute}: {limit_message}")
+            return jsonify({
+                'ok': False,
+                'error': 'USER_LIMIT_REACHED',
+                'message': limit_message,
+                'current_users': current_users,
+                'max_users': max_users
+            }), 403
+
+        # Create institute staff member with 2-tier approval fields
         pw_hash = generate_password_hash(password)
         db.collection('users').document(email).set({
             'name': name,
             'email': email,
             'phone': phone,
             'institute': institute,
+            'institute_id': admin_email,  # Link to institute admin
             'password_hash': pw_hash,
             'created_at': SERVER_TIMESTAMP,
-            'approved': 0,  # Pending approval (super admin or institute admin)
+            'approved': 0,  # Final approval status (requires BOTH tiers)
+            'approved_by_institute': 0,  # Tier 1: Institute admin approval
+            'approved_by_super_admin': 0,  # Tier 2: Super admin approval
             'active': 1,
             'is_admin': 0,
             'user_type': 'institute_staff'  # Track registration type
         })
 
-        log_action(None, 'API Register Staff', f"{name} ({email}) registered as institute staff via mobile - pending approval")
+        log_action(None, 'API Register Staff', f"{name} ({email}) registered as institute staff via mobile - 2-tier approval required. Plan: {current_users + 1}/{max_users} users")
 
-        # Send notification to SUPER ADMIN (for visibility)
+        # Send notification to INSTITUTE ADMIN (Tier 1)
         try:
-            send_registration_notification({
+            send_institute_staff_registration_notification({
                 'name': name,
                 'email': email,
                 'phone': phone,
                 'institute': institute,
-                'created_at': datetime.now().isoformat(),
-                'user_type': 'institute_staff'
-            })
+                'created_at': datetime.now().isoformat()
+            }, admin_email)
+            logger.info(f"Tier 1 notification sent to institute admin: {admin_email}")
+        except Exception as email_error:
+            # Log error but don't fail registration
+            logger.error(f"Failed to send staff registration notification to institute admin: {email_error}")
+
+        # Send notification to SUPER ADMIN (for 2-tier approval visibility)
+        try:
+            send_super_admin_staff_registration_notification({
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'institute': institute,
+                'created_at': datetime.now().isoformat()
+            }, institute, admin_email, current_users + 1, max_users)
+            logger.info(f"Tier 2 notification sent to super admin (pending tier 1)")
         except Exception as email_error:
             # Log error but don't fail registration
             logger.error(f"Failed to send staff registration notification to super admin: {email_error}")
-
-        # Also notify institute admin (they can approve)
-        try:
-            # Query for institute admin
-            admins = db.collection('users').where('institute', '==', institute).where('is_admin', '==', 1).limit(1).stream()
-            admin_email = None
-            for admin_doc in admins:
-                admin_email = admin_doc.id  # Document ID is the email
-                break
-
-            if admin_email:
-                send_institute_staff_registration_notification({
-                    'name': name,
-                    'email': email,
-                    'phone': phone,
-                    'institute': institute,
-                    'created_at': datetime.now().isoformat()
-                }, admin_email)
-            else:
-                logger.warning(f"No institute admin found for {institute} to send notification")
-        except Exception as webhook_error:
-            # Log error but don't fail registration
-            logger.error(f"Failed to send institute staff registration notification: {webhook_error}")
 
         return jsonify({
             'ok': True,
@@ -4463,12 +4487,73 @@ def admin_dashboard():
     # pull the documents into a list of dicts
     pending_physios = [doc.to_dict() for doc in docs]
 
+    # Get plan information and user count
+    admin_email = session.get('user_id')
+    institute_name = session.get('institute')
+
+    # Get subscription info and user limits
+    try:
+        from subscription_manager import check_user_limit, get_user_subscription
+
+        # Check user limits
+        can_add_more, limit_message, current_users, max_users = check_user_limit(admin_email)
+
+        # Get subscription details
+        subscription = get_user_subscription(admin_email)
+        plan_name = subscription.get('plan_name', 'No Active Plan')
+        plan_type = subscription.get('plan_type', 'free')
+
+        # Calculate usage percentage
+        usage_percentage = int((current_users / max_users * 100)) if max_users > 0 else 0
+
+        # Determine status color
+        if usage_percentage >= 90:
+            status_color = '#e74c3c'  # Red
+            status_text = 'Critical'
+        elif usage_percentage >= 80:
+            status_color = '#f39c12'  # Orange
+            status_text = 'Warning'
+        elif usage_percentage >= 60:
+            status_color = '#3498db'  # Blue
+            status_text = 'Good'
+        else:
+            status_color = '#27ae60'  # Green
+            status_text = 'Excellent'
+
+        plan_info = {
+            'current_users': current_users,
+            'max_users': max_users,
+            'available_slots': max_users - current_users,
+            'usage_percentage': usage_percentage,
+            'can_add_more': can_add_more,
+            'status_color': status_color,
+            'status_text': status_text,
+            'plan_name': plan_name,
+            'plan_type': plan_type
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching plan info for {admin_email}: {e}")
+        # Default values if subscription check fails
+        plan_info = {
+            'current_users': 0,
+            'max_users': 0,
+            'available_slots': 0,
+            'usage_percentage': 0,
+            'can_add_more': False,
+            'status_color': '#95a5a6',
+            'status_text': 'Unknown',
+            'plan_name': 'Error loading plan',
+            'plan_type': 'unknown'
+        }
+
     # render
     return render_template(
         'admin_dashboard.html',
         pending_physios=pending_physios,
         name=session.get('user_name'),
-        institute=session.get('institute')
+        institute=institute_name,
+        plan_info=plan_info
     )
 
 
@@ -4855,7 +4940,10 @@ def approve_physios():
 @app.route('/approve_user/<user_email>', methods=['POST'])
 @login_required()
 def approve_user(user_email):
-    """Institute admin approves a user and creates Firebase Auth account if needed"""
+    """
+    Institute admin approves a user (TIER 1 APPROVAL ONLY).
+    This sets approved_by_institute=1 and notifies super admin for tier 2 approval.
+    """
     if session.get('is_admin') != 1:
         return redirect('/login_institute')
 
@@ -4879,77 +4967,52 @@ def approve_user(user_email):
 
         user_data = user_doc.to_dict()
         user_name = user_data.get('name', '')
+        user_type = user_data.get('user_type', '')
 
-        # Check if user already has Firebase Auth account
-        firebase_uid = user_data.get('firebase_uid')
-        temp_password = None
+        # Check if already approved by institute
+        if user_data.get('approved_by_institute') == 1:
+            flash(f"User {user_email} has already been approved by institute admin (Tier 1 complete). Awaiting super admin approval (Tier 2).", "info")
+            return redirect('/approve_physios')
 
-        if not firebase_uid:
-            # Create Firebase Auth account
-            logger.info(f"Creating Firebase Auth account for {user_email}")
-            auth_result = create_firebase_auth_account(user_email, user_name)
+        # TIER 1 APPROVAL: Institute admin approval
+        db.collection('users').document(user_email).update({
+            'approved_by_institute': 1,
+            'approved_by_institute_at': SERVER_TIMESTAMP,
+            'approved_by_institute_email': session.get('user_id')
+        })
 
-            if auth_result['success']:
-                # Update Firestore with firebase_uid
-                db.collection('users').document(user_email).update({
-                    'approved': 1,
-                    'firebase_uid': auth_result['uid'],
-                    'email_verified': True  # Auto-verify email when super admin approves
-                })
-
-                temp_password = auth_result['temp_password']
-
-                if temp_password:
-                    flash(
-                        f"User {user_email} has been approved and Firebase Auth account created. "
-                        f"Temporary password: {temp_password} - Please share this with the user securely.",
-                        "success"
-                    )
-                    logger.info(f"Firebase Auth account created for {user_email} with temporary password")
-                else:
-                    flash(
-                        f"User {user_email} has been approved. Firebase Auth account already existed.",
-                        "success"
-                    )
-            else:
-                # Approve anyway even if Firebase Auth creation failed
-                db.collection('users').document(user_email).update({
-                    'approved': 1,
-                    'email_verified': True  # Auto-verify email when super admin approves
-                })
-                flash(
-                    f"User {user_email} has been approved, but Firebase Auth account creation failed: {auth_result['error']}. "
-                    "User can still login with traditional method.",
-                    "warning"
-                )
-        else:
-            # User already has Firebase Auth account, just approve
-            db.collection('users').document(user_email).update({
-                'approved': 1,
-                'email_verified': True  # Auto-verify email when super admin approves
-            })
-            flash(f"User {user_email} has been approved", "success")
+        flash(
+            f"Tier 1 Approval Complete! User {user_email} has been approved by you. "
+            f"Super admin will be notified for final approval (Tier 2).",
+            "success"
+        )
 
         log_action(
             session.get('user_id'),
-            'Approve User',
-            f"Approved user {user_email}" +
-            (f" and created Firebase Auth account" if temp_password else "")
+            'Institute Admin Approve (Tier 1)',
+            f"Institute admin approved {user_email} (Tier 1). Awaiting super admin approval (Tier 2)."
         )
 
-        # Send approval notification to staff member via n8n
+        # Send notification to SUPER ADMIN for Tier 2 approval
         try:
-            send_institute_staff_approval_notification(
+            admin_email = session.get('user_id')
+            admin_name = session.get('name', 'Institute Admin')
+
+            send_super_admin_tier2_approval_notification(
                 user_data={
                     'name': user_name,
-                    'email': user_email
+                    'email': user_email,
+                    'phone': user_data.get('phone', ''),
+                    'institute': user_data.get('institute', '')
                 },
                 institute_name=user_data.get('institute', ''),
-                temp_password=temp_password
+                institute_admin_email=admin_email,
+                approved_by=admin_name
             )
-        except Exception as webhook_error:
+            logger.info(f"Tier 2 notification sent to super admin for {user_email}")
+        except Exception as email_error:
             # Log error but don't fail approval
-            logger.error(f"Failed to send staff approval notification: {webhook_error}")
+            logger.error(f"Failed to send tier 2 notification to super admin: {email_error}")
 
         # Send in-app welcome notification
         try:
@@ -7676,7 +7739,11 @@ def export_blog_leads():
 @app.route('/super_admin/approve_user/<user_email>', methods=['POST'])
 @super_admin_required()
 def super_admin_approve_user(user_email):
-    """Super admin approves a user globally and creates Firebase Auth account if needed"""
+    """
+    Super admin approves a user globally (TIER 2 APPROVAL or DIRECT APPROVAL).
+    - For institute staff: Requires tier 1 approval first (2-tier system)
+    - For individual/admin users: Direct approval (single-tier system)
+    """
     # Validate admin action
     admin_data = {
         'email': user_email,
@@ -7697,6 +7764,26 @@ def super_admin_approve_user(user_email):
 
         user_data = user_doc.to_dict()
         user_name = user_data.get('name', '')
+        user_type = user_data.get('user_type', 'individual')
+
+        # Check if this is an institute staff member requiring 2-tier approval
+        if user_type == 'institute_staff':
+            # Check if tier 1 approval is complete
+            if user_data.get('approved_by_institute') != 1:
+                flash(
+                    f"Cannot approve {user_email} yet. Institute admin must approve first (Tier 1). "
+                    f"This is a 2-tier approval system for institute staff members.",
+                    "warning"
+                )
+                return redirect('/super_admin_dashboard')
+
+            # Tier 1 is complete, proceed with tier 2 approval
+            approval_message = "Tier 2 approval complete! User has been fully approved (2-tier system)."
+            log_message = "Super admin approved institute staff (Tier 2)"
+        else:
+            # Individual or institute admin user - single-tier approval
+            approval_message = "User has been approved."
+            log_message = "Super admin approved user (direct approval)"
 
         # Check if user already has Firebase Auth account
         firebase_uid = user_data.get('firebase_uid')
@@ -7708,9 +7795,12 @@ def super_admin_approve_user(user_email):
             auth_result = create_firebase_auth_account(user_email, user_name)
 
             if auth_result['success']:
-                # Update Firestore with firebase_uid
+                # Update Firestore with firebase_uid and final approval
                 db.collection('users').document(user_email).update({
                     'approved': 1,
+                    'approved_by_super_admin': 1,
+                    'approved_by_super_admin_at': SERVER_TIMESTAMP,
+                    'approved_by_super_admin_email': session.get('user_id'),
                     'firebase_uid': auth_result['uid'],
                     'email_verified': True  # Auto-verify email when super admin approves
                 })
@@ -7719,24 +7809,27 @@ def super_admin_approve_user(user_email):
 
                 if temp_password:
                     flash(
-                        f"User {user_email} has been approved and Firebase Auth account created. "
+                        f"{approval_message} Firebase Auth account created. "
                         f"Temporary password: {temp_password} - Please share this with the user securely.",
                         "success"
                     )
                     logger.info(f"Firebase Auth account created for {user_email} with temporary password")
                 else:
                     flash(
-                        f"User {user_email} has been approved. Firebase Auth account already existed.",
+                        f"{approval_message} Firebase Auth account already existed.",
                         "success"
                     )
             else:
                 # Approve anyway even if Firebase Auth creation failed
                 db.collection('users').document(user_email).update({
                     'approved': 1,
+                    'approved_by_super_admin': 1,
+                    'approved_by_super_admin_at': SERVER_TIMESTAMP,
+                    'approved_by_super_admin_email': session.get('user_id'),
                     'email_verified': True  # Auto-verify email when super admin approves
                 })
                 flash(
-                    f"User {user_email} has been approved, but Firebase Auth account creation failed: {auth_result['error']}. "
+                    f"{approval_message} Firebase Auth account creation failed: {auth_result['error']}. "
                     "User can still login with traditional method.",
                     "warning"
                 )
@@ -7744,14 +7837,17 @@ def super_admin_approve_user(user_email):
             # User already has Firebase Auth account, just approve
             db.collection('users').document(user_email).update({
                 'approved': 1,
+                'approved_by_super_admin': 1,
+                'approved_by_super_admin_at': SERVER_TIMESTAMP,
+                'approved_by_super_admin_email': session.get('user_id'),
                 'email_verified': True  # Auto-verify email when super admin approves
             })
-            flash(f"User {user_email} has been approved", "success")
+            flash(f"{approval_message}", "success")
 
         log_action(
             session.get('user_id'),
             'Super Admin Approve User',
-            f"Super admin approved user {user_email}" +
+            f"{log_message}: {user_email}" +
             (f" and created Firebase Auth account" if temp_password else "")
         )
 

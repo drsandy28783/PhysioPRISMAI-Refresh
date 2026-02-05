@@ -2,13 +2,204 @@
 {% block title %}Institute Admin Dashboard – Physiologic PRISM{% endblock %}
 
 {% block content %}
+  <style>
+    .plan-usage-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      padding: 24px;
+      color: white;
+      margin: 24px 0;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .plan-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .plan-title {
+      font-size: 18px;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .status-badge {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.2);
+    }
+
+    .usage-stats {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      flex: 1;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-subtext {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    .progress-container {
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      height: 12px;
+      overflow: hidden;
+      margin-top: 16px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .plan-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .plan-name {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .upgrade-hint {
+      font-size: 12px;
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+      .usage-stats {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .stat-value {
+        font-size: 24px;
+      }
+    }
+  </style>
+
   <div class="container">
     <h2>Welcome {{ name }} (Admin)</h2>
     <p><strong>Institute:</strong> {{ institute }}</p>
 
+    <!-- Plan Usage Card -->
+    <div class="plan-usage-card">
+      <div class="plan-header">
+        <div class="plan-title">📊 Team Plan Usage</div>
+        <div class="status-badge" style="background: {{ plan_info.status_color }};">
+          {{ plan_info.status_text }}
+        </div>
+      </div>
+
+      <div class="usage-stats">
+        <div class="stat-box">
+          <div class="stat-label">Current Users</div>
+          <div class="stat-value">{{ plan_info.current_users }}</div>
+          <div class="stat-subtext">of {{ plan_info.max_users }} allowed</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-label">Available Slots</div>
+          <div class="stat-value">
+            {% if plan_info.available_slots > 0 %}
+              {{ plan_info.available_slots }}
+            {% else %}
+              <span style="color: #ffeb3b;">0</span>
+            {% endif %}
+          </div>
+          <div class="stat-subtext">
+            {% if plan_info.can_add_more %}
+              Can add more users
+            {% else %}
+              <span style="color: #ffeb3b;">⚠️ Limit reached</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-label">Usage</div>
+          <div class="stat-value">{{ plan_info.usage_percentage }}%</div>
+          <div class="stat-subtext">
+            {% if plan_info.usage_percentage >= 90 %}
+              Nearly full
+            {% elif plan_info.usage_percentage >= 80 %}
+              High usage
+            {% elif plan_info.usage_percentage >= 60 %}
+              Moderate usage
+            {% else %}
+              Low usage
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-bar"
+             style="width: {{ plan_info.usage_percentage }}%; background: {{ plan_info.status_color }};">
+          {% if plan_info.usage_percentage > 15 %}
+            {{ plan_info.usage_percentage }}%
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="plan-footer">
+        <div class="plan-name">
+          <strong>Plan:</strong> {{ plan_info.plan_name }}
+        </div>
+        {% if not plan_info.can_add_more %}
+          <div class="upgrade-hint">
+            💡 Upgrade your plan to add more users
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
     <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 24px;">
       <a href="{{ url_for('approve_physios') }}">
-        <button class="button">Approve Pending Users</button>
+        <button class="button">Approve Pending Users
+          {% if pending_physios|length > 0 %}
+            <span style="background: #e74c3c; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 8px;">
+              {{ pending_physios|length }}
+            </span>
+          {% endif %}
+        </button>
       </a>
 
       <a href="{{ url_for('audit_logs') }}">
