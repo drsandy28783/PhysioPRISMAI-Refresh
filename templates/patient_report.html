@@ -638,6 +638,229 @@
   </div>
   {% endif %}
 
+  <!-- 10. Patient Progress Summary (Visual) -->
+  {% if follow_ups and follow_ups|length > 0 %}
+  <div class="report-section page-break">
+    <h2 class="section-header">📊 10. Patient Progress Summary</h2>
+    <div class="section-content">
+
+      <!-- Progress Comparison: Initial vs Current -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+
+        <!-- Initial Assessment Column -->
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
+          <h3 style="color: #856404; margin-top: 0; font-size: 16px;">📋 Initial Assessment</h3>
+
+          {% if subjective %}
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Activity Limitation:</div>
+            <div style="font-size: 14px; color: #333;">{{ subjective.activity_performance or 'Not documented' }}</div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Functional Capacity:</div>
+            <div style="font-size: 14px; color: #333;">{{ subjective.activity_capacity or 'Not documented' }}</div>
+          </div>
+          {% endif %}
+
+          {% if perspectives %}
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Emotional State:</div>
+            <div style="font-size: 14px; color: #333;">{{ perspectives.affective_aspect or 'Not documented' }}</div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Patient Expectation:</div>
+            <div style="font-size: 14px; color: #333;">{{ perspectives.expectation or 'Not documented' }}</div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Knowledge Level:</div>
+            <div style="font-size: 14px; color: #333;">{{ perspectives.knowledge or 'Not documented' }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Current Status Column -->
+        <div style="background: #d4edda; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745;">
+          <h3 style="color: #155724; margin-top: 0; font-size: 16px;">✅ Current Status (Session {{ follow_ups[-1].session_number or follow_ups|length }})</h3>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 600; color: #155724; font-size: 13px; margin-bottom: 4px;">Goal Achievement:</div>
+            <div style="font-size: 14px; color: #333; font-weight: 600;">{{ follow_ups[-1].grade_of_achievement or 'Not recorded' }}</div>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 600; color: #155724; font-size: 13px; margin-bottom: 4px;">Treatment Perception:</div>
+            <div style="font-size: 14px; color: #333; font-weight: 600;">{{ follow_ups[-1].perception_of_treatment or 'Not recorded' }}</div>
+          </div>
+
+          {% if follow_ups[-1].feedback %}
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 600; color: #155724; font-size: 13px; margin-bottom: 4px;">Patient Feedback:</div>
+            <div style="font-size: 14px; color: #333; font-style: italic;">"{{ follow_ups[-1].feedback }}"</div>
+          </div>
+          {% endif %}
+
+          <div style="margin-top: 16px; padding: 12px; background: white; border-radius: 4px;">
+            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Total Sessions Completed:</div>
+            <div style="font-size: 20px; font-weight: 700; color: #28a745;">{{ follow_ups|length }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Progress Chart -->
+      <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin-top: 20px;">
+        <h3 style="color: #1a5f5a; margin-top: 0; margin-bottom: 20px; font-size: 16px;">📈 Progress Trend Over Time</h3>
+        <canvas id="progressChart" style="max-height: 300px;"></canvas>
+      </div>
+
+      <!-- Progress Insights -->
+      <div style="background: #e7f3ff; padding: 16px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #0066cc;">
+        <h4 style="margin: 0 0 8px 0; color: #004085; font-size: 14px;">💡 Progress Insights</h4>
+        <ul style="margin: 0; padding-left: 20px; color: #333; font-size: 14px; line-height: 1.8;">
+          <li>Patient has completed <strong>{{ follow_ups|length }} treatment sessions</strong></li>
+          <li>Current achievement level: <strong>{{ follow_ups[-1].grade_of_achievement or 'Not recorded' }}</strong></li>
+          <li>Patient perceives treatment as: <strong>{{ follow_ups[-1].perception_of_treatment or 'Not recorded' }}</strong></li>
+          {% if perspectives and perspectives.expectation %}
+          <li>Initial expectation was: <strong>{{ perspectives.expectation }}</strong></li>
+          {% endif %}
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <script nonce="{{ csp_nonce() }}">
+    // Progress Chart Data
+    const followUpData = {{ follow_ups | tojson }};
+
+    // Prepare chart data
+    const sessions = followUpData.map((f, idx) => `S${f.session_number || (idx + 1)}`);
+
+    // Map achievement grades to numeric values
+    const achievementData = followUpData.map(f => {
+      const grade = f.grade_of_achievement || '';
+      if (grade.includes('Fully')) return 3;
+      if (grade.includes('Partially')) return 2;
+      return 1;
+    });
+
+    // Map perception to numeric values
+    const perceptionData = followUpData.map(f => {
+      const perception = f.perception_of_treatment || '';
+      if (perception.includes('Very Effective')) return 3;
+      if (perception.includes('Somewhat')) return 2;
+      return 1;
+    });
+
+    // Create the chart
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: sessions,
+        datasets: [
+          {
+            label: 'Goal Achievement',
+            data: achievementData,
+            borderColor: '#1a5f5a',
+            backgroundColor: 'rgba(26, 95, 90, 0.1)',
+            borderWidth: 3,
+            tension: 0.3,
+            fill: true,
+            pointRadius: 5,
+            pointBackgroundColor: '#1a5f5a',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 7
+          },
+          {
+            label: 'Treatment Perception',
+            data: perceptionData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 3,
+            tension: 0.3,
+            fill: true,
+            pointRadius: 5,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 7
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              font: { size: 14, weight: '600' },
+              padding: 15,
+              usePointStyle: true
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleFont: { size: 14, weight: '600' },
+            bodyFont: { size: 13 },
+            callbacks: {
+              label: function(context) {
+                const label = context.dataset.label || '';
+                const value = context.parsed.y;
+                let text = '';
+
+                if (label.includes('Achievement')) {
+                  text = value === 3 ? 'Fully Achieved' :
+                         value === 2 ? 'Partially Achieved' : 'Not Achieved';
+                } else {
+                  text = value === 3 ? 'Very Effective' :
+                         value === 2 ? 'Somewhat Effective' : 'Not Effective';
+                }
+
+                return label + ': ' + text;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            min: 0,
+            max: 3.5,
+            ticks: {
+              stepSize: 1,
+              font: { size: 12, weight: '600' },
+              callback: function(value) {
+                const labels = {
+                  0: '',
+                  1: 'Not Achieved\n/ Not Effective',
+                  2: 'Partially\n/ Somewhat',
+                  3: 'Fully Achieved\n/ Very Effective'
+                };
+                return labels[value] || '';
+              }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            }
+          },
+          x: {
+            ticks: {
+              font: { size: 12, weight: '600' }
+            },
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+  </script>
+  {% endif %}
+
   <!-- 11. Follow-up Sessions -->
   {% if follow_ups %}
   <div class="report-section page-break">
