@@ -10224,6 +10224,106 @@ def cleanup_old_drafts():
 
 
 # ═══════════════════════════════════════════════════════════════════
+# VOICE TRANSCRIPTION (Azure Speech Services)
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/api/transcribe', methods=['POST'])
+@login_required()
+def api_transcribe_audio():
+    """
+    Transcribe audio to text using Azure Speech Services
+    HIPAA-compliant voice-to-text for clinical documentation
+
+    Request:
+        - audio file (multipart/form-data) or
+        - audio blob (base64 encoded in JSON)
+
+    Returns:
+        {
+            'success': bool,
+            'text': str,
+            'confidence': float,
+            'duration': float,
+            'error': str (optional)
+        }
+    """
+    try:
+        from azure_speech_client import get_azure_speech_client
+
+        # Check if Azure Speech is configured
+        speech_key = os.getenv('AZURE_SPEECH_KEY')
+        if not speech_key:
+            return jsonify({
+                'success': False,
+                'error': 'Voice transcription is not configured'
+            }), 503
+
+        # Get user's preferred language (default: en-US)
+        language = request.form.get('language', 'en-US')
+
+        # Initialize Speech client
+        speech_client = get_azure_speech_client(language=language)
+
+        # Check if file upload or base64
+        if 'audio' in request.files:
+            # Handle file upload
+            audio_file = request.files['audio']
+
+            if audio_file.filename == '':
+                return jsonify({
+                    'success': False,
+                    'error': 'No audio file provided'
+                }), 400
+
+            # Read audio data
+            audio_blob = audio_file.read()
+            content_type = audio_file.content_type or 'audio/wav'
+
+            # Transcribe
+            result = speech_client.transcribe_from_blob(audio_blob, content_type)
+
+        elif request.is_json:
+            # Handle JSON with base64 audio
+            data = request.get_json()
+
+            if 'audio' not in data:
+                return jsonify({
+                    'success': False,
+                    'error': 'No audio data provided'
+                }), 400
+
+            # Decode base64
+            import base64
+            audio_b64 = data['audio']
+            audio_blob = base64.b64decode(audio_b64)
+            content_type = data.get('content_type', 'audio/wav')
+
+            # Transcribe
+            result = speech_client.transcribe_from_blob(audio_blob, content_type)
+
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid request format'
+            }), 400
+
+        # Log usage (for billing/analytics)
+        if result['success']:
+            logger.info(f"Voice transcription: user={session.get('user_id')}, "
+                       f"duration={result.get('duration', 0):.2f}s, "
+                       f"confidence={result.get('confidence', 0):.2f}")
+
+        return jsonify(result), 200 if result['success'] else 400
+
+    except Exception as e:
+        logger.error(f"Error transcribing audio: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to transcribe audio'
+        }), 500
+
+
+# ═══════════════════════════════════════════════════════════════════
 # HEALTH CHECK
 # ═══════════════════════════════════════════════════════════════════
 

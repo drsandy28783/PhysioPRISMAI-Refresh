@@ -173,6 +173,9 @@
     <!-- Keyboard Shortcuts System -->
     <script defer src="{{ url_for('static', filename='keyboardShortcuts.js') }}" nonce="{{ csp_nonce() }}"></script>
 
+    <!-- Voice Recorder (Voice-to-Text) -->
+    <script defer src="{{ url_for('static', filename='voiceRecorder.js') }}" nonce="{{ csp_nonce() }}"></script>
+
     <!-- Service Worker Registration -->
     <script nonce="{{ csp_nonce() }}">
       if ('serviceWorker' in navigator) {

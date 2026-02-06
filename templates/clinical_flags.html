@@ -31,7 +31,7 @@
         <div class="control-group">
           <textarea id="{{ name }}" name="{{ name }}"
                     class="input-field" rows="3"
-                    placeholder="{{ placeholder }}">{{ request.form[name] or '' }}</textarea>
+                    placeholder="{{ placeholder }}" data-voice-enabled>{{ request.form[name] or '' }}</textarea>
           <button type="button" class="ai-btn" title="Ask AI follow-up"
                   data-field="{{ name }}">🧠</button>
         </div>

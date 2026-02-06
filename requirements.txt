@@ -46,6 +46,8 @@ azure-identity==1.19.0
 msal==1.31.1
 # Azure OpenAI - GPT-4 Turbo (replaces Vertex AI)
 openai==1.55.3
+# Azure Speech Services - HIPAA-compliant voice-to-text transcription
+azure-cognitiveservices-speech==1.40.0
 flask-login==0.6.3
 flask-wtf==1.2.1
 flask-cors==5.0.0

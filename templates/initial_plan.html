@@ -48,7 +48,7 @@
             <button type="button" class="ai-btn" data-field="{{ name }}" title="Suggest tests for {{ label }}">🧠</button>
           </div>
           <textarea id="{{ name }}_suggestion" class="ai-suggestion" rows="2" readonly placeholder="AI suggestions..."></textarea>
-          <textarea name="{{ name }}_details" class="input-field" rows="2" placeholder="Details (optional)...">{{ request.form[name + '_details'] or '' }}</textarea>
+          <textarea name="{{ name }}_details" class="input-field" rows="2" placeholder="Details (optional)..." data-voice-enabled>{{ request.form[name + '_details'] or '' }}</textarea>
         </div>
       {% endfor %}
 

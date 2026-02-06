@@ -38,7 +38,7 @@
         <div class="field-block">
           <label for="{{ name }}">{{ label }}:</label>
           <div class="control-group">
-            <textarea id="{{ name }}" name="{{ name }}" class="input-field" rows="3" placeholder="{{ placeholder }}">{{ request.form[name] or '' }}</textarea>
+            <textarea id="{{ name }}" name="{{ name }}" class="input-field" rows="3" placeholder="{{ placeholder }}" data-voice-enabled>{{ request.form[name] or '' }}</textarea>
             <button type="button" class="ai-btn" data-field="{{ name }}" title="Ask AI for suggestions">🧠</button>
           </div>
           <div id="{{ name }}_popup" class="ai-popup"></div>

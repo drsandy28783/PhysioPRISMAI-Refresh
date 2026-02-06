@@ -29,12 +29,12 @@
 
     <div class="field-block">
       <label for="area_involved">Area Involved:</label>
-      <textarea id="area_involved" name="area_involved" class="input-field" rows="2">{{ request.form.area_involved or '' }}</textarea>
+      <textarea id="area_involved" name="area_involved" class="input-field" rows="2" data-voice-enabled>{{ request.form.area_involved or '' }}</textarea>
     </div>
 
     <div class="field-block">
       <label for="presenting_symptom">Presenting Symptom:</label>
-      <textarea id="presenting_symptom" name="presenting_symptom" class="input-field" rows="2">{{ request.form.presenting_symptom or '' }}</textarea>
+      <textarea id="presenting_symptom" name="presenting_symptom" class="input-field" rows="2" data-voice-enabled>{{ request.form.presenting_symptom or '' }}</textarea>
     </div>
 
     <div class="field-block">
