@@ -24,7 +24,7 @@
      */
     loadTheme() {
       const savedTheme = localStorage.getItem(THEME_KEY);
-      return savedTheme || THEMES.AUTO;
+      return savedTheme || THEMES.LIGHT; // Default to light mode instead of auto
     }
 
     /**
