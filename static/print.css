@@ -1,0 +1,651 @@
+/**
+ * PhysioPRISM - Global Print Stylesheet
+ * =====================================
+ *
+ * Makes all pages print-friendly automatically.
+ * Hides UI elements, optimizes layout, and ensures professional appearance.
+ *
+ * Usage: This file is automatically applied when users print any page.
+ */
+
+/* ================================================================
+   1. HIDE UI ELEMENTS
+   ================================================================ */
+
+@media print {
+  /* Navigation */
+  nav,
+  .navbar,
+  .navbar-menu,
+  header nav,
+  .nav-header {
+    display: none !important;
+  }
+
+  /* Buttons and Interactive Elements */
+  button,
+  .button,
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .small-button,
+  input[type="submit"],
+  input[type="button"],
+  .action-button,
+  .action-buttons {
+    display: none !important;
+  }
+
+  /* Forms (unless marked as printable) */
+  form:not(.printable),
+  .form-group:not(.printable),
+  input:not(.printable),
+  select:not(.printable),
+  textarea:not(.printable) {
+    display: none !important;
+  }
+
+  /* Sidebars and Aside Elements */
+  aside,
+  .sidebar,
+  .side-panel {
+    display: none !important;
+  }
+
+  /* Modals and Popups */
+  .modal,
+  .popup,
+  .overlay,
+  .ai-modal,
+  .ai-popup,
+  .tooltip {
+    display: none !important;
+  }
+
+  /* Alerts and Flash Messages */
+  .alert:not(.printable),
+  .flash-messages:not(.printable),
+  .notification,
+  .toast {
+    display: none !important;
+  }
+
+  /* Footer Navigation */
+  footer nav,
+  footer .links,
+  .footer-menu {
+    display: none !important;
+  }
+
+  /* Media Elements */
+  video,
+  audio,
+  iframe:not(.printable) {
+    display: none !important;
+  }
+
+  /* AI Disclaimer */
+  .ai-disclaimer {
+    display: none !important;
+  }
+
+  /* Mobile Hamburger Menu */
+  .navbar-toggle,
+  .hamburger-menu {
+    display: none !important;
+  }
+
+  /* Classes marked for hiding */
+  .no-print,
+  .screen-only,
+  .hide-print {
+    display: none !important;
+  }
+}
+
+/* ================================================================
+   2. LAYOUT OPTIMIZATION
+   ================================================================ */
+
+@media print {
+  /* Body Setup */
+  body {
+    background: white !important;
+    background-image: none !important;
+    color: #000 !important;
+    margin: 0;
+    padding: 10mm 15mm;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+
+  /* Remove all backgrounds and shadows */
+  * {
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Keep white backgrounds for cards/sections */
+  .card,
+  .content-card,
+  .report-section,
+  .patient-info-box,
+  .data-table,
+  table {
+    background: white !important;
+    background-color: white !important;
+  }
+
+  /* Remove rounded corners (better for printing) */
+  * {
+    border-radius: 0 !important;
+  }
+
+  /* Full width for content */
+  .container,
+  .container-sm,
+  .container-md,
+  .container-card,
+  .content,
+  main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 10mm 15mm;
+  }
+
+  /* Remove fixed positioning */
+  * {
+    position: static !important;
+  }
+}
+
+/* ================================================================
+   3. TYPOGRAPHY OPTIMIZATION
+   ================================================================ */
+
+@media print {
+  /* Font sizes optimized for print */
+  body {
+    font-family: 'Times New Roman', serif;
+    font-size: 12pt;
+  }
+
+  h1 {
+    font-size: 20pt;
+    margin-bottom: 12pt;
+    page-break-after: avoid;
+  }
+
+  h2 {
+    font-size: 16pt;
+    margin-bottom: 10pt;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-size: 14pt;
+    margin-bottom: 8pt;
+    page-break-after: avoid;
+  }
+
+  h4, h5, h6 {
+    font-size: 12pt;
+    margin-bottom: 6pt;
+    page-break-after: avoid;
+  }
+
+  p {
+    margin-bottom: 8pt;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Black text for better readability */
+  body,
+  p,
+  h1, h2, h3, h4, h5, h6,
+  td, th,
+  li,
+  span,
+  div {
+    color: #000 !important;
+  }
+
+  /* Links */
+  a {
+    color: #000 !important;
+    text-decoration: underline;
+  }
+
+  /* Show link URLs (optional - can be removed if too cluttered) */
+  a[href]:not(.no-print-url):after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+    word-wrap: break-word;
+  }
+
+  /* Don't show URLs for internal anchors */
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after {
+    content: "";
+  }
+
+  /* Strong and emphasis */
+  strong, b {
+    font-weight: bold;
+  }
+
+  em, i {
+    font-style: italic;
+  }
+}
+
+/* ================================================================
+   4. PAGE BREAKS
+   ================================================================ */
+
+@media print {
+  /* Prevent awkward page breaks */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep tables together */
+  table {
+    page-break-inside: avoid;
+  }
+
+  /* Keep figures/images together */
+  figure,
+  img {
+    page-break-inside: avoid;
+  }
+
+  /* Keep lists together */
+  ul, ol, dl {
+    page-break-before: avoid;
+  }
+
+  /* Keep paragraphs reasonably together */
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Keep table rows together */
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Utility classes for page breaks */
+  .page-break,
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  .keep-together,
+  .no-break {
+    page-break-inside: avoid;
+  }
+
+  /* Allow breaks if needed */
+  .allow-break {
+    page-break-inside: auto;
+  }
+}
+
+/* ================================================================
+   5. TABLE OPTIMIZATION
+   ================================================================ */
+
+@media print {
+  /* Repeat table headers on each page */
+  thead {
+    display: table-header-group;
+  }
+
+  /* Repeat table footers */
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Table styling */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12pt;
+  }
+
+  th, td {
+    padding: 6pt 8pt;
+    border: 1px solid #000;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold;
+  }
+
+  /* Data table specific */
+  .data-table th {
+    background: #e0e0e0 !important;
+    color: #000 !important;
+  }
+
+  .data-table td {
+    border: 1px solid #ccc;
+  }
+
+  /* Assessment table */
+  .assessment-table th {
+    background: #f5f5f5 !important;
+  }
+}
+
+/* ================================================================
+   6. SPECIAL PRINT CLASSES
+   ================================================================ */
+
+@media print {
+  /* Show only when printing */
+  .print-only,
+  .show-print {
+    display: block !important;
+  }
+
+  .print-inline {
+    display: inline !important;
+  }
+
+  /* Print-specific headers/footers */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 20pt;
+    border-bottom: 2pt solid #000;
+    padding-bottom: 10pt;
+  }
+
+  .print-footer {
+    display: block !important;
+    text-align: center;
+    margin-top: 20pt;
+    border-top: 1pt solid #000;
+    padding-top: 10pt;
+    font-size: 10pt;
+  }
+}
+
+/* ================================================================
+   7. IMAGES AND MEDIA
+   ================================================================ */
+
+@media print {
+  /* Images */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+
+  /* Logo sizing */
+  .logo,
+  .clinic-logo,
+  .brand-logo {
+    max-width: 120px !important;
+    height: auto !important;
+  }
+
+  /* Icons - make smaller */
+  .icon,
+  svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* ================================================================
+   8. GRID AND FLEXBOX ADJUSTMENTS
+   ================================================================ */
+
+@media print {
+  /* Convert grids to single column for print */
+  .grid,
+  .grid-2,
+  .grid-3,
+  .grid-4,
+  .plans-grid,
+  .dashboard-grid,
+  .card-grid {
+    display: block !important;
+  }
+
+  .grid > *,
+  .grid-2 > *,
+  .grid-3 > *,
+  .grid-4 > * {
+    margin-bottom: 12pt;
+    page-break-inside: avoid;
+  }
+
+  /* Flexbox to block */
+  .flex,
+  .flex-row {
+    display: block !important;
+  }
+}
+
+/* ================================================================
+   9. PATIENT REPORT SPECIFIC (ENHANCED)
+   ================================================================ */
+
+@media print {
+  /* Report sections */
+  .report-section {
+    page-break-inside: avoid;
+    margin-bottom: 16pt;
+  }
+
+  /* Section headers */
+  .section-header,
+  .report-section h2 {
+    background: #e0e0e0 !important;
+    color: #000 !important;
+    padding: 8pt 12pt;
+    margin-bottom: 12pt;
+    border-left: 4pt solid #000;
+  }
+
+  /* Field labels */
+  .field-label,
+  .info-label {
+    font-weight: bold;
+    margin-bottom: 4pt;
+  }
+
+  /* Field values */
+  .field-value,
+  .info-value {
+    margin-bottom: 12pt;
+  }
+
+  /* Clinical flags */
+  .flag-item {
+    border-left-width: 3pt !important;
+    padding: 6pt 12pt;
+    margin-bottom: 8pt;
+    page-break-inside: avoid;
+  }
+
+  .flag-item.red {
+    border-left-color: #000 !important;
+  }
+
+  /* Signature section */
+  .signature-section {
+    margin-top: 40pt;
+    page-break-inside: avoid;
+  }
+
+  .signature-line {
+    border-top: 1pt solid #000;
+    margin-bottom: 6pt;
+  }
+}
+
+/* ================================================================
+   10. DASHBOARD AND STATS
+   ================================================================ */
+
+@media print {
+  /* Stat cards */
+  .stat-card {
+    border: 1pt solid #ccc;
+    padding: 12pt;
+    margin-bottom: 12pt;
+    page-break-inside: avoid;
+  }
+
+  .stat-card-number {
+    font-size: 18pt;
+    font-weight: bold;
+  }
+
+  .stat-card-label {
+    font-size: 12pt;
+  }
+}
+
+/* ================================================================
+   11. INVOICE SPECIFIC
+   ================================================================ */
+
+@media print {
+  /* Invoice container */
+  .invoice-container {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Invoice header */
+  .invoice-header {
+    margin-bottom: 20pt;
+    border-bottom: 2pt solid #000;
+    padding-bottom: 12pt;
+  }
+
+  /* Invoice table */
+  .invoice-table td,
+  .invoice-table th {
+    padding: 8pt;
+  }
+
+  /* Invoice totals */
+  .invoice-total {
+    font-size: 14pt;
+    font-weight: bold;
+    margin-top: 12pt;
+  }
+}
+
+/* ================================================================
+   12. BLOG POST SPECIFIC
+   ================================================================ */
+
+@media print {
+  /* Blog header */
+  .blog-header {
+    margin-bottom: 20pt;
+  }
+
+  /* Blog content */
+  .blog-content p {
+    text-align: justify;
+    margin-bottom: 12pt;
+  }
+
+  /* Code blocks */
+  pre, code {
+    background: #f5f5f5 !important;
+    border: 1pt solid #ccc;
+    padding: 8pt;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+
+  /* Blockquotes */
+  blockquote {
+    border-left: 3pt solid #ccc;
+    padding-left: 12pt;
+    margin-left: 0;
+    font-style: italic;
+    page-break-inside: avoid;
+  }
+}
+
+/* ================================================================
+   13. PRICING PAGE SPECIFIC
+   ================================================================ */
+
+@media print {
+  /* Plan cards */
+  .plan-card {
+    border: 2pt solid #000;
+    padding: 12pt;
+    margin-bottom: 16pt;
+    page-break-inside: avoid;
+  }
+
+  .plan-card.featured {
+    border: 3pt solid #000;
+    background: #f0f0f0 !important;
+  }
+
+  /* Plan features list */
+  .plan-features li {
+    margin-bottom: 6pt;
+  }
+}
+
+/* ================================================================
+   14. ACCESSIBILITY AND FINAL ADJUSTMENTS
+   ================================================================ */
+
+@media print {
+  /* Ensure good contrast */
+  *::selection {
+    background: transparent !important;
+  }
+
+  /* Remove outlines */
+  *:focus {
+    outline: none !important;
+  }
+
+  /* Print-friendly footer */
+  body::after {
+    content: "";
+    display: block;
+    height: 1px;
+  }
+}
+
+/* ================================================================
+   END OF PRINT STYLESHEET
+   ================================================================ */

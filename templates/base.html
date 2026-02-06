@@ -37,6 +37,7 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
     <link rel="stylesheet" href="{{ url_for('static', filename='assessmentProgress.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='print.css') }}" media="print">
 
     <!-- Dark Mode Theme Manager (load early to prevent flash) -->
     <script src="{{ url_for('static', filename='theme.js') }}" nonce="{{ csp_nonce() }}"></script>
