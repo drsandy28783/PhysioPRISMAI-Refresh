@@ -38,6 +38,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
     <link rel="stylesheet" href="{{ url_for('static', filename='assessmentProgress.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='print.css') }}" media="print">
+    <link rel="stylesheet" href="{{ url_for('static', filename='keyboardShortcuts.css') }}">
 
     <!-- Dark Mode Theme Manager (load early to prevent flash) -->
     <script src="{{ url_for('static', filename='theme.js') }}" nonce="{{ csp_nonce() }}"></script>
@@ -64,12 +65,12 @@
             <span></span>
         </button>
         <ul class="navbar-menu" id="navbar-menu">
-            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('view_patients') }}">Patients</a></li>
-            <li><a href="{{ url_for('add_patient') }}">Add Patient</a></li>
-            <li><a href="{{ url_for('subscription_dashboard') }}">Subscription</a></li>
+            <li><a href="{{ url_for('dashboard') }}" title="Dashboard (Press D)">Dashboard</a></li>
+            <li><a href="{{ url_for('view_patients') }}" title="View Patients (Press P)">Patients</a></li>
+            <li><a href="{{ url_for('add_patient') }}" title="Add Patient (Press N)">Add Patient</a></li>
+            <li><a href="{{ url_for('subscription_dashboard') }}" title="Subscription (Press S)">Subscription</a></li>
             <li><a href="{{ url_for('pricing') }}">Pricing</a></li>
-            <li><a href="{{ url_for('blog_list') }}">Blog</a></li>
+            <li><a href="{{ url_for('blog_list') }}" title="Blog (Press B)">Blog</a></li>
             <li class="notification-nav-item">
                 <a href="{{ url_for('notifications_page') }}" class="notification-bell-link">
                     🔔 Notifications
@@ -80,6 +81,11 @@
                 <button id="theme-toggle" class="theme-toggle-button" aria-label="Toggle theme" title="Switch to dark mode">
                     <span class="theme-icon">☀️</span>
                     <span class="theme-label">Light</span>
+                </button>
+            </li>
+            <li class="keyboard-shortcuts-nav-item">
+                <button id="keyboard-shortcuts-btn" class="keyboard-shortcuts-button" aria-label="Keyboard shortcuts" title="Show keyboard shortcuts (Press ?)">
+                    ⌨️
                 </button>
             </li>
             <li><a href="{{ url_for('logout') }}">Logout</a></li>
@@ -160,6 +166,9 @@
 
     <!-- Version Check and Auto-Reload System -->
     <script defer src="{{ url_for('static', filename='version-check.js') }}?v=5" nonce="{{ csp_nonce() }}"></script>
+
+    <!-- Keyboard Shortcuts System -->
+    <script defer src="{{ url_for('static', filename='keyboardShortcuts.js') }}" nonce="{{ csp_nonce() }}"></script>
 
     <!-- Service Worker Registration -->
     <script nonce="{{ csp_nonce() }}">
