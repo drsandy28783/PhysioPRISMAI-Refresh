@@ -21,6 +21,7 @@ These features are already implemented and working:
 - ✅ **Beautiful Data Visualizations** - Patient progress charts in reports (web + mobile) (Completed: 2026-02-06)
 - ✅ **Print-Friendly Formats** - Comprehensive global print stylesheet (652 lines) for all pages (Previously completed)
 - ✅ **Advanced Search & Filters (Web)** - Deep search, multi-field filters, saved searches (Previously completed)
+- ✅ **Keyboard Shortcuts & Power User Features** - Navigation shortcuts, command palette, help modal (Previously completed)
 
 ---
 
@@ -193,24 +194,15 @@ These features are already implemented and working:
 
 ---
 
-### 3. **Smart Templates & Macros** ⚡
+### 3. ~~**Smart Templates & Macros**~~ ⚡ - REMOVED (User Decision)
 
-**Current State**:
-- ✅ Pre-defined assessment forms exist
-- ❌ No custom user templates
+**Status:** ❌ NOT IMPLEMENTING - Removed per user feedback (2026-02-06)
 
-**What's Still Needed:**
-- **Custom template library** per user
-- **Text expansion** (type "bp" → expands to full boilerplate)
-- **Share templates with team**
-- **Variables** ({{patient_name}}, {{date}})
-
-**Why Valuable:**
-- Massive time saver
-- Consistency in documentation
-
-**Impact:** 🚀 High Value
-**Effort:** Low-Medium (2 weeks)
+**Reason for Removal:**
+- User feedback: Templates would be confusing and lead to clinical errors
+- Risk: Copy-paste of incorrect/outdated information
+- Decision: Wait for user feedback before implementing
+- Alternative: Basic text filling/snippets may be implemented instead (TBD)
 
 ---
 
@@ -323,18 +315,26 @@ These features are already implemented and working:
 
 ---
 
-### 9. **Keyboard Shortcuts & Power User Features** ⌨️
+### 9. ✅ **Keyboard Shortcuts & Power User Features** ⌨️ - COMPLETED (Previously)
 
-**What:**
-- Keyboard shortcuts for common actions
-  - `N` = New patient
-  - `/` = Quick search
-  - `Ctrl+S` = Save notes
-- Command palette (Cmd+K) like Notion
-- Bulk actions
+**What Was Delivered:**
+- ✅ Navigation shortcuts: D=Dashboard, N=New Patient, P=Patients, S=Subscription, B=Blog, A=Audit Logs
+- ✅ Action shortcuts: Ctrl+S=Save, Ctrl+P=Print, Ctrl+K=Command Palette
+- ✅ Special shortcuts: /=Focus Search, Esc=Close Modals, ?=Show Help
+- ✅ **Command Palette** (Ctrl+K) - Searchable quick actions like Notion
+- ✅ **Help Modal** (?) - Shows all available shortcuts
+- ✅ Toast notifications for feedback
+- ✅ Smart input detection (doesn't interfere with typing)
 
-**Impact:** 😊 User Delight
-**Effort:** Medium (1 week)
+**Implementation Details:**
+- File: static/keyboardShortcuts.js (583 lines)
+- File: static/keyboardShortcuts.css
+- 27 searchable commands in palette
+- Works across all pages
+- Keyboard shortcuts button in navbar
+
+**Status:** ✅ COMPLETE
+**Impact:** ✅ Power users love it!
 
 ---
 
@@ -464,10 +464,11 @@ These features are already implemented and working:
 | ✅ **Data Visualizations** | High Delight | Medium | 1 day | ✅ DONE |
 | ✅ **Advanced Search (Web)** | High | Medium | Previously done | ✅ DONE |
 | ✅ **Print Formats** | Medium | Low | Previously done | ✅ DONE |
-| **Smart Templates** | High Value | Low-Medium | 2 weeks | 🔜 NEXT |
+| ✅ **Keyboard Shortcuts** | High Delight | Medium | Previously done | ✅ DONE |
+| ~~**Smart Templates**~~ | ❌ REMOVED | - | - | ❌ REMOVED |
 
-**Completed: 5/6** (Only Smart Templates remaining in this tier!)
-**Remaining Time: 2 weeks**
+**Completed: 6/6** (All immediate priority features complete!)
+**Next Tier:** Move to short-term features (Scheduling, SMS)
 
 ---
 
@@ -609,7 +610,7 @@ These features are already implemented and working:
 
 ## 🏁 CONCLUSION
 
-**Completed:** 12 major features ⬆️ (was 8, now 12!)
+**Completed:** 13 major features ⬆️ (was 8, now 13!)
 - ✅ Data Export & Backup
 - ✅ Audit Logging
 - ✅ Advanced RBAC (2-tier approval)
@@ -622,17 +623,20 @@ These features are already implemented and working:
 - ✅ **Beautiful Data Visualizations** - 2026-02-06 🆕
 - ✅ **Print-Friendly Formats** - Previously completed ✅
 - ✅ **Advanced Search & Filters (Web)** - Previously completed ✅
+- ✅ **Keyboard Shortcuts & Power User Features** - Previously completed ✅
 
-**Remaining Essential:** 4 features (Scheduling, SMS, Collaboration, Documents, Patient Portal) - Down from 6!
+**Remaining Essential:** 4 features (Scheduling, SMS, Collaboration, Documents, Patient Portal)
 
-**Remaining Aesthetic:** 10 features (Templates, Keyboard Shortcuts, etc.) - Down from 14!
+**Remaining Aesthetic:** 8 features (Multi-Language, Telehealth, Advanced AI, etc.) - Templates removed!
 
-**Recommended Focus:**
-1. **Smart Templates & Macros** - Highest ROI, 2 weeks effort - 🔜 NEXT
-2. **Advanced Search (Web)** - Complete parity with mobile - 1-2 weeks
-3. **Print Formats** - Professional output for clinics - 2-3 days
-4. **Appointment Scheduling** - Critical workflow feature - 4-6 weeks
-5. **SMS Integration** - Complete communication suite - 1-2 weeks
+**Removed by User Decision:** 1 feature (Smart Templates - risk of clinical errors)
+
+**Recommended Next Steps:**
+1. ~~**Smart Templates**~~ - ❌ Removed (user decision - risk of errors)
+2. **Basic Text Filling** - TBD (awaiting user clarification on requirements)
+3. **Appointment Scheduling** - Critical workflow feature - 4-6 weeks - 🔜 NEXT
+4. **SMS Integration** - Complete communication suite - 1-2 weeks
+5. **Team Collaboration** - Multi-therapist clinics - 6-8 weeks
 
 **Session Progress:**
 - ✅ Session 1 (Quick Wins): **EXCEEDED!** Dark Mode + Voice Input + Data Viz done!
