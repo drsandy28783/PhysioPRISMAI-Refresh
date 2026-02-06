@@ -39,6 +39,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='assessmentProgress.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='print.css') }}" media="print">
     <link rel="stylesheet" href="{{ url_for('static', filename='keyboardShortcuts.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='textExpansion.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='autocomplete.css') }}">
 
     <!-- Dark Mode Theme Manager (load early to prevent flash) -->
     <script src="{{ url_for('static', filename='theme.js') }}" nonce="{{ csp_nonce() }}"></script>
@@ -175,6 +177,12 @@
 
     <!-- Voice Recorder (Voice-to-Text) -->
     <script defer src="{{ url_for('static', filename='voiceRecorder.js') }}" nonce="{{ csp_nonce() }}"></script>
+
+    <!-- Text Expansion (Medical Abbreviations) -->
+    <script defer src="{{ url_for('static', filename='textExpansion.js') }}" nonce="{{ csp_nonce() }}"></script>
+
+    <!-- Smart Autocomplete (Learn from History) -->
+    <script defer src="{{ url_for('static', filename='autocomplete.js') }}" nonce="{{ csp_nonce() }}"></script>
 
     <!-- Service Worker Registration -->
     <script nonce="{{ csp_nonce() }}">

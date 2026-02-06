@@ -10324,6 +10324,162 @@ def api_transcribe_audio():
 
 
 # ═══════════════════════════════════════════════════════════════════
+# TEXT AUTOCOMPLETE API - Learn from user's historical phrases
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/api/autocomplete/suggestions', methods=['POST'])
+@login_required()
+def api_autocomplete_suggestions():
+    """
+    Get autocomplete suggestions based on user's historical patient data.
+    Learns from the current user's own notes to provide personalized suggestions.
+
+    Request JSON:
+        {
+            "field": "chief_complaint",  // Field name
+            "query": "lower back",       // Partial text user has typed
+            "limit": 5                   // Max suggestions to return
+        }
+
+    Returns:
+        {
+            "suggestions": [
+                {"text": "lower back pain radiating to left leg", "frequency": 5},
+                {"text": "lower back pain with morning stiffness", "frequency": 3}
+            ]
+        }
+    """
+    try:
+        data = request.get_json()
+        field = data.get('field', '')
+        query = data.get('query', '').lower().strip()
+        limit = data.get('limit', 5)
+
+        user_id = session.get('user_id')
+
+        if not query or len(query) < 3:
+            # Don't suggest for very short queries
+            return jsonify({'suggestions': []}), 200
+
+        # Define which fields to search in Firestore based on field name
+        field_mappings = {
+            # Chief complaints
+            'chief_complaint': ['chief_complaint'],
+            'present_history': ['present_history'],
+            'past_history': ['past_history'],
+
+            # Subjective examination
+            'impairmentBodyStructure': ['impairment_body_structure'],
+            'impairmentBodyFunction': ['impairment_body_function'],
+            'activityLimitationPerformance': ['activity_limitation_performance'],
+            'activityLimitationCapacity': ['activity_limitation_capacity'],
+            'contextualFactorsEnvironmental': ['contextual_factors_environmental'],
+            'contextualFactorsPersonal': ['contextual_factors_personal'],
+
+            # Perspectives
+            'knowledge_entry': ['knowledge_entry'],
+            'attribution_entry': ['attribution_entry'],
+            'expectation_entry': ['expectation_entry'],
+            'consequences_awareness_entry': ['consequences_awareness_entry'],
+            'locus_of_control_entry': ['locus_of_control_entry'],
+            'affective_aspect_entry': ['affective_aspect_entry'],
+
+            # Treatment plan
+            'treatment_plan': ['treatment_plan'],
+            'goal_targeted': ['goal_targeted'],
+            'reasoning': ['reasoning'],
+            'reference': ['reference'],
+
+            # SMART Goals
+            'patient_goal': ['patient_goal'],
+            'baseline_status': ['baseline_status'],
+            'measurable_outcome': ['measurable_outcome'],
+
+            # Follow-ups
+            'belief_feedback': ['belief_feedback'],
+            'plan_next': ['plan_next', 'treatment_plan'],
+        }
+
+        # Get Firestore fields to search
+        firestore_fields = field_mappings.get(field, [field])
+
+        # Collect phrases from user's patient records
+        phrases_with_frequency = {}
+
+        # Query user's patients
+        patients_ref = db.collection('patients').where('user_id', '==', user_id)
+        patients = patients_ref.stream()
+
+        for patient in patients:
+            patient_data = patient.to_dict()
+
+            # Check each mapped field
+            for fs_field in firestore_fields:
+                value = patient_data.get(fs_field, '')
+
+                if isinstance(value, str) and value:
+                    value_lower = value.lower()
+
+                    # Check if query matches
+                    if query in value_lower:
+                        # Extract the full sentence/phrase containing the query
+                        sentences = value.split('.')
+                        for sentence in sentences:
+                            sentence = sentence.strip()
+                            if query in sentence.lower() and len(sentence) > len(query):
+                                # Count frequency
+                                if sentence in phrases_with_frequency:
+                                    phrases_with_frequency[sentence] += 1
+                                else:
+                                    phrases_with_frequency[sentence] = 1
+
+            # Also check subjective_examination subcollection
+            if fs_field in ['impairment_body_structure', 'impairment_body_function',
+                           'activity_limitation_performance', 'activity_limitation_capacity',
+                           'contextual_factors_environmental', 'contextual_factors_personal']:
+                sub_ref = db.collection('patients').document(patient.id).collection('subjective_examination')
+                sub_docs = sub_ref.stream()
+
+                for sub_doc in sub_docs:
+                    sub_data = sub_doc.to_dict()
+                    for fs_field in firestore_fields:
+                        value = sub_data.get(fs_field, '')
+                        if isinstance(value, str) and value and query in value.lower():
+                            sentences = value.split('.')
+                            for sentence in sentences:
+                                sentence = sentence.strip()
+                                if query in sentence.lower() and len(sentence) > len(query):
+                                    if sentence in phrases_with_frequency:
+                                        phrases_with_frequency[sentence] += 1
+                                    else:
+                                        phrases_with_frequency[sentence] = 1
+
+        # Sort by frequency (most common first)
+        sorted_phrases = sorted(
+            phrases_with_frequency.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        # Format suggestions
+        suggestions = [
+            {
+                'text': phrase,
+                'frequency': freq
+            }
+            for phrase, freq in sorted_phrases[:limit]
+        ]
+
+        logger.info(f"Autocomplete: user={user_id}, field={field}, query='{query}', found={len(suggestions)} suggestions")
+
+        return jsonify({'suggestions': suggestions}), 200
+
+    except Exception as e:
+        logger.error(f"Autocomplete error: {str(e)}")
+        return jsonify({'suggestions': []}), 200  # Return empty on error
+
+
+# ═══════════════════════════════════════════════════════════════════
 # HEALTH CHECK
 # ═══════════════════════════════════════════════════════════════════
 
