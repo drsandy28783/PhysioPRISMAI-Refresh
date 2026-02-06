@@ -4579,7 +4579,7 @@ def admin_dashboard():
 @login_required()
 def view_patients():
         """Enhanced patient list with advanced search and filtering"""
-        # Get filter parameters
+        # Get filter parameters (existing)
         name_filter = request.args.get('name', '').strip()
         id_filter = request.args.get('patient_id', '').strip()
         contact_filter = request.args.get('contact', '').strip()
@@ -4589,6 +4589,13 @@ def view_patients():
         sort_by = request.args.get('sort', 'newest')  # newest, oldest, name_asc, name_desc
         status_filter = request.args.get('status', '').strip()  # active, completed, archived
         tags_filter = request.args.getlist('tags')  # Multiple tags can be selected
+
+        # Get new filter parameters
+        age_min = request.args.get('age_min', '').strip()
+        age_max = request.args.get('age_max', '').strip()
+        gender_filter = request.args.get('gender', '').strip()
+        deep_search = request.args.get('deep_search', '').strip()
+        quick_filter = request.args.get('quick_filter', '').strip()
 
         try:
             # 1) Base query - fetch all patients for this user
@@ -4650,6 +4657,51 @@ def view_patients():
                 filtered_patients = [p for p in filtered_patients
                                     if any(tag in (p.get('tags') or []) for tag in tags_filter)]
 
+            # NEW: Age range filtering
+            if age_min or age_max:
+                def extract_age(age_sex_str):
+                    """Extract age from 'age/sex' format (e.g., '25/M' -> 25)"""
+                    if not age_sex_str:
+                        return None
+                    try:
+                        age_part = age_sex_str.split('/')[0].strip()
+                        return int(age_part)
+                    except (ValueError, IndexError):
+                        return None
+
+                if age_min:
+                    try:
+                        min_age = int(age_min)
+                        filtered_patients = [p for p in filtered_patients
+                                            if extract_age(p.get('age_sex')) is not None
+                                            and extract_age(p.get('age_sex')) >= min_age]
+                    except ValueError:
+                        pass  # Invalid age, skip filter
+
+                if age_max:
+                    try:
+                        max_age = int(age_max)
+                        filtered_patients = [p for p in filtered_patients
+                                            if extract_age(p.get('age_sex')) is not None
+                                            and extract_age(p.get('age_sex')) <= max_age]
+                    except ValueError:
+                        pass  # Invalid age, skip filter
+
+            # NEW: Gender filtering
+            if gender_filter:
+                def extract_gender(age_sex_str):
+                    """Extract gender from 'age/sex' format (e.g., '25/M' -> 'M')"""
+                    if not age_sex_str:
+                        return None
+                    try:
+                        gender_part = age_sex_str.split('/')[1].strip().upper()
+                        return gender_part
+                    except IndexError:
+                        return None
+
+                filtered_patients = [p for p in filtered_patients
+                                    if extract_gender(p.get('age_sex')) == gender_filter.upper()]
+
             # 5) Date range filtering
             if date_from:
                 try:
@@ -4668,6 +4720,92 @@ def view_patients():
                                         if parse_created_at(p) and parse_created_at(p) < to_date]
                 except ValueError:
                     pass  # Invalid date format, skip filter
+
+            # NEW: Deep search (search within assessment notes, diagnoses, treatments)
+            if deep_search and (name_filter or complaint_filter):
+                search_term = (name_filter or complaint_filter).lower()
+                deep_matched_patient_ids = set()
+
+                # Search in assessment collections
+                assessment_collections = [
+                    'subjective_examination',
+                    'provisional_diagnosis',
+                    'treatment_plan',
+                    'follow_ups'
+                ]
+
+                for patient in filtered_patients:
+                    patient_id = patient.get('patient_id')
+                    if not patient_id:
+                        continue
+
+                    # Check if already matched
+                    if patient_id in deep_matched_patient_ids:
+                        continue
+
+                    # Search in each assessment collection
+                    for collection_name in assessment_collections:
+                        try:
+                            docs = db.collection(collection_name).where('patient_id', '==', patient_id).limit(10).stream()
+                            for doc in docs:
+                                doc_data = doc.to_dict()
+                                # Search in all string fields
+                                for key, value in doc_data.items():
+                                    if isinstance(value, str) and search_term in value.lower():
+                                        deep_matched_patient_ids.add(patient_id)
+                                        break
+                                if patient_id in deep_matched_patient_ids:
+                                    break
+                        except Exception as e:
+                            logger.warning(f"Deep search error in {collection_name} for patient {patient_id}: {e}")
+                            continue
+
+                        if patient_id in deep_matched_patient_ids:
+                            break
+
+                # Filter to only deep-matched patients if we did deep search
+                if search_term:
+                    filtered_patients = [p for p in filtered_patients
+                                        if p.get('patient_id') in deep_matched_patient_ids]
+
+            # NEW: Quick filters
+            if quick_filter == 'assessment_incomplete':
+                # Filter patients without completed treatment plans
+                incomplete_patients = []
+                for patient in filtered_patients:
+                    patient_id = patient.get('patient_id')
+                    try:
+                        # Check if treatment plan exists
+                        treatment_doc = db.collection('treatment_plan').where('patient_id', '==', patient_id).limit(1).stream()
+                        has_treatment = False
+                        for _ in treatment_doc:
+                            has_treatment = True
+                            break
+                        if not has_treatment:
+                            incomplete_patients.append(patient)
+                    except Exception as e:
+                        logger.warning(f"Error checking treatment plan for {patient_id}: {e}")
+                        continue
+                filtered_patients = incomplete_patients
+
+            elif quick_filter == 'no_follow_up':
+                # Filter patients without follow-ups
+                no_followup_patients = []
+                for patient in filtered_patients:
+                    patient_id = patient.get('patient_id')
+                    try:
+                        # Check if follow-ups exist
+                        followup_docs = db.collection('follow_ups').where('patient_id', '==', patient_id).limit(1).stream()
+                        has_followup = False
+                        for _ in followup_docs:
+                            has_followup = True
+                            break
+                        if not has_followup:
+                            no_followup_patients.append(patient)
+                    except Exception as e:
+                        logger.warning(f"Error checking follow-ups for {patient_id}: {e}")
+                        continue
+                filtered_patients = no_followup_patients
 
             # 6) Apply sorting
             if sort_by == 'newest':
@@ -4698,7 +4836,29 @@ def view_patients():
             all_tags.update(p.get('tags') or [])
         all_tags = sorted(list(all_tags))
 
-        # 9) Render on success
+        # 9) Check if any filters are active
+        has_active_filters = any([
+            name_filter, id_filter, contact_filter, complaint_filter,
+            date_from, date_to, status_filter, tags_filter,
+            age_min, age_max, gender_filter, quick_filter
+        ])
+
+        # 10) Fetch saved searches for this user
+        saved_searches = []
+        try:
+            saved_searches_docs = db.collection('saved_searches').where('user_id', '==', session.get('user_id')).limit(20).stream()
+            for doc in saved_searches_docs:
+                search_data = doc.to_dict()
+                saved_searches.append({
+                    'id': doc.id,
+                    'name': search_data.get('name', ''),
+                    'url': '/view_patients' + search_data.get('filters', '')
+                })
+        except Exception as e:
+            logger.warning(f"Error fetching saved searches: {e}")
+            # Continue without saved searches
+
+        # 11) Render on success
         return render_template('view_patients.html',
                              patients=paginated_patients,
                              total_count=len(patients),
@@ -4707,8 +4867,84 @@ def view_patients():
                              current_status=status_filter,
                              current_tags=tags_filter,
                              page=page,
-                             total_pages=total_pages)
+                             total_pages=total_pages,
+                             has_active_filters=has_active_filters,
+                             saved_searches=saved_searches)
 
+
+# ============================================================================
+# SAVED SEARCHES API ENDPOINTS
+# ============================================================================
+
+@app.route('/api/save_search', methods=['POST'])
+@login_required()
+def api_save_search():
+    """Save a search filter combination for quick access"""
+    try:
+        data = request.get_json()
+        search_name = data.get('name', '').strip()
+        filters_query = data.get('filters', '').strip()
+
+        if not search_name:
+            return jsonify({'success': False, 'error': 'Search name is required'}), 400
+
+        if not filters_query:
+            return jsonify({'success': False, 'error': 'No filters to save'}), 400
+
+        # Create saved search document
+        search_data = {
+            'user_id': session.get('user_id'),
+            'name': search_name,
+            'filters': filters_query,
+            'created_at': datetime.now(timezone.utc).isoformat(),
+        }
+
+        # Save to Firestore
+        doc_ref = db.collection('saved_searches').document()
+        doc_ref.set(search_data)
+
+        logger.info(f"User {session.get('user_id')} saved search: {search_name}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Search saved successfully',
+            'search_id': doc_ref.id
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error saving search: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/delete_saved_search/<search_id>', methods=['DELETE'])
+@login_required()
+def api_delete_saved_search(search_id):
+    """Delete a saved search"""
+    try:
+        # Verify ownership
+        doc_ref = db.collection('saved_searches').document(search_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            return jsonify({'success': False, 'error': 'Search not found'}), 404
+
+        search_data = doc.to_dict()
+        if search_data.get('user_id') != session.get('user_id'):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+        # Delete the search
+        doc_ref.delete()
+
+        logger.info(f"User {session.get('user_id')} deleted saved search: {search_id}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Search deleted successfully'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error deleting saved search: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/register_institute', methods=['GET', 'POST'])

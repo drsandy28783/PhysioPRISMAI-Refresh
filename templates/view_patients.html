@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Patient List – Physiologic PRISM{% endblock %}
 
-<!-- Force cache refresh v4 -->
+<!-- Force cache refresh v5 - Advanced Search -->
 
 {% block head %}
 <style>
@@ -12,6 +12,42 @@
     margin-bottom: 24px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
+
+  /* Quick Filters */
+  .quick-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+  }
+  .quick-filter-btn {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .quick-filter-btn:hover {
+    background: #e9ecef;
+    border-color: #1a5f5a;
+    color: #1a5f5a;
+    transform: translateY(-2px);
+  }
+  .quick-filter-btn.active {
+    background: #1a5f5a;
+    border-color: #1a5f5a;
+    color: white;
+  }
+
   .filter-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -27,6 +63,9 @@
     font-weight: 600;
     color: #2c3e50;
     margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .filter-input-group input,
   .filter-input-group select {
@@ -35,6 +74,96 @@
     border-radius: 6px;
     font-size: 14px;
   }
+
+  /* Deep Search Toggle */
+  .deep-search-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #e3f2fd;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border-left: 4px solid #2196f3;
+  }
+  .deep-search-toggle input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+  .deep-search-toggle label {
+    cursor: pointer;
+    font-weight: 600;
+    color: #1565c0;
+    margin: 0;
+  }
+  .deep-search-hint {
+    font-size: 12px;
+    color: #1976d2;
+    margin-left: 32px;
+  }
+
+  /* Saved Searches */
+  .saved-searches {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+  .saved-searches-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .saved-searches-header h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 16px;
+  }
+  .saved-search-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .saved-search-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    font-size: 13px;
+  }
+  .saved-search-item a {
+    color: #1a5f5a;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .saved-search-item a:hover {
+    text-decoration: underline;
+  }
+  .saved-search-delete {
+    color: #dc3545;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 0 4px;
+  }
+  .save-search-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .save-search-btn:hover {
+    background: #218838;
+  }
+
   .filter-actions {
     display: flex;
     gap: 12px;
@@ -48,6 +177,9 @@
     margin-bottom: 16px;
     color: #2c3e50;
     font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   .clear-filters-btn {
     background: #95a5a6;
@@ -61,6 +193,7 @@
   .clear-filters-btn:hover {
     background: #7f8c8d;
   }
+
   .status-badge {
     display: inline-block;
     padding: 4px 8px;
@@ -71,6 +204,7 @@
   .status-active { background: #d4edda; color: #155724; }
   .status-completed { background: #cce5ff; color: #004085; }
   .status-archived { background: #f8d7da; color: #721c24; }
+
   .tag-badge {
     display: inline-block;
     padding: 2px 6px;
@@ -103,6 +237,7 @@
     background: #fff3cd;
     color: #856404;
   }
+
   .pagination {
     display: flex;
     justify-content: center;
@@ -125,6 +260,12 @@
     color: white;
     border-color: #007bff;
   }
+
+  .help-icon {
+    color: #6c757d;
+    cursor: help;
+    font-size: 16px;
+  }
 </style>
 {% endblock %}
 
@@ -132,19 +273,74 @@
   <div class="container">
     <h2>Patient List</h2>
 
+    <!-- Quick Filters -->
+    <div class="quick-filters">
+      <button class="quick-filter-btn" onclick="applyQuickFilter('new_this_week')" title="Patients added in the last 7 days">
+        🆕 New This Week
+      </button>
+      <button class="quick-filter-btn" onclick="applyQuickFilter('new_this_month')" title="Patients added this month">
+        📅 New This Month
+      </button>
+      <button class="quick-filter-btn" onclick="applyQuickFilter('active_treatment')" title="Patients with active treatment status">
+        ⚡ Active Treatment
+      </button>
+      <button class="quick-filter-btn" onclick="applyQuickFilter('assessment_incomplete')" title="Patients with incomplete assessments">
+        ⏳ Assessment Incomplete
+      </button>
+      <button class="quick-filter-btn" onclick="applyQuickFilter('no_follow_up')" title="Patients without any follow-up sessions">
+        🔴 No Follow-Ups
+      </button>
+    </div>
+
+    <!-- Saved Searches -->
+    {% if saved_searches %}
+    <div class="saved-searches">
+      <div class="saved-searches-header">
+        <h4>💾 Saved Searches</h4>
+      </div>
+      <div class="saved-search-list">
+        {% for search in saved_searches %}
+        <div class="saved-search-item">
+          <a href="{{ search.url }}">{{ search.name }}</a>
+          <span class="saved-search-delete" onclick="deleteSavedSearch('{{ search.id }}')" title="Delete this saved search">×</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Filter Stats -->
     {% if total_count is defined %}
     <div class="filter-stats">
-      📊 Showing <strong>{{ filtered_count }}</strong> of <strong>{{ total_count }}</strong> patients
-      {% if filtered_count < total_count %}
-        ({{ total_count - filtered_count }} filtered out)
+      <div>
+        📊 Showing <strong>{{ filtered_count }}</strong> of <strong>{{ total_count }}</strong> patients
+        {% if filtered_count < total_count %}
+          ({{ total_count - filtered_count }} filtered out)
+        {% endif %}
+      </div>
+      {% if has_active_filters %}
+      <button class="save-search-btn" onclick="saveCurrentSearch()" title="Save this search for quick access later">
+        💾 Save This Search
+      </button>
       {% endif %}
     </div>
     {% endif %}
 
     <!-- Advanced Filter Form -->
-    <form method="GET" class="filter-form">
+    <form method="GET" class="filter-form" id="filter-form">
       <h3 style="margin-top: 0; margin-bottom: 16px; color: #2c3e50;">🔍 Search & Filter Patients</h3>
+
+      <!-- Deep Search Toggle -->
+      <div class="deep-search-toggle">
+        <input type="checkbox" id="deep-search" name="deep_search" value="1" {% if request.args.get('deep_search') %}checked{% endif %}>
+        <label for="deep-search">
+          🔎 Deep Search
+          <span class="help-icon" title="Search within assessment notes, diagnoses, treatment plans, and follow-ups">ⓘ</span>
+        </label>
+      </div>
+      <div class="deep-search-hint">
+        💡 Deep search looks inside assessment notes, diagnoses, treatment plans, and follow-up records (slower but more thorough)
+      </div>
 
       <div class="filter-grid">
         <div class="filter-input-group">
@@ -168,12 +364,34 @@
         </div>
 
         <div class="filter-input-group">
-          <label>Date From:</label>
+          <label>
+            Age Range:
+            <span class="help-icon" title="Filter by patient age">ⓘ</span>
+          </label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="number" name="age_min" placeholder="Min" min="0" max="120" style="width: 70px;" value="{{ request.args.get('age_min', '') }}">
+            <span>-</span>
+            <input type="number" name="age_max" placeholder="Max" min="0" max="120" style="width: 70px;" value="{{ request.args.get('age_max', '') }}">
+          </div>
+        </div>
+
+        <div class="filter-input-group">
+          <label>Gender:</label>
+          <select name="gender">
+            <option value="">All Genders</option>
+            <option value="M" {% if request.args.get('gender') == 'M' %}selected{% endif %}>Male</option>
+            <option value="F" {% if request.args.get('gender') == 'F' %}selected{% endif %}>Female</option>
+            <option value="O" {% if request.args.get('gender') == 'O' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+
+        <div class="filter-input-group">
+          <label>Date Added From:</label>
           <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}">
         </div>
 
         <div class="filter-input-group">
-          <label>Date To:</label>
+          <label>Date Added To:</label>
           <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}">
         </div>
 
@@ -272,13 +490,13 @@
     {% if total_pages > 1 %}
     <div class="pagination">
       {% if page > 1 %}
-        <a href="{{ url_for('view_patients', page=page-1, name=request.args.get('name', ''), patient_id=request.args.get('patient_id', ''), contact=request.args.get('contact', ''), complaint=request.args.get('complaint', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', ''), sort=request.args.get('sort', 'newest'), status=request.args.get('status', '')) }}">&laquo; Previous</a>
+        <a href="{{ url_for('view_patients', page=page-1, **request.args) }}">&laquo; Previous</a>
       {% endif %}
 
       <span class="current">Page {{ page }} of {{ total_pages }}</span>
 
       {% if page < total_pages %}
-        <a href="{{ url_for('view_patients', page=page+1, name=request.args.get('name', ''), patient_id=request.args.get('patient_id', ''), contact=request.args.get('contact', ''), complaint=request.args.get('complaint', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', ''), sort=request.args.get('sort', 'newest'), status=request.args.get('status', '')) }}">Next &raquo;</a>
+        <a href="{{ url_for('view_patients', page=page+1, **request.args) }}">Next &raquo;</a>
       {% endif %}
     </div>
     {% endif %}
@@ -287,4 +505,113 @@
       <a href="{{ url_for('dashboard') }}" class="button">&larr; Back to Dashboard</a>
     </div>
   </div>
+
+  <script>
+    // Quick Filters
+    function applyQuickFilter(filterType) {
+      const today = new Date();
+      const form = document.getElementById('filter-form');
+
+      // Clear existing filters
+      const inputs = form.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], select');
+      inputs.forEach(input => {
+        if (input.type === 'checkbox') return;
+        if (input.tagName === 'SELECT') {
+          input.selectedIndex = 0;
+        } else {
+          input.value = '';
+        }
+      });
+
+      // Apply specific filter
+      switch(filterType) {
+        case 'new_this_week':
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          form.querySelector('[name="date_from"]').value = weekAgo.toISOString().split('T')[0];
+          break;
+
+        case 'new_this_month':
+          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+          form.querySelector('[name="date_from"]').value = monthStart.toISOString().split('T')[0];
+          break;
+
+        case 'active_treatment':
+          form.querySelector('[name="status"]').value = 'active';
+          break;
+
+        case 'assessment_incomplete':
+          // This will be handled by backend - set a special flag
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.name = 'quick_filter';
+          hiddenInput.value = 'assessment_incomplete';
+          form.appendChild(hiddenInput);
+          break;
+
+        case 'no_follow_up':
+          const hiddenInput2 = document.createElement('input');
+          hiddenInput2.type = 'hidden';
+          hiddenInput2.name = 'quick_filter';
+          hiddenInput2.value = 'no_follow_up';
+          form.appendChild(hiddenInput2);
+          break;
+      }
+
+      form.submit();
+    }
+
+    // Save Search
+    function saveCurrentSearch() {
+      const name = prompt('Enter a name for this search:');
+      if (!name) return;
+
+      const currentUrl = window.location.search;
+
+      fetch('/api/save_search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name,
+          filters: currentUrl
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Search saved successfully!');
+          location.reload();
+        } else {
+          alert('Error saving search: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving search');
+      });
+    }
+
+    // Delete Saved Search
+    function deleteSavedSearch(searchId) {
+      if (!confirm('Delete this saved search?')) return;
+
+      fetch('/api/delete_saved_search/' + searchId, {
+        method: 'DELETE'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('Error deleting search: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting search');
+      });
+    }
+  </script>
 {% endblock %}
