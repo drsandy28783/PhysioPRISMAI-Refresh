@@ -61,14 +61,15 @@ def create_verification_token(email: str) -> str:
         token_hash = hash_token(token)
 
         # Calculate expiry time
-        expires_at = datetime.utcnow() + timedelta(hours=TOKEN_EXPIRY_HOURS)
+        from datetime import timezone
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRY_HOURS)
 
         # Store in Cosmos DB
         db.collection('email_verification_tokens').document(email).set({
             'email': email,
             'token_hash': token_hash,
             'created_at': SERVER_TIMESTAMP,
-            'expires_at': expires_at,
+            'expires_at': expires_at.isoformat(),  # Convert to ISO string for JSON serialization
             'verified': False,
             'attempts': 0  # Track verification attempts for security
         })
@@ -107,8 +108,17 @@ def verify_token(email: str, token: str) -> tuple[bool, str]:
 
         # Check expiry
         expires_at = token_data.get('expires_at')
-        if expires_at and datetime.utcnow() > expires_at:
-            return False, "Verification token has expired. Please request a new one"
+        if expires_at:
+            # Handle both ISO string and datetime object
+            from datetime import timezone
+            if isinstance(expires_at, str):
+                expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+            current_time = datetime.now(timezone.utc)
+            # Make expires_at timezone-aware if it's not
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if current_time > expires_at:
+                return False, "Verification token has expired. Please request a new one"
 
         # Check attempts limit (prevent brute force)
         attempts = token_data.get('attempts', 0)

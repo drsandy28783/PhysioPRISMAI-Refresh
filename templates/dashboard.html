@@ -274,8 +274,8 @@
         </div>
         <div class="stat-subtext">
           {{ analytics.usage_stats.ai_percent }}% used
-          {% if analytics.usage_stats.tokens_balance > 0 %}
-            + {{ analytics.usage_stats.tokens_balance }} AI calls
+          {% if analytics.usage_stats.get('tokens_balance', 0) > 0 %}
+            + {{ analytics.usage_stats.get('tokens_balance', 0) }} AI calls
           {% endif %}
         </div>
       </div>
@@ -347,11 +347,11 @@
         </div>
       </div>
 
-      {% if analytics.usage_stats.tokens_balance > 0 %}
+      {% if analytics.usage_stats.get('tokens_balance', 0) > 0 %}
       <div class="alert-box info" style="margin-top: 16px;">
         <span style="font-size: 20px;">ℹ️</span>
         <div>
-          <strong>AI Call Balance:</strong> You have <strong>{{ analytics.usage_stats.tokens_balance }} AI calls</strong> available.
+          <strong>AI Call Balance:</strong> You have <strong>{{ analytics.usage_stats.get('tokens_balance', 0) }} AI calls</strong> available.
           These will be used automatically when your monthly quota is exhausted.
         </div>
       </div>

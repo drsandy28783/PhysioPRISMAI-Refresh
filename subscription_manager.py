@@ -248,14 +248,15 @@ def get_user_subscription(user_id: str) -> Dict:
         # No subscription exists - create free trial if enabled
         if FREE_TRIAL_ENABLED:
             trial_end = datetime.now(timezone.utc) + timedelta(days=FREE_TRIAL_DAYS)
+            current_time = datetime.now(timezone.utc)
 
             new_subscription = {
                 'user_id': user_id,
                 'plan_type': 'free_trial',
                 'status': 'active',
-                'trial_end_date': trial_end,
-                'current_period_start': datetime.now(timezone.utc),
-                'current_period_end': trial_end,
+                'trial_end_date': trial_end.isoformat(),  # Convert to ISO string for JSON serialization
+                'current_period_start': current_time.isoformat(),  # Convert to ISO string
+                'current_period_end': trial_end.isoformat(),  # Convert to ISO string
                 'price_amount': 0,
                 'currency': 'INR',
                 'patients_created_this_month': 0,
@@ -760,8 +761,8 @@ def reset_monthly_quota(user_id: str) -> bool:
             sub_ref.update({
                 'patients_created_this_month': 0,
                 'ai_calls_this_month': 0,
-                'current_period_start': now,
-                'current_period_end': period_end,
+                'current_period_start': now.isoformat(),  # Convert to ISO string for JSON serialization
+                'current_period_end': period_end.isoformat(),  # Convert to ISO string for JSON serialization
                 'updated_at': SERVER_TIMESTAMP
             })
 
@@ -817,7 +818,20 @@ def get_usage_stats(user_id: str) -> Dict:
 
     except Exception as e:
         logger.error(f"Error getting usage stats for {user_id}: {e}")
-        return {}
+        # Return default structure to prevent template errors
+        return {
+            'plan_type': 'free_trial',
+            'status': 'unknown',
+            'patients_used': 0,
+            'patients_limit': 0,
+            'patients_percent': 0,
+            'ai_calls_used': 0,
+            'ai_calls_limit': 0,
+            'ai_percent': 0,
+            'tokens_balance': 0,
+            'period_end': None,
+            'trial_end': None
+        }
 
 
 def get_plan_info(plan_type: str) -> Optional[Dict]:

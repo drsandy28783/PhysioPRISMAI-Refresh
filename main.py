@@ -439,12 +439,13 @@ def store_reset_token(db, email, token):
     """
     try:
         # Token expires in 30 minutes
-        expiry_time = datetime.utcnow() + timedelta(minutes=30)
+        from datetime import timezone
+        expiry_time = datetime.now(timezone.utc) + timedelta(minutes=30)
 
         user_ref = db.collection('users').document(email)
         user_ref.update({
             'reset_token': token,
-            'reset_token_expiry': expiry_time
+            'reset_token_expiry': expiry_time.isoformat()  # Convert to ISO string for JSON serialization
         })
 
         logger.info(f"Password reset token stored for {email}")
@@ -483,11 +484,21 @@ def verify_reset_token(db, token):
             logger.warning(f"Reset token has no expiry time")
             return None
 
-        # Convert Firestore timestamp to datetime if needed
-        if hasattr(token_expiry, 'timestamp'):
-            token_expiry = datetime.fromtimestamp(token_expiry.timestamp())
+        # Handle different token_expiry formats
+        from datetime import timezone
+        if isinstance(token_expiry, str):
+            # ISO string format
+            token_expiry = datetime.fromisoformat(token_expiry.replace('Z', '+00:00'))
+        elif hasattr(token_expiry, 'timestamp'):
+            # Firestore timestamp object
+            token_expiry = datetime.fromtimestamp(token_expiry.timestamp(), tz=timezone.utc)
 
-        if datetime.utcnow() > token_expiry:
+        # Make timezone-aware if needed
+        if token_expiry.tzinfo is None:
+            token_expiry = token_expiry.replace(tzinfo=timezone.utc)
+
+        current_time = datetime.now(timezone.utc)
+        if current_time > token_expiry:
             logger.warning(f"Reset token expired for {user_doc.id}")
             return None
 
@@ -2669,10 +2680,12 @@ def api_login_deprecated_old():
         token = secrets.token_urlsafe(32)
 
         # Store token in Firestore (optional - for token validation)
+        from datetime import timezone as tz
+        expires_at = datetime.now(tz.utc) + timedelta(hours=8)
         db.collection('user_tokens').document(email).set({
             'token': token,
             'created_at': SERVER_TIMESTAMP,
-            'expires_at': datetime.utcnow() + timedelta(hours=8)
+            'expires_at': expires_at.isoformat()  # Convert to ISO string for JSON serialization
         })
 
         # Determine role
@@ -2744,10 +2757,12 @@ def api_login_institute_deprecated_old():
 
         # Generate token
         token = secrets.token_urlsafe(32)
+        from datetime import timezone as tz
+        expires_at = datetime.now(tz.utc) + timedelta(hours=8)
         db.collection('user_tokens').document(email).set({
             'token': token,
             'created_at': SERVER_TIMESTAMP,
-            'expires_at': datetime.utcnow() + timedelta(hours=8)
+            'expires_at': expires_at.isoformat()  # Convert to ISO string for JSON serialization
         })
 
         role = "super_admin" if user.get('is_super_admin', 0) == 1 else "institute_admin"
@@ -4037,13 +4052,14 @@ def request_data_deletion():
         deletion_reason = request.form.get('deletion_reason', '').strip()
 
         # Calculate scheduled deletion date (30 days from now)
-        scheduled_deletion = datetime.utcnow() + timedelta(days=30)
+        from datetime import timezone
+        scheduled_deletion = datetime.now(timezone.utc) + timedelta(days=30)
 
         # Mark account for deletion
         user_ref.update({
             'deletion_requested': True,
             'deletion_request_date': SERVER_TIMESTAMP,
-            'scheduled_deletion_date': scheduled_deletion,
+            'scheduled_deletion_date': scheduled_deletion.isoformat(),  # Convert to ISO string for JSON serialization
             'deletion_reason': deletion_reason,
             'active': 0  # Deactivate account immediately
         })
@@ -9117,7 +9133,7 @@ def blog_create():
             }
 
             if status == 'published':
-                post_data['published_at'] = datetime.now()
+                post_data['published_at'] = datetime.now(timezone.utc).isoformat()  # Convert to ISO string for JSON serialization
 
             # Create the post
             doc_ref = db.collection('blog_posts').add(post_data)
@@ -9189,7 +9205,7 @@ def blog_edit(post_id):
             # Update published_at if changing from draft to published
             old_status = post_doc.to_dict().get('status')
             if status == 'published' and old_status != 'published':
-                update_data['published_at'] = datetime.now()
+                update_data['published_at'] = datetime.now(timezone.utc).isoformat()  # Convert to ISO string for JSON serialization
 
             post_ref.update(update_data)
             flash('Blog post updated successfully!', 'success')
@@ -9298,9 +9314,9 @@ Strong clinical reasoning skills develop over time through practice, reflection,
                 'tags': ['Clinical Reasoning', 'Evidence-Based Practice', 'Assessment'],
                 'status': 'published',
                 'meta_description': 'Clinical reasoning framework for physiotherapists - learn how to make better clinical decisions through structured assessment and evidence-based practice.',
-                'created_at': datetime.now(),
-                'updated_at': datetime.now(),
-                'published_at': datetime.now(),
+                'created_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string for JSON serialization
+                'updated_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string
+                'published_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string
                 'views': 0
             },
             {
@@ -9368,9 +9384,9 @@ Mastering history taking is essential for every physiotherapist. Structured docu
                 'tags': ['Assessment', 'Patient History', 'Documentation'],
                 'status': 'published',
                 'meta_description': 'Learn comprehensive history taking techniques for physiotherapy practice - structured approach to patient assessment and documentation.',
-                'created_at': datetime.now(),
-                'updated_at': datetime.now(),
-                'published_at': datetime.now(),
+                'created_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string for JSON serialization
+                'updated_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string
+                'published_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string
                 'views': 0
             },
             {
@@ -9461,9 +9477,9 @@ Systematic objective assessment provides the evidence base for clinical reasonin
                 'tags': ['Objective Assessment', 'Clinical Measurement', 'Outcome Measures'],
                 'status': 'published',
                 'meta_description': 'Comprehensive guide to objective assessment for physiotherapists - learn systematic examination techniques and outcome measures.',
-                'created_at': datetime.now(),
-                'updated_at': datetime.now(),
-                'published_at': datetime.now(),
+                'created_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string for JSON serialization
+                'updated_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string
+                'published_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string
                 'views': 0
             }
         ]

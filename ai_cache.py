@@ -108,16 +108,22 @@ class AICache:
             created_at = cache_data.get('created_at')
             if created_at:
                 try:
+                    from datetime import timezone
                     # Handle different timestamp formats
                     if isinstance(created_at, str):
                         # Cosmos DB ISO string format
                         created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
                     elif hasattr(created_at, 'seconds'):
                         # Firestore Timestamp object - convert to datetime
-                        created_at = datetime.utcfromtimestamp(created_at.seconds)
+                        created_at = datetime.fromtimestamp(created_at.seconds, tz=timezone.utc)
+
+                    # Ensure timezone-aware datetime
+                    if created_at.tzinfo is None:
+                        created_at = created_at.replace(tzinfo=timezone.utc)
 
                     expiry_date = created_at + timedelta(days=self.cache_ttl_days)
-                    if datetime.utcnow() > expiry_date:
+                    current_time = datetime.now(timezone.utc)
+                    if current_time > expiry_date:
                         logger.info(f"Cache expired: {cache_key[:16]}...")
                         self._record_cache_miss(cache_key, reason='expired')
                         return None
@@ -202,7 +208,8 @@ class AICache:
             cost_per_call = (input_tokens / 1_000_000 * pricing['input']) + (output_tokens / 1_000_000 * pricing['output'])
 
             # Calculate expiration date (90 days from now)
-            expires_at = datetime.utcnow() + timedelta(days=self.cache_ttl_days)
+            from datetime import timezone
+            expires_at = datetime.now(timezone.utc) + timedelta(days=self.cache_ttl_days)
 
             # Prepare cache document
             cache_doc = {
@@ -211,7 +218,7 @@ class AICache:
                 'response': response,
                 'model': model,
                 'created_at': SERVER_TIMESTAMP,
-                'expires_at': expires_at,  # Explicit expiration date for compliance
+                'expires_at': expires_at.isoformat(),  # Convert to ISO string for JSON serialization
                 'last_accessed': SERVER_TIMESTAMP,
                 'access_count': 0,  # Number of times this cache was hit
                 'cost_saved': cost_per_call,  # Estimated cost saved per hit
