@@ -5769,24 +5769,54 @@ def patient_report(patient_id):
     if session.get('is_admin') == 0 and patient.get(
             'physio_id') != session.get('user_id'):
         return "Access denied."
-    # fetch each section
+
+    # Fetch each assessment section
     def fetch_one(coll):
         d = db.collection(coll).where('patient_id', '==',
                                       patient_id).limit(1).get()
         return d[0].to_dict() if d else {}
 
+    # Fetch follow-ups (can have multiple)
+    def fetch_all(coll):
+        docs = db.collection(coll).where('patient_id', '==',
+                                         patient_id).order_by('timestamp', direction='DESCENDING').get()
+        return [d.to_dict() for d in docs] if docs else []
+
     subjective = fetch_one('subjective_examination')
     perspectives = fetch_one('patient_perspectives')
+    initial_plan = fetch_one('initial_plan')
+    patho_mechanism = fetch_one('patho_mechanism')
+    chronic_diseases = fetch_one('chronic_diseases')
+    clinical_flags = fetch_one('clinical_flags')
+    objective = fetch_one('objective_assessments')
     diagnosis = fetch_one('provisional_diagnosis')
-    treatment = fetch_one('treatment_plan')
     goals = fetch_one('smart_goals')
+    treatment = fetch_one('treatment_plan')
+    follow_ups = fetch_all('follow_ups')
+
+    # Get therapist info
+    therapist_doc = db.collection('users').document(patient.get('physio_id', '')).get()
+    therapist = therapist_doc.to_dict() if therapist_doc.exists else {}
+
+    # Get current date/time for report
+    from datetime import datetime as dt
+    report_date = dt.now().strftime('%d %b %Y %I:%M %p')
+
     return render_template('patient_report.html',
                            patient=patient,
                            subjective=subjective,
                            perspectives=perspectives,
+                           initial_plan=initial_plan,
+                           patho_mechanism=patho_mechanism,
+                           chronic_diseases=chronic_diseases,
+                           clinical_flags=clinical_flags,
+                           objective=objective,
                            diagnosis=diagnosis,
                            goals=goals,
-                           treatment=treatment)
+                           treatment=treatment,
+                           follow_ups=follow_ups,
+                           therapist=therapist,
+                           report_date=report_date)
 
 
 @app.route('/download_report/<path:patient_id>')
@@ -5800,18 +5830,37 @@ def download_report(patient_id):
     if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
         return "Access denied.", 403
 
-    # 2) Fetch each section for the report
+    # 2) Fetch all assessment sections
     def fetch_one(coll):
         result = db.collection(coll) \
                      .where('patient_id', '==', patient_id) \
                      .limit(1).get()
         return result[0].to_dict() if result else {}
 
-    subjective   = fetch_one('subjective_examination')
+    def fetch_all(coll):
+        docs = db.collection(coll).where('patient_id', '==',
+                                         patient_id).order_by('timestamp', direction='DESCENDING').get()
+        return [d.to_dict() for d in docs] if docs else []
+
+    subjective = fetch_one('subjective_examination')
     perspectives = fetch_one('patient_perspectives')
-    diagnosis    = fetch_one('provisional_diagnosis')
-    goals        = fetch_one('smart_goals')
-    treatment    = fetch_one('treatment_plan')
+    initial_plan = fetch_one('initial_plan')
+    patho_mechanism = fetch_one('patho_mechanism')
+    chronic_diseases = fetch_one('chronic_diseases')
+    clinical_flags = fetch_one('clinical_flags')
+    objective = fetch_one('objective_assessments')
+    diagnosis = fetch_one('provisional_diagnosis')
+    goals = fetch_one('smart_goals')
+    treatment = fetch_one('treatment_plan')
+    follow_ups = fetch_all('follow_ups')
+
+    # Get therapist info
+    therapist_doc = db.collection('users').document(patient.get('physio_id', '')).get()
+    therapist = therapist_doc.to_dict() if therapist_doc.exists else {}
+
+    # Get current date/time for report
+    from datetime import datetime as dt
+    report_date = dt.now().strftime('%d %b %Y %I:%M %p')
 
     # 3) Render the HTML template
     rendered = render_template(
@@ -5819,9 +5868,17 @@ def download_report(patient_id):
         patient=patient,
         subjective=subjective,
         perspectives=perspectives,
+        initial_plan=initial_plan,
+        patho_mechanism=patho_mechanism,
+        chronic_diseases=chronic_diseases,
+        clinical_flags=clinical_flags,
+        objective=objective,
         diagnosis=diagnosis,
         goals=goals,
-        treatment=treatment
+        treatment=treatment,
+        follow_ups=follow_ups,
+        therapist=therapist,
+        report_date=report_date
     )
 
     # 4) Generate PDF

@@ -1,42 +1,702 @@
 {% extends "base.html" %}
-{% block title %}Patient Report – Physiologic PRISM{% endblock %}
+{% block title %}Patient Report – {{ patient.name }} – PhysiologicPRISM{% endblock %}
 
 {% block head %}
 <style>
+  /* Print Styles */
   @media print {
-    button { display: none !important; }
-    nav.navbar { display: none !important; }
+    nav.navbar, button, .no-print { display: none !important; }
+    body { background: white !important; padding: 0; }
+    .report-container { box-shadow: none; margin: 0; padding: 20px; max-width: 100%; }
+    .report-section { page-break-inside: avoid; }
+    .page-break { page-break-before: always; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; }
+    h3 { font-size: 16px; }
   }
-  .container { max-width: 800px; margin: 40px auto; padding: 24px; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-  h2, h3 { color: #00695c; }
-  p { margin: 8px 0; }
+
+  /* Screen Styles */
+  .report-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 40px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    color: #333;
+  }
+
+  /* Header Styles */
+  .report-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--primary, #1a5f5a);
+  }
+
+  .clinic-branding {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .clinic-logo {
+    max-width: 150px;
+    max-height: 80px;
+  }
+
+  .clinic-info {
+    text-align: right;
+    font-size: 14px;
+    color: #666;
+  }
+
+  .report-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary, #1a5f5a);
+    margin: 20px 0 10px 0;
+  }
+
+  .report-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 10px;
+  }
+
+  /* Patient Info Box */
+  .patient-info-box {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .info-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #222;
+  }
+
+  /* Section Styles */
+  .report-section {
+    margin-bottom: 35px;
+  }
+
+  .section-header {
+    background: linear-gradient(135deg, var(--primary, #1a5f5a) 0%, #2a7f7a 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .section-content {
+    padding-left: 10px;
+  }
+
+  .field-group {
+    margin-bottom: 20px;
+  }
+
+  .field-label {
+    font-weight: 600;
+    color: var(--primary, #1a5f5a);
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .field-value {
+    color: #444;
+    line-height: 1.6;
+    font-size: 15px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .field-value.empty {
+    color: #999;
+    font-style: italic;
+  }
+
+  /* Table Styles for Structured Data */
+  .assessment-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+  }
+
+  .assessment-table th {
+    background: #f5f5f5;
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+    border: 1px solid #ddd;
+    font-size: 14px;
+  }
+
+  .assessment-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+  }
+
+  /* List Styles */
+  .flag-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .flag-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    border-left: 4px solid;
+    background: #f9f9f9;
+    border-radius: 4px;
+  }
+
+  .flag-item.red { border-left-color: #dc3545; }
+  .flag-item.yellow { border-left-color: #ffc107; }
+  .flag-item.black { border-left-color: #000; }
+  .flag-item.blue { border-left-color: #007bff; }
+
+  /* Follow-up Section */
+  .followup-card {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  .followup-header {
+    font-weight: 600;
+    color: var(--primary, #1a5f5a);
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  /* Buttons */
+  .action-buttons {
+    margin-bottom: 30px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--primary, #1a5f5a);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #0d4f4a;
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+  }
+
+  /* Footer */
+  .report-footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 2px solid #eee;
+    text-align: center;
+    color: #666;
+    font-size: 13px;
+  }
+
+  .signature-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 60px;
+  }
+
+  .signature-box {
+    text-align: center;
+  }
+
+  .signature-line {
+    border-top: 1px solid #333;
+    width: 200px;
+    margin: 0 auto 5px;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-  <div class="container">
-    <h2>Patient Report: {{ patient.name }} ({{ patient.patient_id }})</h2>
-    <button class="button" onclick="window.print()">🖨️ Print Report</button>
-
-    <h3>Basic Info</h3>
-    <p><strong>ID:</strong> {{ patient.patient_id }}</p>
-    <p><strong>Name:</strong> {{ patient.name }}</p>
-    <p><strong>Age/Sex:</strong> {{ patient.age_sex }}</p>
-    <p><strong>Contact:</strong> {{ patient.contact }}</p>
-
-    <h3>Patient Functioning Assessment</h3>
-    <p>{{ subjective.body_structure if subjective else 'Not Filled' }}</p>
-
-    <h3>Patient Perspectives</h3>
-    <p>{{ perspectives.knowledge if perspectives else 'Not Filled' }}</p>
-
-    <h3>Provisional Diagnosis</h3>
-    <p>{{ diagnosis.likelihood if diagnosis else 'Not Filled' }}</p>
-
-    <h3>SMART Goals</h3>
-    <p>{{ goals.patient_goal if goals else 'Not Filled' }}</p>
-
-    <h3>Treatment Plan</h3>
-    <p>{{ treatment.treatment if treatment else 'Not Filled' }}</p>
+<div class="report-container">
+  <!-- Action Buttons (Hidden in Print) -->
+  <div class="action-buttons no-print">
+    <button class="btn btn-primary" onclick="window.print()">
+      🖨️ Print Report
+    </button>
+    <a href="{{ url_for('download_report', patient_id=patient.patient_id) }}" class="btn btn-secondary">
+      📄 Download PDF
+    </a>
+    <a href="{{ url_for('view_patients') }}" class="btn btn-secondary">
+      ← Back to Patients
+    </a>
   </div>
+
+  <!-- Report Header -->
+  <div class="report-header">
+    <div class="clinic-branding">
+      <div>
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM" class="clinic-logo">
+      </div>
+      <div class="clinic-info">
+        <div><strong>{% if therapist.get('institute') %}{{ therapist.institute }}{% else %}PhysiologicPRISM{% endif %}</strong></div>
+        {% if therapist.get('name') %}<div>Physiotherapist: {{ therapist.name }}</div>{% endif %}
+        {% if therapist.get('phone') %}<div>Contact: {{ therapist.phone }}</div>{% endif %}
+        <div>Generated: {{ report_date }}</div>
+      </div>
+    </div>
+    <h1 class="report-title">Comprehensive Patient Assessment Report</h1>
+    <p class="report-subtitle">Clinical Documentation & Treatment Plan</p>
+  </div>
+
+  <!-- Patient Information -->
+  <div class="patient-info-box">
+    <div class="info-item">
+      <span class="info-label">Patient ID</span>
+      <span class="info-value">{{ patient.patient_id }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Name</span>
+      <span class="info-value">{{ patient.name }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Age / Gender</span>
+      <span class="info-value">{{ patient.age_sex }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Contact</span>
+      <span class="info-value">{{ patient.contact }}</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Chief Complaint</span>
+      <span class="info-value">{{ patient.chief_complaint or 'Not recorded' }}</span>
+    </div>
+  </div>
+
+  <!-- 1. Subjective Examination -->
+  {% if subjective %}
+  <div class="report-section">
+    <h2 class="section-header">1. Subjective Examination (ICF Framework)</h2>
+    <div class="section-content">
+      <div class="field-group">
+        <div class="field-label">Body Structure & Function</div>
+        <div class="field-value">{{ subjective.body_structure or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Body Function</div>
+        <div class="field-value">{{ subjective.body_function or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Activity Performance</div>
+        <div class="field-value">{{ subjective.activity_performance or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Activity Capacity</div>
+        <div class="field-value">{{ subjective.activity_capacity or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Contextual - Environmental Factors</div>
+        <div class="field-value">{{ subjective.contextual_environmental or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Contextual - Personal Factors</div>
+        <div class="field-value">{{ subjective.contextual_personal or 'Not documented' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 2. Patient Perspectives -->
+  {% if perspectives %}
+  <div class="report-section">
+    <h2 class="section-header">2. Patient Perspectives & Beliefs</h2>
+    <div class="section-content">
+      <div class="field-group">
+        <div class="field-label">Knowledge & Understanding</div>
+        <div class="field-value">{{ perspectives.knowledge or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Attribution (Cause)</div>
+        <div class="field-value">{{ perspectives.attribution or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Expectations</div>
+        <div class="field-value">{{ perspectives.expectation or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Consequences Awareness</div>
+        <div class="field-value">{{ perspectives.consequences_awareness or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Locus of Control</div>
+        <div class="field-value">{{ perspectives.locus_of_control or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Affective Aspect (Emotional Response)</div>
+        <div class="field-value">{{ perspectives.affective_aspect or 'Not documented' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 3. Initial Plan of Assessment -->
+  {% if initial_plan %}
+  <div class="report-section page-break">
+    <h2 class="section-header">3. Initial Plan of Assessment</h2>
+    <div class="section-content">
+      <table class="assessment-table">
+        <tr>
+          <th>Assessment Type</th>
+          <th>Plan</th>
+          <th>Details/Notes</th>
+        </tr>
+        <tr>
+          <td>Active Movements</td>
+          <td>{{ initial_plan.active_movements or 'Not planned' }}</td>
+          <td>{{ initial_plan.active_movements_details or '-' }}</td>
+        </tr>
+        <tr>
+          <td>Passive Movements</td>
+          <td>{{ initial_plan.passive_movements or 'Not planned' }}</td>
+          <td>{{ initial_plan.passive_movements_details or '-' }}</td>
+        </tr>
+        <tr>
+          <td>Passive Over-Pressure</td>
+          <td>{{ initial_plan.passive_over_pressure or 'Not planned' }}</td>
+          <td>{{ initial_plan.passive_over_pressure_details or '-' }}</td>
+        </tr>
+        <tr>
+          <td>Resisted Movements</td>
+          <td>{{ initial_plan.resisted_movements or 'Not planned' }}</td>
+          <td>{{ initial_plan.resisted_movements_details or '-' }}</td>
+        </tr>
+        <tr>
+          <td>Combined Movements</td>
+          <td>{{ initial_plan.combined_movements or 'Not planned' }}</td>
+          <td>{{ initial_plan.combined_movements_details or '-' }}</td>
+        </tr>
+        <tr>
+          <td>Special Tests</td>
+          <td>{{ initial_plan.special_tests or 'Not planned' }}</td>
+          <td>{{ initial_plan.special_tests_details or '-' }}</td>
+        </tr>
+        <tr>
+          <td>Neuro-Dynamic Examination</td>
+          <td>{{ initial_plan.neuro_dynamic_examination or 'Not planned' }}</td>
+          <td>{{ initial_plan.neuro_dynamic_examination_details or '-' }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 4. Pathophysiological Mechanism -->
+  {% if patho_mechanism %}
+  <div class="report-section">
+    <h2 class="section-header">4. Pathophysiological Mechanism</h2>
+    <div class="section-content">
+      <div class="field-group">
+        <div class="field-label">Area Involved</div>
+        <div class="field-value">{{ patho_mechanism.area_involved or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Presenting Symptom</div>
+        <div class="field-value">{{ patho_mechanism.presenting_symptom or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Pain Type</div>
+        <div class="field-value">{{ patho_mechanism.pain_type or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Pain Nature</div>
+        <div class="field-value">{{ patho_mechanism.pain_nature or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Pain Severity</div>
+        <div class="field-value">{{ patho_mechanism.pain_severity or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Pain Irritability</div>
+        <div class="field-value">{{ patho_mechanism.pain_irritability or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Possible Source</div>
+        <div class="field-value">{{ patho_mechanism.possible_source or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Stage of Healing</div>
+        <div class="field-value">{{ patho_mechanism.stage_healing or 'Not documented' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 5. Chronic Disease Factors -->
+  {% if chronic_diseases %}
+  <div class="report-section">
+    <h2 class="section-header">5. Chronic Disease Maintenance Factors</h2>
+    <div class="section-content">
+      {% if chronic_diseases.causes %}
+      <div class="field-group">
+        <div class="field-label">Contributing Factors</div>
+        <ul>
+          {% for cause in chronic_diseases.causes %}
+          <li>{{ cause }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      <div class="field-group">
+        <div class="field-label">Specific Factors / Details</div>
+        <div class="field-value">{{ chronic_diseases.specific_factors or 'Not documented' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 6. Clinical Flags -->
+  {% if clinical_flags %}
+  <div class="report-section page-break">
+    <h2 class="section-header">6. Clinical Flags Assessment</h2>
+    <div class="section-content">
+      <ul class="flag-list">
+        {% if clinical_flags.red_flags %}
+        <li class="flag-item red">
+          <strong>🚩 Red Flags (Medical Urgency):</strong><br>
+          {{ clinical_flags.red_flags }}
+        </li>
+        {% endif %}
+        {% if clinical_flags.yellow_flags %}
+        <li class="flag-item yellow">
+          <strong>⚠️ Yellow Flags (Psychosocial):</strong><br>
+          {{ clinical_flags.yellow_flags }}
+        </li>
+        {% endif %}
+        {% if clinical_flags.black_flags %}
+        <li class="flag-item black">
+          <strong>⬛ Black Flags (Occupational/Contextual):</strong><br>
+          {{ clinical_flags.black_flags }}
+        </li>
+        {% endif %}
+        {% if clinical_flags.blue_flags %}
+        <li class="flag-item blue">
+          <strong>🔵 Blue Flags (Perceived Work Factors):</strong><br>
+          {{ clinical_flags.blue_flags }}
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 7. Objective Assessment -->
+  {% if objective %}
+  <div class="report-section">
+    <h2 class="section-header">7. Objective Assessment</h2>
+    <div class="section-content">
+      <div class="field-group">
+        <div class="field-label">Assessment Plan</div>
+        <div class="field-value">{{ objective.plan or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Assessment Notes / Modifications</div>
+        <div class="field-value">{{ objective.plan_details or 'Not documented' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 8. Provisional Diagnosis -->
+  {% if diagnosis %}
+  <div class="report-section">
+    <h2 class="section-header">8. Provisional Diagnosis</h2>
+    <div class="section-content">
+      <div class="field-group">
+        <div class="field-label">Likelihood / Diagnosis</div>
+        <div class="field-value">{{ diagnosis.likelihood or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Structure at Fault</div>
+        <div class="field-value">{{ diagnosis.structure_fault or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Primary Symptom</div>
+        <div class="field-value">{{ diagnosis.symptom or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Findings that Support Hypothesis</div>
+        <div class="field-value">{{ diagnosis.findings_support or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Findings that Reject Hypothesis</div>
+        <div class="field-value">{{ diagnosis.findings_reject or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Is Hypothesis Supported?</div>
+        <div class="field-value">{{ diagnosis.hypothesis_supported or 'Not documented' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 9. SMART Goals -->
+  {% if goals %}
+  <div class="report-section page-break">
+    <h2 class="section-header">9. SMART Goals</h2>
+    <div class="section-content">
+      <div class="field-group">
+        <div class="field-label">Patient's Goal</div>
+        <div class="field-value">{{ goals.patient_goal or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Baseline Status</div>
+        <div class="field-value">{{ goals.baseline_status or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Measurable Outcome</div>
+        <div class="field-value">{{ goals.measurable_outcome or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Time Duration / Timeframe</div>
+        <div class="field-value">{{ goals.time_duration or 'Not documented' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 10. Treatment Plan -->
+  {% if treatment %}
+  <div class="report-section">
+    <h2 class="section-header">10. Treatment Plan</h2>
+    <div class="section-content">
+      <div class="field-group">
+        <div class="field-label">Treatment Approach</div>
+        <div class="field-value">{{ treatment.treatment_plan or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Goal Targeted</div>
+        <div class="field-value">{{ treatment.goal_targeted or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Clinical Reasoning / Rationale</div>
+        <div class="field-value">{{ treatment.reasoning or 'Not documented' }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Evidence / References</div>
+        <div class="field-value">{{ treatment.reference or 'Not documented' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 11. Follow-up Sessions -->
+  {% if follow_ups %}
+  <div class="report-section page-break">
+    <h2 class="section-header">11. Follow-up Sessions ({{ follow_ups|length }})</h2>
+    <div class="section-content">
+      {% for followup in follow_ups %}
+      <div class="followup-card">
+        <div class="followup-header">
+          Session {% if followup.session_number %}{{ followup.session_number }}{% else %}#{{ loop.index }}{% endif %}
+          - {{ followup.followup_date or 'Date not recorded' }}
+        </div>
+        {% if followup.grade_of_achievement %}
+        <div class="field-group">
+          <div class="field-label">Grade of Achievement</div>
+          <div class="field-value">{{ followup.grade_of_achievement }}</div>
+        </div>
+        {% endif %}
+        {% if followup.perception_of_treatment %}
+        <div class="field-group">
+          <div class="field-label">Perception of Treatment</div>
+          <div class="field-value">{{ followup.perception_of_treatment }}</div>
+        </div>
+        {% endif %}
+        {% if followup.feedback %}
+        <div class="field-group">
+          <div class="field-label">Patient Feedback</div>
+          <div class="field-value">{{ followup.feedback }}</div>
+        </div>
+        {% endif %}
+        {% if followup.updated_treatment %}
+        <div class="field-group">
+          <div class="field-label">Updated Treatment Plan</div>
+          <div class="field-value">{{ followup.updated_treatment }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Report Footer -->
+  <div class="report-footer">
+    <div class="signature-section">
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <div>Patient Signature</div>
+        <div style="font-size: 12px; color: #999;">Date: _____________</div>
+      </div>
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <div>Physiotherapist Signature</div>
+        <div style="font-size: 12px; color: #999;">Date: _____________</div>
+      </div>
+    </div>
+    <p style="margin-top: 40px;">
+      This document is confidential and intended for medical use only.<br>
+      Generated by PhysiologicPRISM - AI-Powered Physiotherapy Practice Management System
+    </p>
+  </div>
+</div>
 {% endblock %}
