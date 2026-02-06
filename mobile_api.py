@@ -1069,6 +1069,114 @@ def api_get_patient(patient_id):
         return jsonify({'error': 'Failed to fetch patient'}), 500
 
 
+@mobile_api.route('/patients/<patient_id>/comprehensive-report', methods=['GET'])
+@require_auth
+def api_get_patient_comprehensive_report(patient_id):
+    """
+    Get comprehensive patient report with all assessment sections
+
+    Returns:
+    {
+        "patient": {...},
+        "therapist": {...},
+        "assessments": {
+            "subjective": {...},
+            "perspectives": {...},
+            "initial_plan": {...},
+            "patho_mechanism": {...},
+            "chronic_diseases": {...},
+            "clinical_flags": {...},
+            "objective": {...},
+            "diagnosis": {...},
+            "goals": {...},
+            "treatment": {...}
+        },
+        "follow_ups": [...]
+    }
+    """
+    try:
+        # 1. Fetch patient and check permissions
+        patient_doc = db.collection('patients').document(patient_id).get()
+
+        if not patient_doc.exists:
+            return jsonify({'error': 'Patient not found'}), 404
+
+        patient_data = patient_doc.to_dict()
+        patient_data['id'] = patient_doc.id
+
+        # Check if this patient belongs to the current user
+        user_email = g.user.get('email') or g.user.get('uid')
+        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # 2. Fetch therapist info
+        therapist_doc = db.collection('users').document(patient_data.get('physio_id', '')).get()
+        therapist_data = therapist_doc.to_dict() if therapist_doc.exists else {}
+
+        # 3. Fetch all assessment sections
+        def fetch_one(collection_name):
+            docs = db.collection(collection_name).where('patient_id', '==', patient_id).limit(1).get()
+            if docs:
+                data = list(docs)[0].to_dict()
+                # Convert timestamps to ISO format
+                for key, value in data.items():
+                    if hasattr(value, 'isoformat'):
+                        data[key] = value.isoformat()
+                return data
+            return {}
+
+        def fetch_all(collection_name):
+            docs = db.collection(collection_name).where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').get()
+            result = []
+            for doc in docs:
+                data = doc.to_dict()
+                data['id'] = doc.id
+                # Convert timestamps to ISO format
+                for key, value in data.items():
+                    if hasattr(value, 'isoformat'):
+                        data[key] = value.isoformat()
+                result.append(data)
+            return result
+
+        assessments = {
+            'subjective': fetch_one('subjective_examination'),
+            'perspectives': fetch_one('patient_perspectives'),
+            'initial_plan': fetch_one('initial_plan'),
+            'patho_mechanism': fetch_one('patho_mechanism'),
+            'chronic_diseases': fetch_one('chronic_diseases'),
+            'clinical_flags': fetch_one('clinical_flags'),
+            'objective': fetch_one('objective_assessments'),
+            'diagnosis': fetch_one('provisional_diagnosis'),
+            'goals': fetch_one('smart_goals'),
+            'treatment': fetch_one('treatment_plan')
+        }
+
+        follow_ups = fetch_all('follow_ups')
+
+        # Convert patient timestamps
+        for field in ['created_at', 'updated_at']:
+            if field in patient_data and patient_data[field]:
+                try:
+                    if hasattr(patient_data[field], 'isoformat'):
+                        patient_data[field] = patient_data[field].isoformat()
+                except:
+                    pass
+
+        log_audit('view_comprehensive_report', {'patient_id': patient_id})
+
+        return jsonify({
+            'patient': patient_data,
+            'therapist': therapist_data,
+            'assessments': assessments,
+            'follow_ups': follow_ups,
+            'report_generated_at': datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching comprehensive report: {e}")
+        return jsonify({'error': 'Failed to fetch comprehensive report'}), 500
+
+
 @mobile_api.route('/patients', methods=['POST'])
 @require_auth
 def api_create_patient():
