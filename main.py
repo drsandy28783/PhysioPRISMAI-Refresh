@@ -118,6 +118,7 @@ from schemas import (
     AIBasicSuggestionSchema,
     AIFieldSuggestionSchema,
     SMARTGoalsSchema,
+    TreatmentPlanSchema,  # ✅ FIXED: Added missing import
     SubscriptionCheckoutSchema,
     TokenPurchaseSchema,
     PaymentVerificationSchema,
