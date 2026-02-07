@@ -115,6 +115,9 @@ from schemas import (
     PatientSchema,
     SubjectiveExaminationSchema,
     AIPromptSchema,
+    AIBasicSuggestionSchema,
+    AIFieldSuggestionSchema,
+    SMARTGoalsSchema,
     SubscriptionCheckoutSchema,
     TokenPurchaseSchema,
     PaymentVerificationSchema,
@@ -5825,7 +5828,7 @@ def smart_goals(patient_id):
             'time_duration': request.form.get('time_duration', '')
         }
 
-        is_valid, result = validate_data(TreatmentPlanSchema, form_data)
+        is_valid, result = validate_data(SMARTGoalsSchema, form_data)
         if not is_valid:
             flash("Validation error. Please check your input.", "error")
             return redirect(f'/smart_goals/{patient_id}')

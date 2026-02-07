@@ -86,6 +86,13 @@ window.fetch = async function(url, options) {
   return originalFetch.call(this, url, options);
 };
 
+// ═══════════════════════════════════════════════════════════════════════
+// UTILITY: Get current patient ID (standardized across all pages)
+// ═══════════════════════════════════════════════════════════════════════
+function getPatientId() {
+  return window.currentPatientId || window.patientId || '';
+}
+
 // ================================================================
 // AI Suggestion Modal Functions
 // ================================================================
@@ -213,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1) Suggest past-history questions
   document.getElementById('suggest_questions')?.addEventListener('click', async () => {
     const payload = {
+      patient_id:      getPatientId(),  // ✅ FIXED: Added patient_id
       age_sex:         ageSexInput?.value.trim() || '',
       present_history: presentTextarea?.value.trim() || ''
     };
@@ -238,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 2) Generate provisional diagnoses
   document.getElementById('gen_diagnosis')?.addEventListener('click', async () => {
     const payload = {
+      patient_id: getPatientId(),  // ✅ FIXED: Added patient_id
       previous: {
         age_sex:         ageSexInput?.value.trim() || '',
         present_history: presentTextarea?.value.trim() || '',
@@ -428,7 +437,7 @@ if (document.getElementById('perspectives-form')) {
         const res = await fetch(`/api/ai_suggestion/perspectives/${field}`, {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ previous: allPrev, inputs: { [field]: value } })
+          body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, inputs: { [field]: value } })  // ✅ FIXED: Added patient_id
         });
         const { suggestion, error } = await res.json();
         if (error) throw new Error(error);
@@ -531,7 +540,7 @@ if (document.getElementById('perspectives-form')) {
           const res = await fetch(`/api/ai_suggestion/initial_plan/${field}`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ previous: allPrev, selection })
+            body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, selection })  // ✅ FIXED: Added patient_id
           });
           const { suggestion, error } = await res.json();
           if (error) throw new Error(error);
@@ -627,7 +636,7 @@ if (document.querySelector('select#possible_source')) {
         const res = await fetch('/api/ai_suggestion/patho/possible_source', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ previous: allPrev, selection })
+          body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, selection })  // ✅ FIXED: Added patient_id
         });
         const { suggestion, error } = await res.json();
         if (error) throw new Error(error);
@@ -694,6 +703,7 @@ if (document.getElementById('specific_factors')) {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
+          patient_id: currentPatientId,  // ✅ FIXED: Added patient_id
           previous: allPrev,
           input: text,
           causes
@@ -761,7 +771,7 @@ if (document.getElementById('clinical-flags-form')) {
 
       try {
         const res = await fetch(
-          `/api/ai_suggestion/clinical_flags/${window.patientId || 'unknown'}/suggest`,
+          `/api/ai_suggestion/clinical_flags/${getPatientId() || 'unknown'}/suggest`,  // ✅ FIXED: Use getPatientId()
           {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
@@ -827,7 +837,7 @@ if (document.getElementById('objective-assessment-form')) {
           {
             method: 'POST',
             headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ previous: allPrev, value: allPrev.assessments[field].choice })
+            body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, value: allPrev.assessments[field].choice })  // ✅ FIXED: Added patient_id
           }
         );
         const { suggestion, error } = await res.json();
@@ -900,7 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const res = await fetch(
-          `/provisional_diagnosis_suggest/${window.patientId}?field=${field}`,
+          `/provisional_diagnosis_suggest/${getPatientId()}?field=${field}`,  // ✅ FIXED: Use getPatientId()
           {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -943,7 +953,7 @@ document.querySelectorAll('.ai-btn[data-screen="smart_goals"]').forEach(btn => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patient_id: window.patientId,
+          patient_id: getPatientId(),  // ✅ FIXED: Use getPatientId() instead of window.patientId
           previous: {
             age_sex: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').age_sex || '',
             present_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').present_history || '',
@@ -1001,7 +1011,7 @@ if (document.getElementById('treatment-plan-form') || document.querySelector('[n
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({
-            patient_id: window.patientId,
+            patient_id: getPatientId(),  // ✅ FIXED: Use getPatientId() instead of window.patientId
             previous: {
               age_sex: addPatientData.age_sex || '',
               present_history: addPatientData.present_history || '',

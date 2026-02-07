@@ -342,13 +342,14 @@ class TreatmentPlanSchema(Schema):
 # ─── AI SUGGESTION SCHEMAS ────────────────────────────────────────────
 
 class AIPromptSchema(Schema):
-    """AI suggestion request validation - critical for security"""
+    """AI suggestion request validation - critical for security (LEGACY - being phased out)"""
 
     class Meta:
         unknown = EXCLUDE
 
     patient_id = fields.Str(
-        required=True,
+        required=False,  # Made optional - not all AI requests have patient context yet
+        allow_none=True,
         validate=[
             validate.Length(min=1, max=100),
             validate.Regexp(r'^[a-zA-Z0-9_-]+$', error='Invalid patient ID format')
@@ -361,7 +362,7 @@ class AIPromptSchema(Schema):
     )
 
     context = fields.Dict(
-        required=True,
+        required=False,  # Made optional for simpler requests
         keys=fields.Str(),
         values=fields.Str(allow_none=True)
     )
@@ -369,12 +370,176 @@ class AIPromptSchema(Schema):
     @validates('context')
     def validate_context_no_sensitive_data(self, value):
         """Ensure no sensitive data keys in context"""
+        if not value:
+            return
         validate_no_sensitive_keys(value)
 
         # Also check values for excessive length (prevent abuse)
         for key, val in value.items():
             if val and len(str(val)) > 10000:
                 raise ValidationError(f'Context field "{key}" exceeds maximum length (10,000 characters)')
+
+
+class AIBasicSuggestionSchema(Schema):
+    """For simple AI suggestions on add_patient page (before patient_id exists)"""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    patient_id = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(min=1, max=100),
+            validate.Regexp(r'^[a-zA-Z0-9_-]+$', error='Invalid patient ID format')
+        ]
+    )
+
+    age_sex = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=50),
+            validate_no_html
+        ]
+    )
+
+    present_history = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=5000),
+            validate_no_html
+        ]
+    )
+
+    past_history = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=5000),
+            validate_no_html
+        ]
+    )
+
+    inputs = fields.Dict(
+        required=False,
+        keys=fields.Str(),
+        values=fields.Str(allow_none=True)
+    )
+
+
+class AIFieldSuggestionSchema(Schema):
+    """For field-specific AI suggestions with previous clinical context"""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    patient_id = fields.Str(
+        required=False,  # Optional - some pages don't have patient_id yet
+        allow_none=True,
+        validate=[
+            validate.Length(min=1, max=100),
+            validate.Regexp(r'^[a-zA-Z0-9_-]+$', error='Invalid patient ID format')
+        ]
+    )
+
+    field = fields.Str(
+        required=False,  # Field name for specific suggestions
+        validate=validate.Length(min=1, max=100)
+    )
+
+    previous = fields.Dict(
+        required=False,
+        keys=fields.Str(),
+        values=fields.Raw()  # Allow nested dicts
+    )
+
+    inputs = fields.Dict(
+        required=False,
+        keys=fields.Str(),
+        values=fields.Raw()
+    )
+
+    selection = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=validate.Length(max=500)
+    )
+
+    value = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=validate.Length(max=500)
+    )
+
+    patient_goals = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=validate.Length(max=3000)
+    )
+
+    input = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=validate.Length(max=5000)
+    )
+
+    causes = fields.List(
+        fields.Str(validate=validate.Length(max=100)),
+        required=False
+    )
+
+
+class SMARTGoalsSchema(Schema):
+    """SMART goals form validation schema"""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    patient_id = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=1, max=100),
+            validate.Regexp(r'^[a-zA-Z0-9_-]+$')
+        ]
+    )
+
+    patient_goal = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=3000),
+            validate_no_html
+        ]
+    )
+
+    baseline_status = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=2000),
+            validate_no_html
+        ]
+    )
+
+    measurable_outcome = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=2000),
+            validate_no_html
+        ]
+    )
+
+    time_duration = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=500),
+            validate_no_html
+        ]
+    )
 
 
 # ─── SUBSCRIPTION & PAYMENT SCHEMAS ───────────────────────────────────
@@ -1170,6 +1335,9 @@ __all__ = [
 
     # AI Suggestions
     'AIPromptSchema',
+    'AIBasicSuggestionSchema',
+    'AIFieldSuggestionSchema',
+    'SMARTGoalsSchema',
 
     # Subscriptions & Payments
     'SubscriptionCheckoutSchema',
