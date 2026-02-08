@@ -842,6 +842,7 @@ csp = {
         'https://www.gstatic.com',  # Firebase
         'https://www.googletagmanager.com',  # Google Analytics
         'https://checkout.razorpay.com',  # Razorpay payment checkout
+        'https://cdn.jsdelivr.net',  # Chart.js CDN
     ],
     'style-src': [
         "'self'",
@@ -5374,6 +5375,15 @@ def add_patient():
         if not is_valid:
             # Validation failed - show errors to user
             logger.warning(f"Patient validation failed: {result}")
+
+            # For AJAX requests, return JSON errors
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': False,
+                    'errors': result
+                }), 400
+
+            # For normal form submission, use flash messages
             for field, errors in result.items():
                 for error in errors:
                     flash(f'{field.title()}: {error}', 'error')
@@ -5793,7 +5803,11 @@ def provisional_diagnosis(patient_id):
 
         is_valid, result = validate_data(ProvisionalDiagnosisSchema, form_data)
         if not is_valid:
-            flash("Validation error. Please check your input.", "error")
+            # Show detailed validation errors to user
+            logger.warning(f"Provisional Diagnosis validation failed: {result}")
+            for field, errors in result.items():
+                for error in errors:
+                    flash(f'{field.replace("_", " ").title()}: {error}', 'error')
             return redirect(f'/provisional_diagnosis/{patient_id}')
 
         keys = [
@@ -5831,7 +5845,11 @@ def smart_goals(patient_id):
 
         is_valid, result = validate_data(SMARTGoalsSchema, form_data)
         if not is_valid:
-            flash("Validation error. Please check your input.", "error")
+            # Show detailed validation errors to user
+            logger.warning(f"SMART Goals validation failed: {result}")
+            for field, errors in result.items():
+                for error in errors:
+                    flash(f'{field.replace("_", " ").title()}: {error}', 'error')
             return redirect(f'/smart_goals/{patient_id}')
 
         keys = [
@@ -5869,7 +5887,11 @@ def treatment_plan(patient_id):
 
         is_valid, result = validate_data(TreatmentPlanSchema, form_data)
         if not is_valid:
-            flash("Validation error. Please check your input.", "error")
+            # Show detailed validation errors to user
+            logger.warning(f"Treatment Plan validation failed: {result}")
+            for field, errors in result.items():
+                for error in errors:
+                    flash(f'{field.replace("_", " ").title()}: {error}', 'error')
             return redirect(f'/treatment_plan/{patient_id}')
 
         keys = ['treatment_plan', 'goal_targeted', 'reasoning', 'reference']
@@ -5904,7 +5926,11 @@ def follow_ups(patient_id):
 
         is_valid, result = validate_data(FollowUpSchema, form_data)
         if not is_valid:
-            flash("Validation error. Please check your input.", "error")
+            # Show detailed validation errors to user
+            logger.warning(f"Follow-Up validation failed: {result}")
+            for field, errors in result.items():
+                for error in errors:
+                    flash(f'{field.replace("_", " ").title()}: {error}', 'error')
             return redirect(f'/follow_ups/{patient_id}')
 
         entry = {

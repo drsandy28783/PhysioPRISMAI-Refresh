@@ -159,15 +159,42 @@
         // Submit via FormData (works with existing Flask POST handler)
         const formData = new FormData(form);
 
+        // Add header to indicate AJAX request so server can return JSON errors
+        const headers = new Headers();
+        headers.append('X-Requested-With', 'XMLHttpRequest');
+
         try {
           const response = await fetch(form.action || window.location.pathname, {
             method: 'POST',
+            headers: headers,
             body: formData
           });
 
-          // Check if redirect (Flask redirects return HTML of the target page)
-          if (response.ok) {
-            // Get the redirect URL from response headers or parse from response
+          // Check if response is JSON (validation errors) or redirect (success)
+          const contentType = response.headers.get('content-type');
+
+          if (contentType && contentType.includes('application/json')) {
+            // JSON response - validation errors
+            const data = await response.json();
+            isNavigating = false;
+
+            if (data.errors) {
+              // Display validation errors
+              let errorMessage = 'Please fix the following errors:\n\n';
+              for (const [field, messages] of Object.entries(data.errors)) {
+                errorMessage += `${field}:\n`;
+                messages.forEach(msg => {
+                  errorMessage += `  • ${msg}\n`;
+                });
+              }
+              alert(errorMessage);
+            } else if (data.error) {
+              alert('Error: ' + data.error);
+            } else {
+              alert('Failed to save patient. Please check your inputs and try again.');
+            }
+          } else if (response.ok) {
+            // HTML response - successful redirect
             const responseUrl = response.url;
             console.log('[Add Patient] Success, navigating to:', responseUrl);
 
@@ -177,7 +204,7 @@
             // Use replace instead of href to avoid history issues
             window.location.replace(responseUrl);
           } else {
-            // Handle error
+            // Other error
             isNavigating = false;
             console.error('[Add Patient] Submission failed');
             alert('Failed to save patient. Please try again.');
