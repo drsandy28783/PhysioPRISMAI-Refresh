@@ -138,6 +138,22 @@ PLANS = {
             'Onboarding support',
             'SLA guarantees'
         ]
+    },
+    'super_admin': {
+        'name': 'Super Admin (Unlimited)',
+        'price': 0,  # Free for super admins
+        'currency': 'INR',
+        'patients_limit': -1,  # -1 = UNLIMITED
+        'ai_calls_limit': -1,  # -1 = UNLIMITED AI calls
+        'max_users': 1,
+        'features': [
+            'UNLIMITED patients',
+            'UNLIMITED AI calls',
+            'Full system access',
+            'All workflows',
+            'Admin dashboard',
+            'Testing privileges'
+        ]
     }
 }
 
@@ -407,6 +423,10 @@ def check_ai_limit(user_id: str) -> Tuple[bool, bool, str]:
         ai_calls_limit = subscription.get('ai_calls_limit', 0)
         ai_calls_used = subscription.get('ai_calls_this_month', 0)
         ai_tokens = subscription.get('ai_tokens_balance', 0)
+
+        # Check for unlimited AI calls (-1 means unlimited)
+        if ai_calls_limit == -1:
+            return True, False, ""
 
         # Check if within quota
         if ai_calls_used < ai_calls_limit:
