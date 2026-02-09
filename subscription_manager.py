@@ -34,20 +34,21 @@ FREE_TRIAL_DAYS = int(os.environ.get('FREE_TRIAL_DAYS', '14'))
 FREE_TRIAL_PATIENTS = int(os.environ.get('FREE_TRIAL_PATIENTS', '5'))
 FREE_TRIAL_AI_CALLS = int(os.environ.get('FREE_TRIAL_AI_CALLS', '25'))
 
-# Plan definitions with limits (Revised January 2026 - Option B: All plans profitable)
-# Option B: Scale-to-zero infrastructure for small plans + moderate price increases
-# This makes ALL plans profitable: Solo (+25%), Team (5) (+70%), Team Pro (+80%), Institute+ (82-83%)
+# Plan definitions with limits (Revised February 2026 - Volume Discount Strategy)
+# Volume discounts: 5% for 5 users, 10% for 10 users, 15% for 15+ users
+# All plans: $50/user base rate (~₹4,200) with 250 AI calls per user
+# All plans maintain 90%+ profit margins with Azure OpenAI costs of ₹0.91/call
 PLANS = {
     'free_trial': {
         'name': 'Free Trial',
         'price': 0,
         'currency': 'INR',
-        'patients_limit': 10,  # Limited to 10 during trial only
-        'ai_calls_limit': FREE_TRIAL_AI_CALLS,
+        'patients_limit': FREE_TRIAL_PATIENTS,  # Use env variable (default 5)
+        'ai_calls_limit': FREE_TRIAL_AI_CALLS,  # Use env variable (default 25)
         'duration_days': FREE_TRIAL_DAYS,
         'max_users': 1,
         'features': [
-            '10 patients (trial)',
+            f'{FREE_TRIAL_PATIENTS} patients (trial)',
             f'{FREE_TRIAL_AI_CALLS} AI suggestions',
             'All features',
             'PDF reports',
@@ -56,30 +57,33 @@ PLANS = {
     },
     'solo': {
         'name': 'Solo Professional',
-        'price': 1499,  # Increased from ₹899 (+67%) - now profitable with scale-to-zero
+        'price': 4200,  # $50 USD (~₹4,200) - 94% profit margin, competitive internationally
+        'price_usd': 50,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 50,  # Reduced from 100 to optimize costs
+        'ai_calls_limit': 250,  # Increased from 50 - great value proposition
         'max_users': 1,
         'features': [
             'UNLIMITED patients',
-            '50 AI calls/month',
+            '250 AI calls/month',
             'All workflows',
             'PDF reports',
             'Priority email support',
-            'Usage analytics'
+            'Usage analytics',
+            'Export to PDF/CSV'
         ]
     },
     'team_5': {
         'name': 'Team (5 Users)',
-        'price': 4999,  # Increased from ₹3,999 (+25%) - now profitable with scale-to-zero
+        'price': 19999,  # $237.50 USD (~₹19,999) - 5% volume discount ($47.50/user)
+        'price_usd': 238,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 400,  # Reduced from 500 to optimize costs
+        'ai_calls_limit': 1250,  # 250 AI calls per user × 5 users
         'max_users': 5,
         'features': [
             'UNLIMITED patients',
-            '400 AI calls/month',
+            '1,250 AI calls/month (250/user)',
             'Up to 5 users',
             'All workflows',
             'PDF reports',
@@ -90,14 +94,15 @@ PLANS = {
     },
     'team_10': {
         'name': 'Team Pro (10 Users)',
-        'price': 8999,  # Increased from ₹7,499 (+20%) - now highly profitable (80% margin)
+        'price': 37799,  # $450 USD (~₹37,799) - 10% volume discount ($45/user)
+        'price_usd': 450,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 800,  # Reduced from 1,000 to optimize costs
+        'ai_calls_limit': 2500,  # 250 AI calls per user × 10 users
         'max_users': 10,
         'features': [
             'UNLIMITED patients',
-            '800 AI calls/month',
+            '2,500 AI calls/month (250/user)',
             'Up to 10 users',
             'All workflows',
             'Advanced analytics',
@@ -107,14 +112,15 @@ PLANS = {
     },
     'institute_15': {
         'name': 'Institute (15 Users)',
-        'price': 12999,  # Increased from ₹10,999 (+18%) - now 82% margin
+        'price': 53599,  # $637.50 USD (~₹53,599) - 15% volume discount ($42.50/user)
+        'price_usd': 638,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 1500,  # Kept same - generous for institutes
+        'ai_calls_limit': 3750,  # 250 AI calls per user × 15 users
         'max_users': 15,
         'features': [
             'UNLIMITED patients',
-            '1,500 AI calls/month',
+            '3,750 AI calls/month (250/user)',
             'Up to 15 users',
             'All workflows',
             'API access',
@@ -124,14 +130,15 @@ PLANS = {
     },
     'institute_20': {
         'name': 'Institute Plus (20 Users)',
-        'price': 16999,  # Increased from ₹14,499 (+17%) - now 83% margin
+        'price': 71399,  # $850 USD (~₹71,399) - 15% volume discount ($42.50/user)
+        'price_usd': 850,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
-        'ai_calls_limit': 2000,  # Kept same - generous for large institutes
+        'ai_calls_limit': 5000,  # 250 AI calls per user × 20 users
         'max_users': 20,
         'features': [
             'UNLIMITED patients',
-            '2,000 AI calls/month',
+            '5,000 AI calls/month (250/user)',
             'Up to 20 users',
             'All workflows',
             'Custom integrations',
