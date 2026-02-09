@@ -33,6 +33,7 @@ FREE_TRIAL_ENABLED = os.environ.get('FREE_TRIAL_ENABLED', 'true').lower() == 'tr
 FREE_TRIAL_DAYS = int(os.environ.get('FREE_TRIAL_DAYS', '14'))
 FREE_TRIAL_PATIENTS = int(os.environ.get('FREE_TRIAL_PATIENTS', '5'))
 FREE_TRIAL_AI_CALLS = int(os.environ.get('FREE_TRIAL_AI_CALLS', '25'))
+FREE_TRIAL_VOICE_MINUTES = int(os.environ.get('FREE_TRIAL_VOICE_MINUTES', '30'))  # 30 minutes of voice typing
 
 # Plan definitions with limits (Revised February 2026 - Volume Discount Strategy)
 # Volume discounts: 5% for 5 users, 10% for 10 users, 15% for 15+ users
@@ -45,11 +46,13 @@ PLANS = {
         'currency': 'INR',
         'patients_limit': FREE_TRIAL_PATIENTS,  # Use env variable (default 5)
         'ai_calls_limit': FREE_TRIAL_AI_CALLS,  # Use env variable (default 25)
+        'voice_minutes_limit': FREE_TRIAL_VOICE_MINUTES,  # Use env variable (default 30)
         'duration_days': FREE_TRIAL_DAYS,
         'max_users': 1,
         'features': [
             f'{FREE_TRIAL_PATIENTS} patients (trial)',
             f'{FREE_TRIAL_AI_CALLS} AI suggestions',
+            f'{FREE_TRIAL_VOICE_MINUTES} min voice typing',
             'All features',
             'PDF reports',
             'Email support'
@@ -62,10 +65,12 @@ PLANS = {
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 250,  # Increased from 50 - great value proposition
+        'voice_minutes_limit': 120,  # 2 hours of voice typing per month
         'max_users': 1,
         'features': [
             'UNLIMITED patients',
             '250 AI calls/month',
+            '120 min voice typing/month',
             'All workflows',
             'PDF reports',
             'Priority email support',
@@ -80,10 +85,12 @@ PLANS = {
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 1250,  # 250 AI calls per user × 5 users
+        'voice_minutes_limit': 600,  # 120 minutes per user × 5 users (10 hours total)
         'max_users': 5,
         'features': [
             'UNLIMITED patients',
             '1,250 AI calls/month (250/user)',
+            '600 min voice typing (120/user)',
             'Up to 5 users',
             'All workflows',
             'PDF reports',
@@ -99,10 +106,12 @@ PLANS = {
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 2500,  # 250 AI calls per user × 10 users
+        'voice_minutes_limit': 1200,  # 120 minutes per user × 10 users (20 hours total)
         'max_users': 10,
         'features': [
             'UNLIMITED patients',
             '2,500 AI calls/month (250/user)',
+            '1,200 min voice typing (120/user)',
             'Up to 10 users',
             'All workflows',
             'Advanced analytics',
@@ -117,10 +126,12 @@ PLANS = {
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 3750,  # 250 AI calls per user × 15 users
+        'voice_minutes_limit': 1800,  # 120 minutes per user × 15 users (30 hours total)
         'max_users': 15,
         'features': [
             'UNLIMITED patients',
             '3,750 AI calls/month (250/user)',
+            '1,800 min voice typing (120/user)',
             'Up to 15 users',
             'All workflows',
             'API access',
@@ -135,10 +146,12 @@ PLANS = {
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 5000,  # 250 AI calls per user × 20 users
+        'voice_minutes_limit': 2400,  # 120 minutes per user × 20 users (40 hours total)
         'max_users': 20,
         'features': [
             'UNLIMITED patients',
             '5,000 AI calls/month (250/user)',
+            '2,400 min voice typing (120/user)',
             'Up to 20 users',
             'All workflows',
             'Custom integrations',
@@ -152,10 +165,12 @@ PLANS = {
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': -1,  # -1 = UNLIMITED AI calls
+        'voice_minutes_limit': -1,  # -1 = UNLIMITED voice typing
         'max_users': 1,
         'features': [
             'UNLIMITED patients',
             'UNLIMITED AI calls',
+            'UNLIMITED voice typing',
             'Full system access',
             'All workflows',
             'Admin dashboard',
@@ -286,6 +301,8 @@ def get_user_subscription(user_id: str) -> Dict:
                 'patients_limit': FREE_TRIAL_PATIENTS,
                 'ai_calls_this_month': 0,
                 'ai_calls_limit': FREE_TRIAL_AI_CALLS,
+                'voice_minutes_used_this_month': 0,
+                'voice_minutes_limit': FREE_TRIAL_VOICE_MINUTES,
                 'ai_tokens_balance': 0,
                 'ai_tokens_purchased_total': 0,
                 'max_users': 1,
@@ -565,6 +582,101 @@ def deduct_ai_usage(user_id: str, use_token: bool = False, cache_hit: bool = Fal
         return False
 
 
+def check_voice_limit(user_id: str) -> Tuple[bool, str]:
+    """
+    Check if user can use voice typing.
+
+    Args:
+        user_id: User's email or Firebase UID
+
+    Returns:
+        tuple: (can_use_voice: bool, message: str)
+    """
+    try:
+        subscription = get_user_subscription(user_id)
+
+        # Check if subscription is active
+        if subscription.get('status') != 'active':
+            return False, "Your subscription has expired. Please upgrade to continue using voice typing."
+
+        # Get limits
+        voice_minutes_limit = subscription.get('voice_minutes_limit', 0)
+        voice_minutes_used = subscription.get('voice_minutes_used_this_month', 0)
+
+        # Check for unlimited voice typing (-1 means unlimited)
+        if voice_minutes_limit == -1:
+            return True, ""
+
+        # Check if within quota
+        if voice_minutes_used < voice_minutes_limit:
+            return True, ""
+
+        # Quota exhausted
+        return False, f"Voice typing quota exhausted ({voice_minutes_limit} minutes). Upgrade your plan for more minutes."
+
+    except Exception as e:
+        logger.error(f"Error checking voice limit for {user_id}: {e}")
+        return False, "Error checking voice typing quota. Please try again."
+
+
+def deduct_voice_usage(user_id: str, duration_seconds: float) -> bool:
+    """
+    Deduct voice typing usage from user's quota.
+
+    Args:
+        user_id: User's email or Firebase UID
+        duration_seconds: Duration of audio transcribed in seconds
+
+    Returns:
+        bool: Success status
+    """
+    try:
+        # Convert seconds to minutes (round up)
+        import math
+        minutes_used = math.ceil(duration_seconds / 60.0)
+
+        # Minimum deduction of 1 minute
+        if minutes_used < 1:
+            minutes_used = 1
+
+        sub_ref = db.collection('subscriptions').document(user_id)
+        sub_doc = sub_ref.get()
+
+        if not sub_doc.exists:
+            return False
+
+        subscription = sub_doc.to_dict()
+        current_minutes = subscription.get('voice_minutes_used_this_month', 0)
+
+        # Update count
+        sub_ref.update({
+            'voice_minutes_used_this_month': current_minutes + minutes_used,
+            'updated_at': SERVER_TIMESTAMP
+        })
+
+        logger.info(f"Deducted {minutes_used} minutes of voice typing for {user_id}: total={current_minutes + minutes_used}")
+
+        # Log usage
+        db.collection('voice_usage_logs').add({
+            'user_id': user_id,
+            'duration_seconds': duration_seconds,
+            'minutes_charged': minutes_used,
+            'timestamp': SERVER_TIMESTAMP
+        })
+
+        # Check and send quota notifications
+        try:
+            check_and_notify_quota(user_id, 'voice')
+        except Exception as e:
+            logger.warning(f"Failed to check quota notifications: {e}")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"Error deducting voice usage for {user_id}: {e}")
+        return False
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # SUBSCRIPTION OPERATIONS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -606,6 +718,8 @@ def upgrade_subscription(user_id: str, plan_type: str, subscription_id: str = No
             'patients_limit': plan['patients_limit'],
             'ai_calls_this_month': 0,
             'ai_calls_limit': plan['ai_calls_limit'],
+            'voice_minutes_used_this_month': 0,
+            'voice_minutes_limit': plan.get('voice_minutes_limit', 0),
             'max_users': plan.get('max_users', 1),
             'updated_at': SERVER_TIMESTAMP
         }
@@ -788,6 +902,7 @@ def reset_monthly_quota(user_id: str) -> bool:
             sub_ref.update({
                 'patients_created_this_month': 0,
                 'ai_calls_this_month': 0,
+                'voice_minutes_used_this_month': 0,
                 'current_period_start': now.isoformat(),  # Convert to ISO string for JSON serialization
                 'current_period_end': period_end.isoformat(),  # Convert to ISO string for JSON serialization
                 'updated_at': SERVER_TIMESTAMP

@@ -100,7 +100,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app_auth import require_firebase_auth, require_firebase_auth_with_rate_limit, require_auth
-from quota_middleware import require_ai_quota, require_patient_quota
+from quota_middleware import require_ai_quota, require_patient_quota, require_voice_quota
 from firebase_admin import auth
 from ai_cache import AICache, get_ai_suggestion_with_cache
 from rate_limiter import (
@@ -10276,6 +10276,7 @@ def cleanup_old_drafts():
 
 @app.route('/api/transcribe', methods=['POST'])
 @login_required()
+@require_voice_quota
 def api_transcribe_audio():
     """
     Transcribe audio to text using Azure Speech Services

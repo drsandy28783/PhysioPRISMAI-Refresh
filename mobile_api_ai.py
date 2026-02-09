@@ -13,6 +13,7 @@ import logging
 from flask import Blueprint, request, jsonify, g
 from azure_cosmos_db import get_cosmos_db
 from app_auth import require_firebase_auth, require_auth
+from quota_middleware import require_voice_quota
 import re
 
 # Import centralized AI prompts
@@ -1215,6 +1216,7 @@ def api_ai_generic_field(field):
 
 @mobile_api_ai.route('/transcribe', methods=['POST'], endpoint='api_transcribe')
 @require_auth
+@require_voice_quota
 def api_transcribe_audio():
     """Transcribe audio file to text using OpenAI Whisper"""
     try:

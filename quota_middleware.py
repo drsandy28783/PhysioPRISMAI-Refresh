@@ -22,8 +22,10 @@ from flask import jsonify, g, request
 from subscription_manager import (
     check_patient_limit,
     check_ai_limit,
+    check_voice_limit,
     deduct_patient_usage,
     deduct_ai_usage,
+    deduct_voice_usage,
     get_user_subscription
 )
 
@@ -153,6 +155,75 @@ def require_ai_quota(f):
 
         except Exception as e:
             logger.error(f"Error in AI quota middleware: {e}")
+            return jsonify({'error': 'Quota check failed'}), 500
+
+    return decorated_function
+
+
+def require_voice_quota(f):
+    """
+    Decorator to check voice typing quota before executing function.
+
+    Usage:
+        @app.route('/api/transcribe')
+        @require_auth
+        @require_voice_quota
+        def api_transcribe_audio():
+            # Voice transcription logic
+            pass
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            # Get user ID from g.user (set by @require_auth)
+            user_id = g.user.get('email') or g.user.get('uid')
+
+            if not user_id:
+                return jsonify({'error': 'User not authenticated'}), 401
+
+            # Check voice quota
+            can_use_voice, message = check_voice_limit(user_id)
+
+            if not can_use_voice:
+                logger.warning(f"Voice typing quota exceeded for {user_id}: {message}")
+                return jsonify({
+                    'error': 'Quota exceeded',
+                    'message': message,
+                    'quota_type': 'voice_minutes',
+                    'action_required': 'upgrade'
+                }), 403
+
+            # Execute the function
+            result = f(*args, **kwargs)
+
+            # Check if the response indicates success
+            if isinstance(result, tuple):
+                response, status_code = result[0], result[1] if len(result) > 1 else 200
+            else:
+                response, status_code = result, 200
+
+            # Only deduct if request was successful (2xx status)
+            if 200 <= status_code < 300:
+                # Get duration from response if available
+                duration_seconds = 0
+                if hasattr(response, 'get_json'):
+                    data = response.get_json()
+                    if isinstance(data, dict):
+                        duration_seconds = data.get('duration', 0)
+
+                # Store duration in g for deduction
+                if hasattr(g, 'voice_duration_seconds'):
+                    duration_seconds = g.voice_duration_seconds
+
+                # Deduct voice usage
+                if duration_seconds > 0:
+                    deduct_voice_usage(user_id, duration_seconds)
+                    logger.info(f"Deducted voice typing usage for {user_id}: {duration_seconds:.1f}s")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error in voice quota middleware: {e}")
             return jsonify({'error': 'Quota check failed'}), 500
 
     return decorated_function
