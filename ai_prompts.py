@@ -163,16 +163,18 @@ SUBJECTIVE_FIELD_GUIDANCE: Dict[str, str] = {
         "reduced participation in regular social/leisure activities."
     ),
     "activity_capacity": (
-        "Ask about what the patient CAN do in a standardized, controlled, or optimal clinical environment. "
-        "Focus on their maximum ability under ideal conditions without environmental barriers. "
-        "Examples: distance they can walk on level ground, repetitions achievable in clinic, "
-        "range of motion in controlled positions, functional capacity during standardized tests."
+        "Ask about what the patient CAN potentially do in ideal, standardized conditions (CAPACITY), "
+        "not what they actually do in daily life (performance) or underlying body functions. "
+        "Focus on their highest achievable level of activity-based functioning without real-world barriers. "
+        "Examples: maximum walking distance on flat surface without obstacles, best stair climbing ability in controlled setting, "
+        "optimal lifting capacity in ideal conditions, highest sustainable activity level they could achieve clinically."
     ),
     "contextual_environmental": (
         "Ask about physical environment, workplace setup, aids, social support, and environmental barriers."
     ),
     "contextual_personal": (
-        "Ask about lifestyle, fitness, coping, beliefs, expectations, motivation, and relevant habits."
+        "Ask about occupation, hobbies, lifestyle activities, fitness routines, personal habits (smoking, sleep, diet, exercise), "
+        "and daily routines. Focus on WHAT ACTIVITIES the patient does personally, not their beliefs or feelings."
     ),
 }
 
@@ -391,17 +393,19 @@ Provide 2-3 questions about ACTUAL PERFORMANCE ONLY and 2-3 clinical reasoning p
         'activity_limitation_capacity': """
 For ACTIVITY CAPACITY ONLY - You are assessing what they CAN do in ideal conditions:
 INCLUDE ONLY:
-- Maximum ability in controlled/optimal settings
-- Measurable thresholds (distance, time, repetitions, weight)
-- Best-case performance (clinical testing, no barriers)
-- Capacity vs performance gap
+- Maximum ACTIVITY-BASED ability in controlled/optimal settings (e.g., walking distance, stair climbing, lifting tasks)
+- Measurable activity thresholds without real-world barriers (distance, time, repetitions for functional tasks)
+- Best-case FUNCTIONAL performance in standardized clinical environment
+- Capacity vs performance gap for activities (NOT body functions)
 
 DO NOT INCLUDE (these belong in OTHER fields):
 - What they actually do at home (= Activity Performance)
-- Joint ROM or strength tests (= Body Function)
+- Isolated body functions like joint ROM, muscle strength tests, or reflexes (= Body Function)
 - Work or social participation (= Participation)
 
-Provide 2-3 questions about CAPACITY ONLY and 2-3 clinical reasoning points about maximum ability.""",
+Focus on ACTIVITIES the patient can perform at their maximum potential, not underlying body functions or structures.
+
+Provide 2-3 questions about ACTIVITY CAPACITY ONLY and 2-3 clinical reasoning points about maximum functional ability in ideal conditions.""",
 
         'contextual_environmental': """
 For ENVIRONMENTAL FACTORS ONLY - You are assessing external world barriers/facilitators:
@@ -419,20 +423,24 @@ DO NOT INCLUDE (these belong in OTHER fields):
 Provide 2-3 questions about ENVIRONMENT ONLY and 2-3 clinical reasoning points about external barriers/facilitators.""",
 
         'contextual_personal': """
-For PERSONAL FACTORS ONLY - You are assessing internal patient characteristics:
+For PERSONAL FACTORS ONLY - You are assessing personal activities and lifestyle characteristics:
 INCLUDE ONLY:
-- Lifestyle and fitness level
-- Beliefs, expectations, and illness perceptions
-- Coping strategies and psychological state
-- Personal habits (smoking, sleep, exercise, diet)
-- Goals and motivation
+- Occupation and work-related activities
+- Hobbies, sports, and recreational activities
+- Fitness routines and physical activity level
+- Personal habits affecting health (smoking, alcohol, sleep patterns, diet, exercise habits)
+- Daily lifestyle routines and personal schedules
 
 DO NOT INCLUDE (these belong in OTHER fields):
+- Beliefs, expectations, illness perceptions (= Patient Perspectives screen)
+- Coping strategies, psychological state, motivation (= Patient Perspectives screen)
 - Physical environment or support (= Environmental Factors)
-- Task performance (= Activity)
+- Task performance limitations (= Activity Performance)
 - Social roles (= Participation)
 
-Provide 2-3 questions about PERSONAL FACTORS ONLY and 2-3 clinical reasoning points about internal patient characteristics."""
+Focus on WHAT ACTIVITIES the patient engages in personally, NOT their feelings, beliefs, or psychological state.
+
+Provide 2-3 questions about PERSONAL ACTIVITIES/LIFESTYLE ONLY and 2-3 clinical reasoning points about how personal activities may relate to their condition."""
     }
 
     specific_guidance = field_specific_guidance.get(field, "")
@@ -603,20 +611,20 @@ def get_patient_perspectives_field_prompt(
     # Field-specific clinical reasoning templates for each CSM component
     field_specific_guidance = {
         'knowledge': """
-For KNOWLEDGE OF THE ILLNESS (Illness Identity) - Understanding what they think is wrong:
+For KNOWLEDGE OF THE ILLNESS (Illness Identity) - Understanding their mental model of the condition:
 
 WHAT THIS CSM COMPONENT ASSESSES:
-- Patient's understanding of their diagnosis/condition
-- Labels they use to describe their problem
-- How they identify and name their symptoms
-- Their mental representation of "what is wrong"
+- Specific labels/diagnostic terms they use (medical vs lay language)
+- Their mental model of tissue pathology or dysfunction
+- Understanding of structural vs functional problems
+- Accuracy of their illness representation
 
-INCLUDE ONLY:
-- What do they call their condition?
-- What do they think is happening in their body?
-- How do they explain their symptoms to others?
-- What information have they received about their diagnosis?
-- How accurate is their understanding of the condition?
+INCLUDE ONLY - Ask about their conceptual understanding:
+- What specific words/terms do they use? (e.g., "torn muscle", "pinched nerve", "wear and tear", "arthritis")
+- Do they view it as structural damage, tissue injury, or functional problem?
+- What explanation were they given by healthcare providers, online sources, or others?
+- Are they using catastrophic language suggesting serious pathology?
+- Do they understand the difference between hurt and harm?
 
 DO NOT INCLUDE (these belong in OTHER fields):
 - What caused it (= Illness Attribution)
@@ -624,29 +632,30 @@ DO NOT INCLUDE (these belong in OTHER fields):
 - How serious they think it is (= Consequences Awareness)
 - How they feel about it emotionally (= Affective Aspect)
 
-CLINICAL REASONING FOCUS:
-- Accurate illness identity helps with treatment adherence
-- Misunderstanding or catastrophic labels (e.g., "my spine is crumbling") affect outcomes
-- Knowledge level guides education needs
-- Health literacy and information sources matter
+CLINICAL REASONING FOCUS - Consider impact on treatment:
+- Catastrophic labels ("degeneration", "bone-on-bone", "slipped disc") drive fear-avoidance and predict poor outcomes
+- Structural damage beliefs increase perceived threat and reduce self-efficacy
+- Misalignment with modern pain science creates barriers to active treatment
+- Health literacy level determines education approach needed
+- Correcting misconceptions early improves engagement and outcomes
 
-Provide 2-3 questions about KNOWLEDGE/IDENTITY ONLY and 2-3 clinical reasoning points.""",
+Provide 2-3 targeted questions exploring their illness representation and 2-3 reasoning points about therapeutic implications.""",
 
         'attribution': """
-For ILLNESS ATTRIBUTION (Perceived Cause) - Understanding what they believe caused their problem:
+For ILLNESS ATTRIBUTION (Perceived Cause) - Understanding causal beliefs and attribution style:
 
 WHAT THIS CSM COMPONENT ASSESSES:
-- Patient's beliefs about causation
-- Attribution style (biomedical, psychosocial, behavioral, environmental)
-- Whether they blame themselves, others, or external factors
-- Their understanding of risk factors and mechanisms
+- Causal attribution model (monocausal vs multicausal)
+- Attribution style (biomechanical, psychosocial, behavioral, multifactorial)
+- Self-blame vs external blame patterns
+- Alignment with biopsychosocial model
 
-INCLUDE ONLY:
-- What do they think caused this problem?
-- Do they attribute it to a specific incident, activity, or factor?
-- Do they believe it was preventable?
-- Do they see connections to lifestyle, work, stress, or other factors?
-- How do their causal beliefs align with evidence-based understanding?
+INCLUDE ONLY - Explore their causal model:
+- Do they identify a single cause (e.g., "I lifted wrong") or multiple contributing factors?
+- Is attribution purely structural/mechanical (e.g., "my disc moved") or do they recognize behavioral/psychological factors?
+- Do they blame themselves, bad luck, work demands, past injury, or aging?
+- Can they identify modifiable vs non-modifiable factors?
+- Are they attributing pain to inevitable tissue damage or viewing it as a modifiable experience?
 
 DO NOT INCLUDE (these belong in OTHER fields):
 - What they call the condition (= Knowledge)
@@ -654,30 +663,31 @@ DO NOT INCLUDE (these belong in OTHER fields):
 - How serious it is (= Consequences Awareness)
 - Their emotional response (= Affective Aspect)
 
-CLINICAL REASONING FOCUS:
-- Causal attributions affect treatment expectations
-- Self-blame can increase distress and reduce adherence
-- Misattributed causes may lead to inappropriate coping strategies
-- External attributions may reduce self-efficacy
-- Alignment with biomedical model affects engagement
+CLINICAL REASONING FOCUS - Therapeutic target identification:
+- Monocausal attributions (e.g., "it's just my posture") oversimplify and limit treatment engagement with multifactorial approaches
+- Purely structural attributions increase fear-avoidance and reduce activity participation
+- Self-blame increases distress; reframe toward controllable contributing factors
+- External/fatalistic attribution (e.g., "it's just aging") reduces self-efficacy and active engagement
+- Recognizing multiple modifiable factors (sleep, stress, movement patterns, beliefs) enables targeted intervention
 
-Provide 2-3 questions about ATTRIBUTION ONLY and 2-3 clinical reasoning points.""",
+Provide 2-3 specific questions assessing their causal attribution model and 2-3 reasoning points about treatment implications.""",
 
         'expectation': """
-For EXPECTATION ABOUT ILLNESS (Timeline) - Understanding their time expectations:
+For EXPECTATION ABOUT ILLNESS (Timeline) - Understanding temporal beliefs and recovery expectations:
 
 WHAT THIS CSM COMPONENT ASSESSES:
-- Expected duration of the condition
-- Recovery timeline beliefs
-- Acute vs chronic perception
-- Certainty or uncertainty about prognosis
+- Specific recovery timeline expectations (days, weeks, months, permanent)
+- Trajectory beliefs (linear improvement vs fluctuating vs plateauing)
+- Acute vs chronic illness perception
+- Prognostic certainty vs uncertainty
 
-INCLUDE ONLY:
-- How long do they think this will last?
-- Do they expect full recovery, partial recovery, or chronicity?
-- What is their timeline for improvement?
-- Are they uncertain about the course?
-- How realistic are their timeline expectations for this condition?
+INCLUDE ONLY - Explore their temporal model:
+- What specific timeframe do they expect for recovery? (e.g., "better in 2 weeks" vs "this is permanent")
+- Do they expect linear steady improvement, ups and downs, or no change?
+- Are they viewing this as acute and resolvable or chronic and manageable?
+- How certain or uncertain are they about the prognosis?
+- Are their timeline expectations realistic for this condition/presentation?
+- Do past experiences with similar conditions shape their current timeline beliefs?
 
 DO NOT INCLUDE (these belong in OTHER fields):
 - What they think is wrong (= Knowledge)
@@ -685,30 +695,31 @@ DO NOT INCLUDE (these belong in OTHER fields):
 - How serious the consequences are (= Consequences Awareness)
 - Their feelings about it (= Affective Aspect)
 
-CLINICAL REASONING FOCUS:
-- Unrealistic short-term expectations can lead to disappointment and non-adherence
-- Chronic illness perception when condition is acute can reduce recovery
-- Uncertainty about timeline increases anxiety
-- Timeline expectations affect treatment commitment
-- Age and past experience shape timeline beliefs
+CLINICAL REASONING FOCUS - Manage expectations proactively:
+- Unrealistically short timelines ("should be gone in days") predict disappointment, perceived treatment failure, and disengagement
+- Chronic/permanent beliefs in acute conditions become self-fulfilling prophecies and impair recovery
+- Excessive prognostic uncertainty increases anxiety and catastrophizing
+- Mismatch between patient timeline and evidence-based prognosis creates adherence barriers
+- Acknowledging normal fluctuation patterns prevents crisis response to setbacks
 
-Provide 2-3 questions about EXPECTATION/TIMELINE ONLY and 2-3 clinical reasoning points.""",
+Provide 2-3 specific questions about recovery timeline expectations and 2-3 reasoning points about managing temporal beliefs.""",
 
         'consequences_awareness': """
-For AWARENESS OF CONSEQUENCES - Understanding perceived seriousness and impact:
+For AWARENESS OF CONSEQUENCES - Understanding perceived threat level and life impact:
 
 WHAT THIS CSM COMPONENT ASSESSES:
-- How serious they perceive the condition to be
-- Awareness of potential short and long-term consequences
-- Impact on life roles and activities
-- Degree of threat perception
+- Perceived severity and threat level (minor annoyance to life-threatening)
+- Awareness of functional consequences (activity and participation impact)
+- Catastrophizing vs minimizing cognitive patterns
+- Short-term vs long-term consequence understanding
 
-INCLUDE ONLY:
-- How serious do they think this condition is?
-- What impact do they think it will have on their life?
-- Are they aware of potential consequences if untreated?
-- Do they understand activity limitations and participation restrictions?
-- Are they minimizing or catastrophizing the consequences?
+INCLUDE ONLY - Assess their threat appraisal:
+- On a scale from "minor nuisance" to "serious threat", where do they place this condition?
+- What specific life domains do they believe will be affected? (work capacity, family roles, independence, identity)
+- Are they catastrophizing worst-case scenarios? (e.g., "I'll end up in a wheelchair", "I'll lose my job", "I'll never be the same")
+- Are they minimizing or dismissing potential consequences? (e.g., "it's nothing, I'll just push through")
+- Do they understand the difference between temporary limitations and permanent disability?
+- Are they aware of secondary consequences of inactivity/avoidance?
 
 DO NOT INCLUDE (these belong in OTHER fields):
 - What they call it (= Knowledge)
@@ -717,30 +728,31 @@ DO NOT INCLUDE (these belong in OTHER fields):
 - Their emotional response (= Affective Aspect)
 - Whether they can control it (= Locus of Control)
 
-CLINICAL REASONING FOCUS:
-- Perceived severity drives help-seeking behavior
-- Catastrophizing consequences predicts poorer outcomes
-- Minimization can lead to delayed treatment or non-adherence
-- Awareness of consequences motivates behavior change
-- Balance between realistic awareness and hope is therapeutic
+CLINICAL REASONING FOCUS - Identify catastrophizing or minimization:
+- Catastrophizing consequences (especially regarding participation/identity threats) is the strongest predictor of chronic disability and poor outcomes
+- Minimization prevents engagement with treatment and leads to delayed recovery or re-injury
+- Overstated threat perception drives protective behaviors (guarding, avoidance, hypervigilance)
+- Balanced awareness (realistic acknowledgment without catastrophizing) optimizes motivation and engagement
+- Consequence beliefs directly inform goal-setting priorities and treatment buy-in
 
-Provide 2-3 questions about CONSEQUENCES AWARENESS ONLY and 2-3 clinical reasoning points.""",
+Provide 2-3 targeted questions exploring perceived severity and life impact, and 2-3 reasoning points about catastrophizing or minimization patterns.""",
 
         'locus_of_control': """
-For LOCUS OF CONTROL - Understanding perceived controllability:
+For LOCUS OF CONTROL - Understanding perceived agency and self-efficacy:
 
 WHAT THIS CSM COMPONENT ASSESSES:
-- Whether they believe they can control or influence the condition
-- Internal locus (I can affect outcomes) vs External locus (outside my control)
-- Self-efficacy beliefs
-- Sense of agency in recovery
+- Internal locus (self-directed, active agency) vs External locus (passive, dependent on others/fate)
+- Self-efficacy beliefs about influencing symptoms and recovery
+- Active participant vs passive recipient role
+- Controllability beliefs and learned helplessness
 
-INCLUDE ONLY:
-- Do they believe they can influence their recovery?
-- Do they feel they have control over their symptoms?
-- Do they see themselves as active participants or passive recipients?
-- What control strategies do they think will work?
-- Is the locus internal (self-directed) or external (doctor, fate, luck)?
+INCLUDE ONLY - Determine their control beliefs:
+- Do they believe THEY can influence their recovery through their own actions?
+- What specific things do they think THEY can do to improve? (vs waiting for external fixes)
+- Are they relying primarily on healthcare professionals, medications, or injections to "fix" them?
+- Do they see recovery as dependent on their own behavior change or external interventions?
+- Are they expressing learned helplessness? (e.g., "nothing helps", "I've tried everything")
+- Do they believe pain/symptoms are something they can modulate or completely outside their control?
 
 DO NOT INCLUDE (these belong in OTHER fields):
 - What the condition is (= Knowledge)
@@ -749,30 +761,32 @@ DO NOT INCLUDE (these belong in OTHER fields):
 - How serious it is (= Consequences)
 - How they feel emotionally (= Affective Aspect)
 
-CLINICAL REASONING FOCUS:
-- Internal locus of control predicts better outcomes and adherence
-- External locus may reduce engagement in self-management
-- Learned helplessness from chronic pain affects control beliefs
-- Empowerment and education can shift locus toward internal
-- Cultural factors influence control attributions
+CLINICAL REASONING FOCUS - Build self-efficacy and agency:
+- Internal locus of control is one of the strongest predictors of successful rehabilitation outcomes and adherence
+- External locus (passive recipient mentality) predicts poor engagement, non-adherence, and dependence on passive treatments
+- Learned helplessness from repeated failed treatments requires graded mastery experiences to rebuild self-efficacy
+- Pain neuroscience education can shift locus from "something wrong with my body" to "I can influence my nervous system"
+- Cultural and socioeconomic factors may shape control beliefs; some cultures emphasize external authority/expertise
 
-Provide 2-3 questions about LOCUS OF CONTROL ONLY and 2-3 clinical reasoning points.""",
+Provide 2-3 specific questions assessing their sense of agency and controllability, and 2-3 reasoning points about building internal locus.""",
 
         'affective_aspect': """
-For AFFECTIVE ASPECT (Emotional Response) - Understanding feelings elicited by the illness:
+For AFFECTIVE ASPECT (Emotional Response) - Understanding dominant emotional responses and psychological distress:
 
 WHAT THIS CSM COMPONENT ASSESSES:
-- Emotional reactions to the condition
-- Anxiety, fear, sadness, anger, frustration, hopelessness, acceptance
-- Emotional distress level
-- Coping mechanisms and emotional regulation
+- Primary emotional response patterns (fear, anxiety, anger, sadness, frustration, hopelessness, acceptance)
+- Emotional intensity and distress level
+- Fear-avoidance and kinesiophobia indicators
+- Emotional regulation and coping capacity
 
-INCLUDE ONLY:
-- What emotions are they experiencing about this condition?
-- How does this problem make them feel?
-- Are they anxious, fearful, angry, sad, frustrated, or accepting?
-- How intense are their emotional responses?
-- How are emotions affecting their daily functioning?
+INCLUDE ONLY - Identify emotional responses to the condition:
+- What is their dominant emotional response when they think about this condition? (fear, worry, anger, sadness, frustration)
+- Are they expressing fear of movement or re-injury (kinesiophobia)?
+- Are there signs of anxiety or catastrophizing? (excessive worry, worst-case thinking)
+- Are they expressing hopelessness, helplessness, or low mood related to the condition?
+- Is there anger or frustration—at themselves, healthcare system, or circumstances?
+- Are they showing acceptance and adjustment, or struggling emotionally?
+- How intense is the emotional distress (mild irritation to severe distress affecting function)?
 
 DO NOT INCLUDE (these belong in OTHER fields):
 - What they think is wrong (= Knowledge)
@@ -781,15 +795,16 @@ DO NOT INCLUDE (these belong in OTHER fields):
 - How serious it is (= Consequences)
 - Whether they can control it (= Locus of Control)
 
-CLINICAL REASONING FOCUS:
-- Fear-avoidance beliefs predict chronic disability
-- Anxiety and catastrophizing worsen pain and outcomes
-- Depression and hopelessness reduce treatment adherence
-- Anger and frustration may indicate unmet expectations
-- Acceptance correlates with better adjustment
-- Yellow flags for psychosocial risk
+CLINICAL REASONING FOCUS - Identify yellow flags and emotional barriers:
+- Fear-avoidance beliefs (fear of movement/re-injury) are the strongest predictor of transition from acute to chronic disability
+- Kinesiophobia drives protective behaviors (guarding, avoidance) that perpetuate dysfunction
+- Anxiety and catastrophizing amplify pain perception via central sensitization mechanisms
+- Depression and hopelessness reduce treatment engagement, adherence, and self-management
+- Anger/frustration may indicate unmet expectations, lack of validation, or perceived injustice—requires acknowledgment and reframing
+- Acceptance and psychological flexibility predict better outcomes than emotional suppression or struggle
+- Yellow flag identification (distress, catastrophizing, hopelessness) triggers biopsychosocial approach
 
-Provide 2-3 questions about AFFECTIVE/EMOTIONAL RESPONSE ONLY and 2-3 clinical reasoning points."""
+Provide 2-3 specific questions identifying emotional responses and distress patterns, and 2-3 reasoning points about emotional barriers and yellow flags."""
     }
 
     specific_guidance = field_specific_guidance.get(field, "")
