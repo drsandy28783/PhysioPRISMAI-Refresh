@@ -938,11 +938,14 @@ def get_usage_stats(user_id: str) -> Dict:
         patients_limit = subscription.get('patients_limit', 0)
         ai_calls_used = subscription.get('ai_calls_this_month', 0)
         ai_calls_limit = subscription.get('ai_calls_limit', 0)
+        voice_minutes_used = subscription.get('voice_minutes_used_this_month', 0)
+        voice_minutes_limit = subscription.get('voice_minutes_limit', 0)
         tokens = subscription.get('ai_tokens_balance', 0)
 
         # Calculate percentages
         patients_percent = (patients_used / patients_limit * 100) if patients_limit > 0 else 0
         ai_percent = (ai_calls_used / ai_calls_limit * 100) if ai_calls_limit > 0 else 0
+        voice_percent = (voice_minutes_used / voice_minutes_limit * 100) if voice_minutes_limit > 0 else 0
 
         return {
             'plan_type': subscription.get('plan_type'),
@@ -953,6 +956,9 @@ def get_usage_stats(user_id: str) -> Dict:
             'ai_calls_used': ai_calls_used,
             'ai_calls_limit': ai_calls_limit,
             'ai_percent': round(ai_percent, 1),
+            'voice_minutes_used': voice_minutes_used,
+            'voice_minutes_limit': voice_minutes_limit,
+            'voice_minutes_percent': round(voice_percent, 1),
             'tokens_balance': tokens,
             'period_end': subscription.get('current_period_end'),
             'trial_end': subscription.get('trial_end_date')
@@ -967,6 +973,9 @@ def get_usage_stats(user_id: str) -> Dict:
             'patients_used': 0,
             'patients_limit': 0,
             'patients_percent': 0,
+            'voice_minutes_used': 0,
+            'voice_minutes_limit': 0,
+            'voice_minutes_percent': 0,
             'ai_calls_used': 0,
             'ai_calls_limit': 0,
             'ai_percent': 0,
@@ -1014,7 +1023,7 @@ def check_and_notify_quota(user_id: str, quota_type: str = 'all') -> None:
 
     Args:
         user_id: User's email or Firebase UID
-        quota_type: 'ai', 'patients', or 'all'
+        quota_type: 'ai', 'patients', 'voice', or 'all'
     """
     try:
         from notification_service import notify_quota_warning
@@ -1061,6 +1070,25 @@ def check_and_notify_quota(user_id: str, quota_type: str = 'all') -> None:
                 elif patients_percent >= 80 and patients_used == int(patients_limit * 0.8):
                     notify_quota_warning(user_id, 'Patients', 80, patients_used, patients_limit)
                     logger.info(f"Sent 80% patient quota notification to {user_id}")
+
+        # Check voice typing quota
+        if quota_type in ['voice', 'all']:
+            voice_minutes_used = subscription.get('voice_minutes_used_this_month', 0)
+            voice_minutes_limit = subscription.get('voice_minutes_limit', 0)
+
+            if voice_minutes_limit > 0 and voice_minutes_limit != -1:  # -1 means unlimited
+                voice_percent = (voice_minutes_used / voice_minutes_limit) * 100
+
+                # Create notification at 80%, 90%, and 100% thresholds
+                if voice_percent >= 100 and voice_minutes_used >= voice_minutes_limit:
+                    notify_quota_warning(user_id, 'Voice Typing Minutes', 100, voice_minutes_used, voice_minutes_limit)
+                    logger.info(f"Sent 100% voice typing quota notification to {user_id}")
+                elif voice_percent >= 90 and voice_minutes_used >= int(voice_minutes_limit * 0.9):
+                    notify_quota_warning(user_id, 'Voice Typing Minutes', 90, voice_minutes_used, voice_minutes_limit)
+                    logger.info(f"Sent 90% voice typing quota notification to {user_id}")
+                elif voice_percent >= 80 and voice_minutes_used >= int(voice_minutes_limit * 0.8):
+                    notify_quota_warning(user_id, 'Voice Typing Minutes', 80, voice_minutes_used, voice_minutes_limit)
+                    logger.info(f"Sent 80% voice typing quota notification to {user_id}")
 
     except Exception as e:
         logger.error(f"Error checking quota notifications for {user_id}: {e}")
