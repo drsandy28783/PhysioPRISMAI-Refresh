@@ -100,6 +100,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app_auth import require_firebase_auth, require_firebase_auth_with_rate_limit, require_auth
+from quota_middleware import require_ai_quota, require_patient_quota
 from firebase_admin import auth
 from ai_cache import AICache, get_ai_suggestion_with_cache
 from rate_limiter import (
@@ -6207,6 +6208,7 @@ def reactivate_user(user_email):
 @app.route('/api/ai_suggestion/past_questions', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_past_questions():
     data = request.get_json() or {}
 
@@ -6252,6 +6254,7 @@ def ai_past_questions():
 @app.route('/api/ai_suggestion/provisional_diagnosis', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_provisional_diagnosis():
     data = request.get_json() or {}
 
@@ -6795,6 +6798,7 @@ def debug_ai_objective_assessment():
 @app.route('/api/ai_suggestion/subjective/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_subjective_field(field):
        data = request.get_json() or {}
 
@@ -6844,6 +6848,7 @@ def ai_subjective_field(field):
 @app.route('/api/ai_suggestion/subjective_diagnosis', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_subjective_diagnosis():
        data = request.get_json() or {}
 
@@ -6890,6 +6895,7 @@ def ai_subjective_diagnosis():
 @app.route('/api/ai_suggestion/perspectives/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_perspectives_field(field):
         data = request.get_json() or {}
 
@@ -6940,6 +6946,7 @@ def ai_perspectives_field(field):
 @app.route('/api/ai_suggestion/perspectives_diagnosis', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_perspectives_diagnosis():
         data   = request.get_json() or {}
 
@@ -7008,6 +7015,7 @@ def ai_perspectives_diagnosis():
 @app.route('/api/ai_suggestion/initial_plan/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_initial_plan_field(field):
     data = request.get_json() or {}
 
@@ -7061,6 +7069,7 @@ def ai_initial_plan_field(field):
 @app.route('/api/ai_suggestion/initial_plan_summary', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_initial_plan_summary():
     data = request.get_json() or {}
 
@@ -7110,6 +7119,7 @@ def ai_initial_plan_summary():
 @app.route('/api/ai_suggestion/patho/possible_source', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_patho_source():
     data = request.get_json() or {}
 
@@ -7174,6 +7184,7 @@ def ai_patho_source():
 @app.route('/api/ai_suggestion/chronic/specific_factors', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_chronic_factors():
     data = request.get_json() or {}
 
@@ -7236,6 +7247,7 @@ def ai_chronic_factors():
 @app.route('/api/ai_suggestion/clinical_flags/<patient_id>/suggest', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def clinical_flags_suggest(patient_id):
     data = request.get_json() or {}
 
@@ -7292,6 +7304,7 @@ def clinical_flags_suggest(patient_id):
 @app.route('/api/ai_suggestion/objective_assessment/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def objective_assessment_field_suggest(field):
     """
     IMPROVED: Suggest comprehensive objective assessment plan based on body region and all previous clinical data.
@@ -7433,6 +7446,7 @@ def provisional_diagnosis_suggest(patient_id):
 @app.route('/api/ai_suggestion/smart_goals/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_smart_goals(field):
     """
     IMPROVED: SMART goals field suggestions with body region-specific ICF participation goals.
@@ -7502,6 +7516,7 @@ def ai_smart_goals(field):
 @app.route('/api/ai_suggestion/treatment_plan/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def treatment_plan_suggest(field):
     data       = request.get_json() or {}
 
@@ -7587,6 +7602,7 @@ def treatment_plan_suggest(field):
 @app.route('/api/ai_suggestion/treatment_plan_summary/<patient_id>', methods=['GET'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def treatment_plan_summary(patient_id):
     """
     Gathers every saved screen for this patient and asks the AI to
@@ -7771,6 +7787,7 @@ def ai_followup_suggestion(patient_id):
 @app.route('/api/ai_suggestion/followup/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
+@require_ai_quota
 def ai_followup_field(field):
     """
     IMPROVED: Follow-up field suggestions with body region-specific progression strategies.
