@@ -875,6 +875,7 @@ csp = {
         'https://www.google-analytics.com',  # Google Analytics
         'https://analytics.google.com',  # Google Analytics
         'https://region1.google-analytics.com',  # Google Analytics
+        'https://cdn.jsdelivr.net',  # Chart.js CDN (for source maps)
     ],
     'frame-src': [
         "'self'",
