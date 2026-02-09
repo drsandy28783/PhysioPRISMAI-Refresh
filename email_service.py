@@ -24,37 +24,48 @@ APP_NAME = os.environ.get('APP_NAME', 'PhysiologicPRISM')
 APP_URL = os.environ.get('APP_URL', 'https://physiologicprism.com')
 
 
-def send_email(to: str, subject: str, html: str) -> bool:
+def send_email(to: str, subject: str, html: str, max_retries: int = 3) -> bool:
     """
-    Base function to send email via Resend API.
+    Base function to send email via Resend API with retry logic.
 
     Args:
         to: Recipient email address
         subject: Email subject
         html: HTML content of the email
+        max_retries: Maximum number of retry attempts (default: 3)
 
     Returns:
         bool: True if sent successfully, False otherwise
     """
     if not resend.api_key:
-        logger.warning("RESEND_API_KEY not configured - skipping email")
+        logger.error("CRITICAL: RESEND_API_KEY not configured - email service disabled!")
+        logger.error(f"Attempted to send: TO={to}, SUBJECT={subject}")
         return False
 
-    try:
-        params = {
-            "from": FROM_EMAIL,
-            "to": [to],
-            "subject": subject,
-            "html": html,
-        }
+    for attempt in range(max_retries):
+        try:
+            params = {
+                "from": FROM_EMAIL,
+                "to": [to],
+                "subject": subject,
+                "html": html,
+            }
 
-        response = resend.Emails.send(params)
-        logger.info(f"Email sent successfully to {to}: {subject}")
-        return True
+            logger.info(f"Attempting to send email (attempt {attempt + 1}/{max_retries}): TO={to}, SUBJECT={subject}")
+            response = resend.Emails.send(params)
+            logger.info(f"✅ Email sent successfully to {to}: {subject} (Response: {response})")
+            return True
 
-    except Exception as e:
-        logger.error(f"Failed to send email to {to}: {str(e)}")
-        return False
+        except Exception as e:
+            logger.error(f"❌ Failed to send email (attempt {attempt + 1}/{max_retries}) to {to}: {type(e).__name__}: {str(e)}")
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+            else:
+                logger.error(f"CRITICAL: All {max_retries} email send attempts failed for {to}", exc_info=True)
+                return False
+
+    return False
 
 
 def send_registration_notification(user_data: Dict[str, Any]) -> bool:
@@ -73,6 +84,9 @@ def send_registration_notification(user_data: Dict[str, Any]) -> bool:
     Returns:
         bool: True if email sent successfully, False otherwise
     """
+    logger.info(f"🔔 send_registration_notification called for: {user_data.get('name')} ({user_data.get('email')})")
+    logger.info(f"Email config: FROM={FROM_EMAIL}, TO={SUPER_ADMIN_EMAIL}, RESEND_KEY={'SET' if resend.api_key else 'NOT SET'}")
+
     try:
         user_type = user_data.get('user_type', 'individual')
 
@@ -333,6 +347,9 @@ def send_institute_admin_registration_notification(user_data: Dict[str, Any]) ->
     Returns:
         bool: True if email sent successfully, False otherwise
     """
+    logger.info(f"🏥 send_institute_admin_registration_notification called for: {user_data.get('name')} ({user_data.get('email')})")
+    logger.info(f"Email config: FROM={FROM_EMAIL}, TO={SUPER_ADMIN_EMAIL}, RESEND_KEY={'SET' if resend.api_key else 'NOT SET'}")
+
     try:
         html = f"""
         <!DOCTYPE html>
