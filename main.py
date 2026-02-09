@@ -9114,6 +9114,17 @@ def pricing():
         return render_template('pricing.html', current_subscription=None)
 
 
+@app.route('/free-trial')
+def free_trial():
+    """Display free trial landing page"""
+    try:
+        return render_template('free_trial.html')
+    except Exception as e:
+        logger.error(f"Error loading free trial page: {e}", exc_info=True)
+        flash('Error loading page. Please try again.', 'error')
+        return redirect(url_for('homepage'))
+
+
 @app.route('/checkout')
 def checkout():
     """Display checkout page for subscription or token purchase"""

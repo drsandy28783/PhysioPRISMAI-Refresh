@@ -1,0 +1,349 @@
+<!-- Exit Intent Popup for Blog Posts -->
+<div id="exit-intent-popup" class="exit-popup-overlay" style="display: none;">
+  <div class="exit-popup-container">
+    <button class="exit-popup-close" id="close-exit-popup" aria-label="Close popup">&times;</button>
+
+    <div class="exit-popup-content">
+      <div class="exit-popup-icon">🚀</div>
+      <h2 class="exit-popup-title">Wait! Before You Go...</h2>
+      <p class="exit-popup-subtitle">Try PhysiologicPRISM free for 14 days</p>
+
+      <div class="exit-popup-features">
+        <div class="exit-popup-feature">
+          <span class="feature-check">✓</span>
+          <span>AI-powered clinical decision support</span>
+        </div>
+        <div class="exit-popup-feature">
+          <span class="feature-check">✓</span>
+          <span>Structured documentation workflows</span>
+        </div>
+        <div class="exit-popup-feature">
+          <span class="feature-check">✓</span>
+          <span>Evidence-based treatment suggestions</span>
+        </div>
+        <div class="exit-popup-feature">
+          <span class="feature-check">✓</span>
+          <span>10 patients & 25 AI assists included</span>
+        </div>
+      </div>
+
+      <div class="exit-popup-cta">
+        <a href="{{ url_for('free_trial') }}" class="exit-popup-button primary">
+          Start Free Trial →
+        </a>
+        <a href="{{ url_for('register_choice') }}" class="exit-popup-button secondary">
+          Sign Up Now
+        </a>
+      </div>
+
+      <p class="exit-popup-guarantee">
+        ✨ No credit card required • Full access • Cancel anytime
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Exit Popup Overlay */
+  .exit-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Popup Container */
+  .exit-popup-container {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Close Button */
+  .exit-popup-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 30px;
+    color: #999;
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .exit-popup-close:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  /* Popup Content */
+  .exit-popup-content {
+    padding: 40px 30px;
+    text-align: center;
+  }
+
+  .exit-popup-icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+  }
+
+  .exit-popup-title {
+    font-size: 28px;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .exit-popup-subtitle {
+    font-size: 18px;
+    color: #7f8c8d;
+    margin-bottom: 25px;
+  }
+
+  /* Features List */
+  .exit-popup-features {
+    text-align: left;
+    margin-bottom: 30px;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .exit-popup-feature {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 15px;
+    color: #2c3e50;
+  }
+
+  .exit-popup-feature:last-child {
+    margin-bottom: 0;
+  }
+
+  .feature-check {
+    color: #27ae60;
+    font-weight: bold;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* CTA Buttons */
+  .exit-popup-cta {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .exit-popup-button {
+    display: block;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .exit-popup-button.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .exit-popup-button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .exit-popup-button.secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+  }
+
+  .exit-popup-button.secondary:hover {
+    background: #f8f9ff;
+  }
+
+  /* Guarantee Text */
+  .exit-popup-guarantee {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin: 0;
+  }
+
+  /* Mobile Responsive */
+  @media (max-width: 600px) {
+    .exit-popup-container {
+      max-width: 95%;
+      margin: 10px;
+    }
+
+    .exit-popup-content {
+      padding: 30px 20px;
+    }
+
+    .exit-popup-title {
+      font-size: 24px;
+    }
+
+    .exit-popup-subtitle {
+      font-size: 16px;
+    }
+
+    .exit-popup-icon {
+      font-size: 50px;
+    }
+
+    .exit-popup-cta {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<script nonce="{{ csp_nonce() }}">
+  (function() {
+    'use strict';
+
+    // Configuration
+    const POPUP_DELAY = 1000; // Minimum time on page before popup can show (ms)
+    const EXIT_THRESHOLD = 50; // Pixels from top to trigger exit intent
+    const SESSION_KEY = 'exitPopupShown';
+
+    let popupShown = false;
+    let timeOnPage = 0;
+
+    // Check if popup was already shown in this session
+    if (sessionStorage.getItem(SESSION_KEY)) {
+      return; // Don't show again this session
+    }
+
+    // Track time on page
+    setTimeout(() => {
+      timeOnPage = POPUP_DELAY;
+    }, POPUP_DELAY);
+
+    // Get popup elements
+    const popup = document.getElementById('exit-intent-popup');
+    const closeButton = document.getElementById('close-exit-popup');
+
+    if (!popup || !closeButton) {
+      console.warn('Exit intent popup elements not found');
+      return;
+    }
+
+    // Function to show popup
+    function showPopup() {
+      if (popupShown || !timeOnPage) {
+        return;
+      }
+
+      popup.style.display = 'flex';
+      popupShown = true;
+      sessionStorage.setItem(SESSION_KEY, 'true');
+
+      // Track event (if analytics available)
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'exit_intent_popup_shown', {
+          'event_category': 'engagement',
+          'event_label': 'blog_exit_popup'
+        });
+      }
+    }
+
+    // Function to hide popup
+    function hidePopup() {
+      popup.style.display = 'none';
+
+      // Track event (if analytics available)
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'exit_intent_popup_closed', {
+          'event_category': 'engagement',
+          'event_label': 'blog_exit_popup'
+        });
+      }
+    }
+
+    // Exit intent detection
+    document.addEventListener('mouseleave', function(e) {
+      // Check if mouse is leaving from top of viewport (going to browser controls)
+      if (e.clientY < EXIT_THRESHOLD && !popupShown && timeOnPage >= POPUP_DELAY) {
+        showPopup();
+      }
+    });
+
+    // Close button handler
+    closeButton.addEventListener('click', hidePopup);
+
+    // Close on overlay click
+    popup.addEventListener('click', function(e) {
+      if (e.target === popup) {
+        hidePopup();
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && popup.style.display === 'flex') {
+        hidePopup();
+      }
+    });
+
+    // Track CTA clicks
+    const ctaButtons = popup.querySelectorAll('.exit-popup-button');
+    ctaButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'exit_popup_cta_clicked', {
+            'event_category': 'conversion',
+            'event_label': this.textContent.trim()
+          });
+        }
+      });
+    });
+
+  })();
+</script>

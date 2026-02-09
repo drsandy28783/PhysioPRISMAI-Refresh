@@ -1,0 +1,451 @@
+{% extends "base_public.html" %}
+
+{% block title %}Start Your Free 14-Day Trial - Physio PRISM{% endblock %}
+
+{% block head %}
+<!-- SEO Meta Tags -->
+<meta name="description" content="Try PhysiologicPRISM free for 14 days. AI-powered clinical reasoning tools for physiotherapists. No credit card required. Full access to all features.">
+<meta name="keywords" content="physiotherapy software free trial, physio documentation software, AI clinical reasoning, free trial">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Start Your Free 14-Day Trial - PhysiologicPRISM">
+<meta property="og:description" content="Try PhysiologicPRISM free for 14 days. AI-powered clinical reasoning tools for physiotherapists. No credit card required.">
+
+<style>
+  /* Hide the navbar on marketing pages */
+  body > .navbar { display: none !important; }
+
+  /* Reset container */
+  .container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Marketing navbar */
+  .homepage-navbar {
+    background: #1a5f5a;
+    padding: 16px 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .homepage-navbar .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .homepage-navbar .logo img {
+    height: 40px;
+  }
+
+  .homepage-navbar .nav-links {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .homepage-navbar .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+
+  .homepage-navbar .nav-links a:hover {
+    opacity: 0.8;
+  }
+
+  .homepage-navbar .cta-btn {
+    background: white;
+    color: #1a5f5a;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  .trial-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .trial-hero h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+    color: white;
+  }
+
+  .trial-hero .subtitle {
+    font-size: 1.5em;
+    margin-bottom: 30px;
+    opacity: 0.95;
+  }
+
+  .trial-hero .cta-button {
+    display: inline-block;
+    background: white;
+    color: #764ba2;
+    padding: 18px 40px;
+    font-size: 1.3em;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .trial-hero .cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+
+  .trial-hero .no-card {
+    margin-top: 15px;
+    font-size: 1.1em;
+    opacity: 0.9;
+  }
+
+  .trial-features {
+    max-width: 1200px;
+    margin: 60px auto;
+    padding: 0 20px;
+  }
+
+  .trial-features h2 {
+    text-align: center;
+    font-size: 2.5em;
+    color: #2c3e50;
+    margin-bottom: 50px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-bottom: 60px;
+  }
+
+  .feature-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+  }
+
+  .feature-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+  }
+
+  .feature-card h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 1.4em;
+  }
+
+  .feature-card p {
+    color: #7f8c8d;
+    line-height: 1.6;
+  }
+
+  .trial-includes {
+    background: #f8f9fa;
+    padding: 60px 20px;
+    text-align: center;
+  }
+
+  .trial-includes h2 {
+    font-size: 2.5em;
+    color: #2c3e50;
+    margin-bottom: 40px;
+  }
+
+  .includes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .include-item {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .include-item .icon {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+  }
+
+  .include-item .label {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+  }
+
+  .include-item .description {
+    font-size: 0.95em;
+    color: #7f8c8d;
+  }
+
+  .social-proof {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 0 20px;
+    text-align: center;
+  }
+
+  .social-proof h2 {
+    font-size: 2em;
+    color: #2c3e50;
+    margin-bottom: 30px;
+  }
+
+  .testimonial {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+
+  .testimonial .quote {
+    font-size: 1.1em;
+    font-style: italic;
+    color: #555;
+    margin-bottom: 15px;
+    line-height: 1.6;
+  }
+
+  .testimonial .author {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .final-cta {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+  }
+
+  .final-cta h2 {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    color: white;
+  }
+
+  .final-cta p {
+    font-size: 1.3em;
+    margin-bottom: 30px;
+  }
+
+  .final-cta .cta-button {
+    display: inline-block;
+    background: white;
+    color: #27ae60;
+    padding: 18px 40px;
+    font-size: 1.3em;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .final-cta .cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+
+  .guarantee {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    font-size: 1.1em;
+  }
+
+  @media (max-width: 768px) {
+    .trial-hero h1 {
+      font-size: 2em;
+    }
+
+    .trial-hero .subtitle {
+      font-size: 1.2em;
+    }
+
+    .trial-features h2,
+    .trial-includes h2,
+    .final-cta h2 {
+      font-size: 1.8em;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Marketing Navbar -->
+<nav class="homepage-navbar">
+  <a href="{{ url_for('homepage') }}" class="logo" style="text-decoration: none;">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM">
+    <span>PhysiologicPRISM</span>
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('homepage') }}">Home</a>
+    <a href="{{ url_for('pricing') }}">Pricing</a>
+    <a href="{{ url_for('blog_list') }}">Blog</a>
+    <a href="{{ url_for('login') }}">Sign in</a>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="trial-hero">
+  <h1>🚀 Start Your Free 14-Day Trial</h1>
+  <p class="subtitle">Experience AI-powered clinical reasoning tools built for physiotherapists</p>
+  <a href="{{ url_for('register_choice') }}" class="cta-button">Get Started Free →</a>
+  <p class="no-card">✨ No credit card required • Full access • Cancel anytime</p>
+</section>
+
+<!-- Features Section -->
+<section class="trial-features">
+  <h2>What You'll Get During Your Trial</h2>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <h3>AI Clinical Support</h3>
+      <p>Get intelligent suggestions for provisional diagnosis, treatment planning, and red flag detection based on your clinical findings.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <h3>Structured Documentation</h3>
+      <p>Follow the PRISM framework for comprehensive patient assessment from subjective examination to treatment planning.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Progress Tracking</h3>
+      <p>Monitor patient outcomes with automated progress tracking and outcome measurement tools.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📄</div>
+      <h3>Professional Reports</h3>
+      <p>Generate comprehensive PDF patient reports with one click for referrals and documentation.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>HIPAA Compliant</h3>
+      <p>Your patient data is encrypted and stored securely with enterprise-grade security measures.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">💡</div>
+      <h3>Evidence-Based</h3>
+      <p>All AI suggestions are backed by current research and clinical practice guidelines.</p>
+    </div>
+  </div>
+</section>
+
+<!-- What's Included Section -->
+<section class="trial-includes">
+  <h2>Your Free Trial Includes</h2>
+
+  <div class="includes-grid">
+    <div class="include-item">
+      <div class="icon">👥</div>
+      <div class="label">10 Patients</div>
+      <div class="description">Add and manage up to 10 patients</div>
+    </div>
+
+    <div class="include-item">
+      <div class="icon">✍️</div>
+      <div class="label">25 AI Assists</div>
+      <div class="description">AI-powered documentation suggestions</div>
+    </div>
+
+    <div class="include-item">
+      <div class="icon">⚡</div>
+      <div class="label">All Features</div>
+      <div class="description">Full access to every feature</div>
+    </div>
+
+    <div class="include-item">
+      <div class="icon">📧</div>
+      <div class="label">Email Support</div>
+      <div class="description">Priority support from our team</div>
+    </div>
+  </div>
+</section>
+
+<!-- Social Proof Section -->
+<section class="social-proof">
+  <h2>Join Physiotherapists Already Using PRISM</h2>
+
+  <div class="testimonial">
+    <p class="quote">"PhysiologicPRISM has transformed how I document patient assessments. The AI suggestions help me think through complex cases and ensure I don't miss important clinical considerations."</p>
+    <p class="author">— Dr. Sandeep Rao, Founder & Clinical Developer</p>
+  </div>
+
+  <div class="testimonial">
+    <p class="quote">"The structured assessment workflow combined with AI support makes clinical reasoning more systematic and evidence-based. It's like having a clinical supervisor available 24/7."</p>
+    <p class="author">— Physiotherapy Professional User</p>
+  </div>
+</section>
+
+<!-- Final CTA Section -->
+<section class="final-cta">
+  <h2>Ready to Transform Your Practice?</h2>
+  <p>Start your free trial today. No credit card required.</p>
+  <a href="{{ url_for('register_choice') }}" class="cta-button">Start Free Trial Now →</a>
+
+  <div class="guarantee">
+    <span>✓</span>
+    <span>14 days free</span>
+    <span>•</span>
+    <span>No credit card needed</span>
+    <span>•</span>
+    <span>Cancel anytime</span>
+  </div>
+</section>
+
+<!-- Copyright Notice -->
+<div style="
+  text-align: center;
+  padding: 30px 20px;
+  background: #f8f9fa;
+  color: #666;
+  font-size: 0.9em;
+">
+  <p style="margin: 0 0 10px 0;">
+    <a href="{{ url_for('privacy_policy') }}" style="color: #7cb342; margin: 0 10px;">Privacy Policy</a> |
+    <a href="{{ url_for('terms_of_service') }}" style="color: #7cb342; margin: 0 10px;">Terms of Service</a> |
+    <a href="{{ url_for('refund_policy') }}" style="color: #7cb342; margin: 0 10px;">Refund Policy</a>
+  </p>
+  <p style="margin: 0;">&copy; 2025 PhysiologicPRISM | PRISM Framework</p>
+</div>
+{% endblock %}
