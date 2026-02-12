@@ -65,3 +65,6 @@ sentry-sdk[flask]==2.19.2
 # ===== FIREBASE SERVICES =====
 # Firebase Admin - Authentication (temporary, will be replaced with Azure AD B2C)
 firebase-admin==6.6.0
+# ===== MESSAGING SERVICES =====
+# Twilio - SMS and WhatsApp Business API
+twilio==9.3.7

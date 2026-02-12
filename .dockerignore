@@ -169,3 +169,18 @@ license.txt
 # Backup Files
 *.backup_*
 main.py.backup*
+
+# Messaging Documentation (2026-02-12 - keep in git, exclude from Docker)
+MESSAGING_SUMMARY.md
+MESSAGING_IMPLEMENTATION_GUIDE.md
+MESSAGING_HIPAA_GDPR_COMPLIANCE.md
+
+# Other Implementation Documentation (keep in git, exclude from Docker)
+SCHEMA_AUDIT.md
+COMPLETE_AI_FIX_SUMMARY.md
+FREE_TRIAL_IMPLEMENTATION.md
+RAZORPAY_INTEGRATION_GUIDE.md
+PRODUCTION_READINESS_PLAN.md
+GOOGLE_CLOUD_DEPLOYMENT.md
+AZURE_MIGRATION_SUMMARY.md
+DATA_EXPORT_IMPLEMENTATION.md

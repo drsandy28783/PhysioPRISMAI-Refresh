@@ -172,3 +172,14 @@ coverage.xml
 !test_sentry.py
 !check_user_cosmos.py
 !list_all_users_cosmos.py
+
+# Messaging Implementation Documentation (2026-02-12 - keep in repo for reference)
+# These are kept in git but excluded from Docker via .dockerignore
+# MESSAGING_SUMMARY.md
+# MESSAGING_IMPLEMENTATION_GUIDE.md
+# MESSAGING_HIPAA_GDPR_COMPLIANCE.md
+
+# Schema & Audit Documentation (local reference)
+SCHEMA_AUDIT.md
+COMPLETE_AI_FIX_SUMMARY.md
+FREE_TRIAL_IMPLEMENTATION.md
