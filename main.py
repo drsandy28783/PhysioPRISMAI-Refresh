@@ -912,7 +912,7 @@ Talisman(
     content_security_policy_report_only=False,  # Enforce CSP (not just report)
     permissions_policy={  # Feature Policy (formerly Permissions-Policy)
         'geolocation': '()',  # Block geolocation
-        'microphone': '()',  # Block microphone
+        'microphone': 'self',  # Allow microphone for voice transcription
         'camera': '()',  # Block camera
     },
 )

@@ -162,12 +162,17 @@
             </ul>
         </div>
 
-        <button class="retry-button" onclick="location.reload()">
+        <button class="retry-button" id="retry-button">
             Retry Connection
         </button>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
+        // Retry button handler
+        document.getElementById('retry-button').addEventListener('click', function() {
+            location.reload();
+        });
+
         // Automatically retry when connection is restored
         window.addEventListener('online', function() {
             console.log('Connection restored!');
