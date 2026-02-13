@@ -4,7 +4,7 @@
  * Enhanced PWA functionality with offline support
  */
 
-const CACHE_VERSION = 'v1.0.8';
+const CACHE_VERSION = 'v1.0.9';
 const CACHE_NAME = `physioprism-${CACHE_VERSION}`;
 const OFFLINE_CACHE = `physioprism-offline-${CACHE_VERSION}`;
 
@@ -17,9 +17,8 @@ const STATIC_RESOURCES = [
   '/static/assessmentProgress.js',
   '/static/draftAutoSave.js',
   '/static/form-change-tracker.js',
-  '/static/version-check.js',
-  '/static/pwa-install.js'
-  // Note: manifest.json intentionally not cached to ensure latest version is always fetched
+  '/static/version-check.js'
+  // Note: manifest.json and pwa-install.js intentionally not cached
 ];
 
 // Offline fallback page
