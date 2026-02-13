@@ -2,7 +2,7 @@
   "name": "PhysiologicPRISM",
   "short_name": "PhysioPRISM",
   "description": "AI-Powered Physiotherapy Practice Management System - Clinical reasoning, patient management, and comprehensive assessment tools",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
