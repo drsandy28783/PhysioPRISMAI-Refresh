@@ -226,6 +226,76 @@ def build_patient_context(raw: dict) -> dict:
     return ctx
 
 
+def fetch_patient_data_from_db(patient_id: str, user_id: str) -> dict:
+    """
+    HIPAA-COMPLIANT: Fetch ALL patient data from database (server-side only).
+    This prevents PHI from being stored in browser localStorage.
+
+    Args:
+        patient_id: Patient document ID
+        user_id: Current user ID for access control
+
+    Returns:
+        dict with patient data including base info, subjective, perspectives, assessments
+    """
+    try:
+        # Get base patient document
+        patient_ref = db.collection('patients').document(patient_id)
+        patient_doc = patient_ref.get()
+
+        if not patient_doc.exists:
+            logger.warning(f"Patient {patient_id} not found")
+            return {}
+
+        patient = patient_doc.to_dict()
+
+        # Access control - verify user has permission
+        if patient.get('physio_id') != user_id:
+            logger.warning(f"User {user_id} attempted unauthorized access to patient {patient_id}")
+            return {}
+
+        # Fetch subjective examination data
+        subjective_data = {}
+        subjective_query = db.collection('subjective_examinations') \
+            .where('patient_id', '==', patient_id) \
+            .order_by('timestamp', direction='DESCENDING') \
+            .limit(1) \
+            .get()
+        if subjective_query:
+            subjective_data = subjective_query[0].to_dict() if len(subjective_query) > 0 else {}
+
+        # Fetch perspectives data
+        perspectives_data = {}
+        perspectives_query = db.collection('patient_perspectives') \
+            .where('patient_id', '==', patient_id) \
+            .order_by('timestamp', direction='DESCENDING') \
+            .limit(1) \
+            .get()
+        if perspectives_query:
+            perspectives_data = perspectives_query[0].to_dict() if len(perspectives_query) > 0 else {}
+
+        # Fetch initial plan / assessments data
+        assessments_data = {}
+        assessments_query = db.collection('initial_plans') \
+            .where('patient_id', '==', patient_id) \
+            .order_by('timestamp', direction='DESCENDING') \
+            .limit(1) \
+            .get()
+        if assessments_query:
+            assessments_data = assessments_query[0].to_dict() if len(assessments_query) > 0 else {}
+
+        return {
+            'patient': patient,
+            'subjective': subjective_data,
+            'perspectives': perspectives_data,
+            'assessments': assessments_data
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching patient data from DB: {e}", exc_info=True)
+        return {}
+
+
 def get_ai_suggestion_safe(prompt, metadata=None, patient_context="", user_id=None):
     """
     Safe wrapper for get_ai_suggestion that handles imports and errors.
@@ -437,22 +507,35 @@ def api_ai_subjective_diagnosis():
 @mobile_api_ai.route('/perspectives/<field>', methods=['POST'])
 @require_auth
 def api_ai_perspectives_field(field):
-    """AI suggestions for patient perspectives fields (CSM components)"""
+    """
+    HIPAA-COMPLIANT: AI suggestions for patient perspectives fields (CSM components).
+    Fetches all patient data from database server-side (no PHI from frontend).
+    """
     try:
         raw = request.get_json() or {}
+        patient_id = raw.get('patient_id', '')
 
-        # Build unified PHI-safe clinical context (supports both flat and nested payloads)
-        ctx = build_patient_context(raw)
+        if not patient_id:
+            return jsonify({'error': 'patient_id is required'}), 400
 
-        age_sex = ctx["age_sex"]
-        present_hist = ctx["present_history"]
-        past_hist = ctx["past_history"]
+        user_id = g.user.get('uid', g.user.get('email'))
 
-        # Get subjective findings from previous context
-        previous = raw.get('previous', {})
-        subjective = sanitize_subjective_data(previous.get('subjective', {}))
+        # HIPAA-COMPLIANT: Fetch ALL patient data from database (server-side)
+        patient_data = fetch_patient_data_from_db(patient_id, user_id)
 
-        # Inputs = current perspectives field content
+        if not patient_data:
+            return jsonify({'error': 'Patient not found or access denied'}), 404
+
+        # Extract and sanitize patient context
+        patient = patient_data.get('patient', {})
+        subjective_data = patient_data.get('subjective', {})
+
+        age_sex = sanitize_age_sex(patient.get('age_sex', ''))
+        present_hist = sanitize_clinical_text(patient.get('chief_complaint', '') or patient.get('present_history', ''))
+        past_hist = sanitize_clinical_text(patient.get('medical_history', '') or patient.get('past_history', ''))
+        subjective = sanitize_subjective_data(subjective_data)
+
+        # Get currently entered perspectives data (from form, not from DB)
         existing_perspectives = sanitize_subjective_data(raw.get("inputs", {}))
 
         # Use centralized FIELD-SPECIFIC prompt
@@ -468,13 +551,14 @@ def api_ai_perspectives_field(field):
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': f'perspectives_{field}',
             'tags': ['perspectives', 'patient-centered', 'csm', field],
-            'user_id': g.user.get('uid', g.user.get('email'))
-        }, patient_context=age_sex)
+            'user_id': user_id,
+            'patient_id': patient_id
+        }, patient_context=age_sex, user_id=user_id)
 
         return jsonify({'suggestion': suggestion}), 200
 
     except Exception as e:
-        logger.error(f"AI perspectives field error: {e}")
+        logger.error(f"AI perspectives field error: {e}", exc_info=True)
         return jsonify({'error': 'AI suggestion failed'}), 500
 
 
@@ -517,22 +601,38 @@ def api_ai_patient_perspectives():
 @mobile_api_ai.route('/initial_plan/<field>', methods=['POST'])
 @require_auth
 def api_ai_initial_plan_field(field):
-    """AI suggestions for initial ASSESSMENT plan fields (IMPROVED - focuses on physical examination tests, not treatment)"""
+    """
+    HIPAA-COMPLIANT: AI suggestions for initial ASSESSMENT plan fields.
+    Focuses on physical examination tests, not treatment.
+    Fetches all patient data from database server-side (no PHI from frontend).
+    """
     try:
-        # Normalize field names (chief_complaint -> present_history, medical_history -> past_history)
         raw = request.get_json() or {}
-        data = normalize_patient_data(raw)
-        previous = data.get('previous', {})
+        patient_id = raw.get('patient_id', '')
         selection = raw.get('selection', '')  # "Mandatory assessment", "Assessment with precaution", or "Absolutely Contraindicated"
 
-        # Extract and sanitize patient context
-        age_sex = sanitize_age_sex(previous.get('age_sex', ''))
-        present_hist = sanitize_clinical_text(previous.get('present_history', ''))
-        past_hist = sanitize_clinical_text(previous.get('past_history', ''))
-        subjective = sanitize_subjective_data(previous.get('subjective', {}))
-        diagnosis = sanitize_clinical_text(previous.get('provisional_diagnosis', ''))
+        if not patient_id:
+            return jsonify({'error': 'patient_id is required'}), 400
 
-        # Use centralized prompt (IMPROVED - now focuses on ASSESSMENT planning, not treatment)
+        user_id = g.user.get('uid', g.user.get('email'))
+
+        # HIPAA-COMPLIANT: Fetch ALL patient data from database (server-side)
+        patient_data = fetch_patient_data_from_db(patient_id, user_id)
+
+        if not patient_data:
+            return jsonify({'error': 'Patient not found or access denied'}), 404
+
+        # Extract and sanitize patient context
+        patient = patient_data.get('patient', {})
+        subjective_data = patient_data.get('subjective', {})
+
+        age_sex = sanitize_age_sex(patient.get('age_sex', ''))
+        present_hist = sanitize_clinical_text(patient.get('chief_complaint', '') or patient.get('present_history', ''))
+        past_hist = sanitize_clinical_text(patient.get('medical_history', '') or patient.get('past_history', ''))
+        subjective = sanitize_subjective_data(subjective_data)
+        diagnosis = sanitize_clinical_text(patient.get('provisional_diagnosis', ''))
+
+        # Use centralized prompt (focuses on ASSESSMENT planning, not treatment)
         prompt = get_initial_plan_field_prompt(
             field=field,
             age_sex=age_sex,
@@ -546,13 +646,14 @@ def api_ai_initial_plan_field(field):
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': f'initial_plan_{field}',
             'tags': ['initial_plan', 'assessment', field],
-            'user_id': g.user.get('uid', g.user.get('email'))
-        }, patient_context=age_sex)
+            'user_id': user_id,
+            'patient_id': patient_id
+        }, patient_context=age_sex, user_id=user_id)
 
         return jsonify({'suggestion': suggestion}), 200
 
     except Exception as e:
-        logger.error(f"AI initial plan error: {e}")
+        logger.error(f"AI initial plan error: {e}", exc_info=True)
         return jsonify({'error': 'AI suggestion failed'}), 500
 
 

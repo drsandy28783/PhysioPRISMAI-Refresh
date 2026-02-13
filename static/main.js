@@ -385,26 +385,7 @@ if (document.getElementById('perspectives-form')) {
   const currentPatientId = window.currentPatientId || '';
   console.log('[Perspectives AI] Current patient ID:', currentPatientId);
 
-  // Load prior data - PATIENT-SPECIFIC keys
-  const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)     || '{}');
-  const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)    || '{}');
-  let   prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`) || '{}');
-
-  console.log('[Perspectives AI] Loaded patient data:', {
-    present_history: prevAdd.present_history?.substring(0, 50) + '...',
-    past_history: prevAdd.past_history?.substring(0, 50) + '...',
-    subjective: Object.keys(prevSubj).length + ' fields',
-    perspectives: Object.keys(prevPersp).length + ' fields'
-  });
-
-  // Build a single "previous" object for the server
-  const allPrev = {
-    age_sex:         prevAdd.age_sex || '',
-    present_history: prevAdd.present_history || '',
-    past_history:    prevAdd.past_history || '',
-    subjective:      prevSubj,
-    perspectives:    prevPersp
-  };
+  // HIPAA-COMPLIANT: NO localStorage for PHI - server fetches all data
 
   // Attach click listeners to each 🧠 button (ONLY on perspectives page)
   if (document.getElementById('perspectives-form')) {
@@ -425,19 +406,30 @@ if (document.getElementById('perspectives-form')) {
         return;
       }
       const value = fieldEl.value.trim();
-      // update local cache - PATIENT-SPECIFIC
-      prevPersp[field] = value;
-      localStorage.setItem(`perspectives_inputs_${currentPatientId}`, JSON.stringify(prevPersp));
+
+      // Collect currently entered perspectives data (not from localStorage)
+      const currentInputs = {};
+      ['knowledge', 'knowledge_entry', 'attribution', 'attribution_entry',
+       'expectation', 'expectation_entry', 'consequences_awareness', 'consequences_awareness_entry',
+       'locus_of_control', 'locus_of_control_entry', 'affective_aspect', 'affective_aspect_entry'].forEach(name => {
+        const el = document.getElementById(name);
+        if (el) currentInputs[name] = el.value.trim();
+      });
 
       // Show modal with field-specific title
       const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
       try {
+        // HIPAA-COMPLIANT: Send only patient_id and current form inputs
+        // Server fetches all historical data from database
         const res = await fetch(`/api/ai_suggestion/perspectives/${field}`, {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, inputs: { [field]: value } })  // ✅ FIXED: Added patient_id
+          body: JSON.stringify({
+            patient_id: currentPatientId,
+            inputs: currentInputs
+          })
         });
         const { suggestion, error } = await res.json();
         if (error) throw new Error(error);
@@ -486,28 +478,11 @@ if (document.getElementById('perspectives-form')) {
 }
   // ——— AI on Initial Plan screen ———
   if (document.getElementById('initial-plan-form')) {
-    // Get patient-specific localStorage keys
+    // Get patient-specific ID from page
     const currentPatientId = window.currentPatientId || '';
-
-    // load up prior stages with patient-specific keys
-    const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
-    const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
-    const prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
-
-    // **Here's the key** for Initial Plan data:
-    let prevAssess = JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`) || '{}');
-
     console.log('[Initial Plan AI] Current patient ID:', currentPatientId);
 
-    // Build the “previous” object we send to every AI call
-    const allPrev = {
-      age_sex:         prevAdd.age_sex        || '',
-      present_history: prevAdd.present_history|| '',
-      past_history:    prevAdd.past_history   || '',
-      subjective:      prevSubj,
-      perspectives:    prevPersp,
-      assessments:     prevAssess
-    };
+    // HIPAA-COMPLIANT: NO localStorage for PHI - server fetches all data
 
     // Per-field test suggestions (ONLY on initial plan page)
     if (document.getElementById('initial-plan-form')) {
@@ -528,19 +503,21 @@ if (document.getElementById('perspectives-form')) {
           return;
         }
         const selection = fieldEl.value.trim();
-        // **Save** the choice into our local cache
-        prevAssess[field] = { choice: selection };
-        localStorage.setItem(`initial_plan_assessments_${currentPatientId}`, JSON.stringify(prevAssess));
 
         // Show modal with field-specific title
         const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
         try {
+          // HIPAA-COMPLIANT: Send only patient_id and current selection
+          // Server fetches all historical data from database
           const res = await fetch(`/api/ai_suggestion/initial_plan/${field}`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, selection })  // ✅ FIXED: Added patient_id
+            body: JSON.stringify({
+              patient_id: currentPatientId,
+              selection: selection
+            })
           });
           const { suggestion, error } = await res.json();
           if (error) throw new Error(error);

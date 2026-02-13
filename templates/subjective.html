@@ -52,6 +52,9 @@
   </div>
 
   <script nonce="{{ csp_nonce() }}">
+    // Make patient_id available globally for AI suggestions
+    window.currentPatientId = '{{ patient_id }}';
+
     // Initialize Draft Auto-Save
     let draftAutoSave;
 

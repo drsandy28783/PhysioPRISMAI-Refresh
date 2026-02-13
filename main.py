@@ -10282,6 +10282,44 @@ def cleanup_old_drafts():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
+@app.route('/api/patient/<patient_id>/basic_data', methods=['GET'])
+@login_required()
+def get_patient_basic_data(patient_id):
+    """
+    Get basic patient data for AI context (age_sex, present_history, past_history)
+    Used by AI suggestion system to populate localStorage when missing
+    """
+    try:
+        user_id = session.get('user_id')
+
+        # Get patient document
+        patient_ref = db.collection('patients').document(patient_id)
+        patient_doc = patient_ref.get()
+
+        if not patient_doc.exists:
+            return jsonify({'ok': False, 'error': 'Patient not found'}), 404
+
+        patient = patient_doc.to_dict()
+
+        # Access control
+        if session.get('is_admin') == 0 and patient.get('physio_id') != user_id:
+            return jsonify({'ok': False, 'error': 'Access denied'}), 403
+
+        # Return basic data needed for AI context
+        return jsonify({
+            'ok': True,
+            'age_sex': patient.get('age_sex', ''),
+            'chief_complaint': patient.get('chief_complaint', ''),
+            'present_history': patient.get('present_history', '') or patient.get('chief_complaint', ''),
+            'medical_history': patient.get('medical_history', ''),
+            'past_history': patient.get('past_history', '') or patient.get('medical_history', '')
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error getting patient basic data: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 # ═══════════════════════════════════════════════════════════════════
 # VOICE TRANSCRIPTION (Azure Speech Services)
 # ═══════════════════════════════════════════════════════════════════
