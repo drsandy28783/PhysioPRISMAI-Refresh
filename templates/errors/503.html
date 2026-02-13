@@ -48,7 +48,7 @@
   </div>
 
   <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 32px;">
-    <button onclick="location.reload()" class="button" style="background-color: #3498db;">
+    <button id="try-again-btn" class="button" style="background-color: #3498db;">
       🔄 Try Again
     </button>
     <a href="{{ url_for('index') }}">
@@ -81,6 +81,11 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
+  // Add event listener
+  document.getElementById('try-again-btn').addEventListener('click', function() {
+    location.reload();
+  });
+
   // Auto-refresh after 30 seconds
   setTimeout(function() {
     const autoRefresh = confirm('Service is still unavailable. Would you like to refresh the page?');

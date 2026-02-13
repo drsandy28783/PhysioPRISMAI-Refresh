@@ -82,8 +82,9 @@
           </td>
           <td style="padding: 16px; text-align: center;">
             <button
-              onclick="processDeletion('{{ request.email }}', '{{ request.name }}')"
-              class="button"
+              class="button process-deletion-btn"
+              data-user-email="{{ request.email }}"
+              data-user-name="{{ request.name }}"
               style="background-color: #e74c3c; padding: 8px 16px; font-size: 14px;">
               🗑️ Execute Deletion
             </button>
@@ -113,6 +114,15 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
+// Add event listeners
+document.querySelectorAll('.process-deletion-btn').forEach(button => {
+  button.addEventListener('click', function() {
+    const email = this.getAttribute('data-user-email');
+    const name = this.getAttribute('data-user-name');
+    processDeletion(email, name);
+  });
+});
+
 async function processDeletion(userEmail, userName) {
   const confirmation = confirm(
     `⚠️ CONFIRM ACCOUNT DELETION ⚠️\n\n` +

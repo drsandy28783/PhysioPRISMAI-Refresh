@@ -9,7 +9,7 @@
     <div style="margin-bottom: 20px;">
         <a href="{{ url_for('super_admin_dashboard') }}" class="button" style="background:#6c757d;">← Back to Dashboard</a>
         <a href="{{ url_for('export_training_data', format='jsonl') }}" class="button" style="background:#28a745;">📥 Export Training Data (JSONL)</a>
-        <button onclick="clearExpiredCache()" class="button" style="background:#dc3545;">🗑️ Clear Expired Cache</button>
+        <button id="clear-cache-btn" class="button" style="background:#dc3545;">🗑️ Clear Expired Cache</button>
     </div>
 
     <!-- 7 Days Statistics -->
@@ -194,6 +194,9 @@
 </style>
 
 <script nonce="{{ csp_nonce() }}">
+// Add event listener
+document.getElementById('clear-cache-btn').addEventListener('click', clearExpiredCache);
+
 function clearExpiredCache() {
     if (!confirm('Clear expired cache entries? This cannot be undone.')) {
         return;

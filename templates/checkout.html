@@ -142,7 +142,7 @@
         <div class="loading">Loading...</div>
     </div>
 
-    <button id="payBtn" class="pay-btn" onclick="initiatePayment()" disabled>
+    <button id="payBtn" class="pay-btn" disabled>
         Proceed to Payment
     </button>
 
@@ -476,6 +476,9 @@ window.addEventListener('load', function() {
         showError('Payment gateway library failed to load. Please refresh the page.');
     }
 });
+
+// Add event listener to pay button
+document.getElementById('payBtn').addEventListener('click', initiatePayment);
 
 // Load details on page load
 loadDetails();

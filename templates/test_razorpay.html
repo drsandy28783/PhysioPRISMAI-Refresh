@@ -53,25 +53,25 @@
 
     <div class="test-section">
         <h2>1. Environment Variables Check</h2>
-        <button onclick="checkEnvVars()">Check Environment Variables</button>
+        <button id="check-env-btn">Check Environment Variables</button>
         <div id="envResult"></div>
     </div>
 
     <div class="test-section">
         <h2>2. API Connection Test</h2>
-        <button onclick="testApiConnection()">Test Razorpay API Connection</button>
+        <button id="test-api-btn">Test Razorpay API Connection</button>
         <div id="apiResult"></div>
     </div>
 
     <div class="test-section">
         <h2>3. Subscription Plans Test</h2>
-        <button onclick="testPlans()">Load Subscription Plans</button>
+        <button id="test-plans-btn">Load Subscription Plans</button>
         <div id="plansResult"></div>
     </div>
 
     <div class="test-section">
         <h2>4. Checkout Test (Requires Login)</h2>
-        <button onclick="testCheckout()">Test Checkout Creation</button>
+        <button id="test-checkout-btn">Test Checkout Creation</button>
         <div id="checkoutResult"></div>
     </div>
 
@@ -101,6 +101,12 @@ RAZORPAY_PLAN_INSTITUTE_15=plan_xxxxx</pre>
     </div>
 
     <script nonce="{{ csp_nonce() }}">
+        // Add event listeners
+        document.getElementById('check-env-btn').addEventListener('click', checkEnvVars);
+        document.getElementById('test-api-btn').addEventListener('click', testApiConnection);
+        document.getElementById('test-plans-btn').addEventListener('click', testPlans);
+        document.getElementById('test-checkout-btn').addEventListener('click', testCheckout);
+
         async function checkEnvVars() {
             const result = document.getElementById('envResult');
             result.innerHTML = '<p>Checking...</p>';

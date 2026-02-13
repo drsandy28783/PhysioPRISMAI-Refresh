@@ -333,13 +333,13 @@
         <!-- Actions Card -->
         <div class="card actions-card">
             <h2>Manage Subscription</h2>
-            <button class="action-btn btn-primary" onclick="window.location.href='/pricing'">
+            <button class="action-btn btn-primary" id="view-plans-btn">
                 View All Plans
             </button>
-            <button class="action-btn btn-success" onclick="window.location.href='/checkout?type=tokens&package=popular'">
+            <button class="action-btn btn-success" id="buy-tokens-btn">
                 Buy AI Tokens
             </button>
-            <button class="action-btn btn-danger" onclick="cancelSubscription()" id="cancelBtn">
+            <button class="action-btn btn-danger" id="cancelBtn">
                 Cancel Subscription
             </button>
         </div>
@@ -347,6 +347,17 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
+// Add event listeners
+document.getElementById('view-plans-btn').addEventListener('click', function() {
+    window.location.href = '/pricing';
+});
+
+document.getElementById('buy-tokens-btn').addEventListener('click', function() {
+    window.location.href = '/checkout?type=tokens&package=popular';
+});
+
+document.getElementById('cancelBtn').addEventListener('click', cancelSubscription);
+
 let subscriptionData = null;
 
 async function loadDashboard() {

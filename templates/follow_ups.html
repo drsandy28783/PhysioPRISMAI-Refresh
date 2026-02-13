@@ -111,7 +111,7 @@
           <label>Next Follow-up Date:</label>
           <input type="date" id="next_followup_date" class="input-field" value="{{ patient.next_followup_date or '' }}">
         </div>
-        <button onclick="setNextFollowup()" class="button" style="background: #3498db;">Set Reminder</button>
+        <button id="set-followup-btn" class="button" style="background: #3498db;">Set Reminder</button>
       </div>
 
       {% if patient.next_followup_date %}
@@ -121,13 +121,21 @@
           <span style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">✓ Patient Notified</span>
         {% else %}
           <span style="background: #95a5a6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">Not Notified</span>
-          <button onclick="markNotified()" class="button" style="background: #27ae60; font-size: 12px; padding: 6px 12px; margin-left: 8px;">Mark as Notified</button>
+          <button id="mark-notified-btn" class="button" style="background: #27ae60; font-size: 12px; padding: 6px 12px; margin-left: 8px;">Mark as Notified</button>
         {% endif %}
       </div>
       {% endif %}
     </div>
 
     <script nonce="{{ csp_nonce() }}">
+      // Add event listeners
+      document.getElementById('set-followup-btn').addEventListener('click', setNextFollowup);
+
+      const markNotifiedBtn = document.getElementById('mark-notified-btn');
+      if (markNotifiedBtn) {
+        markNotifiedBtn.addEventListener('click', markNotified);
+      }
+
       async function setNextFollowup() {
         const date = document.getElementById('next_followup_date').value;
 

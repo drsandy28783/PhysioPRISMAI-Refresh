@@ -128,7 +128,7 @@
   </form>
 
   <div class="backup-section">
-    <span class="backup-toggle" onclick="toggleBackupForm()">
+    <span class="backup-toggle" id="backup-toggle">
       Lost your phone? Use a backup code
     </span>
 
@@ -141,10 +141,14 @@
     </form>
   </div>
 
-  <a href="{{ url_for('login') }}" class="cancel-link" onclick="clearSession()">Cancel and return to login</a>
+  <a href="{{ url_for('login') }}" class="cancel-link" id="cancel-link">Cancel and return to login</a>
 </div>
 
 <script nonce="{{ csp_nonce() }}">
+// Add event listeners
+document.getElementById('backup-toggle').addEventListener('click', toggleBackupForm);
+document.getElementById('cancel-link').addEventListener('click', clearSession);
+
 function toggleBackupForm() {
   const backupForm = document.getElementById('backupForm');
   backupForm.classList.toggle('active');

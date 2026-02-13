@@ -62,11 +62,10 @@
 
               {% if user.active == 1 %}
                 <form action="{{ url_for('super_admin_deactivate_user', user_email=user.email) }}"
-                      method="post" style="display:inline; margin-left: 4px;">
+                      method="post" class="deactivate-form" data-user-name="{{ user.name }}" style="display:inline; margin-left: 4px;">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="button"
-                          style="padding: 4px 8px; font-size: 12px; background-color: #e74c3c;"
-                          onclick="return confirm('Deactivate user {{ user.name }}?');">
+                          style="padding: 4px 8px; font-size: 12px; background-color: #e74c3c;">
                     Deactivate
                   </button>
                 </form>
@@ -97,6 +96,16 @@
   </div>
 
   <script nonce="{{ csp_nonce() }}">
+    // Add event listeners for deactivate forms
+    document.querySelectorAll('.deactivate-form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        const userName = this.getAttribute('data-user-name');
+        if (!confirm(`Deactivate user ${userName}?`)) {
+          e.preventDefault();
+        }
+      });
+    });
+
     // Simple search functionality
     document.getElementById('searchInput').addEventListener('keyup', function() {
       const searchTerm = this.value.toLowerCase();

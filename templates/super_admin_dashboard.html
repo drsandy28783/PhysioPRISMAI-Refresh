@@ -82,8 +82,8 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="button" style="background-color: #27ae60;">✓ Approve</button>
               </form>
-              <button type="button" class="button" style="background-color: #e74c3c;"
-                      onclick="showRejectDialog('{{ user.email }}', '{{ user.name }}')">✗ Reject</button>
+              <button type="button" class="button reject-user-btn" style="background-color: #e74c3c;"
+                      data-user-email="{{ user.email }}" data-user-name="{{ user.name }}">✗ Reject</button>
             </td>
           </tr>
           {% endfor %}
@@ -178,13 +178,24 @@
 
         <div style="display: flex; gap: 10px; margin-top: 20px;">
           <button type="submit" class="button" style="background-color: #e74c3c; flex: 1;">Reject User</button>
-          <button type="button" class="button" style="background-color: #95a5a6; flex: 1;" onclick="hideRejectDialog()">Cancel</button>
+          <button type="button" class="button" id="cancel-reject-btn" style="background-color: #95a5a6; flex: 1;">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
   <script nonce="{{ csp_nonce() }}">
+    // Add event listeners
+    document.querySelectorAll('.reject-user-btn').forEach(button => {
+      button.addEventListener('click', function() {
+        const email = this.getAttribute('data-user-email');
+        const name = this.getAttribute('data-user-name');
+        showRejectDialog(email, name);
+      });
+    });
+
+    document.getElementById('cancel-reject-btn').addEventListener('click', hideRejectDialog);
+
     function showRejectDialog(email, name) {
       const dialog = document.getElementById('rejectDialog');
       const form = document.getElementById('rejectForm');

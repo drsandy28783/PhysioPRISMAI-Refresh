@@ -131,10 +131,16 @@
     like a password manager or printed copy in a safe place.
   </div>
 
-  <button onclick="window.print()" class="btn-secondary no-print">Print Backup Codes</button>
+  <button id="print-btn" class="btn-secondary no-print">Print Backup Codes</button>
 
   <a href="{{ url_for('dashboard') }}" class="btn-primary no-print" style="margin-top: 16px;">
     Continue to Dashboard
   </a>
 </div>
+
+<script nonce="{{ csp_nonce() }}">
+  document.getElementById('print-btn').addEventListener('click', function() {
+    window.print();
+  });
+</script>
 {% endblock %}

@@ -414,7 +414,7 @@
             {% if current_subscription and current_subscription.plan_type == 'solo' %}
                 <div class="current-plan-badge">Current Plan</div>
             {% else %}
-                <button class="subscribe-btn" onclick="subscribeToPlan('solo')">
+                <button class="subscribe-btn subscribe-plan-btn" data-plan="solo">
                     Start Free Trial
                 </button>
             {% endif %}
@@ -451,7 +451,7 @@
             {% if current_subscription and current_subscription.plan_type == 'team_5' %}
                 <div class="current-plan-badge">Current Plan</div>
             {% else %}
-                <button class="subscribe-btn" onclick="subscribeToPlan('team_5')">
+                <button class="subscribe-btn subscribe-plan-btn" data-plan="team_5">
                     Start Free Trial
                 </button>
             {% endif %}
@@ -478,7 +478,7 @@
             {% if current_subscription and current_subscription.plan_type == 'team_10' %}
                 <div class="current-plan-badge">Current Plan</div>
             {% else %}
-                <button class="subscribe-btn" onclick="subscribeToPlan('team_10')">
+                <button class="subscribe-btn subscribe-plan-btn" data-plan="team_10">
                     Start Free Trial
                 </button>
             {% endif %}
@@ -513,7 +513,7 @@
             {% if current_subscription and current_subscription.plan_type == 'institute_15' %}
                 <div class="current-plan-badge">Current Plan</div>
             {% else %}
-                <button class="subscribe-btn" onclick="subscribeToPlan('institute_15')">
+                <button class="subscribe-btn subscribe-plan-btn" data-plan="institute_15">
                     Contact Sales
                 </button>
             {% endif %}
@@ -540,7 +540,7 @@
             {% if current_subscription and current_subscription.plan_type == 'institute_20' %}
                 <div class="current-plan-badge">Current Plan</div>
             {% else %}
-                <button class="subscribe-btn" onclick="subscribeToPlan('institute_20')">
+                <button class="subscribe-btn subscribe-plan-btn" data-plan="institute_20">
                     Contact Sales
                 </button>
             {% endif %}
@@ -562,7 +562,7 @@
                 <li class="feature-item">24/7 support</li>
                 <li class="feature-item">Custom contract terms</li>
             </ul>
-            <button class="subscribe-btn" onclick="window.location.href='mailto:support@physioprism.com'">
+            <button class="subscribe-btn" id="contact-sales-btn">
                 Contact Sales
             </button>
         </div>
@@ -581,7 +581,7 @@
                 <div style="color: #7f8c8d;">Assists</div>
                 <div class="ai-call-price">₹325</div>
                 <div class="ai-call-per">₹13.00/assist</div>
-                <button class="buy-ai-call-btn" onclick="buyAICalls('starter')">Buy Now</button>
+                <button class="buy-ai-call-btn" data-package="starter">Buy Now</button>
             </div>
 
             <div class="ai-call-card">
@@ -590,7 +590,7 @@
                 <div style="color: #7f8c8d;">Assists</div>
                 <div class="ai-call-price">₹599</div>
                 <div class="ai-call-per">₹11.98/assist</div>
-                <button class="buy-ai-call-btn" onclick="buyAICalls('regular')">Buy Now</button>
+                <button class="buy-ai-call-btn" data-package="regular">Buy Now</button>
             </div>
 
             <div class="ai-call-card popular">
@@ -600,7 +600,7 @@
                 <div style="color: #7f8c8d;">Assists</div>
                 <div class="ai-call-price">₹1,099</div>
                 <div class="ai-call-per">₹10.99/assist</div>
-                <button class="buy-ai-call-btn" onclick="buyAICalls('popular')">Buy Now</button>
+                <button class="buy-ai-call-btn" data-package="popular">Buy Now</button>
             </div>
 
             <div class="ai-call-card">
@@ -609,7 +609,7 @@
                 <div style="color: #7f8c8d;">Assists</div>
                 <div class="ai-call-price">₹2,499</div>
                 <div class="ai-call-per">₹9.99/assist</div>
-                <button class="buy-ai-call-btn" onclick="buyAICalls('professional')">Buy Now</button>
+                <button class="buy-ai-call-btn" data-package="professional">Buy Now</button>
             </div>
 
             <div class="ai-call-card">
@@ -618,7 +618,7 @@
                 <div style="color: #7f8c8d;">Assists</div>
                 <div class="ai-call-price">₹4,499</div>
                 <div class="ai-call-per">₹8.99/assist</div>
-                <button class="buy-ai-call-btn" onclick="buyAICalls('enterprise')">Buy Now</button>
+                <button class="buy-ai-call-btn" data-package="enterprise">Buy Now</button>
             </div>
         </div>
     </div>
@@ -656,6 +656,33 @@
 
 <script src="https://checkout.razorpay.com/v1/checkout.js" nonce="{{ csp_nonce() }}"></script>
 <script nonce="{{ csp_nonce() }}">
+// Add event listeners for all subscribe buttons
+document.addEventListener('DOMContentLoaded', function() {
+  // Subscribe to plan buttons
+  document.querySelectorAll('.subscribe-plan-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const planType = this.getAttribute('data-plan');
+      subscribeToPlan(planType);
+    });
+  });
+
+  // Buy AI calls buttons
+  document.querySelectorAll('.buy-ai-call-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const packageName = this.getAttribute('data-package');
+      buyAICalls(packageName);
+    });
+  });
+
+  // Contact sales button
+  const contactSalesBtn = document.getElementById('contact-sales-btn');
+  if (contactSalesBtn) {
+    contactSalesBtn.addEventListener('click', function() {
+      window.location.href = 'mailto:support@physioprism.com';
+    });
+  }
+});
+
 function subscribeToPlan(planType) {
     // Redirect to checkout page
     window.location.href = `/checkout?plan=${planType}&type=subscription`;

@@ -458,7 +458,7 @@
             html += `<a href="/view_follow_ups/${followup.patient_id}" class="button" style="font-size: 12px; padding: 6px 12px;">View</a>`;
 
             if (!followup.followup_notified) {
-              html += `<button onclick="markAsNotified('${followup.patient_id}')" class="button" style="background: #27ae60; font-size: 12px; padding: 6px 12px;">Mark Notified</button>`;
+              html += `<button class="button mark-notified-btn" data-patient-id="${followup.patient_id}" style="background: #27ae60; font-size: 12px; padding: 6px 12px;">Mark Notified</button>`;
             }
 
             html += '</td>';
@@ -480,6 +480,14 @@
         document.getElementById('upcoming-followups-loading').innerHTML = '<p style="color: #e74c3c;">Error loading follow-ups</p>';
       }
     })();
+
+    // Event delegation for dynamically created mark-notified buttons
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('mark-notified-btn')) {
+        const patientId = e.target.getAttribute('data-patient-id');
+        markAsNotified(patientId);
+      }
+    });
 
     async function markAsNotified(patientId) {
       try {

@@ -175,7 +175,7 @@
               <td>
                 <div class="post-actions">
                   <a href="{{ url_for('blog_edit', post_id=post.id) }}" class="btn btn-secondary">Edit</a>
-                  <button class="btn btn-danger" onclick="deletePost('{{ post.id }}', '{{ post.title }}')">Delete</button>
+                  <button class="btn btn-danger delete-post-btn" data-post-id="{{ post.id }}" data-post-title="{{ post.title }}">Delete</button>
                 </div>
               </td>
             </tr>
@@ -193,6 +193,17 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
+// Add event listeners to delete buttons
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.delete-post-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const postId = this.getAttribute('data-post-id');
+      const title = this.getAttribute('data-post-title');
+      deletePost(postId, title);
+    });
+  });
+});
+
 function deletePost(postId, title) {
   if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
     return;

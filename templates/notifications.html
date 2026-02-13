@@ -216,7 +216,7 @@
     </h2>
 
     {% if notifications and (notifications | selectattr('read', 'equalto', False) | list | length > 0) %}
-      <button class="mark-all-read-btn" onclick="markAllAsRead()">
+      <button class="mark-all-read-btn" id="mark-all-read-btn">
         ✓ Mark All as Read
       </button>
     {% endif %}
@@ -266,13 +266,13 @@
 
           <div class="notification-actions">
             {% if not notification.read %}
-              <button class="notification-action-btn"
-                      onclick="markAsRead('{{ notification.id }}')">
+              <button class="notification-action-btn mark-read-btn"
+                      data-notification-id="{{ notification.id }}">
                 Mark as Read
               </button>
             {% endif %}
-            <button class="notification-action-btn delete"
-                    onclick="deleteNotification('{{ notification.id }}')">
+            <button class="notification-action-btn delete delete-notification-btn"
+                    data-notification-id="{{ notification.id }}">
               Delete
             </button>
           </div>
@@ -293,6 +293,31 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
+// Add event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Mark all as read button
+  const markAllBtn = document.getElementById('mark-all-read-btn');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', markAllAsRead);
+  }
+
+  // Mark as read buttons (use event delegation for dynamic content)
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('mark-read-btn')) {
+      const notificationId = e.target.getAttribute('data-notification-id');
+      markAsRead(notificationId);
+    }
+  });
+
+  // Delete notification buttons (use event delegation for dynamic content)
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('delete-notification-btn')) {
+      const notificationId = e.target.getAttribute('data-notification-id');
+      deleteNotification(notificationId);
+    }
+  });
+});
+
 async function markAsRead(notificationId) {
   try {
     const response = await fetch(`/api/notifications/${notificationId}/read`, {

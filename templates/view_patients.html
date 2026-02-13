@@ -275,19 +275,19 @@
 
     <!-- Quick Filters -->
     <div class="quick-filters">
-      <button class="quick-filter-btn" onclick="applyQuickFilter('new_this_week')" title="Patients added in the last 7 days">
+      <button class="quick-filter-btn" data-filter="new_this_week" title="Patients added in the last 7 days">
         🆕 New This Week
       </button>
-      <button class="quick-filter-btn" onclick="applyQuickFilter('new_this_month')" title="Patients added this month">
+      <button class="quick-filter-btn" data-filter="new_this_month" title="Patients added this month">
         📅 New This Month
       </button>
-      <button class="quick-filter-btn" onclick="applyQuickFilter('active_treatment')" title="Patients with active treatment status">
+      <button class="quick-filter-btn" data-filter="active_treatment" title="Patients with active treatment status">
         ⚡ Active Treatment
       </button>
-      <button class="quick-filter-btn" onclick="applyQuickFilter('assessment_incomplete')" title="Patients with incomplete assessments">
+      <button class="quick-filter-btn" data-filter="assessment_incomplete" title="Patients with incomplete assessments">
         ⏳ Assessment Incomplete
       </button>
-      <button class="quick-filter-btn" onclick="applyQuickFilter('no_follow_up')" title="Patients without any follow-up sessions">
+      <button class="quick-filter-btn" data-filter="no_follow_up" title="Patients without any follow-up sessions">
         🔴 No Follow-Ups
       </button>
     </div>
@@ -302,7 +302,7 @@
         {% for search in saved_searches %}
         <div class="saved-search-item">
           <a href="{{ search.url }}">{{ search.name }}</a>
-          <span class="saved-search-delete" onclick="deleteSavedSearch('{{ search.id }}')" title="Delete this saved search">×</span>
+          <span class="saved-search-delete delete-search-btn" data-search-id="{{ search.id }}" title="Delete this saved search">×</span>
         </div>
         {% endfor %}
       </div>
@@ -319,7 +319,7 @@
         {% endif %}
       </div>
       {% if has_active_filters %}
-      <button class="save-search-btn" onclick="saveCurrentSearch()" title="Save this search for quick access later">
+      <button class="save-search-btn" id="save-search-btn" title="Save this search for quick access later">
         💾 Save This Search
       </button>
       {% endif %}
@@ -507,6 +507,31 @@
   </div>
 
   <script nonce="{{ csp_nonce() }}">
+    // Add event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Quick filter buttons
+      document.querySelectorAll('.quick-filter-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const filterType = this.getAttribute('data-filter');
+          applyQuickFilter(filterType);
+        });
+      });
+
+      // Delete saved search buttons
+      document.querySelectorAll('.delete-search-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const searchId = this.getAttribute('data-search-id');
+          deleteSavedSearch(searchId);
+        });
+      });
+
+      // Save search button
+      const saveSearchBtn = document.getElementById('save-search-btn');
+      if (saveSearchBtn) {
+        saveSearchBtn.addEventListener('click', saveCurrentSearch);
+      }
+    });
+
     // Quick Filters
     function applyQuickFilter(filterType) {
       const today = new Date();
