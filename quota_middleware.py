@@ -223,8 +223,14 @@ def require_voice_quota(f):
             return result
 
         except Exception as e:
+            import traceback
             logger.error(f"Error in voice quota middleware: {e}")
-            return jsonify({'error': 'Quota check failed'}), 500
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return jsonify({
+                'error': 'Quota check failed',
+                'message': str(e),
+                'details': 'Voice transcription quota check failed. Please contact support if this persists.'
+            }), 500
 
     return decorated_function
 
