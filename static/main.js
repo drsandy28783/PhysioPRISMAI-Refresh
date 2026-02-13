@@ -18,7 +18,8 @@ onAuthStateChanged(auth, (user) => {
   if (!user) {
     console.warn('Firebase Auth: User not signed in');
   } else {
-    console.log('Firebase Auth: User authenticated:', user.email);
+    // HIPAA-COMPLIANT: Do not log email (PHI identifier)
+    console.log('Firebase Auth: User authenticated');
   }
 });
 
@@ -91,6 +92,62 @@ window.fetch = async function(url, options) {
 // ═══════════════════════════════════════════════════════════════════════
 function getPatientId() {
   return window.currentPatientId || window.patientId || '';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// HIPAA-COMPLIANT: Fetch patient context from server (replaces localStorage)
+// ═══════════════════════════════════════════════════════════════════════
+let patientContextCache = null;
+let patientContextCacheId = null;
+
+async function getPatientContext(patientId) {
+  // Use cached data if available for the same patient
+  if (patientContextCache && patientContextCacheId === patientId) {
+    return patientContextCache;
+  }
+
+  try {
+    const response = await fetch(`/api/patient/${patientId}/context`);
+    if (!response.ok) {
+      console.error('Failed to fetch patient context:', response.statusText);
+      return {
+        ok: false,
+        age_sex: '',
+        present_history: '',
+        past_history: '',
+        subjective: {},
+        perspectives: {},
+        assessments: {},
+        smart_goals: {}
+      };
+    }
+
+    const data = await response.json();
+
+    // Cache the result (in-memory only, cleared on page reload)
+    patientContextCache = data;
+    patientContextCacheId = patientId;
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching patient context:', error);
+    return {
+      ok: false,
+      age_sex: '',
+      present_history: '',
+      past_history: '',
+      subjective: {},
+      perspectives: {},
+      assessments: {},
+      smart_goals: {}
+    };
+  }
+}
+
+// Helper to invalidate cache when data is updated
+function invalidatePatientContextCache() {
+  patientContextCache = null;
+  patientContextCacheId = null;
 }
 
 // ================================================================
@@ -383,7 +440,6 @@ document.addEventListener('DOMContentLoaded', () => {
 if (document.getElementById('perspectives-form')) {
   // Get current patient ID from the page
   const currentPatientId = window.currentPatientId || '';
-  console.log('[Perspectives AI] Current patient ID:', currentPatientId);
 
   // HIPAA-COMPLIANT: NO localStorage for PHI - server fetches all data
 
@@ -480,7 +536,6 @@ if (document.getElementById('perspectives-form')) {
   if (document.getElementById('initial-plan-form')) {
     // Get patient-specific ID from page
     const currentPatientId = window.currentPatientId || '';
-    console.log('[Initial Plan AI] Current patient ID:', currentPatientId);
 
     // HIPAA-COMPLIANT: NO localStorage for PHI - server fetches all data
 
@@ -533,26 +588,41 @@ if (document.getElementById('perspectives-form')) {
 
     // Full summary + provisional dx
     document.getElementById('gen_initial_summary')?.addEventListener('click', async () => {
-      // ensure details from each field are also saved
-      ['active_movements','passive_movements','passive_over_pressure',
-       'resisted_movements','combined_movements','special_tests','neurodynamic']
-        .forEach(f => {
-          const details = (document.getElementById(f + '_details')?.value||'').trim();
-          prevAssess[f] = {
-            choice:  prevAssess[f]?.choice || '',
-            details
-          };
-        });
-      // persist again
-      localStorage.setItem(`initial_plan_assessments_${currentPatientId}`, JSON.stringify(prevAssess));
-
       AIModal.show('Assessment Summary & Provisional Dx');
 
       try {
+        // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+        const context = await getPatientContext(currentPatientId);
+
+        // Collect current form data for assessments
+        const currentAssessments = {};
+        ['active_movements','passive_movements','passive_over_pressure',
+         'resisted_movements','combined_movements','special_tests','neurodynamic']
+          .forEach(f => {
+            const fieldEl = document.getElementById(f);
+            const detailsEl = document.getElementById(f + '_details');
+            currentAssessments[f] = {
+              choice: fieldEl?.value || '',
+              details: detailsEl?.value?.trim() || ''
+            };
+          });
+
+        const allPrev = {
+          age_sex: context.age_sex || '',
+          present_history: context.present_history || '',
+          past_history: context.past_history || '',
+          subjective: context.subjective || {},
+          perspectives: context.perspectives || {}
+        };
+
         const res = await fetch('/api/ai_suggestion/initial_plan_summary', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ previous: allPrev, inputs: prevAssess })
+          body: JSON.stringify({
+            patient_id: currentPatientId,
+            previous: allPrev,
+            inputs: currentAssessments
+          })
         });
         const { summary, error } = await res.json();
         if (error) throw new Error(error);
@@ -566,24 +636,7 @@ if (document.getElementById('perspectives-form')) {
 
 // ——— AI on Pathophysiological Mechanism screen ———
 if (document.querySelector('select#possible_source')) {
-  // Get patient-specific localStorage keys
   const currentPatientId = window.currentPatientId || '';
-
-  // load up all prior data with patient-specific keys
-  const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
-  const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
-  const prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
-  const assessments = JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`)|| '{}');
-
-  console.log('[Pathophysiology AI] Current patient ID:', currentPatientId);
-  const allPrev = {
-    age_sex:         prevAdd.age_sex||'',
-    present_history: prevAdd.present_history||'',
-    past_history:    prevAdd.past_history||'',
-    subjective:      prevSubj,
-    perspectives:    prevPersp,
-    assessments     // your key under which you stored the initial plan choices
-  };
 
   // ONLY attach on pathophysiology page
   if (document.getElementById('patho-form') || document.querySelector('[name="possible_source"]')) {
@@ -596,91 +649,98 @@ if (document.querySelector('select#possible_source')) {
         if (btn.disabled) return;
         btn.disabled = true;
 
-        const field     = btn.dataset.field;               // "possible_source"
+        const field = btn.dataset.field; // "possible_source"
         const fieldEl = document.getElementById(field);
-      if (!fieldEl) {
-        console.warn(`Field element '${field}' not found`);
-        btn.disabled = false;
-        return;
-      }
-      const selection = fieldEl.value.trim();
+        if (!fieldEl) {
+          console.warn(`Field element '${field}' not found`);
+          btn.disabled = false;
+          return;
+        }
+        const selection = fieldEl.value.trim();
 
-      // Show modal with field-specific title
-      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      AIModal.show(`AI Suggestions: ${fieldTitle}`);
+        // Show modal with field-specific title
+        const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
-      try {
-        const res = await fetch('/api/ai_suggestion/patho/possible_source', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, selection })  // ✅ FIXED: Added patient_id
-        });
-        const { suggestion, error } = await res.json();
-        if (error) throw new Error(error);
-        AIModal.showContent(suggestion);
-      } catch (e) {
-        AIModal.showError(e.message);
-      } finally {
-        btn.disabled = false;
-      }
+        try {
+          // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+          const context = await getPatientContext(currentPatientId);
+
+          const allPrev = {
+            age_sex: context.age_sex || '',
+            present_history: context.present_history || '',
+            past_history: context.past_history || '',
+            subjective: context.subjective || {},
+            perspectives: context.perspectives || {},
+            assessments: context.assessments || {}
+          };
+
+          const res = await fetch('/api/ai_suggestion/patho/possible_source', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, selection })
+          });
+          const { suggestion, error } = await res.json();
+          if (error) throw new Error(error);
+          AIModal.showContent(suggestion);
+        } catch (e) {
+          AIModal.showError(e.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
     });
-  });
   } // Close if (patho-form check)
 }
 // ——— AI on Chronic Disease Factors screen ———
 if (document.getElementById('specific_factors')) {
-  // Get patient-specific localStorage keys
   const currentPatientId = window.currentPatientId || '';
-
-  // load all prior data with patient-specific keys
-  const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
-  const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
-  const prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
-  const assessments = JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`)|| '{}');
-
-  console.log('[Chronic Disease AI] Current patient ID:', currentPatientId);
-  const allPrev = {
-    age_sex:         prevAdd.age_sex||'',
-    present_history: prevAdd.present_history||'',
-    past_history:    prevAdd.past_history||'',
-    subjective:      prevSubj,
-    perspectives:    prevPersp,
-    assessments
-  };
 
   // Chronic factors follow-ups
   document.querySelector('.ai-btn')?.addEventListener('click', async e => {
     e.preventDefault();
     e.stopPropagation();
 
-    const btn    = e.currentTarget;
+    const btn = e.currentTarget;
 
     // Prevent multiple clicks
     if (btn.disabled) return;
     btn.disabled = true;
 
-    const field  = btn.dataset.field;               // "specific_factors"
+    const field = btn.dataset.field; // "specific_factors"
     const fieldEl = document.getElementById(field);
     if (!fieldEl) {
       console.warn(`Field element '${field}' not found`);
       btn.disabled = false;
       return;
     }
-    const text   = fieldEl.value.trim();
+    const text = fieldEl.value.trim();
     // gather checked causes
     const causes = Array.from(document.querySelectorAll('input[name="maintenance_causes"]:checked'))
-                        .map(cb => cb.value);
+                      .map(cb => cb.value);
 
     // Show modal
     const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
     try {
+      // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+      const context = await getPatientContext(currentPatientId);
+
+      const allPrev = {
+        age_sex: context.age_sex || '',
+        present_history: context.present_history || '',
+        past_history: context.past_history || '',
+        subjective: context.subjective || {},
+        perspectives: context.perspectives || {},
+        assessments: context.assessments || {}
+      };
+
       const res = await fetch('/api/ai_suggestion/chronic/specific_factors', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          patient_id: currentPatientId,  // ✅ FIXED: Added patient_id
+          patient_id: currentPatientId,
           previous: allPrev,
           input: text,
           causes
@@ -698,37 +758,25 @@ if (document.getElementById('specific_factors')) {
 }
 // ——— AI on Clinical Flags screen ———
 if (document.getElementById('clinical-flags-form')) {
-  // Get patient-specific localStorage keys
   const currentPatientId = window.currentPatientId || '';
 
-  const prevAdd   = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
-  const prevSubj  = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
-  const prevPersp = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
-  const prevAssess= JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`)|| '{}');
+  // HIPAA-COMPLIANT: Fetch patient context from server on page load for highlights
+  (async () => {
+    const context = await getPatientContext(currentPatientId);
 
-  console.log('[Clinical Flags AI] Current patient ID:', currentPatientId);
-
-  const allPrev = {
-    age_sex:         prevAdd.age_sex||'',
-    present_history: prevAdd.present_history||'',
-    past_history:    prevAdd.past_history||'',
-    subjective:      prevSubj,
-    perspectives:    prevPersp,
-    assessments:     prevAssess
-  };
-
-  // On page load: highlight relevant flags
-  const highlights = [];
-  if (allPrev.subjective.pain_irritability === 'Present') {
-    highlights.push('yellow_flags');
-  }
-  if (allPrev.assessments.special_tests?.choice === 'Absolutely Contraindicated') {
-    highlights.push('black_flags');
-  }
-  highlights.forEach(id => {
-    const el = document.getElementById(id + '_block');
-    if (el) el.classList.add('highlight');
-  });
+    // On page load: highlight relevant flags based on server data
+    const highlights = [];
+    if (context.subjective && context.subjective.pain_irritability === 'Present') {
+      highlights.push('yellow_flags');
+    }
+    if (context.assessments && context.assessments.special_tests === 'Absolutely Contraindicated') {
+      highlights.push('black_flags');
+    }
+    highlights.forEach(id => {
+      const el = document.getElementById(id + '_block');
+      if (el) el.classList.add('highlight');
+    });
+  })();
 
   // Wire up AI buttons (ONLY on clinical flags page)
   if (document.getElementById('flags-form') || document.querySelector('[name="red_flags"]')) {
@@ -740,81 +788,84 @@ if (document.getElementById('clinical-flags-form')) {
           console.warn(`Field element '${field}' not found`);
           return;
         }
-        const text  = fieldEl.value.trim();
+        const text = fieldEl.value.trim();
 
-      // Show modal
-      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      AIModal.show(`AI Suggestions: ${fieldTitle}`);
+        // Show modal
+        const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
-      try {
-        const res = await fetch(
-          `/api/ai_suggestion/clinical_flags/${getPatientId() || 'unknown'}/suggest`,  // ✅ FIXED: Use getPatientId()
-          {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ previous: allPrev, field, text })
-          }
-        );
-        const { suggestions, error } = await res.json();
-        if (error) throw new Error(error);
-        AIModal.showContent(suggestions);
-      } catch (e) {
-        AIModal.showError(e.message);
-      }
+        try {
+          // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+          const context = await getPatientContext(currentPatientId);
+
+          const allPrev = {
+            age_sex: context.age_sex || '',
+            present_history: context.present_history || '',
+            past_history: context.past_history || '',
+            subjective: context.subjective || {},
+            perspectives: context.perspectives || {},
+            assessments: context.assessments || {}
+          };
+
+          const res = await fetch(
+            `/api/ai_suggestion/clinical_flags/${getPatientId() || 'unknown'}/suggest`,
+            {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ previous: allPrev, field, text })
+            }
+          );
+          const { suggestions, error } = await res.json();
+          if (error) throw new Error(error);
+          AIModal.showContent(suggestions);
+        } catch (e) {
+          AIModal.showError(e.message);
+        }
+      });
     });
-  });
   } // Close if (flags-form check)
 }
 // ——— AI on Objective Assessment screen ———
 if (document.getElementById('objective-assessment-form')) {
-  // Get patient-specific localStorage keys
   const currentPatientId = window.currentPatientId || '';
-
-  // load prior stages with patient-specific keys
-  const prevAdd    = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`)    || '{}');
-  const prevSubj   = JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`)   || '{}');
-  const prevPersp  = JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`)|| '{}');
-  const prevAssess = JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`)|| '{}');
-
-  console.log('[Objective Assessment AI] Current patient ID:', currentPatientId);
-
-  const allPrev = {
-    age_sex:         prevAdd.age_sex         || '',
-    present_history: prevAdd.present_history || '',
-    past_history:    prevAdd.past_history    || '',
-    subjective:      prevSubj,
-    perspectives:    prevPersp,
-    assessments:     prevAssess
-  };
 
   // per-field AI helpers
   document.querySelectorAll('#objective-assessment-form .ai-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const field = btn.dataset.field;          // "plan"
-
-      // update local prevAssess so later provisional DX has this choice
+      const field = btn.dataset.field; // "plan"
       const fieldEl = document.getElementById(field);
       if (!fieldEl) {
         console.warn(`Field element '${field}' not found`);
         return;
       }
-      allPrev.assessments[field] = {
-        choice: fieldEl.value
-      };
-      localStorage.setItem(`initial_plan_assessments_${currentPatientId}`,
-                           JSON.stringify(allPrev.assessments));
 
       // Show modal
       const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
       try {
+        // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+        const context = await getPatientContext(currentPatientId);
+
+        const allPrev = {
+          age_sex: context.age_sex || '',
+          present_history: context.present_history || '',
+          past_history: context.past_history || '',
+          subjective: context.subjective || {},
+          perspectives: context.perspectives || {},
+          assessments: context.assessments || {}
+        };
+
         const res = await fetch(
           `/api/ai_suggestion/objective_assessment/${field}`,
           {
             method: 'POST',
             headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, value: allPrev.assessments[field].choice })  // ✅ FIXED: Added patient_id
+            body: JSON.stringify({
+              patient_id: currentPatientId,
+              previous: allPrev,
+              value: fieldEl.value
+            })
           }
         );
         const { suggestion, error } = await res.json();
@@ -830,22 +881,35 @@ if (document.getElementById('objective-assessment-form')) {
   // provisional DX button
   document.getElementById('gen_provisional_dx')?.addEventListener('click', async () => {
     try {
-      // also grab details text
-      const planDetailsEl = document.getElementById('plan_details');
-      if (planDetailsEl) {
-        allPrev.assessments.plan.details = planDetailsEl.value.trim();
-      }
-      localStorage.setItem(`initial_plan_assessments_${currentPatientId}`,
-                           JSON.stringify(allPrev.assessments));
-
       AIModal.show('Provisional Diagnosis');
+
+      // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+      const context = await getPatientContext(currentPatientId);
+
+      const allPrev = {
+        age_sex: context.age_sex || '',
+        present_history: context.present_history || '',
+        past_history: context.past_history || '',
+        subjective: context.subjective || {},
+        perspectives: context.perspectives || {},
+        assessments: context.assessments || {}
+      };
+
+      // Include current plan details if available
+      const planDetailsEl = document.getElementById('plan_details');
+      if (planDetailsEl && planDetailsEl.value.trim()) {
+        allPrev.plan_details = planDetailsEl.value.trim();
+      }
 
       const res = await fetch(
         `/api/ai_suggestion/provisional_diagnosis`,
         {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ previous: allPrev })
+          body: JSON.stringify({
+            patient_id: currentPatientId,
+            previous: allPrev
+          })
         }
       );
       const { diagnosis, error } = await res.json();
@@ -869,46 +933,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
-      try {
-        // Get patient-specific localStorage keys
-        const currentPatientId = window.currentPatientId || '';
-        console.log('[Provisional Diagnosis AI] Current patient ID:', currentPatientId);
+        try {
+          const currentPatientId = window.currentPatientId || '';
 
-        // Get patient data from localStorage for context with patient-specific keys
-        const patientData = {
-          previous: {
-            age_sex: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').age_sex || '',
-            present_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').present_history || '',
-            past_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').past_history || '',
-            subjective: JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`) || '{}'),
-            perspectives: JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`) || '{}'),
-            assessments: JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`) || '{}')
-          }
-        };
+          // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+          const context = await getPatientContext(currentPatientId);
 
-        const res = await fetch(
-          `/provisional_diagnosis_suggest/${getPatientId()}?field=${field}`,  // ✅ FIXED: Use getPatientId()
-          {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(patientData)
-          }
-        );
-        const { suggestion } = await res.json();
-        AIModal.showContent(suggestion || 'No suggestion available.');
-      } catch (err) {
-        console.error(err);
-        AIModal.showError('Error fetching suggestion');
-      }
+          const patientData = {
+            patient_id: currentPatientId,
+            previous: {
+              age_sex: context.age_sex || '',
+              present_history: context.present_history || '',
+              past_history: context.past_history || '',
+              subjective: context.subjective || {},
+              perspectives: context.perspectives || {},
+              assessments: context.assessments || {}
+            }
+          };
+
+          const res = await fetch(
+            `/provisional_diagnosis_suggest/${getPatientId()}?field=${field}`,
+            {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(patientData)
+            }
+          );
+          const { suggestion } = await res.json();
+          AIModal.showContent(suggestion || 'No suggestion available.');
+        } catch (err) {
+          console.error(err);
+          AIModal.showError('Error fetching suggestion');
+        }
+      });
     });
-  });
   } // Close if (provisional-diagnosis-form check)
 });
 
 // SMART Goals suggestions
 document.querySelectorAll('.ai-btn[data-screen="smart_goals"]').forEach(btn => {
   btn.addEventListener('click', async () => {
-    const field = btn.dataset.field;                   // e.g. "patient_goal"
+    const field = btn.dataset.field; // e.g. "patient_goal"
     const input = document.getElementById(field);
 
     // Skip if input doesn't exist on this page
@@ -922,22 +987,23 @@ document.querySelectorAll('.ai-btn[data-screen="smart_goals"]').forEach(btn => {
     AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
     try {
-      // Get patient-specific localStorage keys
       const currentPatientId = window.currentPatientId || '';
-      console.log('[SMART Goals AI] Current patient ID:', currentPatientId);
+
+      // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+      const context = await getPatientContext(currentPatientId);
 
       const resp = await fetch(`/api/ai_suggestion/smart_goals/${field}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patient_id: getPatientId(),  // ✅ FIXED: Use getPatientId() instead of window.patientId
+          patient_id: getPatientId(),
           previous: {
-            age_sex: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').age_sex || '',
-            present_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').present_history || '',
-            past_history: JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}').past_history || '',
-            subjective: JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`) || '{}'),
-            perspectives: JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`) || '{}'),
-            assessments: JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`) || '{}')
+            age_sex: context.age_sex || '',
+            present_history: context.present_history || '',
+            past_history: context.past_history || '',
+            subjective: context.subjective || {},
+            perspectives: context.perspectives || {},
+            assessments: context.assessments || {}
           },
           patient_goals: input.value
         })
@@ -971,50 +1037,49 @@ if (document.getElementById('treatment-plan-form') || document.querySelector('[n
         return;
       }
 
-    // Show modal
-    const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    AIModal.show(`AI Suggestions: ${fieldTitle}`);
+      // Show modal
+      const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
-    try {
-      // Get patient-specific localStorage keys
-      const currentPatientId = window.currentPatientId || '';
-      console.log('[Treatment Plan AI] Current patient ID:', currentPatientId);
+      try {
+        const currentPatientId = window.currentPatientId || '';
 
-      // Build comprehensive previous data from localStorage with patient-specific keys
-      const addPatientData = JSON.parse(localStorage.getItem(`add_patient_data_${currentPatientId}`) || '{}');
-      const resp = await fetch(
-        `/api/ai_suggestion/treatment_plan/${field}`,
-        {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({
-            patient_id: getPatientId(),  // ✅ FIXED: Use getPatientId() instead of window.patientId
-            previous: {
-              age_sex: addPatientData.age_sex || '',
-              present_history: addPatientData.present_history || '',
-              past_history: addPatientData.past_history || '',
-              provisional_diagnosis: addPatientData.provisional_diagnosis || '',
-              subjective: JSON.parse(localStorage.getItem(`subjective_inputs_${currentPatientId}`) || '{}'),
-              perspectives: JSON.parse(localStorage.getItem(`perspectives_inputs_${currentPatientId}`) || '{}'),
-              assessments: JSON.parse(localStorage.getItem(`initial_plan_assessments_${currentPatientId}`) || '{}'),
-              smart_goals: JSON.parse(localStorage.getItem(`smart_goals_${currentPatientId}`) || '{}')
-            },
-            input: inputField.value
-          })
+        // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+        const context = await getPatientContext(currentPatientId);
+
+        const resp = await fetch(
+          `/api/ai_suggestion/treatment_plan/${field}`,
+          {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              patient_id: getPatientId(),
+              previous: {
+                age_sex: context.age_sex || '',
+                present_history: context.present_history || '',
+                past_history: context.past_history || '',
+                provisional_diagnosis: context.provisional_diagnosis || '',
+                subjective: context.subjective || {},
+                perspectives: context.perspectives || {},
+                assessments: context.assessments || {},
+                smart_goals: context.smart_goals || {}
+              },
+              input: inputField.value
+            })
+          }
+        );
+        const data = await resp.json();
+        if (data.error) {
+          AIModal.showError(data.error);
+        } else {
+          AIModal.showContent(data.suggestion || 'No suggestion');
         }
-      );
-      const data = await resp.json();
-      if (data.error) {
-        AIModal.showError(data.error);
-      } else {
-        AIModal.showContent(data.suggestion || 'No suggestion');
+      } catch (err) {
+        AIModal.showError('Error fetching suggestion');
+        console.error(err);
       }
-    } catch (err) {
-      AIModal.showError('Error fetching suggestion');
-      console.error(err);
-    }
+    });
   });
-});
 } // Close if (treatment-plan-form check)
 
 // Generate full treatment summary:

@@ -247,7 +247,8 @@ class AICache:
         prompt: str,
         response: str,
         model: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None
     ):
         """
         Save prompt-response pair to training data collection.
@@ -259,6 +260,7 @@ class AICache:
             response: AI response
             model: Model name
             metadata: Additional context
+            user_id: User ID for GDPR compliance (Right to be Forgotten)
         """
         try:
             training_doc = {
@@ -266,6 +268,7 @@ class AICache:
                 'response': response,
                 'model': model,
                 'metadata': metadata or {},
+                'user_id': user_id,  # GDPR-COMPLIANT: Track user for data deletion
                 'created_at': SERVER_TIMESTAMP,
                 'quality_score': None,  # Future: manual quality rating
                 'reviewed': False,  # Future: human review flag
@@ -641,15 +644,25 @@ class AICache:
                 logger.warning("delete_user_training_data called with empty user_id")
                 return 0
 
+            # GDPR-COMPLIANT: Delete all training data for this user
+            deleted_count = 0
+
             # Query all training data for this user
-            # Note: Training data doesn't currently store user_id directly
-            # This is a placeholder for future implementation
-            logger.warning("Training data deletion not fully implemented - user_id not tracked in training_data collection")
+            training_docs = self.db.collection(self.training_data_collection)\
+                .where('user_id', '==', user_id)\
+                .stream()
 
-            # TODO: Add user_id to training_data_collection documents
-            # For now, we can't delete training data without user_id tracking
+            # Delete each document
+            for doc in training_docs:
+                doc.reference.delete()
+                deleted_count += 1
 
-            return 0
+            if deleted_count > 0:
+                logger.info(f"Deleted {deleted_count} training data entries for user {user_id}")
+            else:
+                logger.info(f"No training data found for user {user_id}")
+
+            return deleted_count
 
         except Exception as e:
             logger.error(f"Error deleting user training data for {user_id}: {e}", exc_info=True)

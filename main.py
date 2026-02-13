@@ -1162,10 +1162,17 @@ try:
     csrf.exempt(mobile_api_ai)
     logger.info(f"CSRF exempt blueprints: {csrf._exempt_blueprints}")
 
-    # Enable CORS for mobile API endpoints
+    # Enable CORS for mobile API endpoints - SECURITY: Restrict to specific origins
     CORS(app, resources={
         r"/api/*": {
-            "origins": "*",  # Allow all origins for mobile app (can be restricted later)
+            "origins": [
+                "https://physiologicprism-474610.web.app",
+                "https://physiologicprism-474610.firebaseapp.com",
+                "https://physiologicprism.com",
+                "https://www.physiologicprism.com",
+                # Add development origin only if DEV_ORIGIN env var is set
+                os.environ.get("DEV_ORIGIN", "")
+            ],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": False  # Bearer tokens don't need credentials
@@ -4287,7 +4294,12 @@ def cron_check_subscription_reminders():
     # Verify this is from Cloud Scheduler or has valid secret
     scheduler_header = request.headers.get('X-CloudScheduler-JobName')
     auth_header = request.headers.get('Authorization')
-    cron_secret = os.environ.get('CRON_SECRET', 'default-cron-secret')
+
+    # SECURITY: Enforce CRON_SECRET in production (no default fallback)
+    cron_secret = os.environ.get('CRON_SECRET')
+    if not cron_secret:
+        logger.error("CRON_SECRET environment variable not set - cron jobs disabled")
+        return jsonify({'error': 'Server configuration error'}), 500
 
     if not scheduler_header and auth_header != f'Bearer {cron_secret}':
         logger.warning("Unauthorized cron access attempt")
@@ -4323,7 +4335,12 @@ def cron_cleanup_old_notifications():
     # Verify this is from Cloud Scheduler or has valid secret
     scheduler_header = request.headers.get('X-CloudScheduler-JobName')
     auth_header = request.headers.get('Authorization')
-    cron_secret = os.environ.get('CRON_SECRET', 'default-cron-secret')
+
+    # SECURITY: Enforce CRON_SECRET in production (no default fallback)
+    cron_secret = os.environ.get('CRON_SECRET')
+    if not cron_secret:
+        logger.error("CRON_SECRET environment variable not set - cron jobs disabled")
+        return jsonify({'error': 'Server configuration error'}), 500
 
     if not scheduler_header and auth_header != f'Bearer {cron_secret}':
         logger.warning("Unauthorized cron access attempt")
@@ -10318,6 +10335,136 @@ def get_patient_basic_data(patient_id):
     except Exception as e:
         logger.error(f"Error getting patient basic data: {e}", exc_info=True)
         return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/patient/<patient_id>/context', methods=['GET'])
+@login_required()
+def get_patient_context(patient_id):
+    """
+    HIPAA-COMPLIANT: Get comprehensive patient context from database
+    Replaces localStorage usage for AI suggestions
+
+    Returns all patient data needed for AI context:
+    - Basic patient data (age_sex, present_history, past_history)
+    - Subjective examination (most recent)
+    - Patient perspectives (most recent)
+    - Initial plan assessments (most recent)
+    - SMART goals (most recent)
+    """
+    try:
+        user_id = session.get('user_id')
+
+        # Get patient document
+        patient_ref = db.collection('patients').document(patient_id)
+        patient_doc = patient_ref.get()
+
+        if not patient_doc.exists:
+            return jsonify({'ok': False, 'error': 'Patient not found'}), 404
+
+        patient = patient_doc.to_dict()
+
+        # Access control
+        if session.get('is_admin') == 0 and patient.get('physio_id') != user_id:
+            return jsonify({'ok': False, 'error': 'Access denied'}), 403
+
+        # Build context object
+        context = {
+            'ok': True,
+            'age_sex': patient.get('age_sex', ''),
+            'present_history': patient.get('present_history', '') or patient.get('chief_complaint', ''),
+            'past_history': patient.get('past_history', '') or patient.get('medical_history', ''),
+            'subjective': {},
+            'perspectives': {},
+            'assessments': {},
+            'smart_goals': {}
+        }
+
+        # Fetch most recent subjective examination
+        subjective_docs = db.collection('subjective_examination')\
+            .where('patient_id', '==', patient_id)\
+            .order_by('timestamp', direction='DESCENDING')\
+            .limit(1)\
+            .stream()
+
+        for doc in subjective_docs:
+            subj_data = doc.to_dict()
+            context['subjective'] = {
+                'body_structure': subj_data.get('body_structure', ''),
+                'body_function': subj_data.get('body_function', ''),
+                'activity_performance': subj_data.get('activity_performance', ''),
+                'activity_capacity': subj_data.get('activity_capacity', ''),
+                'contextual_environmental': subj_data.get('contextual_environmental', ''),
+                'contextual_personal': subj_data.get('contextual_personal', '')
+            }
+            break  # Only need the most recent
+
+        # Fetch most recent patient perspectives
+        perspectives_docs = db.collection('patient_perspectives')\
+            .where('patient_id', '==', patient_id)\
+            .order_by('timestamp', direction='DESCENDING')\
+            .limit(1)\
+            .stream()
+
+        for doc in perspectives_docs:
+            persp_data = doc.to_dict()
+            context['perspectives'] = {
+                'knowledge': persp_data.get('knowledge', ''),
+                'attribution': persp_data.get('attribution', ''),
+                'expectation': persp_data.get('expectation', ''),
+                'consequences_awareness': persp_data.get('consequences_awareness', ''),
+                'locus_of_control': persp_data.get('locus_of_control', ''),
+                'affective_aspect': persp_data.get('affective_aspect', '')
+            }
+            break  # Only need the most recent
+
+        # Fetch most recent initial plan assessments
+        initial_plan_docs = db.collection('initial_plan')\
+            .where('patient_id', '==', patient_id)\
+            .order_by('timestamp', direction='DESCENDING')\
+            .limit(1)\
+            .stream()
+
+        for doc in initial_plan_docs:
+            plan_data = doc.to_dict()
+            context['assessments'] = {
+                'active_movements': plan_data.get('active_movements', ''),
+                'passive_movements': plan_data.get('passive_movements', ''),
+                'passive_over_pressure': plan_data.get('passive_over_pressure', ''),
+                'resisted_movements': plan_data.get('resisted_movements', ''),
+                'combined_movements': plan_data.get('combined_movements', ''),
+                'special_tests': plan_data.get('special_tests', ''),
+                'neuro_dynamic_examination': plan_data.get('neuro_dynamic_examination', ''),
+                # Include details as well
+                'active_movements_details': plan_data.get('active_movements_details', ''),
+                'passive_movements_details': plan_data.get('passive_movements_details', ''),
+                'passive_over_pressure_details': plan_data.get('passive_over_pressure_details', ''),
+                'resisted_movements_details': plan_data.get('resisted_movements_details', ''),
+                'combined_movements_details': plan_data.get('combined_movements_details', ''),
+                'special_tests_details': plan_data.get('special_tests_details', ''),
+                'neuro_dynamic_examination_details': plan_data.get('neuro_dynamic_examination_details', '')
+            }
+            break  # Only need the most recent
+
+        # Fetch most recent SMART goals
+        smart_goals_docs = db.collection('smart_goals')\
+            .where('patient_id', '==', patient_id)\
+            .order_by('timestamp', direction='DESCENDING')\
+            .limit(1)\
+            .stream()
+
+        for doc in smart_goals_docs:
+            goals_data = doc.to_dict()
+            context['smart_goals'] = {
+                'smart_goal': goals_data.get('smart_goal', ''),
+                'smart_goal_details': goals_data.get('smart_goal_details', '')
+            }
+            break  # Only need the most recent
+
+        return jsonify(context), 200
+
+    except Exception as e:
+        logger.error(f"Error getting patient context: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': 'Failed to load patient context'}), 500
 
 
 # ═══════════════════════════════════════════════════════════════════
