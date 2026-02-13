@@ -824,6 +824,18 @@ app.config.update(
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max request size
 )
 
+# ─── PRODUCTION SAFETY: Force Debug Mode Off ──────────────────────
+# SECURITY: Explicitly disable debug mode in production to prevent information disclosure
+is_production = bool(os.environ.get('K_SERVICE')) or os.environ.get('ENVIRONMENT') == 'production'
+
+if is_production:
+    app.config['DEBUG'] = False
+    app.config['TESTING'] = False
+    logger.info("Production mode: Debug and testing disabled for security")
+else:
+    # Allow debug mode in development (default Flask behavior)
+    logger.info("Development mode: Debug mode may be enabled")
+
 # Initialize Rate Limiter with Flask app (Redis-based)
 limiter.init_app(app)
 logger.info("Rate limiter initialized with Flask app")
@@ -908,7 +920,7 @@ Talisman(
     force_file_save=False,  # Don't force file downloads
     frame_options='SAMEORIGIN',  # Allow framing only from same origin (prevents clickjacking)
     frame_options_allow_from=None,  # No external frame embedding allowed
-    content_security_policy_report_uri=None,  # CSP violation reporting (can add later)
+    content_security_policy_report_uri='/api/csp-report',  # SECURITY: CSP violation reporting enabled
     content_security_policy_report_only=False,  # Enforce CSP (not just report)
     permissions_policy={  # Feature Policy (formerly Permissions-Policy)
         'geolocation': '()',  # Block geolocation
@@ -10465,6 +10477,57 @@ def get_patient_context(patient_id):
     except Exception as e:
         logger.error(f"Error getting patient context: {e}", exc_info=True)
         return jsonify({'ok': False, 'error': 'Failed to load patient context'}), 500
+
+
+# ═══════════════════════════════════════════════════════════════════
+# CSP VIOLATION REPORTING
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/api/csp-report', methods=['POST'])
+def csp_violation_report():
+    """
+    Receive and log Content Security Policy (CSP) violation reports.
+
+    This endpoint is called by the browser when CSP violations occur,
+    helping detect XSS attacks and other security threats.
+
+    Security Note:
+    - Publicly accessible (browsers send reports without authentication)
+    - Rate limited to prevent abuse
+    - Logs violations for security monitoring
+    """
+    try:
+        # Get CSP violation report from browser
+        report = request.get_json(force=True, silent=True)
+
+        if report:
+            # Extract key violation details
+            csp_report = report.get('csp-report', {})
+
+            # Log CSP violation (for security monitoring)
+            logger.warning(
+                f"CSP Violation Detected: "
+                f"blocked-uri={csp_report.get('blocked-uri', 'unknown')}, "
+                f"violated-directive={csp_report.get('violated-directive', 'unknown')}, "
+                f"document-uri={csp_report.get('document-uri', 'unknown')}"
+            )
+
+            # Optionally store in database for analysis (uncomment if needed)
+            # db.collection('security_violations').add({
+            #     'type': 'csp_violation',
+            #     'report': csp_report,
+            #     'timestamp': SERVER_TIMESTAMP,
+            #     'ip_address': request.remote_addr,
+            #     'user_agent': request.headers.get('User-Agent', 'unknown')
+            # })
+
+        # Return 204 No Content (standard response for CSP reports)
+        return '', 204
+
+    except Exception as e:
+        # Don't expose errors to potential attackers
+        logger.error(f"Error processing CSP report: {e}", exc_info=True)
+        return '', 400
 
 
 # ═══════════════════════════════════════════════════════════════════

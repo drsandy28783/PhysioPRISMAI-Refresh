@@ -154,6 +154,13 @@ function invalidatePatientContextCache() {
 // AI Suggestion Modal Functions
 // ================================================================
 
+// SECURITY: HTML escaping function to prevent XSS
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 const AIModal = {
   modal: null,
   titleEl: null,
@@ -216,15 +223,18 @@ const AIModal = {
   showContent(content) {
     this.currentSuggestion = content;
 
+    // SECURITY: Escape HTML first to prevent XSS, then safely add formatting
+    const escapedContent = escapeHtml(content);
+
     // Convert plain text to HTML with preserved formatting
-    let htmlContent = content
+    let htmlContent = escapedContent
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>');
 
     // If content has numbered lists (1. 2. 3.), convert to <ol>
     if (/^\d+\.\s/.test(content)) {
       const items = content.split(/\n(?=\d+\.\s)/)
-        .map(item => item.replace(/^\d+\.\s/, '').trim())
+        .map(item => escapeHtml(item.replace(/^\d+\.\s/, '').trim()))
         .filter(item => item.length > 0);
       htmlContent = '<ol>' + items.map(item => `<li>${item}</li>`).join('') + '</ol>';
     }
@@ -235,10 +245,12 @@ const AIModal = {
   },
 
   showError(message) {
+    // SECURITY: Escape error message to prevent XSS
+    const escapedMessage = escapeHtml(message);
     this.bodyEl.innerHTML = `
       <div style="text-align: center; padding: 20px; color: #d32f2f;">
         <p style="font-size: 18px; margin-bottom: 8px;">⚠️ Error</p>
-        <p>${message}</p>
+        <p>${escapedMessage}</p>
       </div>
     `;
   },

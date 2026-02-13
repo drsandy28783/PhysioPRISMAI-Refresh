@@ -322,11 +322,23 @@
   /**
    * Highlight matching part of suggestion
    */
-  function highlightMatch(text, query) {
-    if (!query) return text;
+  /**
+   * Escape HTML to prevent XSS attacks
+   * SECURITY: Sanitize user input before displaying
+   */
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
 
+  function highlightMatch(text, query) {
+    if (!query) return escapeHtml(text);
+
+    // SECURITY: Escape HTML first to prevent XSS
+    const escapedText = escapeHtml(text);
     const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
+    return escapedText.replace(regex, '<mark>$1</mark>');
   }
 
   /**
