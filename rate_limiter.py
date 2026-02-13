@@ -19,7 +19,6 @@ import logging
 from flask import g, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from datetime import timedelta
 
 logger = logging.getLogger("app.rate_limiter")
 

@@ -6,10 +6,12 @@ Provides Firestore-compatible API for minimal code changes
 
 import os
 import uuid
+import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 from azure.cosmos import CosmosClient, PartitionKey, exceptions
-from azure.identity import DefaultAzureCredential
+
+logger = logging.getLogger("app.azure_cosmos_db")
 
 
 class CosmosDBDocument:
@@ -118,7 +120,7 @@ class CosmosDBQuery:
 
             return [CosmosDBDocument(item['id'], item, True) for item in items]
         except exceptions.CosmosHttpResponseError as e:
-            print(f"Query error: {e}")
+            logger.error(f"Cosmos DB query error: {e}", exc_info=True)
             return []
 
     def stream(self):
@@ -161,10 +163,7 @@ class CosmosDBDocumentReference:
                 return CosmosDBDocument(self.id, {}, False)
         except Exception as e:
             # Log the actual error for debugging
-            import traceback
-            print(f"❌ Error reading document {self.id}: {e}")
-            print(f"Exception type: {type(e).__name__}")
-            traceback.print_exc()
+            logger.error(f"Error reading document {self.id}: {e} (type: {type(e).__name__})", exc_info=True)
             return CosmosDBDocument(self.id, {}, False)
 
     def set(self, data: Dict[str, Any], merge: bool = False) -> None:
@@ -210,7 +209,7 @@ class CosmosDBDocumentReference:
 
             self.container.upsert_item(body=doc_data)
         except Exception as e:
-            print(f"Error setting document {self.id}: {e}")
+            logger.error(f"Error setting document {self.id}: {e}", exc_info=True)
             raise
 
     def update(self, data: Dict[str, Any]) -> None:
@@ -227,7 +226,7 @@ class CosmosDBDocumentReference:
         except exceptions.CosmosResourceNotFoundError:
             pass  # Document doesn't exist, ignore
         except Exception as e:
-            print(f"Error deleting document {self.id}: {e}")
+            logger.error(f"Error deleting document {self.id}: {e}", exc_info=True)
             raise
 
 
@@ -245,7 +244,7 @@ class CosmosDBCollection:
             self.container.read()
         except exceptions.CosmosResourceNotFoundError:
             # Container doesn't exist, create it
-            print(f"Container {container_name} not found, creating...")
+            logger.info(f"Container {container_name} not found, creating...")
             self.container = database.create_container(
                 id=container_name,
                 partition_key=PartitionKey(path="/id")
@@ -288,7 +287,7 @@ class CosmosDBCollection:
             items = list(self.container.read_all_items())
             return [CosmosDBDocument(item['id'], item, True) for item in items]
         except Exception as e:
-            print(f"Error streaming collection {self.container_name}: {e}")
+            logger.error(f"Error streaming collection {self.container_name}: {e}", exc_info=True)
             return []
 
     def get(self) -> List[CosmosDBDocument]:
@@ -317,7 +316,7 @@ class CosmosDB:
             # Test if database exists
             self.database.read()
         except exceptions.CosmosResourceNotFoundError:
-            print(f"Database {self.database_name} not found, creating...")
+            logger.info(f"Database {self.database_name} not found, creating...")
             self.database = self.client.create_database(self.database_name)
 
     def collection(self, collection_name: str) -> CosmosDBCollection:

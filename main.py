@@ -6,6 +6,7 @@ import uuid
 import secrets
 import string
 import sys
+from typing import Optional, Dict, Any, List, Tuple
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -99,7 +100,7 @@ from xhtml2pdf import pisa
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
-from app_auth import require_firebase_auth, require_firebase_auth_with_rate_limit, require_auth
+from app_auth import require_firebase_auth, require_auth
 from quota_middleware import require_ai_quota, require_patient_quota, require_voice_quota
 from firebase_admin import auth
 from ai_cache import AICache, get_ai_suggestion_with_cache
@@ -222,8 +223,6 @@ class CosmosDBError(Exception):
     """Cosmos DB error"""
     pass
 
-import json, logging, sys
-
 # ---- Google Cloud friendly structured logging ----
 class GCPJsonFormatter(logging.Formatter):
     def format(self, record):
@@ -257,16 +256,27 @@ HIPAA_COMPLIANT_MODE = os.environ.get('HIPAA_COMPLIANT_MODE', 'false').lower() =
 TOS_VERSION = '1.0'
 TOS_LAST_UPDATED = '2025-01-01'  # Update this date when ToS changes
 
-def compare_tos_versions(user_version, current_version):
+def compare_tos_versions(user_version: str, current_version: str) -> Dict[str, Any]:
     """
-    Compare ToS versions and determine if re-acceptance is required.
+    Compare Terms of Service versions and determine if re-acceptance is required.
+
+    Args:
+        user_version: User's currently accepted ToS version (e.g., "1.0")
+        current_version: Current ToS version in the system (e.g., "2.0")
 
     Returns:
         dict with:
-        - 'requires_acceptance': True if major version changed (blocking)
-        - 'has_updates': True if any version changed (for notification)
-        - 'user_major': User's major version number
-        - 'current_major': Current major version number
+        - 'requires_acceptance': bool - True if major version changed (blocking)
+        - 'has_updates': bool - True if any version changed (for notification)
+        - 'user_major': int - User's major version number
+        - 'current_major': int - Current major version number
+
+    Examples:
+        >>> compare_tos_versions("1.0", "1.1")
+        {'requires_acceptance': False, 'has_updates': True, 'user_major': 1, 'current_major': 1}
+
+        >>> compare_tos_versions("1.5", "2.0")
+        {'requires_acceptance': True, 'has_updates': True, 'user_major': 1, 'current_major': 2}
     """
     try:
         user_parts = user_version.split('.')
@@ -373,7 +383,7 @@ except Exception as e:
 # ─────────────────────────────────────────────────────
 
 
-def get_ai_suggestion(prompt: str, metadata: dict = None) -> str:
+def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None) -> str:
     """
     Sends a prompt to Azure OpenAI GPT-4o and returns the assistant's reply.
     Uses intelligent caching to reduce costs and build training data.
@@ -410,7 +420,7 @@ def get_ai_suggestion(prompt: str, metadata: dict = None) -> str:
         return "AI service temporarily unavailable. Please try again."
 
 
-def log_action(user_id, action, details=None):
+def log_action(user_id: str, action: str, details: Optional[Dict[str, Any]] = None) -> None:
     """Append an entry into Firestore `audit_logs` collection."""
     entry = {
         'user_id': user_id,
@@ -420,17 +430,17 @@ def log_action(user_id, action, details=None):
     }
     db.collection('audit_logs').add(entry)
 
-def generate_temp_password(length=12):
+def generate_temp_password(length: int = 12) -> str:
     """Generate a secure temporary password."""
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
     password = ''.join(secrets.choice(alphabet) for i in range(length))
     return password
 
-def generate_reset_token():
+def generate_reset_token() -> str:
     """Generate a secure password reset token."""
     return secrets.token_urlsafe(32)
 
-def store_reset_token(db, email, token):
+def store_reset_token(db: Any, email: str, token: str) -> bool:
     """
     Store password reset token in Firestore user document.
 
@@ -459,7 +469,7 @@ def store_reset_token(db, email, token):
         logger.error(f"Failed to store reset token for {email}: {str(e)}")
         return False
 
-def verify_reset_token(db, token):
+def verify_reset_token(db: Any, token: str) -> tuple[Optional[str], bool]:
     """
     Verify password reset token and return user email if valid.
 
