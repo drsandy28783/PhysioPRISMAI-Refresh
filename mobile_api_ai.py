@@ -377,7 +377,8 @@ def api_ai_past_questions():
         # Use centralized prompt
         prompt = get_past_questions_prompt(age_sex, present_hist)
 
-        user_id = g.user.get('uid', g.user.get('email'))
+        # Always use email for physio_id comparison (consistent across auth methods)
+        user_id = g.user.get('email')
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'past_questions',
             'tags': ['past_history', 'questions'],
@@ -421,7 +422,7 @@ def api_ai_provisional_diagnosis():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'provisional_diagnosis',
             'tags': ['diagnosis', 'provisional'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion, 'diagnosis': suggestion}), 200
@@ -460,7 +461,7 @@ def api_ai_subjective_field(field):
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': f'subjective_{field}',
             'tags': ['subjective', 'examination', field],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -493,7 +494,7 @@ def api_ai_subjective_diagnosis():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'subjective_diagnosis',
             'tags': ['subjective', 'diagnosis'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -517,7 +518,9 @@ def api_ai_perspectives_field(field):
         if not patient_id:
             return jsonify({'error': 'patient_id is required'}), 400
 
-        user_id = g.user.get('uid', g.user.get('email'))
+        # CRITICAL: Always use email for physio_id comparison
+        # physio_id field stores email, not Firebase UID
+        user_id = g.user.get('email')
 
         # HIPAA-COMPLIANT: Fetch ALL patient data from database (server-side)
         patient_data = fetch_patient_data_from_db(patient_id, user_id)
@@ -587,7 +590,7 @@ def api_ai_patient_perspectives():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'patient_perspectives',
             'tags': ['perspectives', 'patient-centered'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -613,7 +616,8 @@ def api_ai_initial_plan_field(field):
         if not patient_id:
             return jsonify({'error': 'patient_id is required'}), 400
 
-        user_id = g.user.get('uid', g.user.get('email'))
+        # Always use email for physio_id comparison (consistent across auth methods)
+        user_id = g.user.get('email')
 
         # HIPAA-COMPLIANT: Fetch ALL patient data from database (server-side)
         patient_data = fetch_patient_data_from_db(patient_id, user_id)
@@ -688,7 +692,7 @@ def api_ai_initial_plan_summary():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'initial_plan_summary',
             'tags': ['initial_plan', 'summary'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -742,7 +746,7 @@ def api_ai_patho_source():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'patho_possible_source',
             'tags': ['pathophysiology', 'pain_mechanism', 'classification'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -794,7 +798,7 @@ def api_ai_chronic_factors():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'chronic_factors',
             'tags': ['chronic', 'maintenance', 'biopsychosocial'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -841,7 +845,7 @@ def api_ai_clinical_flags():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'clinical_flags',
             'tags': ['flags', 'screening', 'safety', 'red_flags', 'yellow_flags'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -886,7 +890,7 @@ def api_ai_objective_assessment():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'objective_assessment',
             'tags': ['objective', 'assessment'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -932,7 +936,7 @@ def api_ai_provisional_diagnosis_field(field):
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': f'provisional_diagnosis_{field}',
             'tags': ['diagnosis', field],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -974,7 +978,7 @@ def api_ai_smart_goals():
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': 'smart_goals',
             'tags': ['goals', 'treatment_planning'],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -1018,7 +1022,7 @@ def api_ai_smart_goals_field(field):
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': f'smart_goals_{field}',
             'tags': ['goals', 'treatment_planning', field],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -1065,7 +1069,7 @@ def api_ai_treatment_plan_field(field):
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': f'treatment_plan_{field}',
             'tags': ['treatment', field],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -1086,7 +1090,8 @@ def api_ai_treatment_plan_summary(patient_id):
             return jsonify({'error': 'Patient not found'}), 404
 
         patient_data = patient_doc.to_dict()
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id comparison (consistent across auth methods)
+        user_email = g.user.get('email')
 
         # Check access
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
@@ -1182,7 +1187,7 @@ def api_ai_followup():
             'endpoint': 'followup',
             'tags': ['followup', 'reassessment'],
             'patient_id': patient_id,
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -1274,7 +1279,7 @@ def api_ai_followup_field(field):
             'endpoint': f'followup_{field}',
             'tags': ['followup', 'field-specific', field],
             'patient_id': patient_id,
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         return jsonify({'suggestion': suggestion}), 200
@@ -1300,7 +1305,7 @@ def api_ai_generic_field(field):
         suggestion = get_ai_suggestion_safe(prompt, metadata={
             'endpoint': f'field_{field}',
             'tags': ['generic', field],
-            'user_id': g.user.get('uid', g.user.get('email'))
+            'user_id': g.user.get('email')
         })
 
         return jsonify({'suggestion': suggestion}), 200

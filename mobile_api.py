@@ -526,7 +526,8 @@ def api_accept_tos():
     }
     """
     try:
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         data = request.get_json() or {}
 
@@ -599,7 +600,8 @@ def api_get_notifications():
     try:
         from notification_service import NotificationService
 
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
         unread_only = request.args.get('unread_only', 'false').lower() == 'true'
         category = request.args.get('category')
         limit = int(request.args.get('limit', 50))
@@ -641,7 +643,8 @@ def api_get_unread_count():
     try:
         from notification_service import NotificationService
 
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
         count = NotificationService.get_unread_count(user_email)
 
         return jsonify({'success': True, 'count': count}), 200
@@ -665,7 +668,8 @@ def api_mark_notification_read(notification_id):
     try:
         from notification_service import NotificationService
 
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
         success = NotificationService.mark_as_read(notification_id, user_email)
 
         if success:
@@ -693,7 +697,8 @@ def api_mark_all_notifications_read():
     try:
         from notification_service import NotificationService
 
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
         count = NotificationService.mark_all_as_read(user_email)
 
         return jsonify({'success': True, 'count': count}), 200
@@ -717,7 +722,8 @@ def api_delete_notification(notification_id):
     try:
         from notification_service import NotificationService
 
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
         success = NotificationService.delete_notification(notification_id, user_email)
 
         if success:
@@ -757,7 +763,8 @@ def api_list_my_patients():
     }
     """
     try:
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         # Get filter parameters from query string
         name_filter = request.args.get('name', '').strip()
@@ -915,7 +922,8 @@ def api_list_my_patients():
 def api_update_patient_status(patient_id):
     """Update patient treatment status"""
     try:
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         # Verify patient exists
         patient_ref = db.collection('patients').document(patient_id)
@@ -961,7 +969,8 @@ def api_update_patient_status(patient_id):
 def api_update_patient_tags(patient_id):
     """Update patient tags"""
     try:
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         # Verify patient exists
         patient_ref = db.collection('patients').document(patient_id)
@@ -1006,7 +1015,8 @@ def api_update_patient_tags(patient_id):
 def api_get_tag_suggestions():
     """Get tag suggestions for autocomplete"""
     try:
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         # Get all patients for this user
         patients = db.collection('patients').where('physio_id', '==', user_email).stream()
@@ -1048,7 +1058,8 @@ def api_get_patient(patient_id):
         patient_data['id'] = patient_doc.id
 
         # Check if this patient belongs to the current user
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
             return jsonify({'error': 'Unauthorized'}), 403
 
@@ -1105,7 +1116,8 @@ def api_get_patient_comprehensive_report(patient_id):
         patient_data['id'] = patient_doc.id
 
         # Check if this patient belongs to the current user
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
             return jsonify({'error': 'Unauthorized'}), 403
 
@@ -1198,7 +1210,8 @@ def api_create_patient():
 
         # Generate UUID for patient
         patient_id = str(uuid.uuid4())
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         # Prepare patient data
         patient_data = {
@@ -1254,7 +1267,8 @@ def api_update_patient(patient_id):
             return jsonify({'error': 'Patient not found'}), 404
 
         patient_data = patient_doc.to_dict()
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         # Check ownership
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
@@ -1290,7 +1304,8 @@ def api_delete_patient(patient_id):
             return jsonify({'error': 'Patient not found'}), 404
 
         patient_data = patient_doc.to_dict()
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         # Check ownership
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
@@ -1337,7 +1352,8 @@ def api_create_follow_up(patient_id):
             return jsonify({'error': 'Patient not found'}), 404
 
         patient_data = patient_doc.to_dict()
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
             return jsonify({'error': 'Unauthorized'}), 403
@@ -1393,7 +1409,8 @@ def api_list_follow_ups(patient_id):
             return jsonify({'error': 'Patient not found'}), 404
 
         patient_data = patient_doc.to_dict()
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
             return jsonify({'error': 'Unauthorized'}), 403
@@ -1871,7 +1888,8 @@ def api_get_audit_logs():
     """Get audit logs (admin: all logs, user: own logs)"""
     try:
         limit = request.args.get('limit', 100, type=int)
-        user_email = g.user.get('email') or g.user.get('uid')
+        # Always use email for physio_id (consistent across auth methods)
+        user_email = g.user.get('email')
 
         if g.user.get('is_admin', 0) == 1 or g.user.get('is_super_admin', 0) == 1:
             # Admin: get all logs for their institute
