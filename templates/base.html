@@ -177,14 +177,29 @@
     <script nonce="{{ csp_nonce() }}">
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
+          // Register with updateViaCache: 'none' to prevent caching of SW file
+          navigator.serviceWorker.register('/service-worker.js', { updateViaCache: 'none' })
             .then((registration) => {
               console.log('[SW] Registered successfully:', registration.scope);
 
-              // Check for updates every 30 minutes
+              // Listen for updates and reload page automatically
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                    console.log('[SW] New version activated - reloading page');
+                    window.location.reload();
+                  }
+                });
+              });
+
+              // Check for updates immediately
+              registration.update();
+
+              // Check for updates every 5 minutes (aggressive for bug fixes)
               setInterval(() => {
                 registration.update();
-              }, 30 * 60 * 1000);
+              }, 5 * 60 * 1000);
             })
             .catch((error) => {
               console.warn('[SW] Registration failed:', error);

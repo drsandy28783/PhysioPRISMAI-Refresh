@@ -9139,6 +9139,11 @@ def service_worker():
     # Add headers to allow broader scope
     response.headers['Content-Type'] = 'application/javascript'
     response.headers['Service-Worker-Allowed'] = '/'
+    # CRITICAL: Prevent browser caching of service worker
+    # This ensures users always get the latest version
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
     return response
 
 @app.route('/offline')
