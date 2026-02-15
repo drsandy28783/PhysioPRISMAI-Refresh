@@ -510,39 +510,6 @@ if (document.getElementById('perspectives-form')) {
     });
   });
   } // Close if (perspectives-form check)
-
-  // Provisional diagnosis button 🩺
-  document.getElementById('gen_perspectives_dx')?.addEventListener('click', async () => {
-    // gather all perspective values
-    const inputs = {};
-    ['knowledge','attribution','expectation','consequences_awareness','locus_of_control','affective_aspect']
-      .forEach(name => {
-        const el = document.getElementById(name);
-        inputs[name] = el ? el.value.trim() : '';
-      });
-
-    AIModal.show('Provisional Impressions');
-
-    try {
-      // FIX: Use provisional_diagnosis endpoint instead of patient_perspectives
-      // to generate diagnosis (not questions)
-      const res = await fetch('/api/ai_suggestion/provisional_diagnosis', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          previous: {
-            ...allPrev,
-            perspectives: inputs  // Include the just-entered perspective values
-          }
-        })
-      });
-      const { suggestion, error } = await res.json();
-      if (error) throw new Error(error);
-      AIModal.showContent(suggestion);
-    } catch (e) {
-      AIModal.showError(e.message);
-    }
-  });
 }
   // ——— AI on Initial Plan screen ———
   if (document.getElementById('initial-plan-form')) {
@@ -1102,7 +1069,7 @@ if (genBtn) {
 
     try {
       const resp = await fetch(
-        `/api/ai_suggestion/treatment_plan_summary/${window.patientId}`
+        `/api/ai_suggestion/treatment_plan_summary/${getPatientId()}`
       );
       const data = await resp.json();
       if (data.error) {
@@ -1129,7 +1096,7 @@ if (document.getElementById('followup-form')) {
       AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
       try {
-        const resp = await fetch(`/ai/followup_suggestion/${window.patientId}`, {
+        const resp = await fetch(`/ai/followup_suggestion/${getPatientId()}`, {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({

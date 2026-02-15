@@ -8,8 +8,6 @@
   .control-group { display: flex; align-items: flex-start; gap: 8px; }
   .control-group .input-field { flex: 1; }
   .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; flex-shrink: 0; margin-top: 0.5rem; }
-  /* Optional: style AI suggestion textarea */
-  .ai-suggestion { margin-top: 8px; width: 100%; padding: 8px; background: #f0f0f0; border-radius: 4px; }
 </style>
 {% endblock %}
 
@@ -47,7 +45,6 @@
             </select>
             <button type="button" class="ai-btn" data-field="{{ name }}" title="Suggest tests for {{ label }}">🧠</button>
           </div>
-          <textarea id="{{ name }}_suggestion" class="ai-suggestion" rows="2" readonly placeholder="AI suggestions..."></textarea>
           <textarea name="{{ name }}_details" class="input-field" rows="2" placeholder="Details (optional)..." data-voice-enabled>{{ request.form[name + '_details'] or '' }}</textarea>
         </div>
       {% endfor %}
