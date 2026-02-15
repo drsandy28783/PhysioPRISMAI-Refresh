@@ -4212,7 +4212,7 @@ def get_unread_count():
 def get_app_version():
     """Get current app version for auto-reload system"""
     # Increment this version number when deploying new changes
-    APP_VERSION = '1.0.6'
+    APP_VERSION = '1.1.0'  # Synchronized with deployment revision 0000104
     MOBILE_VERSION = '1.0.0'  # Update this when mobile app version changes
     return jsonify({
         'version': APP_VERSION,

@@ -7,7 +7,7 @@
   'use strict';
 
   // Current app version - INCREMENT THIS WHEN DEPLOYING
-  const CURRENT_VERSION = '1.0.7'; // AI endpoints fix + cache invalidation
+  const CURRENT_VERSION = '1.1.0'; // Authentication fix + Speech Services + Patient ID fixes
 
   // Check interval (10 minutes - less aggressive)
   const CHECK_INTERVAL = 10 * 60 * 1000;
