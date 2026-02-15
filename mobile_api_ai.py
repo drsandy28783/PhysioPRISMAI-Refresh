@@ -11,7 +11,7 @@ All endpoints use Firebase Bearer token authentication and PHI sanitization.
 import os
 import logging
 from flask import Blueprint, request, jsonify, g
-from azure_cosmos_db import get_cosmos_db
+from azure_cosmos_db import get_cosmos_db, get_patient_safe
 from app_auth import require_firebase_auth, require_auth
 from quota_middleware import require_voice_quota
 import re
@@ -239,12 +239,11 @@ def fetch_patient_data_from_db(patient_id: str, user_id: str) -> dict:
         dict with patient data including base info, subjective, perspectives, assessments
     """
     try:
-        # Get base patient document
-        patient_ref = db.collection('patients').document(patient_id)
-        patient_doc = patient_ref.get()
+        # Get base patient document using SAFE lookup (handles document ID mismatch)
+        patient_doc = get_patient_safe(patient_id)
 
         if not patient_doc.exists:
-            logger.warning(f"Patient {patient_id} not found")
+            logger.warning(f"Patient {patient_id} not found (checked both document ID and patient_id field)")
             return {}
 
         patient = patient_doc.to_dict()
@@ -1081,8 +1080,8 @@ def api_ai_treatment_plan_field(field):
 def api_ai_treatment_plan_summary(patient_id):
     """Get AI summary of treatment plan for a patient"""
     try:
-        # Get patient data
-        patient_doc = db.collection('patients').document(patient_id).get()
+        # Get patient data using SAFE lookup (HIPAA-compliant)
+        patient_doc = get_patient_safe(patient_id)
         if not patient_doc.exists:
             return jsonify({'error': 'Patient not found'}), 404
 
@@ -1150,7 +1149,7 @@ def api_ai_followup():
         diagnosis = ""
         if patient_id:
             try:
-                patient_doc = db.collection('patients').document(patient_id).get()
+                patient_doc = get_patient_safe(patient_id)
                 if patient_doc.exists:
                     patient_data = patient_doc.to_dict()
                     age_sex = sanitize_age_sex(patient_data.get('age_sex', ''))
@@ -1222,8 +1221,8 @@ def api_ai_followup_field(field):
         goals = None
 
         try:
-            # Get patient record
-            patient_doc = db.collection('patients').document(patient_id).get()
+            # Get patient record using SAFE lookup
+            patient_doc = get_patient_safe(patient_id)
             if patient_doc.exists:
                 patient_data = patient_doc.to_dict()
                 age_sex = sanitize_age_sex(patient_data.get('age_sex', ''))

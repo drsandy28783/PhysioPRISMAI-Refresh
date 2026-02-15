@@ -384,3 +384,52 @@ def get_cosmos_db() -> CosmosDB:
     if _cosmos_db_instance is None:
         _cosmos_db_instance = CosmosDB()
     return _cosmos_db_instance
+
+
+def get_patient_safe(patient_id: str) -> CosmosDBDocument:
+    """
+    SAFE patient lookup with fallback query.
+
+    Handles the case where Cosmos DB document ID != patient_id field.
+
+    Args:
+        patient_id: The patient_id value (from URL, form, etc.)
+
+    Returns:
+        CosmosDBDocument (compatible with Firestore DocumentSnapshot)
+
+    Usage:
+        doc = get_patient_safe(patient_id)
+        if doc.exists:
+            patient = doc.to_dict()
+    """
+    db = get_cosmos_db()
+
+    # Try 1: Direct document lookup (fast path)
+    try:
+        doc = db.collection('patients').document(patient_id).get()
+        if doc.exists:
+            logger.debug(f"[PATIENT LOOKUP] Direct hit for: {patient_id}")
+            return doc
+    except Exception as e:
+        logger.warning(f"[PATIENT LOOKUP] Direct lookup error for {patient_id}: {e}")
+
+    # Try 2: Fallback query by patient_id field (handles mismatch)
+    try:
+        logger.info(f"[PATIENT LOOKUP] Direct lookup failed, trying fallback query for: {patient_id}")
+        query_results = db.collection('patients').where('patient_id', '==', patient_id).limit(1).get()
+
+        if query_results and len(query_results) > 0:
+            doc = query_results[0]
+            logger.warning(
+                f"[PATIENT LOOKUP] ⚠️ MISMATCH FOUND! "
+                f"Document ID='{doc.id}' != patient_id field='{patient_id}'. "
+                f"This should be fixed in the database!"
+            )
+            return doc
+    except Exception as e:
+        logger.error(f"[PATIENT LOOKUP] Fallback query error for {patient_id}: {e}")
+
+    # Not found - return empty document
+    logger.error(f"[PATIENT LOOKUP] Patient not found: {patient_id}")
+    return CosmosDBDocument(patient_id, {}, exists=False)

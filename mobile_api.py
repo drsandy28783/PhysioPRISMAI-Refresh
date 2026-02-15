@@ -14,7 +14,7 @@ import uuid
 import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, g
-from azure_cosmos_db import get_cosmos_db, SERVER_TIMESTAMP
+from azure_cosmos_db import get_cosmos_db, get_patient_safe, SERVER_TIMESTAMP
 from app_auth import require_firebase_auth, require_auth
 from firebase_admin import auth
 from functools import wraps
@@ -1039,7 +1039,7 @@ def api_get_tag_suggestions():
 def api_get_patient(patient_id):
     """Get a specific patient by ID"""
     try:
-        patient_doc = db.collection('patients').document(patient_id).get()
+        patient_doc = get_patient_safe(patient_id)
 
         if not patient_doc.exists:
             return jsonify({'error': 'Patient not found'}), 404
@@ -1096,7 +1096,7 @@ def api_get_patient_comprehensive_report(patient_id):
     """
     try:
         # 1. Fetch patient and check permissions
-        patient_doc = db.collection('patients').document(patient_id).get()
+        patient_doc = get_patient_safe(patient_id)
 
         if not patient_doc.exists:
             return jsonify({'error': 'Patient not found'}), 404
@@ -1202,6 +1202,7 @@ def api_create_patient():
 
         # Prepare patient data
         patient_data = {
+            'patient_id': patient_id,  # CRITICAL: Must match document ID for consistent lookups
             'physio_id': user_email,
             'name': data.get('name', ''),
             'age_sex': data.get('age_sex', ''),
@@ -1248,7 +1249,7 @@ def api_update_patient(patient_id):
     """Update an existing patient"""
     try:
         # Check if patient exists
-        patient_doc = db.collection('patients').document(patient_id).get()
+        patient_doc = get_patient_safe(patient_id)
         if not patient_doc.exists:
             return jsonify({'error': 'Patient not found'}), 404
 
@@ -1284,7 +1285,7 @@ def api_delete_patient(patient_id):
     """Delete a patient"""
     try:
         # Check if patient exists
-        patient_doc = db.collection('patients').document(patient_id).get()
+        patient_doc = get_patient_safe(patient_id)
         if not patient_doc.exists:
             return jsonify({'error': 'Patient not found'}), 404
 
@@ -1331,7 +1332,7 @@ def api_create_follow_up(patient_id):
     """
     try:
         # Verify patient exists and user has access
-        patient_doc = db.collection('patients').document(patient_id).get()
+        patient_doc = get_patient_safe(patient_id)
         if not patient_doc.exists:
             return jsonify({'error': 'Patient not found'}), 404
 
@@ -1387,7 +1388,7 @@ def api_list_follow_ups(patient_id):
     """Get all follow-ups for a patient"""
     try:
         # Verify patient exists and user has access
-        patient_doc = db.collection('patients').document(patient_id).get()
+        patient_doc = get_patient_safe(patient_id)
         if not patient_doc.exists:
             return jsonify({'error': 'Patient not found'}), 404
 
@@ -3001,7 +3002,7 @@ def api_save_draft():
         # For new patient forms, skip patient verification since patient doesn't exist yet
         if patient_id != 'new_patient' and form_type != 'add_patient':
             # Verify user has access to this patient
-            patient_doc = db.collection('patients').document(patient_id).get()
+            patient_doc = get_patient_safe(patient_id)
 
             if not patient_doc.exists:
                 return jsonify({'ok': False, 'error': 'Patient not found'}), 404
@@ -3053,7 +3054,7 @@ def api_get_draft(patient_id, form_type):
         # For new patient forms, skip patient verification since patient doesn't exist yet
         if patient_id != 'new_patient' and form_type != 'add_patient':
             # Verify user has access to this patient
-            patient_doc = db.collection('patients').document(patient_id).get()
+            patient_doc = get_patient_safe(patient_id)
 
             if not patient_doc.exists:
                 return jsonify({'ok': False, 'error': 'Patient not found'}), 404

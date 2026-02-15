@@ -10,7 +10,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Cache buster - change this value to force rebuild
-ARG CACHE_BUST=2026-02-15-ai-endpoints-fix
+ARG CACHE_BUST=2026-02-15-permanent-patient-id-fix
 
 # Copy application files explicitly (avoids permission issues)
 COPY templates ./templates
