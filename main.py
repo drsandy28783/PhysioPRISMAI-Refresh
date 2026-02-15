@@ -6937,7 +6937,13 @@ def ai_subjective_diagnosis():
 @require_firebase_auth
 @require_ai_quota
 def ai_perspectives_field(field):
+        # DETAILED LOGGING for debugging
+        logger.info(f"[AI PERSPECTIVES] Endpoint called with field: {field}")
+        logger.info(f"[AI PERSPECTIVES] User: {g.user.get('email', 'unknown')}")
+        logger.info(f"[AI PERSPECTIVES] Request path: {request.path}")
+
         data = request.get_json() or {}
+        logger.info(f"[AI PERSPECTIVES] Request data keys: {list(data.keys())}")
 
         # Validate AI request
         is_valid, result = validate_json(AIPromptSchema, {
@@ -6981,6 +6987,21 @@ def ai_perspectives_field(field):
             return jsonify({'error': 'AI service unavailable.'}), 503
         except Exception:
             return jsonify({'error': 'Unexpected error.'}), 500
+
+
+# FALLBACK ROUTE for old cached JavaScript calling /p_actives/ instead of /perspectives/
+@app.route('/api/ai_suggestion/p_actives/<field>', methods=['POST'])
+@csrf.exempt
+@require_firebase_auth
+@require_ai_quota
+def ai_p_actives_fallback(field):
+        """Temporary fallback for old cached JS - redirects to new perspectives endpoint"""
+        logger.warning(f"[FALLBACK] Old p_actives endpoint called with field: {field} - redirecting to perspectives")
+        logger.warning(f"[FALLBACK] User agent: {request.headers.get('User-Agent', 'unknown')}")
+        logger.warning(f"[FALLBACK] User needs to clear browser cache!")
+
+        # Forward to the correct perspectives endpoint
+        return ai_perspectives_field(field)
 
 
 @app.route('/api/ai_suggestion/perspectives_diagnosis', methods=['POST'])

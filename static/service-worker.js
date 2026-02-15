@@ -4,7 +4,7 @@
  * Enhanced PWA functionality with offline support
  */
 
-const CACHE_VERSION = 'v1.0.9';
+const CACHE_VERSION = 'v1.0.10'; // Bumped to force cache invalidation - AI endpoints fix
 const CACHE_NAME = `physioprism-${CACHE_VERSION}`;
 const OFFLINE_CACHE = `physioprism-offline-${CACHE_VERSION}`;
 
