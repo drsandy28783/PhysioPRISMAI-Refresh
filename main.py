@@ -7543,6 +7543,7 @@ def provisional_diagnosis_suggest(patient_id):
                 initial_plan_data = fetch_latest('subjective_assessments')
                 objective_data = fetch_latest('objective_assessment')
                 clinical_flags_data = fetch_latest('clinical_flags')
+                patho_data = fetch_latest('patho_mechanism')  # NEW: Fetch pain mechanism data
 
                 # Build comprehensive patient context
                 age_sex = patient.get('age_sex', '')
@@ -7557,6 +7558,7 @@ def provisional_diagnosis_suggest(patient_id):
                 sanitized_perspectives = sanitize_subjective_data(perspectives_data) if perspectives_data else {}
                 sanitized_objective = sanitize_subjective_data(objective_data) if objective_data else {}
                 sanitized_clinical_flags = sanitize_subjective_data(clinical_flags_data) if clinical_flags_data else {}
+                sanitized_patho = sanitize_subjective_data(patho_data) if patho_data else {}  # NEW: Sanitize patho data
 
                 # Use IMPROVED centralized prompt from ai_prompts.py
                 from ai_prompts import get_provisional_diagnosis_field_prompt
@@ -7569,7 +7571,8 @@ def provisional_diagnosis_suggest(patient_id):
                     perspectives=sanitized_perspectives,
                     assessments=initial_plan_data,
                     objective_findings=sanitized_objective,
-                    clinical_flags=sanitized_clinical_flags
+                    clinical_flags=sanitized_clinical_flags,
+                    patho_data=sanitized_patho  # NEW: Pass pain mechanism context
                 )
 
                 try:
@@ -7632,6 +7635,7 @@ def ai_smart_goals(field):
     perspectives = sanitize_subjective_data(prev.get("perspectives", {}))
     diagnosis = sanitize_clinical_text(prev.get("provisional_diagnosis", ""))
     clinical_flags = sanitize_subjective_data(prev.get("clinical_flags", {}))
+    patho_data = sanitize_subjective_data(prev.get("patho_data", {}))  # NEW: Sanitize patho data
 
     # Use IMPROVED centralized prompt from ai_prompts.py
     from ai_prompts import get_smart_goals_field_prompt
@@ -7643,7 +7647,8 @@ def ai_smart_goals(field):
         subjective=subjective,
         perspectives=perspectives,
         diagnosis=diagnosis,
-        clinical_flags=clinical_flags
+        clinical_flags=clinical_flags,
+        patho_data=patho_data  # NEW: Pass pain mechanism context
     )
 
     try:
@@ -7709,6 +7714,7 @@ def treatment_plan_suggest(field):
     prov_dx = fetch_latest('provisional_diagnosis')
     goals = fetch_latest('smart_goals')
     clinical_flags_data = fetch_latest('clinical_flags')
+    patho_data = fetch_latest('patho_mechanism')  # NEW: Fetch pain mechanism data
 
     # Build sanitized previous context for IMPROVED centralized prompt
     age_sex = sanitize_age_sex(patient_info.get('age_sex', ''))
@@ -7719,6 +7725,7 @@ def treatment_plan_suggest(field):
     perspectives = sanitize_subjective_data(persp) if persp else {}
     goals_data = sanitize_subjective_data(goals) if goals else {}
     clinical_flags = sanitize_subjective_data(clinical_flags_data) if clinical_flags_data else {}
+    sanitized_patho = sanitize_subjective_data(patho_data) if patho_data else {}  # NEW: Sanitize patho data
 
     # Use IMPROVED centralized prompt from ai_prompts.py with body region-specific guidance
     prompt = get_treatment_plan_field_prompt(
@@ -7730,7 +7737,8 @@ def treatment_plan_suggest(field):
         perspectives=perspectives,
         diagnosis=diagnosis,
         goals=goals_data,
-        clinical_flags=clinical_flags
+        clinical_flags=clinical_flags,
+        patho_data=sanitized_patho  # NEW: Pass pain mechanism context
     )
 
     try:
