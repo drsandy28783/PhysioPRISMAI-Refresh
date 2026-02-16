@@ -6935,6 +6935,7 @@ def ai_subjective_field(field):
        present_hist = sanitize_clinical_text(data.get('present_history', '').strip())
        past_hist = sanitize_clinical_text(data.get('past_history', '').strip())
        existing_inputs = sanitize_subjective_data(data.get('inputs', {}))
+       patho_data = sanitize_subjective_data(data.get('patho_data', {}))  # NEW: Pain mechanism context
 
        # Use centralized prompt from ai_prompts.py
        prompt = get_subjective_field_prompt(
@@ -6942,7 +6943,8 @@ def ai_subjective_field(field):
            age_sex=age_sex,
            present_hist=present_hist,
            past_hist=past_hist,
-           existing_inputs=existing_inputs
+           existing_inputs=existing_inputs,
+           patho_data=patho_data  # NEW: Pass pain mechanism context
        )
        prompt = hard_limits(prompt, 3)
 
@@ -7167,6 +7169,9 @@ def ai_initial_plan_field(field):
     previous = data.get('previous', {})
     selection = data.get('selection', '')  # "Mandatory assessment", "Assessment with precaution", or "Absolutely Contraindicated"
 
+    # NEW: Get current form inputs for intra-form adaptive AI
+    existing_inputs = data.get('inputs', {})
+
     # Sanitize patient data to protect PHI
     age_sex = sanitize_age_sex(previous.get("age_sex", ""))
     present_hist = sanitize_clinical_text(previous.get("present_history", ""))
@@ -7174,6 +7179,8 @@ def ai_initial_plan_field(field):
     subjective = sanitize_subjective_data(previous.get("subjective", {}))
     perspectives = sanitize_subjective_data(previous.get("perspectives", {}))
     diagnosis = sanitize_clinical_text(previous.get("provisional_diagnosis", ""))
+    patho_data = sanitize_subjective_data(previous.get("patho_data", {}))  # NEW: Pain mechanism context
+    sanitized_inputs = sanitize_subjective_data(existing_inputs) if existing_inputs else {}  # NEW: Sanitize form inputs
 
     # Use centralized prompt from ai_prompts.py (IMPROVED - now includes proximal/distal joints and test modifications)
     prompt = get_initial_plan_field_prompt(
@@ -7184,7 +7191,9 @@ def ai_initial_plan_field(field):
         subjective=subjective,
         diagnosis=diagnosis,
         selection=selection,
-        perspectives=perspectives
+        perspectives=perspectives,
+        patho_data=patho_data,  # NEW: Pass pain mechanism context
+        existing_inputs=sanitized_inputs  # NEW: Pass current form inputs for adaptive AI
     )
     prompt = hard_limits(prompt, 4)
 
@@ -7694,6 +7703,9 @@ def treatment_plan_suggest(field):
     logger.info(f"🧠 [server] TreatmentPlan payload for patient {patient_id}: {data}")
     text_input = data.get('input', '').strip()
 
+    # NEW: Get current form inputs for intra-form adaptive AI
+    existing_inputs = data.get('inputs', {})
+
     # Fetch comprehensive patient data from Firestore
     if not patient_id:
         return jsonify({'error': 'Patient ID required'}), 400
@@ -7733,6 +7745,7 @@ def treatment_plan_suggest(field):
     goals_data = sanitize_subjective_data(goals) if goals else {}
     clinical_flags = sanitize_subjective_data(clinical_flags_data) if clinical_flags_data else {}
     sanitized_patho = sanitize_subjective_data(patho_data) if patho_data else {}  # NEW: Sanitize patho data
+    sanitized_inputs = sanitize_subjective_data(existing_inputs) if existing_inputs else {}  # NEW: Sanitize form inputs
 
     # Use IMPROVED centralized prompt from ai_prompts.py with body region-specific guidance
     prompt = get_treatment_plan_field_prompt(
@@ -7745,7 +7758,8 @@ def treatment_plan_suggest(field):
         diagnosis=diagnosis,
         goals=goals_data,
         clinical_flags=clinical_flags,
-        patho_data=sanitized_patho  # NEW: Pass pain mechanism context
+        patho_data=sanitized_patho,  # NEW: Pass pain mechanism context
+        existing_inputs=sanitized_inputs  # NEW: Pass current form inputs for adaptive AI
     )
 
     try:

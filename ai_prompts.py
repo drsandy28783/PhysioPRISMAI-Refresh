@@ -327,6 +327,209 @@ def analyze_objective_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
     return analysis
 
 
+def analyze_subjective_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Analyze existing subjective examination (ICF) inputs to guide adaptive suggestions.
+
+    Subjective examination has 6 ICF-based fields:
+    - body_structure, body_function, activity_performance, activity_capacity,
+      contextual_environmental, contextual_personal
+
+    Returns analysis indicating which ICF domains are already documented and
+    whether there are gaps that need more detail.
+
+    Args:
+        inputs: Dict of current form field values
+
+    Returns:
+        Dict containing analysis of ICF completeness and detail level
+    """
+    analysis = {
+        'body_structure_status': 'untested',
+        'body_function_status': 'untested',
+        'activity_performance_status': 'untested',
+        'activity_capacity_status': 'untested',
+        'environmental_status': 'untested',
+        'personal_status': 'untested',
+        'completed_fields': [],
+        'incomplete_fields': [],
+        'detailed_fields': [],  # Fields with substantial detail
+        'brief_fields': [],  # Fields with minimal detail
+        'priority_focus': 'complete_all_fields'
+    }
+
+    if not inputs:
+        return analysis
+
+    # Threshold for "detailed" vs "brief" - conservative
+    BRIEF_THRESHOLD = 30  # Less than 30 chars = brief
+    DETAILED_THRESHOLD = 100  # More than 100 chars = detailed
+
+    for field_name, field_value in inputs.items():
+        if not field_value or len(str(field_value).strip()) < 3:
+            analysis['incomplete_fields'].append(field_name)
+            continue
+
+        analysis['completed_fields'].append(field_name)
+        value_len = len(str(field_value).strip())
+
+        # Classify detail level
+        if value_len < BRIEF_THRESHOLD:
+            analysis['brief_fields'].append(field_name)
+        elif value_len > DETAILED_THRESHOLD:
+            analysis['detailed_fields'].append(field_name)
+
+        # Map to ICF category
+        field_lower = field_name.lower()
+        if 'body_structure' in field_lower or 'structure' in field_lower:
+            analysis['body_structure_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'body_function' in field_lower or 'function' in field_lower:
+            analysis['body_function_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'activity_performance' in field_lower or 'performance' in field_lower:
+            analysis['activity_performance_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'activity_capacity' in field_lower or 'capacity' in field_lower:
+            analysis['activity_capacity_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'environmental' in field_lower:
+            analysis['environmental_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'personal' in field_lower:
+            analysis['personal_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+
+    # Determine priority focus
+    if len(analysis['incomplete_fields']) > 3:
+        analysis['priority_focus'] = 'complete_remaining_fields'
+    elif len(analysis['brief_fields']) > 2:
+        analysis['priority_focus'] = 'expand_brief_responses'
+    elif analysis['completed_fields']:
+        analysis['priority_focus'] = 'ensure_comprehensiveness'
+    else:
+        analysis['priority_focus'] = 'complete_all_fields'
+
+    return analysis
+
+
+def analyze_initial_plan_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Analyze existing initial plan (assessment plan) inputs to guide adaptive suggestions.
+
+    Initial plan fields vary but typically include specific assessment categories
+    (e.g., ROM tests, strength tests, special tests, neurological tests).
+
+    Returns analysis indicating which assessment categories are already planned
+    and whether the plan is comprehensive.
+
+    Args:
+        inputs: Dict of current form field values
+
+    Returns:
+        Dict containing analysis of assessment plan completeness
+    """
+    analysis = {
+        'completed_fields': [],
+        'incomplete_fields': [],
+        'comprehensive_fields': [],  # Detailed test plans
+        'minimal_fields': [],  # Brief mentions only
+        'priority_focus': 'complete_comprehensive_plan'
+    }
+
+    if not inputs:
+        return analysis
+
+    MINIMAL_THRESHOLD = 40  # Less than 40 chars = minimal
+    COMPREHENSIVE_THRESHOLD = 120  # More than 120 chars = comprehensive
+
+    for field_name, field_value in inputs.items():
+        if not field_value or len(str(field_value).strip()) < 3:
+            analysis['incomplete_fields'].append(field_name)
+            continue
+
+        analysis['completed_fields'].append(field_name)
+        value_len = len(str(field_value).strip())
+
+        if value_len < MINIMAL_THRESHOLD:
+            analysis['minimal_fields'].append(field_name)
+        elif value_len > COMPREHENSIVE_THRESHOLD:
+            analysis['comprehensive_fields'].append(field_name)
+
+    # Determine priority
+    if len(analysis['incomplete_fields']) > 0:
+        analysis['priority_focus'] = 'complete_remaining_categories'
+    elif len(analysis['minimal_fields']) > 2:
+        analysis['priority_focus'] = 'expand_minimal_plans'
+    else:
+        analysis['priority_focus'] = 'refine_and_finalize'
+
+    return analysis
+
+
+def analyze_treatment_plan_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Analyze existing treatment plan inputs to guide adaptive suggestions.
+
+    Treatment plan has 4 fields:
+    - treatment_plan (interventions)
+    - goal_targeted (which SMART goals)
+    - reasoning (clinical rationale)
+    - reference (evidence/literature)
+
+    Returns analysis indicating which fields are complete and how they relate to each other.
+
+    Args:
+        inputs: Dict of current form field values
+
+    Returns:
+        Dict containing analysis of treatment plan completeness and coherence
+    """
+    analysis = {
+        'treatment_plan_status': 'untested',
+        'goal_targeted_status': 'untested',
+        'reasoning_status': 'untested',
+        'reference_status': 'untested',
+        'completed_fields': [],
+        'incomplete_fields': [],
+        'priority_focus': 'complete_all_components'
+    }
+
+    if not inputs:
+        return analysis
+
+    BRIEF_THRESHOLD = 50
+    DETAILED_THRESHOLD = 150
+
+    for field_name, field_value in inputs.items():
+        if not field_value or len(str(field_value).strip()) < 3:
+            analysis['incomplete_fields'].append(field_name)
+            continue
+
+        analysis['completed_fields'].append(field_name)
+        value_len = len(str(field_value).strip())
+
+        field_lower = field_name.lower()
+        status = 'detailed' if value_len > DETAILED_THRESHOLD else ('brief' if value_len < BRIEF_THRESHOLD else 'adequate')
+
+        if 'treatment_plan' in field_lower and 'goal' not in field_lower and 'reasoning' not in field_lower:
+            analysis['treatment_plan_status'] = status
+        elif 'goal' in field_lower:
+            analysis['goal_targeted_status'] = status
+        elif 'reasoning' in field_lower:
+            analysis['reasoning_status'] = status
+        elif 'reference' in field_lower:
+            analysis['reference_status'] = status
+
+    # Determine priority based on logical flow
+    if analysis['treatment_plan_status'] == 'untested':
+        analysis['priority_focus'] = 'define_interventions_first'
+    elif analysis['goal_targeted_status'] == 'untested':
+        analysis['priority_focus'] = 'link_to_goals'
+    elif analysis['reasoning_status'] == 'untested':
+        analysis['priority_focus'] = 'justify_with_reasoning'
+    elif analysis['reference_status'] == 'untested':
+        analysis['priority_focus'] = 'add_evidence_base'
+    else:
+        analysis['priority_focus'] = 'refine_and_integrate'
+
+    return analysis
+
+
 def detect_body_region(presenting_complaint: str) -> Optional[str]:
     """
     Detect the primary body region from the presenting complaint.
@@ -684,6 +887,46 @@ Provide 2-3 questions about PERSONAL ACTIVITIES/LIFESTYLE ONLY and 2-3 clinical 
                 patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
             patho_context += "\nIMPORTANT: Consider contraindications based on pain mechanism and irritability when suggesting examination approaches.\n"
 
+    # NEW: Intra-form adaptive context - analyze ICF completeness
+    intra_form_context = ""
+    if existing_inputs:
+        analysis = analyze_subjective_findings(existing_inputs)
+
+        if analysis['completed_fields']:
+            intra_form_context = "\n\n🔄 INTRA-FORM ADAPTIVE CONTEXT (ICF Framework Completeness):\n\n"
+
+            # Show ICF domains completed
+            intra_form_context += "ICF DOMAINS COMPLETED:\n"
+            for field_name in analysis['completed_fields']:
+                is_brief = field_name in analysis['brief_fields']
+                is_detailed = field_name in analysis['detailed_fields']
+                status = "⚡ DETAILED" if is_detailed else ("⚠️ BRIEF" if is_brief else "✅ ADEQUATE")
+                intra_form_context += f"- {field_name.replace('_', ' ').title()}: {status}\n"
+
+            intra_form_context += "\n🎯 ADAPTIVE GUIDANCE:\n\n"
+
+            # Guidance based on what's completed
+            if analysis['brief_fields']:
+                intra_form_context += f"⚠️ BRIEF RESPONSES DETECTED: {', '.join([f.replace('_', ' ').title() for f in analysis['brief_fields']])}\n"
+                intra_form_context += "   → If this field is one of the brief ones, encourage more detail and specific examples.\n\n"
+
+            if analysis['incomplete_fields']:
+                intra_form_context += f"📝 REMAINING FIELDS: {', '.join([f.replace('_', ' ').title() for f in analysis['incomplete_fields']])}\n"
+                intra_form_context += "   → Complete these to ensure comprehensive ICF documentation.\n\n"
+
+            # Priority focus
+            intra_form_context += f"💡 PRIORITY: {analysis['priority_focus'].replace('_', ' ').title()}\n\n"
+
+            # Specific guidance based on priority
+            if analysis['priority_focus'] == 'expand_brief_responses':
+                intra_form_context += "⚡ GUIDANCE: Several fields have minimal detail. Encourage elaboration with specific examples.\n"
+            elif analysis['priority_focus'] == 'complete_remaining_fields':
+                intra_form_context += "⚡ GUIDANCE: Focus on completing unfilled ICF domains for comprehensive assessment.\n"
+            elif analysis['priority_focus'] == 'ensure_comprehensiveness':
+                intra_form_context += "⚡ GUIDANCE: Most fields completed. Ensure depth and clinical relevance in remaining fields.\n"
+
+            intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
     return f"""
 {SYSTEM_ROLES['icf_specialist']}
 
@@ -695,6 +938,7 @@ PATIENT SNAPSHOT
 OTHER SUBJECTIVE FINDINGS ALREADY GATHERED
 {existing if existing else 'None recorded yet.'}
 {patho_context}
+{intra_form_context}
 
 TARGET ICF COMPONENT: {component}
 {icf_core_guidance}
@@ -3430,6 +3674,7 @@ def get_initial_plan_field_prompt(
     selection: Optional[str] = None,
     perspectives: Optional[Dict[str, Any]] = None,
     patho_data: Optional[Dict[str, Any]] = None,
+    existing_inputs: Optional[Dict[str, str]] = None,  # NEW: Current form inputs for adaptive AI
 ) -> str:
     """
     IMPROVED: Field-specific ASSESSMENT planning guidance (not treatment planning).
@@ -3440,6 +3685,7 @@ def get_initial_plan_field_prompt(
     - Test modifications based on patient perspectives (fear, pain, expectations)
     - Specific restrictions and precautions
     - NEW: Contraindications based on pain mechanism, severity, and irritability
+    - NEW: INTRA-FORM ADAPTIVE AI - Learns from previous fields on THIS form
 
     Endpoint: /api/ai_suggestion/initial_plan/<field>
     """
@@ -3706,6 +3952,42 @@ CLINICAL REASONING TO PROVIDE:
                     patho_contraindications += "- VISCERAL PAIN SUSPECTED: Contraindicated for musculoskeletal testing - requires medical referral\n"
             patho_contraindications += "\n⚠️ MANDATORY: Flag any contraindicated tests based on above warnings.\n"
 
+    # NEW: Intra-form adaptive context - analyze assessment plan completeness
+    intra_form_context = ""
+    if existing_inputs:
+        analysis = analyze_initial_plan_findings(existing_inputs)
+
+        if analysis['completed_fields']:
+            intra_form_context = "\n\n🔄 INTRA-FORM ADAPTIVE CONTEXT (Assessment Plan Completeness):\n\n"
+
+            # Show completed categories
+            intra_form_context += "ASSESSMENT CATEGORIES ALREADY PLANNED:\n"
+            for field_name in analysis['completed_fields']:
+                is_minimal = field_name in analysis['minimal_fields']
+                is_comprehensive = field_name in analysis['comprehensive_fields']
+                status = "⚡ COMPREHENSIVE" if is_comprehensive else ("⚠️ MINIMAL" if is_minimal else "✅ ADEQUATE")
+                intra_form_context += f"- {field_name.replace('_', ' ').title()}: {status}\n"
+
+            intra_form_context += "\n🎯 ADAPTIVE GUIDANCE:\n\n"
+
+            if analysis['minimal_fields']:
+                intra_form_context += f"⚠️ MINIMAL DETAIL DETECTED: {', '.join([f.replace('_', ' ').title() for f in analysis['minimal_fields']])}\n"
+                intra_form_context += "   → If this field is one of them, provide more specific test details (e.g., exact ROM measurements, specific special tests).\n\n"
+
+            if analysis['incomplete_fields']:
+                intra_form_context += f"📝 REMAINING CATEGORIES: {', '.join([f.replace('_', ' ').title() for f in analysis['incomplete_fields']])}\n"
+                intra_form_context += "   → Complete these to ensure comprehensive assessment plan.\n\n"
+
+            # Priority guidance
+            intra_form_context += f"💡 PRIORITY: {analysis['priority_focus'].replace('_', ' ').title()}\n\n"
+
+            if analysis['priority_focus'] == 'expand_minimal_plans':
+                intra_form_context += "⚡ GUIDANCE: Several categories have minimal detail. Provide specific test names and parameters.\n"
+            elif analysis['priority_focus'] == 'complete_remaining_categories':
+                intra_form_context += "⚡ GUIDANCE: Fill in remaining assessment categories for comprehensive examination planning.\n"
+
+            intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
@@ -3715,6 +3997,7 @@ TARGET ASSESSMENT CATEGORY: {component}
 {selection_context}
 {modification_guidance}
 {patho_contraindications}
+{intra_form_context}
 
 {specific_guidance}
 
@@ -4751,6 +5034,7 @@ def get_treatment_plan_field_prompt(
     goals: Optional[Dict[str, Any]] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
     patho_data: Optional[Dict[str, Any]] = None,
+    existing_inputs: Optional[Dict[str, str]] = None,  # NEW: Current form inputs for adaptive AI
 ) -> str:
     """
     IMPROVED: Body region-specific treatment interventions for each field.
@@ -4758,6 +5042,7 @@ def get_treatment_plan_field_prompt(
 
     NEW: Tailors treatment interventions to pain mechanism (e.g., neurogenic vs somatic pain
     requires different approaches) and respects irritability levels.
+    NEW: INTRA-FORM ADAPTIVE AI - Learns from previous fields on THIS form
 
     Endpoint: /api/ai_suggestion/treatment_plan/<field>
     """
@@ -5083,6 +5368,48 @@ GENERAL MUSCULOSKELETAL TREATMENT INTERVENTIONS:
                 elif 'chronic' in str(healing_stage).lower():
                     patho_context += "- CHRONIC STAGE: Focus on graded exposure, pain education, address fear-avoidance, functional restoration\n"
 
+    # NEW: Intra-form adaptive context - analyze treatment plan completeness and coherence
+    intra_form_context = ""
+    if existing_inputs:
+        analysis = analyze_treatment_plan_findings(existing_inputs)
+
+        if analysis['completed_fields']:
+            intra_form_context = "\n\n🔄 INTRA-FORM ADAPTIVE CONTEXT (Treatment Plan Coherence):\n\n"
+
+            # Show completed components
+            intra_form_context += "TREATMENT PLAN COMPONENTS COMPLETED:\n"
+            for field_name in analysis['completed_fields']:
+                field_lower = field_name.lower()
+                if 'treatment_plan' in field_lower and 'goal' not in field_lower:
+                    status = analysis['treatment_plan_status'].upper()
+                elif 'goal' in field_lower:
+                    status = analysis['goal_targeted_status'].upper()
+                elif 'reasoning' in field_lower:
+                    status = analysis['reasoning_status'].upper()
+                elif 'reference' in field_lower:
+                    status = analysis['reference_status'].upper()
+                else:
+                    status = "COMPLETED"
+                intra_form_context += f"- {field_name.replace('_', ' ').title()}: {status}\n"
+
+            intra_form_context += "\n🎯 ADAPTIVE GUIDANCE:\n\n"
+
+            # Priority-based guidance
+            intra_form_context += f"💡 PRIORITY: {analysis['priority_focus'].replace('_', ' ').title()}\n\n"
+
+            if analysis['priority_focus'] == 'define_interventions_first':
+                intra_form_context += "⚡ GUIDANCE: Treatment plan is the foundation. Provide specific interventions with dosage parameters.\n"
+            elif analysis['priority_focus'] == 'link_to_goals':
+                intra_form_context += "⚡ GUIDANCE: Treatment plan defined. Now explicitly link interventions to SMART goals.\n"
+            elif analysis['priority_focus'] == 'justify_with_reasoning':
+                intra_form_context += "⚡ GUIDANCE: Treatment and goals documented. Provide clinical reasoning and evidence base.\n"
+            elif analysis['priority_focus'] == 'add_evidence_base':
+                intra_form_context += "⚡ GUIDANCE: Add literature references to support your treatment approach.\n"
+            elif analysis['priority_focus'] == 'refine_and_integrate':
+                intra_form_context += "⚡ GUIDANCE: All components present. Ensure coherence and integration across all fields.\n"
+
+            intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
     # Field-specific guidance
     field_specific_guidance = {
         'treatment_plan': f"""
@@ -5242,6 +5569,7 @@ Provide clinically relevant, evidence-based suggestions for this field based on 
 {context}
 {icf_participation_guidance}
 {patho_context}
+{intra_form_context}
 
 {specific_guidance}
 
