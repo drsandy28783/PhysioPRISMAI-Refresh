@@ -7425,6 +7425,19 @@ def objective_assessment_field_suggest(field):
         return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 
+# Route alias for mobile app compatibility (o_e_assessment -> objective_assessment)
+@app.route('/api/ai_suggestion/o_e_assessment/<field>', methods=['POST'])
+@csrf.exempt
+@require_firebase_auth
+@require_ai_quota
+def o_e_assessment_field_suggest(field):
+    """
+    Route alias for objective assessment endpoint.
+    Mobile app uses 'o_e_assessment' URL - redirects to main handler.
+    """
+    return objective_assessment_field_suggest(field)
+
+
             # at the bottom of main.py (after your other @app.route handlers)
 
 @app.route('/provisional_diagnosis_suggest/<patient_id>', methods=['GET', 'POST'])
