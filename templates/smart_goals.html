@@ -38,8 +38,8 @@
     {% endfor %}
 
     <div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
-      <button type="submit" class="button">Save &amp; Continue to Treatment Plan</button>
-      <a href="{{ url_for('provisional_diagnosis', patient_id=patient_id) }}" class="button" style="background:#ccc; color:#000;">&larr; Back to Provisional Diagnosis</a>
+      <button type="submit" class="button">Save &amp; Continue</button>
+      <a href="{{ url_for('provisional_diagnosis', patient_id=patient_id) }}" class="button-secondary">&larr; Back to Provisional Diagnosis</a>
     </div>
   </form>
 </div>

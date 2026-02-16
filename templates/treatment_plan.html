@@ -46,9 +46,9 @@
       {% endfor %}
 
       <div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
-        <button type="submit" class="button">Save &amp; Return to Dashboard</button>
+        <button type="submit" class="button">Save &amp; Complete Assessment</button>
         <button type="button" class="button" id="gen_summary">⚡ Generate Summary</button>
-        <a href="{{ url_for('smart_goals', patient_id=patient_id) }}" class="button" style="background:#ccc; color:#000;">
+        <a href="{{ url_for('smart_goals', patient_id=patient_id) }}" class="button-secondary">
           &larr; Back to SMART Goals
         </a>
       </div>

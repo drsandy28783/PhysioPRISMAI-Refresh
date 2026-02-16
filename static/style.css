@@ -215,6 +215,36 @@ small,
   transform: none;
 }
 
+/* Secondary Button - For back/cancel actions */
+.button-secondary {
+  background-color: rgba(26, 95, 90, 0.1);
+  color: var(--primary);
+  padding: 16px 20px;
+  height: 50px;
+  border: 1px solid var(--primary-light);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-secondary:hover {
+  background-color: rgba(26, 95, 90, 0.15);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(26, 95, 90, 0.2);
+}
+
+.button-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(26, 95, 90, 0.1);
+}
+
 /* Form Elements - Mobile Aligned */
 .input-field,
 input[type="text"],
