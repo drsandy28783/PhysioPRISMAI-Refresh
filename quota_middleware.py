@@ -47,9 +47,12 @@ def require_patient_quota(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
-            # Get user ID from g.user (set by @require_auth)
-            user_id = g.user.get('email') or g.user.get('uid')
+            # Get user ID from g.firebase_user (Firebase auth) or g.user (session auth)
+            user_data = getattr(g, 'firebase_user', None) or getattr(g, 'user', None)
+            if not user_data:
+                return jsonify({'error': 'User not authenticated'}), 401
 
+            user_id = user_data.get('email') or user_data.get('uid')
             if not user_id:
                 return jsonify({'error': 'User not authenticated'}), 401
 
@@ -104,9 +107,12 @@ def require_ai_quota(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
-            # Get user ID from g.user (set by @require_auth)
-            user_id = g.user.get('email') or g.user.get('uid')
+            # Get user ID from g.firebase_user (Firebase auth) or g.user (session auth)
+            user_data = getattr(g, 'firebase_user', None) or getattr(g, 'user', None)
+            if not user_data:
+                return jsonify({'error': 'User not authenticated'}), 401
 
+            user_id = user_data.get('email') or user_data.get('uid')
             if not user_id:
                 return jsonify({'error': 'User not authenticated'}), 401
 
@@ -175,9 +181,12 @@ def require_voice_quota(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
-            # Get user ID from g.user (set by @require_auth)
-            user_id = g.user.get('email') or g.user.get('uid')
+            # Get user ID from g.firebase_user (Firebase auth) or g.user (session auth)
+            user_data = getattr(g, 'firebase_user', None) or getattr(g, 'user', None)
+            if not user_data:
+                return jsonify({'error': 'User not authenticated'}), 401
 
+            user_id = user_data.get('email') or user_data.get('uid')
             if not user_id:
                 return jsonify({'error': 'User not authenticated'}), 401
 
@@ -250,9 +259,12 @@ def check_subscription_status(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
-            # Get user ID from g.user (set by @require_auth)
-            user_id = g.user.get('email') or g.user.get('uid')
+            # Get user ID from g.firebase_user (Firebase auth) or g.user (session auth)
+            user_data = getattr(g, 'firebase_user', None) or getattr(g, 'user', None)
+            if not user_data:
+                return jsonify({'error': 'User not authenticated'}), 401
 
+            user_id = user_data.get('email') or user_data.get('uid')
             if not user_id:
                 return jsonify({'error': 'User not authenticated'}), 401
 

@@ -109,6 +109,16 @@
 <script nonce="{{ csp_nonce() }}">
   // Make patient_id available globally for AI suggestions
   window.currentPatientId = '{{ patient_id }}';
+
+  // Update VAS slider value display
+  const painSeveritySlider = document.getElementById('pain_severity');
+  const painSeverityDisplay = document.getElementById('pain_severity_val');
+
+  if (painSeveritySlider && painSeverityDisplay) {
+    painSeveritySlider.addEventListener('input', function() {
+      painSeverityDisplay.textContent = this.value;
+    });
+  }
 </script>
 {% endblock %}
 
