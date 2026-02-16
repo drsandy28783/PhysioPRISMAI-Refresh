@@ -1026,10 +1026,13 @@ def get_provisional_diagnosis_field_prompt(
     assessments: Optional[Dict[str, Any]] = None,
     objective_findings: Optional[Dict[str, Any]] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     IMPROVED: Field-specific provisional diagnosis guidance with body region-specific differential diagnoses.
     Provides evidence-based diagnostic reasoning for each field based on clinical presentation.
+
+    NEW: Integrates pain mechanism classification into differential diagnosis reasoning.
 
     Endpoint: /api/ai_suggestion/provisional_diagnosis/<field>
     """
@@ -1632,6 +1635,23 @@ TARGET FIELD: {field_label}
 Provide clinically relevant, evidence-based suggestions for this field based on the patient's presentation and diagnostic reasoning.
 """)
 
+    # NEW: Add pathophysiological mechanism context for diagnosis integration
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_type = patho_data.get('pain_type', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_mechanism, pain_type, healing_stage]):
+            patho_context = "\n\nPAIN MECHANISM CLASSIFICATION (INTEGRATE INTO DIAGNOSIS):\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source: {pain_mechanism}\n"
+            if pain_type:
+                patho_context += f"- Pain Type: {pain_type}\n"
+            if healing_stage:
+                patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
+            patho_context += "\nIMPORTANT: Integrate pain mechanism into provisional diagnosis (e.g., 'subacromial impingement with nociceptive pain mechanism' or 'lumbar radiculopathy with neurogenic pain').\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1640,6 +1660,7 @@ Provide clinically relevant, evidence-based suggestions for this field based on 
 
 {context}
 {icf_guidance}
+{patho_context}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️  MANDATORY FIRST STEP - PATIENT DATA ANALYSIS
@@ -3587,10 +3608,13 @@ def get_smart_goals_field_prompt(
     perspectives: Optional[Dict[str, Any]] = None,
     diagnosis: Optional[str] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     IMPROVED: Field-specific SMART goals guidance with body region-specific ICF participation goals.
     Provides evidence-based, condition-specific goal-setting recommendations.
+
+    NEW: Adjusts goal timeframes and expectations based on pain severity, irritability, and healing stage.
 
     Endpoint: /api/ai_suggestion/smart_goals/<field>
     """
@@ -4318,10 +4342,31 @@ TARGET FIELD: {field_label}
 Provide clinically relevant, evidence-based SMART goal suggestions for this field based on the patient's presentation, diagnosis, and patient priorities.
 """)
 
+    # NEW: Add pathophysiological mechanism context for realistic goal setting
+    patho_context = ""
+    if patho_data:
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_severity, pain_irritability, healing_stage]):
+            patho_context = "\n\nPAIN & HEALING CONTEXT FOR GOAL TIMEFRAMES:\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            if healing_stage:
+                patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
+            patho_context += "\nIMPORTANT: Adjust goal timeframes based on severity and healing stage.\n"
+            patho_context += "- High severity/irritability → Conservative timelines, stage goals carefully\n"
+            patho_context += "- Acute healing → Protect tissue, don't overpromise quick return to high-level activity\n"
+            patho_context += "- Chronic → May need longer timeframes, address psychosocial factors\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
 {icf_participation_guidance}
+{patho_context}
 
 {specific_guidance}
 
@@ -4429,10 +4474,14 @@ def get_treatment_plan_field_prompt(
     diagnosis: Optional[str] = None,
     goals: Optional[Dict[str, Any]] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     IMPROVED: Body region-specific treatment interventions for each field.
     Provides evidence-based, condition-specific treatment recommendations.
+
+    NEW: Tailors treatment interventions to pain mechanism (e.g., neurogenic vs somatic pain
+    requires different approaches) and respects irritability levels.
 
     Endpoint: /api/ai_suggestion/treatment_plan/<field>
     """
@@ -4707,6 +4756,57 @@ GENERAL MUSCULOSKELETAL TREATMENT INTERVENTIONS:
 - Ergonomic advice
 """
 
+    # NEW: Add pathophysiological mechanism context for treatment selection
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_type = patho_data.get('pain_type', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_mechanism, pain_type, pain_severity, pain_irritability, healing_stage]):
+            patho_context = "\n\n⚕️ PAIN MECHANISM CONTEXT FOR TREATMENT SELECTION:\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source Classification: {pain_mechanism}\n"
+            if pain_type:
+                patho_context += f"- Pain Type: {pain_type}\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            if healing_stage:
+                patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
+
+            patho_context += "\n🎯 TREATMENT IMPLICATIONS:\n"
+
+            # Pain mechanism-specific treatment guidance
+            if pain_mechanism:
+                if 'neurogenic' in str(pain_mechanism).lower():
+                    patho_context += "- NEUROGENIC PAIN: Prioritize graded exposure, pain education, neural mobilization (gentle), avoid aggressive stretching\n"
+                elif 'visceral' in str(pain_mechanism).lower():
+                    patho_context += "- VISCERAL PAIN SUSPECTED: Treatment contraindicated - medical referral required\n"
+                elif 'somatic referred' in str(pain_mechanism).lower():
+                    patho_context += "- SOMATIC REFERRED: Treat source region, consider myofascial trigger points, educate on referred pain patterns\n"
+                elif 'somatic local' in str(pain_mechanism).lower():
+                    patho_context += "- SOMATIC LOCAL: Direct treatment appropriate, manual therapy + exercise, load management\n"
+
+            # Irritability-based treatment modifications
+            if pain_irritability:
+                if 'present' in str(pain_irritability).lower() or 'high' in str(pain_irritability).lower():
+                    patho_context += "- HIGH IRRITABILITY: Gentle progression, avoid flare-ups, prioritize education and desensitization\n"
+                else:
+                    patho_context += "- LOW IRRITABILITY: More aggressive treatment appropriate, can progress quickly\n"
+
+            # Healing stage-based modifications
+            if healing_stage:
+                if 'acute' in str(healing_stage).lower():
+                    patho_context += "- ACUTE STAGE: Protect healing tissues, PRICE principles, avoid end-range stress, gentle AROM\n"
+                elif 'subacute' in str(healing_stage).lower():
+                    patho_context += "- SUBACUTE STAGE: Progressive loading, functional exercises, manual therapy appropriate\n"
+                elif 'chronic' in str(healing_stage).lower():
+                    patho_context += "- CHRONIC STAGE: Focus on graded exposure, pain education, address fear-avoidance, functional restoration\n"
+
     # Field-specific guidance
     field_specific_guidance = {
         'treatment_plan': f"""
@@ -4865,6 +4965,7 @@ Provide clinically relevant, evidence-based suggestions for this field based on 
 
 {context}
 {icf_participation_guidance}
+{patho_context}
 
 {specific_guidance}
 
