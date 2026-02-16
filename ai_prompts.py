@@ -608,10 +608,14 @@ def get_patient_perspectives_field_prompt(
     past_hist: str,
     subjective_inputs: Optional[Dict[str, Any]] = None,
     existing_perspectives: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     FIELD-SPECIFIC patient perspectives prompts based on Common Sense Model (CSM).
     Provides targeted questions and clinical reasoning for each perspective component.
+
+    NEW: Includes pathophysiological mechanism context to tailor perspective questions
+    to pain type and mechanism (e.g., neurogenic vs somatic pain affects expectations).
 
     Endpoint: /api/ai_suggestion/perspectives/<field>
     """
@@ -837,6 +841,26 @@ Provide 2-3 specific questions identifying emotional responses and distress patt
 
     specific_guidance = field_specific_guidance.get(field, "")
 
+    # NEW: Add pathophysiological mechanism context (helps tailor perspective questions)
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_type = patho_data.get('pain_type', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+
+        if any([pain_mechanism, pain_type, pain_severity]):
+            patho_context = "\n\nPAIN MECHANISM CONTEXT:\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source: {pain_mechanism}\n"
+            if pain_type:
+                patho_context += f"- Pain Type: {pain_type}\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            patho_context += "\nNOTE: Tailor perspective questions to pain mechanism (e.g., neurogenic pain may affect timeline expectations differently than acute somatic pain).\n"
+
     return f"""
 {SYSTEM_ROLES['biopsychosocial']}
 
@@ -850,6 +874,7 @@ SUBJECTIVE FINDINGS ALREADY GATHERED
 
 OTHER PATIENT PERSPECTIVES ALREADY GATHERED
 {existing if existing else 'None recorded yet.'}
+{patho_context}
 
 TARGET CSM COMPONENT: {component}
 
@@ -3086,6 +3111,7 @@ def get_initial_plan_field_prompt(
     diagnosis: Optional[str] = None,
     selection: Optional[str] = None,
     perspectives: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     IMPROVED: Field-specific ASSESSMENT planning guidance (not treatment planning).
@@ -3095,6 +3121,7 @@ def get_initial_plan_field_prompt(
     - Proximal and distal joint assessment recommendations
     - Test modifications based on patient perspectives (fear, pain, expectations)
     - Specific restrictions and precautions
+    - NEW: Contraindications based on pain mechanism, severity, and irritability
 
     Endpoint: /api/ai_suggestion/initial_plan/<field>
     """
@@ -3333,6 +3360,34 @@ CLINICAL REASONING TO PROVIDE:
             if awareness == 'Unaware':
                 modification_guidance += "- Limited consequence awareness: Educate during testing about what you're assessing and why\n"
 
+    # NEW: Add pathophysiological mechanism context for contraindication warnings
+    patho_contraindications = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_mechanism, pain_severity, pain_irritability]):
+            patho_contraindications = "\n\n⚠️ CONTRAINDICATION WARNINGS (PAIN MECHANISM BASED):\n"
+            if pain_severity:
+                try:
+                    severity_num = int(pain_severity)
+                    if severity_num >= 7:
+                        patho_contraindications += f"- HIGH PAIN SEVERITY ({severity_num}/10): Limit aggressive testing, prioritize gentle examination\n"
+                except (ValueError, TypeError):
+                    pass
+            if pain_irritability and 'high' in str(pain_irritability).lower():
+                patho_contraindications += "- HIGH IRRITABILITY: Avoid provocative tests that may flare symptoms significantly\n"
+            if healing_stage and 'acute' in str(healing_stage).lower():
+                patho_contraindications += "- ACUTE HEALING STAGE: Protect healing tissues, avoid end-range stressing\n"
+            if pain_mechanism:
+                if 'neurogenic' in str(pain_mechanism).lower():
+                    patho_contraindications += "- NEUROGENIC PAIN: Caution with neurodynamic testing, may provoke significant symptoms\n"
+                elif 'visceral' in str(pain_mechanism).lower():
+                    patho_contraindications += "- VISCERAL PAIN SUSPECTED: Contraindicated for musculoskeletal testing - requires medical referral\n"
+            patho_contraindications += "\n⚠️ MANDATORY: Flag any contraindicated tests based on above warnings.\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
@@ -3341,6 +3396,7 @@ CLINICAL REASONING TO PROVIDE:
 TARGET ASSESSMENT CATEGORY: {component}
 {selection_context}
 {modification_guidance}
+{patho_contraindications}
 
 {specific_guidance}
 
