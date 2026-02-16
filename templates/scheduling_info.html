@@ -213,12 +213,20 @@
     <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button">
       Open Scheduling App →
     </a>
-    {% else %}
+    {% elif is_trial_expired %}
     <div style="background: rgba(231, 76, 60, 0.2); border: 2px solid #e74c3c; border-radius: 12px; padding: 24px; margin: 20px auto; max-width: 600px;">
-      <h3 style="margin-bottom: 12px; font-size: 24px;">Premium Feature</h3>
-      <p style="margin-bottom: 20px; font-size: 16px;">Appointment Scheduling is available with paid subscriptions only.</p>
+      <h3 style="margin-bottom: 12px; font-size: 24px;">Free Trial Expired</h3>
+      <p style="margin-bottom: 20px; font-size: 16px;">Your free trial has ended. Upgrade to a paid plan to continue using the Appointment Scheduling feature.</p>
       <a href="{{ url_for('pricing') }}" class="cta-button" style="background: #e74c3c;">
-        Upgrade to Access →
+        Upgrade Now →
+      </a>
+    </div>
+    {% else %}
+    <div style="background: rgba(241, 196, 15, 0.2); border: 2px solid #f39c12; border-radius: 12px; padding: 24px; margin: 20px auto; max-width: 600px;">
+      <h3 style="margin-bottom: 12px; font-size: 24px;">Subscription Required</h3>
+      <p style="margin-bottom: 20px; font-size: 16px;">Appointment Scheduling is available with a subscription. Start your free trial to test this feature.</p>
+      <a href="{{ url_for('pricing') }}" class="cta-button" style="background: #f39c12;">
+        Start Free Trial →
       </a>
     </div>
     {% endif %}
@@ -376,15 +384,24 @@
     <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button" style="font-size: 20px; padding: 20px 50px;">
       Launch Scheduling App →
     </a>
+    {% elif is_trial_expired %}
+    <div style="max-width: 600px; margin: 0 auto; padding: 40px; background: rgba(231, 76, 60, 0.1); border-radius: 12px; border: 2px solid #e74c3c;">
+      <h3 style="color: #c0392b; margin-bottom: 16px;">Free Trial Expired</h3>
+      <p style="color: #c0392b; margin-bottom: 24px; font-size: 16px;">
+        Your free trial has ended. Upgrade to a paid plan to continue using the Appointment Scheduling feature and unlock all premium features.
+      </p>
+      <a href="{{ url_for('pricing') }}" class="cta-button" style="background: #e74c3c; font-size: 18px; padding: 16px 40px;">
+        Upgrade Now →
+      </a>
+    </div>
     {% else %}
     <div style="max-width: 600px; margin: 0 auto; padding: 40px; background: #fff3cd; border-radius: 12px; border: 2px solid #ffc107;">
-      <h3 style="color: #856404; margin-bottom: 16px;">Upgrade Required</h3>
+      <h3 style="color: #856404; margin-bottom: 16px;">Subscription Required</h3>
       <p style="color: #856404; margin-bottom: 24px; font-size: 16px;">
-        To access the Appointment Scheduling feature, please upgrade to one of our paid plans.
-        Choose from Monthly, Quarterly, or Annual subscriptions.
+        To access the Appointment Scheduling feature, start your free trial or choose from our Monthly, Quarterly, or Annual subscriptions.
       </p>
       <a href="{{ url_for('pricing') }}" class="cta-button" style="background: #f39c12; font-size: 18px; padding: 16px 40px;">
-        View Pricing Plans →
+        Start Free Trial →
       </a>
     </div>
     {% endif %}

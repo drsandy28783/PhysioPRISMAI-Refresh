@@ -9301,18 +9301,24 @@ def scheduling_info():
         # Get user subscription status
         subscription, _ = get_user_subscription(session['user_id'])
 
-        # Check if user has access (paid subscription or active plan)
+        # Check if user has access
         has_access = False
-        plan_type = subscription.get('plan_type', 'free_trial') if subscription else 'free_trial'
+        plan_type = subscription.get('plan_type', 'free') if subscription else 'free'
+        status = subscription.get('status', 'inactive') if subscription else 'inactive'
+        is_trial_expired = False
 
-        # Allow access for paid subscriptions (not free trial)
-        if plan_type in ['monthly', 'quarterly', 'annual', 'lifetime']:
+        # Allow access for active subscriptions (including active free_trial)
+        if status == 'active' and plan_type in ['free_trial', 'monthly', 'quarterly', 'annual', 'lifetime']:
             has_access = True
+        elif plan_type == 'free_trial' and status == 'expired':
+            # Trial has expired
+            is_trial_expired = True
 
         return render_template('scheduling_info.html',
                              has_access=has_access,
                              plan_type=plan_type,
-                             subscription=subscription)
+                             subscription=subscription,
+                             is_trial_expired=is_trial_expired)
     except Exception as e:
         logger.error(f"Error loading scheduling info page: {e}", exc_info=True)
         flash('Error loading page. Please try again.', 'error')
