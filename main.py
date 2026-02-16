@@ -5475,8 +5475,8 @@ def add_patient():
             f"Added patient {patient_id}"
         )
 
-        # Redirect to the next screen
-        return redirect(url_for('subjective', patient_id=patient_id))
+        # Redirect to pathophysiological mechanism (NEW: moved to position 2)
+        return redirect(url_for('patho_mechanism', patient_id=patient_id))
 
     # GET → render the blank form
     return render_template('add_patient.html')
@@ -5658,7 +5658,17 @@ def subjective(patient_id):
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('subjective_examination').add(entry)
         return redirect(f'/perspectives/{patient_id}')
-    return render_template('subjective.html', patient_id=patient_id, patient=patient)
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('subjective.html', patient_id=patient_id, patient=patient, patho_data=patho_data)
 
 
 
@@ -5699,8 +5709,17 @@ def perspectives(patient_id):
         # redirect to the next screen
         return redirect(url_for('initial_plan', patient_id=patient_id))
 
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
     # GET: render the form
-    return render_template('perspectives.html', patient_id=patient_id)
+    return render_template('perspectives.html', patient_id=patient_id, patho_data=patho_data)
 
 
 @app.route('/initial_plan/<path:patient_id>', methods=['GET','POST'])
@@ -5720,8 +5739,19 @@ def initial_plan(patient_id):
             entry[s] = request.form.get(s)
             entry[f"{s}_details"] = request.form.get(f"{s}_details", '')
         db.collection('initial_plan').add(entry)
-        return redirect(f'/patho_mechanism/{patient_id}')
-    return render_template('initial_plan.html', patient_id=patient_id)
+        # Redirect to chronic disease (NEW: patho moved earlier in workflow)
+        return redirect(url_for('chronic_disease', patient_id=patient_id))
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('initial_plan.html', patient_id=patient_id, patho_data=patho_data)
 
 
 
@@ -5746,7 +5776,8 @@ def patho_mechanism(patient_id):
         entry['patient_id'] = patient_id
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('patho_mechanism').add(entry)
-        return redirect(f'/chronic_disease/{patient_id}')
+        # Redirect to subjective examination (NEW: patho moved to position 2)
+        return redirect(url_for('subjective', patient_id=patient_id))
     return render_template('patho_mechanism.html', patient_id=patient_id)
 
 
