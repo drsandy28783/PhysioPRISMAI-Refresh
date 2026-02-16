@@ -291,12 +291,16 @@ def get_subjective_field_prompt(
     age_sex: str,
     present_hist: str,
     past_hist: str,
-    existing_inputs: Dict[str, Any]
+    existing_inputs: Dict[str, Any],
+    patho_data: Optional[Dict[str, Any]] = None
 ) -> str:
     """
     IMPROVED: Provides BOTH questions AND clinical reasoning guidance specific to the ICF component.
     This gives the physiotherapist actionable direction rather than just generic questions.
     Uses ICF Core Sets for evidence-based, condition-specific guidance.
+
+    NEW: Includes pathophysiological mechanism context to guide examination approach based on
+    pain mechanism, severity, and irritability. This helps identify contraindications early.
     """
 
     icf_names = {
@@ -445,6 +449,29 @@ Provide 2-3 questions about PERSONAL ACTIVITIES/LIFESTYLE ONLY and 2-3 clinical 
 
     specific_guidance = field_specific_guidance.get(field, "")
 
+    # NEW: Add pathophysiological mechanism context (helps identify contraindications)
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_type = patho_data.get('pain_type', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_mechanism, pain_type, pain_severity, pain_irritability]):
+            patho_context = "\n\nPAIN MECHANISM & CONTRAINDICATION CONSIDERATIONS:\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source: {pain_mechanism}\n"
+            if pain_type:
+                patho_context += f"- Pain Type: {pain_type}\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            if healing_stage:
+                patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
+            patho_context += "\nIMPORTANT: Consider contraindications based on pain mechanism and irritability when suggesting examination approaches.\n"
+
     return f"""
 {SYSTEM_ROLES['icf_specialist']}
 
@@ -455,6 +482,7 @@ PATIENT SNAPSHOT
 
 OTHER SUBJECTIVE FINDINGS ALREADY GATHERED
 {existing if existing else 'None recorded yet.'}
+{patho_context}
 
 TARGET ICF COMPONENT: {component}
 {icf_core_guidance}
