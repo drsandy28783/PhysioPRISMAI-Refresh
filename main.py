@@ -7460,6 +7460,9 @@ def objective_assessment_field_suggest(field):
     logger.info(f"🧠 [server] ObjectiveAssessment payload: {data}")
     previous = data.get('previous', {})
 
+    # NEW: Get current form inputs for intra-form adaptive AI
+    existing_inputs = data.get('inputs', {})
+
     # Sanitize patient data to protect PHI
     age_sex = sanitize_age_sex(previous.get('age_sex', ''))
     present = sanitize_clinical_text(previous.get('present_history', ''))
@@ -7468,6 +7471,8 @@ def objective_assessment_field_suggest(field):
     perspectives = sanitize_subjective_data(previous.get('perspectives', {}))
     provisional_diagnoses = sanitize_clinical_text(previous.get('provisional_diagnosis', ''))
     clinical_flags = sanitize_subjective_data(previous.get('clinical_flags', {}))
+    patho_data = sanitize_subjective_data(previous.get('patho_data', {}))  # NEW: Patho mechanism data
+    sanitized_inputs = sanitize_subjective_data(existing_inputs) if existing_inputs else {}  # NEW: Sanitize form inputs
 
     # Use IMPROVED centralized prompt from ai_prompts.py
     from ai_prompts import get_objective_assessment_field_prompt
@@ -7479,7 +7484,9 @@ def objective_assessment_field_suggest(field):
         subjective=subjective,
         perspectives=perspectives,
         provisional_diagnoses=provisional_diagnoses,
-        clinical_flags=clinical_flags
+        clinical_flags=clinical_flags,
+        patho_data=patho_data,  # NEW: Pass pain mechanism context
+        existing_inputs=sanitized_inputs  # NEW: Pass current form inputs for adaptive AI
     )
     prompt = hard_limits(prompt, 10)  # Increased limit for comprehensive assessment planning
 

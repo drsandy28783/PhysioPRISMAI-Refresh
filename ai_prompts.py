@@ -115,6 +115,218 @@ ICF_CORE_SETS = {
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# INTRA-FORM ADAPTIVE AI - Analyze existing inputs to guide suggestions
+# ─────────────────────────────────────────────────────────────────────────────
+
+def analyze_objective_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Analyze existing objective assessment inputs to detect which areas have been tested
+    and whether findings are normal (clear) or abnormal (pathology detected).
+
+    This enables INTRA-FORM ADAPTIVE AI - suggestions adapt based on what's already filled
+    on the SAME form, not just previous screens.
+
+    Clinical Logic:
+    - If proximal joint tested and clear → Tone down proximal suggestions, focus elsewhere
+    - If palpation shows tenderness → Dig deeper with related special tests
+    - If all MSK clear → Prioritize neural assessment
+
+    Conservative Approach:
+    - When unclear, classify as 'tested' rather than 'clear' or 'abnormal'
+    - Always include brief mentions of other areas even when cleared
+    - Err on side of comprehensiveness
+
+    Args:
+        inputs: Dict of current form field values {field_name: field_value}
+
+    Returns:
+        Dict containing:
+        {
+            'proximal_status': 'clear' | 'abnormal' | 'untested',
+            'distal_status': 'clear' | 'abnormal' | 'untested',
+            'local_status': 'clear' | 'abnormal' | 'untested',
+            'neural_status': 'clear' | 'abnormal' | 'untested',
+            'palpation_status': 'clear' | 'abnormal' | 'untested',
+            'special_tests_status': 'clear' | 'abnormal' | 'untested',
+            'abnormal_areas': ['biceps tendon', 'lateral epicondyle'],
+            'clear_areas': ['shoulder', 'elbow ROM'],
+            'tested_fields': ['proximal_joint', 'palpation'],
+            'untested_fields': ['distal_joint', 'neurological'],
+            'priority_focus': 'local' | 'proximal' | 'distal' | 'neural' | 'complete_assessment',
+            'has_findings': True/False
+        }
+    """
+    # Keywords for classifying findings (conservative - broad matching)
+    CLEAR_KEYWORDS = [
+        'full rom', 'pain-free', 'pain free', 'painfree', 'negative', 'normal',
+        '5/5', 'no pain', 'no tenderness', 'no swelling', 'no restriction',
+        'intact', 'within normal limits', 'wnl', 'unremarkable',
+        'full range', 'complete rom', 'symmetrical', 'non-tender',
+        'no abnormality', 'no deficit', 'clear'
+    ]
+
+    ABNORMAL_KEYWORDS = [
+        'limited', 'reduced', 'painful', 'pain on', 'pain with', 'positive',
+        'weak', 'weakness', 'tenderness', 'tender', 'swelling', 'swollen',
+        'restricted', 'restriction', 'instability', 'unstable', 'reduced strength',
+        'guarding', 'spasm', 'trigger point', 'decreased', 'diminished',
+        'clicking', 'crepitus', 'catching', 'locking', 'giving way',
+        'unable to', 'difficulty', 'asymmetry', 'deformity'
+    ]
+
+    # Initialize analysis result
+    analysis = {
+        'proximal_status': 'untested',
+        'distal_status': 'untested',
+        'local_status': 'untested',
+        'neural_status': 'untested',
+        'palpation_status': 'untested',
+        'special_tests_status': 'untested',
+        'abnormal_areas': [],
+        'clear_areas': [],
+        'tested_fields': [],
+        'untested_fields': [],
+        'priority_focus': 'complete_assessment',
+        'has_findings': False
+    }
+
+    if not inputs:
+        return analysis
+
+    # Helper function to classify a field value
+    def classify_finding(value: str) -> str:
+        """Returns 'clear', 'abnormal', or 'tested' (unclear)"""
+        if not value or len(value.strip()) < 3:
+            return 'untested'
+
+        value_lower = value.lower()
+
+        # Check for clear indicators (need stronger evidence for "clear" due to conservative approach)
+        clear_matches = sum(1 for keyword in CLEAR_KEYWORDS if keyword in value_lower)
+        abnormal_matches = sum(1 for keyword in ABNORMAL_KEYWORDS if keyword in value_lower)
+
+        # Conservative: if ANY abnormal keywords, classify as abnormal
+        if abnormal_matches > 0:
+            return 'abnormal'
+
+        # Conservative: need MULTIPLE clear keywords or very specific ones to classify as clear
+        if clear_matches >= 2 or any(keyword in value_lower for keyword in ['pain-free', 'pain free', 'full rom', 'negative', '5/5']):
+            return 'clear'
+
+        # Uncertain - just mark as tested
+        return 'tested'
+
+    # Analyze each field
+    for field_name, field_value in inputs.items():
+        if not field_value or len(str(field_value).strip()) < 3:
+            analysis['untested_fields'].append(field_name)
+            continue
+
+        analysis['tested_fields'].append(field_name)
+        field_status = classify_finding(str(field_value))
+
+        # Map field names to anatomical categories
+        field_lower = field_name.lower()
+
+        # Proximal joint assessment
+        if 'proximal' in field_lower:
+            if field_status == 'clear':
+                analysis['proximal_status'] = 'clear'
+                analysis['clear_areas'].append('proximal joint')
+            elif field_status == 'abnormal':
+                analysis['proximal_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('proximal joint')
+                analysis['has_findings'] = True
+            else:
+                analysis['proximal_status'] = 'tested'
+
+        # Distal joint assessment
+        elif 'distal' in field_lower:
+            if field_status == 'clear':
+                analysis['distal_status'] = 'clear'
+                analysis['clear_areas'].append('distal joint')
+            elif field_status == 'abnormal':
+                analysis['distal_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('distal joint')
+                analysis['has_findings'] = True
+            else:
+                analysis['distal_status'] = 'tested'
+
+        # Local/primary joint assessment
+        elif 'local' in field_lower or 'primary' in field_lower or 'main' in field_lower:
+            if field_status == 'clear':
+                analysis['local_status'] = 'clear'
+                analysis['clear_areas'].append('local joint')
+            elif field_status == 'abnormal':
+                analysis['local_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('local joint')
+                analysis['has_findings'] = True
+            else:
+                analysis['local_status'] = 'tested'
+
+        # Neurological assessment
+        elif 'neuro' in field_lower or 'neural' in field_lower or 'nerve' in field_lower:
+            if field_status == 'clear':
+                analysis['neural_status'] = 'clear'
+                analysis['clear_areas'].append('neurological')
+            elif field_status == 'abnormal':
+                analysis['neural_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('neurological')
+                analysis['has_findings'] = True
+            else:
+                analysis['neural_status'] = 'tested'
+
+        # Palpation
+        elif 'palpat' in field_lower:
+            if field_status == 'clear':
+                analysis['palpation_status'] = 'clear'
+                analysis['clear_areas'].append('palpation')
+            elif field_status == 'abnormal':
+                analysis['palpation_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('palpation findings')
+                analysis['has_findings'] = True
+            else:
+                analysis['palpation_status'] = 'tested'
+
+        # Special tests
+        elif 'special' in field_lower or 'test' in field_lower:
+            if field_status == 'clear':
+                analysis['special_tests_status'] = 'clear'
+                analysis['clear_areas'].append('special tests')
+            elif field_status == 'abnormal':
+                analysis['special_tests_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('special tests')
+                analysis['has_findings'] = True
+            else:
+                analysis['special_tests_status'] = 'tested'
+
+    # Determine priority focus based on findings
+    if analysis['abnormal_areas']:
+        # Focus on first abnormal area found
+        if 'proximal' in str(analysis['abnormal_areas']):
+            analysis['priority_focus'] = 'proximal'
+        elif 'local' in str(analysis['abnormal_areas']):
+            analysis['priority_focus'] = 'local'
+        elif 'distal' in str(analysis['abnormal_areas']):
+            analysis['priority_focus'] = 'distal'
+        elif 'palpation' in str(analysis['abnormal_areas']):
+            analysis['priority_focus'] = 'local'  # Palpation findings suggest local pathology
+        else:
+            analysis['priority_focus'] = 'investigate_abnormality'
+    elif analysis['proximal_status'] == 'clear' and analysis['distal_status'] == 'clear' and analysis['local_status'] == 'clear':
+        # All MSK areas clear - prioritize neural assessment
+        analysis['priority_focus'] = 'neural'
+    elif 'untested' in [analysis['proximal_status'], analysis['distal_status']]:
+        # Still have major areas untested
+        analysis['priority_focus'] = 'complete_assessment'
+    else:
+        # Some areas tested, continue comprehensive assessment
+        analysis['priority_focus'] = 'complete_assessment'
+
+    return analysis
+
+
 def detect_body_region(presenting_complaint: str) -> Optional[str]:
     """
     Detect the primary body region from the presenting complaint.
@@ -1840,12 +2052,14 @@ def get_objective_assessment_field_prompt(
     provisional_diagnoses: Optional[str] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
     patho_data: Optional[Dict[str, Any]] = None,
+    existing_inputs: Optional[Dict[str, str]] = None,  # NEW: Current form inputs for adaptive AI
 ) -> str:
     """
     IMPROVED: Field-specific objective assessment planning guidance.
     Provides comprehensive, body region-specific test recommendations based on all previous data.
 
     NEW: Includes pain mechanism context to guide test selection and approach.
+    NEW: INTRA-FORM ADAPTIVE AI - Adapts suggestions based on previous fields filled on THIS form.
 
     Endpoint: /api/ai_suggestion/objective_assessment/<field>
     """
@@ -2263,11 +2477,73 @@ GENERAL MUSCULOSKELETAL OBJECTIVE ASSESSMENT:
                 patho_context += f"- Pain Irritability: {pain_irritability}\n"
             patho_context += "\nNOTE: Consider pain mechanism when selecting test approach (e.g., neurogenic pain requires gentle neurodynamic testing).\n"
 
+    # NEW: Intra-form adaptive context - learn from fields already filled on THIS form
+    intra_form_context = ""
+    if existing_inputs:
+        analysis = analyze_objective_findings(existing_inputs)
+
+        if analysis['tested_fields']:
+            intra_form_context = "\n\n🔄 INTRA-FORM ADAPTIVE CONTEXT (Learning from previous fields on THIS objective assessment form):\n\n"
+
+            # Show what's been tested and findings
+            intra_form_context += "FIELDS ALREADY COMPLETED ON THIS FORM:\n"
+            for field_name in analysis['tested_fields']:
+                field_value = existing_inputs.get(field_name, '')
+                # Determine status indicator
+                if field_name in str(analysis['clear_areas']):
+                    status = "✅ CLEAR"
+                elif field_name in str(analysis['abnormal_areas']):
+                    status = "⚠️ ABNORMAL"
+                else:
+                    status = "📝 TESTED"
+
+                # Truncate long values
+                display_value = field_value[:80] + "..." if len(field_value) > 80 else field_value
+                intra_form_context += f"- {field_name.replace('_', ' ').title()}: {status}\n"
+                intra_form_context += f"  Input: \"{display_value}\"\n"
+
+            intra_form_context += "\n🎯 ADAPTIVE GUIDANCE FOR THIS FIELD:\n\n"
+
+            # Conservative approach - always mention but adjust emphasis
+            if analysis['clear_areas']:
+                intra_form_context += f"✅ AREAS ALREADY CLEARED: {', '.join(analysis['clear_areas'])}\n"
+                intra_form_context += "   → These areas show normal findings. Tone down suggestions for these (brief mention OK).\n"
+                intra_form_context += "   → CONSERVATIVE NOTE: If clinically feasible and time permits, brief reassessment is acceptable for thoroughness.\n\n"
+
+            if analysis['abnormal_areas']:
+                intra_form_context += f"⚠️ AREAS WITH ABNORMAL FINDINGS: {', '.join(analysis['abnormal_areas'])}\n"
+                intra_form_context += "   → DIG DEEPER: Provide detailed, specific tests to further investigate these findings.\n"
+                intra_form_context += "   → Suggest tests that correlate with abnormal findings already documented.\n\n"
+
+            if analysis['untested_fields']:
+                intra_form_context += f"🔍 AREAS NOT YET TESTED: {', '.join(analysis['untested_fields'])}\n"
+                intra_form_context += "   → If relevant to this field, provide comprehensive suggestions.\n\n"
+
+            # Priority focus guidance
+            intra_form_context += f"💡 PRIORITY FOCUS: {analysis['priority_focus'].replace('_', ' ').title()}\n\n"
+
+            # Special cases
+            if analysis['priority_focus'] == 'neural' and analysis['proximal_status'] == 'clear' and analysis['distal_status'] == 'clear':
+                intra_form_context += "⚡ CLINICAL REASONING: Proximal and distal joints cleared → Consider neurogenic source.\n"
+                intra_form_context += "   Suggest comprehensive neurological assessment (dermatomes, myotomes, reflexes, neurodynamics).\n\n"
+            elif analysis['has_findings']:
+                intra_form_context += "⚡ CLINICAL REASONING: Abnormal findings detected → Focus on confirming/ruling out suspected pathology.\n"
+                intra_form_context += "   Suggest tests that provide differential diagnostic value.\n\n"
+            elif len(analysis['clear_areas']) >= 2:
+                intra_form_context += "⚡ CLINICAL REASONING: Multiple areas cleared → Consider referred pain, neural, or systemic causes.\n"
+                intra_form_context += "   Don't over-test cleared structures; focus on untested areas and alternative diagnoses.\n\n"
+
+            # Conservative reminder
+            intra_form_context += "🔔 CONSERVATIVE APPROACH: Even for cleared areas, include brief mention like:\n"
+            intra_form_context += "   'Proximal joint already assessed and clear, but if time permits, brief screen acceptable for completeness.'\n"
+            intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
 {icf_guidance}
 {patho_context}
+{intra_form_context}
 
 {field_guidance}
 
