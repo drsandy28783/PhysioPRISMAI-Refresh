@@ -9293,7 +9293,7 @@ def pricing():
 
 
 @app.route('/scheduling-info')
-@login_required
+@login_required()
 def scheduling_info():
     """Display scheduling app information and features page"""
     try:
