@@ -4496,6 +4496,7 @@ def dashboard():
             'usage_stats': usage_stats,
             'plan_info': plan_info,
             'plan_type': plan_type,
+            'status': usage_stats.get('status', 'inactive'),  # Add status field for template
 
             # Patient statistics
             'total_patients': total_patients,
