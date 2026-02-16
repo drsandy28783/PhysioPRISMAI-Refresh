@@ -5846,7 +5846,16 @@ def objective_assessment(patient_id):
         db.collection('objective_assessments').add(entry)
         return redirect(f'/provisional_diagnosis/{patient_id}')
 
-    return render_template('objective_assessment.html', patient_id=patient_id)
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('objective_assessment.html', patient_id=patient_id, patho_data=patho_data)
 
 
 
@@ -5891,7 +5900,17 @@ def provisional_diagnosis(patient_id):
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('provisional_diagnosis').add(entry)
         return redirect(f'/smart_goals/{patient_id}')
-    return render_template('provisional_diagnosis.html', patient_id=patient_id)
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('provisional_diagnosis.html', patient_id=patient_id, patho_data=patho_data)
 
 
 @app.route('/smart_goals/<path:patient_id>', methods=['GET', 'POST'])
@@ -5933,7 +5952,17 @@ def smart_goals(patient_id):
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('smart_goals').add(entry)
         return redirect(f'/treatment_plan/{patient_id}')
-    return render_template('smart_goals.html', patient_id=patient_id)
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('smart_goals.html', patient_id=patient_id, patho_data=patho_data)
 
 
 @app.route('/treatment_plan/<path:patient_id>', methods=['GET', 'POST'])
@@ -5972,7 +6001,17 @@ def treatment_plan(patient_id):
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('treatment_plan').add(entry)
         return redirect('/dashboard')
-    return render_template('treatment_plan.html', patient_id=patient_id)
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('treatment_plan.html', patient_id=patient_id, patho_data=patho_data)
 
 @app.route('/follow_ups/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
