@@ -1818,10 +1818,13 @@ def get_objective_assessment_field_prompt(
     perspectives: Optional[Dict[str, Any]] = None,
     provisional_diagnoses: Optional[str] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     IMPROVED: Field-specific objective assessment planning guidance.
     Provides comprehensive, body region-specific test recommendations based on all previous data.
+
+    NEW: Includes pain mechanism context to guide test selection and approach.
 
     Endpoint: /api/ai_suggestion/objective_assessment/<field>
     """
@@ -2222,10 +2225,28 @@ GENERAL MUSCULOSKELETAL OBJECTIVE ASSESSMENT:
 - Assess activity limitations
 """
 
+    # NEW: Add pathophysiological mechanism context
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+
+        if any([pain_mechanism, pain_severity, pain_irritability]):
+            patho_context = "\n\nPAIN MECHANISM CONTEXT FOR ASSESSMENT APPROACH:\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source Classification: {pain_mechanism}\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            patho_context += "\nNOTE: Consider pain mechanism when selecting test approach (e.g., neurogenic pain requires gentle neurodynamic testing).\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
 {icf_guidance}
+{patho_context}
 
 {field_guidance}
 
