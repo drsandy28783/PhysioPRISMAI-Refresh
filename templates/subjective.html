@@ -46,7 +46,7 @@
       <div style="display:flex; align-items:center; gap:12px; margin-top:16px; flex-wrap: wrap;">
         <button type="submit" class="button">Save &amp; Continue</button>
         <button type="button" id="gen_subjective_dx" class="button" title="Generate subjective diagnosis">🩺 Generate Diagnosis</button>
-        <a href="{{ url_for('add_patient') }}" class="button-secondary">&larr; Back to Add Patient</a>
+        <a href="{{ url_for('patho_mechanism', patient_id=patient_id) }}" class="button-secondary">&larr; Back to Patho Mechanism</a>
       </div>
     </form>
   </div>

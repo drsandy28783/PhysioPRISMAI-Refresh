@@ -5475,8 +5475,8 @@ def add_patient():
             f"Added patient {patient_id}"
         )
 
-        # Redirect to the next screen
-        return redirect(url_for('subjective', patient_id=patient_id))
+        # Redirect to pathophysiological mechanism (NEW: moved to position 2)
+        return redirect(url_for('patho_mechanism', patient_id=patient_id))
 
     # GET → render the blank form
     return render_template('add_patient.html')
@@ -5658,7 +5658,17 @@ def subjective(patient_id):
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('subjective_examination').add(entry)
         return redirect(f'/perspectives/{patient_id}')
-    return render_template('subjective.html', patient_id=patient_id, patient=patient)
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('subjective.html', patient_id=patient_id, patient=patient, patho_data=patho_data)
 
 
 
@@ -5699,8 +5709,17 @@ def perspectives(patient_id):
         # redirect to the next screen
         return redirect(url_for('initial_plan', patient_id=patient_id))
 
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
     # GET: render the form
-    return render_template('perspectives.html', patient_id=patient_id)
+    return render_template('perspectives.html', patient_id=patient_id, patho_data=patho_data)
 
 
 @app.route('/initial_plan/<path:patient_id>', methods=['GET','POST'])
@@ -5720,8 +5739,19 @@ def initial_plan(patient_id):
             entry[s] = request.form.get(s)
             entry[f"{s}_details"] = request.form.get(f"{s}_details", '')
         db.collection('initial_plan').add(entry)
-        return redirect(f'/patho_mechanism/{patient_id}')
-    return render_template('initial_plan.html', patient_id=patient_id)
+        # Redirect to chronic disease (NEW: patho moved earlier in workflow)
+        return redirect(url_for('chronic_disease', patient_id=patient_id))
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('initial_plan.html', patient_id=patient_id, patho_data=patho_data)
 
 
 
@@ -5746,7 +5776,8 @@ def patho_mechanism(patient_id):
         entry['patient_id'] = patient_id
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('patho_mechanism').add(entry)
-        return redirect(f'/chronic_disease/{patient_id}')
+        # Redirect to subjective examination (NEW: patho moved to position 2)
+        return redirect(url_for('subjective', patient_id=patient_id))
     return render_template('patho_mechanism.html', patient_id=patient_id)
 
 
@@ -5815,7 +5846,16 @@ def objective_assessment(patient_id):
         db.collection('objective_assessments').add(entry)
         return redirect(f'/provisional_diagnosis/{patient_id}')
 
-    return render_template('objective_assessment.html', patient_id=patient_id)
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('objective_assessment.html', patient_id=patient_id, patho_data=patho_data)
 
 
 
@@ -5860,7 +5900,17 @@ def provisional_diagnosis(patient_id):
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('provisional_diagnosis').add(entry)
         return redirect(f'/smart_goals/{patient_id}')
-    return render_template('provisional_diagnosis.html', patient_id=patient_id)
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('provisional_diagnosis.html', patient_id=patient_id, patho_data=patho_data)
 
 
 @app.route('/smart_goals/<path:patient_id>', methods=['GET', 'POST'])
@@ -5902,7 +5952,17 @@ def smart_goals(patient_id):
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('smart_goals').add(entry)
         return redirect(f'/treatment_plan/{patient_id}')
-    return render_template('smart_goals.html', patient_id=patient_id)
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('smart_goals.html', patient_id=patient_id, patho_data=patho_data)
 
 
 @app.route('/treatment_plan/<path:patient_id>', methods=['GET', 'POST'])
@@ -5941,7 +6001,17 @@ def treatment_plan(patient_id):
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('treatment_plan').add(entry)
         return redirect('/dashboard')
-    return render_template('treatment_plan.html', patient_id=patient_id)
+
+    # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
+    patho_data = {}
+    try:
+        patho_docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
+
+    return render_template('treatment_plan.html', patient_id=patient_id, patho_data=patho_data)
 
 @app.route('/follow_ups/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
@@ -6865,6 +6935,7 @@ def ai_subjective_field(field):
        present_hist = sanitize_clinical_text(data.get('present_history', '').strip())
        past_hist = sanitize_clinical_text(data.get('past_history', '').strip())
        existing_inputs = sanitize_subjective_data(data.get('inputs', {}))
+       patho_data = sanitize_subjective_data(data.get('patho_data', {}))  # NEW: Pain mechanism context
 
        # Use centralized prompt from ai_prompts.py
        prompt = get_subjective_field_prompt(
@@ -6872,7 +6943,8 @@ def ai_subjective_field(field):
            age_sex=age_sex,
            present_hist=present_hist,
            past_hist=past_hist,
-           existing_inputs=existing_inputs
+           existing_inputs=existing_inputs,
+           patho_data=patho_data  # NEW: Pass pain mechanism context
        )
        prompt = hard_limits(prompt, 3)
 
@@ -7097,6 +7169,9 @@ def ai_initial_plan_field(field):
     previous = data.get('previous', {})
     selection = data.get('selection', '')  # "Mandatory assessment", "Assessment with precaution", or "Absolutely Contraindicated"
 
+    # NEW: Get current form inputs for intra-form adaptive AI
+    existing_inputs = data.get('inputs', {})
+
     # Sanitize patient data to protect PHI
     age_sex = sanitize_age_sex(previous.get("age_sex", ""))
     present_hist = sanitize_clinical_text(previous.get("present_history", ""))
@@ -7104,6 +7179,8 @@ def ai_initial_plan_field(field):
     subjective = sanitize_subjective_data(previous.get("subjective", {}))
     perspectives = sanitize_subjective_data(previous.get("perspectives", {}))
     diagnosis = sanitize_clinical_text(previous.get("provisional_diagnosis", ""))
+    patho_data = sanitize_subjective_data(previous.get("patho_data", {}))  # NEW: Pain mechanism context
+    sanitized_inputs = sanitize_subjective_data(existing_inputs) if existing_inputs else {}  # NEW: Sanitize form inputs
 
     # Use centralized prompt from ai_prompts.py (IMPROVED - now includes proximal/distal joints and test modifications)
     prompt = get_initial_plan_field_prompt(
@@ -7114,7 +7191,9 @@ def ai_initial_plan_field(field):
         subjective=subjective,
         diagnosis=diagnosis,
         selection=selection,
-        perspectives=perspectives
+        perspectives=perspectives,
+        patho_data=patho_data,  # NEW: Pass pain mechanism context
+        existing_inputs=sanitized_inputs  # NEW: Pass current form inputs for adaptive AI
     )
     prompt = hard_limits(prompt, 4)
 
@@ -7390,6 +7469,9 @@ def objective_assessment_field_suggest(field):
     logger.info(f"🧠 [server] ObjectiveAssessment payload: {data}")
     previous = data.get('previous', {})
 
+    # NEW: Get current form inputs for intra-form adaptive AI
+    existing_inputs = data.get('inputs', {})
+
     # Sanitize patient data to protect PHI
     age_sex = sanitize_age_sex(previous.get('age_sex', ''))
     present = sanitize_clinical_text(previous.get('present_history', ''))
@@ -7398,6 +7480,8 @@ def objective_assessment_field_suggest(field):
     perspectives = sanitize_subjective_data(previous.get('perspectives', {}))
     provisional_diagnoses = sanitize_clinical_text(previous.get('provisional_diagnosis', ''))
     clinical_flags = sanitize_subjective_data(previous.get('clinical_flags', {}))
+    patho_data = sanitize_subjective_data(previous.get('patho_data', {}))  # NEW: Patho mechanism data
+    sanitized_inputs = sanitize_subjective_data(existing_inputs) if existing_inputs else {}  # NEW: Sanitize form inputs
 
     # Use IMPROVED centralized prompt from ai_prompts.py
     from ai_prompts import get_objective_assessment_field_prompt
@@ -7409,7 +7493,9 @@ def objective_assessment_field_suggest(field):
         subjective=subjective,
         perspectives=perspectives,
         provisional_diagnoses=provisional_diagnoses,
-        clinical_flags=clinical_flags
+        clinical_flags=clinical_flags,
+        patho_data=patho_data,  # NEW: Pass pain mechanism context
+        existing_inputs=sanitized_inputs  # NEW: Pass current form inputs for adaptive AI
     )
     prompt = hard_limits(prompt, 10)  # Increased limit for comprehensive assessment planning
 
@@ -7473,6 +7559,7 @@ def provisional_diagnosis_suggest(patient_id):
                 initial_plan_data = fetch_latest('subjective_assessments')
                 objective_data = fetch_latest('objective_assessment')
                 clinical_flags_data = fetch_latest('clinical_flags')
+                patho_data = fetch_latest('patho_mechanism')  # NEW: Fetch pain mechanism data
 
                 # Build comprehensive patient context
                 age_sex = patient.get('age_sex', '')
@@ -7487,6 +7574,7 @@ def provisional_diagnosis_suggest(patient_id):
                 sanitized_perspectives = sanitize_subjective_data(perspectives_data) if perspectives_data else {}
                 sanitized_objective = sanitize_subjective_data(objective_data) if objective_data else {}
                 sanitized_clinical_flags = sanitize_subjective_data(clinical_flags_data) if clinical_flags_data else {}
+                sanitized_patho = sanitize_subjective_data(patho_data) if patho_data else {}  # NEW: Sanitize patho data
 
                 # Use IMPROVED centralized prompt from ai_prompts.py
                 from ai_prompts import get_provisional_diagnosis_field_prompt
@@ -7499,7 +7587,8 @@ def provisional_diagnosis_suggest(patient_id):
                     perspectives=sanitized_perspectives,
                     assessments=initial_plan_data,
                     objective_findings=sanitized_objective,
-                    clinical_flags=sanitized_clinical_flags
+                    clinical_flags=sanitized_clinical_flags,
+                    patho_data=sanitized_patho  # NEW: Pass pain mechanism context
                 )
 
                 try:
@@ -7562,6 +7651,7 @@ def ai_smart_goals(field):
     perspectives = sanitize_subjective_data(prev.get("perspectives", {}))
     diagnosis = sanitize_clinical_text(prev.get("provisional_diagnosis", ""))
     clinical_flags = sanitize_subjective_data(prev.get("clinical_flags", {}))
+    patho_data = sanitize_subjective_data(prev.get("patho_data", {}))  # NEW: Sanitize patho data
 
     # Use IMPROVED centralized prompt from ai_prompts.py
     from ai_prompts import get_smart_goals_field_prompt
@@ -7573,7 +7663,8 @@ def ai_smart_goals(field):
         subjective=subjective,
         perspectives=perspectives,
         diagnosis=diagnosis,
-        clinical_flags=clinical_flags
+        clinical_flags=clinical_flags,
+        patho_data=patho_data  # NEW: Pass pain mechanism context
     )
 
     try:
@@ -7612,6 +7703,9 @@ def treatment_plan_suggest(field):
     logger.info(f"🧠 [server] TreatmentPlan payload for patient {patient_id}: {data}")
     text_input = data.get('input', '').strip()
 
+    # NEW: Get current form inputs for intra-form adaptive AI
+    existing_inputs = data.get('inputs', {})
+
     # Fetch comprehensive patient data from Firestore
     if not patient_id:
         return jsonify({'error': 'Patient ID required'}), 400
@@ -7639,6 +7733,7 @@ def treatment_plan_suggest(field):
     prov_dx = fetch_latest('provisional_diagnosis')
     goals = fetch_latest('smart_goals')
     clinical_flags_data = fetch_latest('clinical_flags')
+    patho_data = fetch_latest('patho_mechanism')  # NEW: Fetch pain mechanism data
 
     # Build sanitized previous context for IMPROVED centralized prompt
     age_sex = sanitize_age_sex(patient_info.get('age_sex', ''))
@@ -7649,6 +7744,8 @@ def treatment_plan_suggest(field):
     perspectives = sanitize_subjective_data(persp) if persp else {}
     goals_data = sanitize_subjective_data(goals) if goals else {}
     clinical_flags = sanitize_subjective_data(clinical_flags_data) if clinical_flags_data else {}
+    sanitized_patho = sanitize_subjective_data(patho_data) if patho_data else {}  # NEW: Sanitize patho data
+    sanitized_inputs = sanitize_subjective_data(existing_inputs) if existing_inputs else {}  # NEW: Sanitize form inputs
 
     # Use IMPROVED centralized prompt from ai_prompts.py with body region-specific guidance
     prompt = get_treatment_plan_field_prompt(
@@ -7660,7 +7757,9 @@ def treatment_plan_suggest(field):
         perspectives=perspectives,
         diagnosis=diagnosis,
         goals=goals_data,
-        clinical_flags=clinical_flags
+        clinical_flags=clinical_flags,
+        patho_data=sanitized_patho,  # NEW: Pass pain mechanism context
+        existing_inputs=sanitized_inputs  # NEW: Pass current form inputs for adaptive AI
     )
 
     try:

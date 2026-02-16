@@ -115,6 +115,421 @@ ICF_CORE_SETS = {
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# INTRA-FORM ADAPTIVE AI - Analyze existing inputs to guide suggestions
+# ─────────────────────────────────────────────────────────────────────────────
+
+def analyze_objective_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Analyze existing objective assessment inputs to detect which areas have been tested
+    and whether findings are normal (clear) or abnormal (pathology detected).
+
+    This enables INTRA-FORM ADAPTIVE AI - suggestions adapt based on what's already filled
+    on the SAME form, not just previous screens.
+
+    Clinical Logic:
+    - If proximal joint tested and clear → Tone down proximal suggestions, focus elsewhere
+    - If palpation shows tenderness → Dig deeper with related special tests
+    - If all MSK clear → Prioritize neural assessment
+
+    Conservative Approach:
+    - When unclear, classify as 'tested' rather than 'clear' or 'abnormal'
+    - Always include brief mentions of other areas even when cleared
+    - Err on side of comprehensiveness
+
+    Args:
+        inputs: Dict of current form field values {field_name: field_value}
+
+    Returns:
+        Dict containing:
+        {
+            'proximal_status': 'clear' | 'abnormal' | 'untested',
+            'distal_status': 'clear' | 'abnormal' | 'untested',
+            'local_status': 'clear' | 'abnormal' | 'untested',
+            'neural_status': 'clear' | 'abnormal' | 'untested',
+            'palpation_status': 'clear' | 'abnormal' | 'untested',
+            'special_tests_status': 'clear' | 'abnormal' | 'untested',
+            'abnormal_areas': ['biceps tendon', 'lateral epicondyle'],
+            'clear_areas': ['shoulder', 'elbow ROM'],
+            'tested_fields': ['proximal_joint', 'palpation'],
+            'untested_fields': ['distal_joint', 'neurological'],
+            'priority_focus': 'local' | 'proximal' | 'distal' | 'neural' | 'complete_assessment',
+            'has_findings': True/False
+        }
+    """
+    # Keywords for classifying findings (conservative - broad matching)
+    CLEAR_KEYWORDS = [
+        'full rom', 'pain-free', 'pain free', 'painfree', 'negative', 'normal',
+        '5/5', 'no pain', 'no tenderness', 'no swelling', 'no restriction',
+        'intact', 'within normal limits', 'wnl', 'unremarkable',
+        'full range', 'complete rom', 'symmetrical', 'non-tender',
+        'no abnormality', 'no deficit', 'clear'
+    ]
+
+    ABNORMAL_KEYWORDS = [
+        'limited', 'reduced', 'painful', 'pain on', 'pain with', 'positive',
+        'weak', 'weakness', 'tenderness', 'tender', 'swelling', 'swollen',
+        'restricted', 'restriction', 'instability', 'unstable', 'reduced strength',
+        'guarding', 'spasm', 'trigger point', 'decreased', 'diminished',
+        'clicking', 'crepitus', 'catching', 'locking', 'giving way',
+        'unable to', 'difficulty', 'asymmetry', 'deformity'
+    ]
+
+    # Initialize analysis result
+    analysis = {
+        'proximal_status': 'untested',
+        'distal_status': 'untested',
+        'local_status': 'untested',
+        'neural_status': 'untested',
+        'palpation_status': 'untested',
+        'special_tests_status': 'untested',
+        'abnormal_areas': [],
+        'clear_areas': [],
+        'tested_fields': [],
+        'untested_fields': [],
+        'priority_focus': 'complete_assessment',
+        'has_findings': False
+    }
+
+    if not inputs:
+        return analysis
+
+    # Helper function to classify a field value
+    def classify_finding(value: str) -> str:
+        """Returns 'clear', 'abnormal', or 'tested' (unclear)"""
+        if not value or len(value.strip()) < 3:
+            return 'untested'
+
+        value_lower = value.lower()
+
+        # Check for clear indicators (need stronger evidence for "clear" due to conservative approach)
+        clear_matches = sum(1 for keyword in CLEAR_KEYWORDS if keyword in value_lower)
+        abnormal_matches = sum(1 for keyword in ABNORMAL_KEYWORDS if keyword in value_lower)
+
+        # Conservative: if ANY abnormal keywords, classify as abnormal
+        if abnormal_matches > 0:
+            return 'abnormal'
+
+        # Conservative: need MULTIPLE clear keywords or very specific ones to classify as clear
+        if clear_matches >= 2 or any(keyword in value_lower for keyword in ['pain-free', 'pain free', 'full rom', 'negative', '5/5']):
+            return 'clear'
+
+        # Uncertain - just mark as tested
+        return 'tested'
+
+    # Analyze each field
+    for field_name, field_value in inputs.items():
+        if not field_value or len(str(field_value).strip()) < 3:
+            analysis['untested_fields'].append(field_name)
+            continue
+
+        analysis['tested_fields'].append(field_name)
+        field_status = classify_finding(str(field_value))
+
+        # Map field names to anatomical categories
+        field_lower = field_name.lower()
+
+        # Proximal joint assessment
+        if 'proximal' in field_lower:
+            if field_status == 'clear':
+                analysis['proximal_status'] = 'clear'
+                analysis['clear_areas'].append('proximal joint')
+            elif field_status == 'abnormal':
+                analysis['proximal_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('proximal joint')
+                analysis['has_findings'] = True
+            else:
+                analysis['proximal_status'] = 'tested'
+
+        # Distal joint assessment
+        elif 'distal' in field_lower:
+            if field_status == 'clear':
+                analysis['distal_status'] = 'clear'
+                analysis['clear_areas'].append('distal joint')
+            elif field_status == 'abnormal':
+                analysis['distal_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('distal joint')
+                analysis['has_findings'] = True
+            else:
+                analysis['distal_status'] = 'tested'
+
+        # Local/primary joint assessment
+        elif 'local' in field_lower or 'primary' in field_lower or 'main' in field_lower:
+            if field_status == 'clear':
+                analysis['local_status'] = 'clear'
+                analysis['clear_areas'].append('local joint')
+            elif field_status == 'abnormal':
+                analysis['local_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('local joint')
+                analysis['has_findings'] = True
+            else:
+                analysis['local_status'] = 'tested'
+
+        # Neurological assessment
+        elif 'neuro' in field_lower or 'neural' in field_lower or 'nerve' in field_lower:
+            if field_status == 'clear':
+                analysis['neural_status'] = 'clear'
+                analysis['clear_areas'].append('neurological')
+            elif field_status == 'abnormal':
+                analysis['neural_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('neurological')
+                analysis['has_findings'] = True
+            else:
+                analysis['neural_status'] = 'tested'
+
+        # Palpation
+        elif 'palpat' in field_lower:
+            if field_status == 'clear':
+                analysis['palpation_status'] = 'clear'
+                analysis['clear_areas'].append('palpation')
+            elif field_status == 'abnormal':
+                analysis['palpation_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('palpation findings')
+                analysis['has_findings'] = True
+            else:
+                analysis['palpation_status'] = 'tested'
+
+        # Special tests
+        elif 'special' in field_lower or 'test' in field_lower:
+            if field_status == 'clear':
+                analysis['special_tests_status'] = 'clear'
+                analysis['clear_areas'].append('special tests')
+            elif field_status == 'abnormal':
+                analysis['special_tests_status'] = 'abnormal'
+                analysis['abnormal_areas'].append('special tests')
+                analysis['has_findings'] = True
+            else:
+                analysis['special_tests_status'] = 'tested'
+
+    # Determine priority focus based on findings
+    if analysis['abnormal_areas']:
+        # Focus on first abnormal area found
+        if 'proximal' in str(analysis['abnormal_areas']):
+            analysis['priority_focus'] = 'proximal'
+        elif 'local' in str(analysis['abnormal_areas']):
+            analysis['priority_focus'] = 'local'
+        elif 'distal' in str(analysis['abnormal_areas']):
+            analysis['priority_focus'] = 'distal'
+        elif 'palpation' in str(analysis['abnormal_areas']):
+            analysis['priority_focus'] = 'local'  # Palpation findings suggest local pathology
+        else:
+            analysis['priority_focus'] = 'investigate_abnormality'
+    elif analysis['proximal_status'] == 'clear' and analysis['distal_status'] == 'clear' and analysis['local_status'] == 'clear':
+        # All MSK areas clear - prioritize neural assessment
+        analysis['priority_focus'] = 'neural'
+    elif 'untested' in [analysis['proximal_status'], analysis['distal_status']]:
+        # Still have major areas untested
+        analysis['priority_focus'] = 'complete_assessment'
+    else:
+        # Some areas tested, continue comprehensive assessment
+        analysis['priority_focus'] = 'complete_assessment'
+
+    return analysis
+
+
+def analyze_subjective_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Analyze existing subjective examination (ICF) inputs to guide adaptive suggestions.
+
+    Subjective examination has 6 ICF-based fields:
+    - body_structure, body_function, activity_performance, activity_capacity,
+      contextual_environmental, contextual_personal
+
+    Returns analysis indicating which ICF domains are already documented and
+    whether there are gaps that need more detail.
+
+    Args:
+        inputs: Dict of current form field values
+
+    Returns:
+        Dict containing analysis of ICF completeness and detail level
+    """
+    analysis = {
+        'body_structure_status': 'untested',
+        'body_function_status': 'untested',
+        'activity_performance_status': 'untested',
+        'activity_capacity_status': 'untested',
+        'environmental_status': 'untested',
+        'personal_status': 'untested',
+        'completed_fields': [],
+        'incomplete_fields': [],
+        'detailed_fields': [],  # Fields with substantial detail
+        'brief_fields': [],  # Fields with minimal detail
+        'priority_focus': 'complete_all_fields'
+    }
+
+    if not inputs:
+        return analysis
+
+    # Threshold for "detailed" vs "brief" - conservative
+    BRIEF_THRESHOLD = 30  # Less than 30 chars = brief
+    DETAILED_THRESHOLD = 100  # More than 100 chars = detailed
+
+    for field_name, field_value in inputs.items():
+        if not field_value or len(str(field_value).strip()) < 3:
+            analysis['incomplete_fields'].append(field_name)
+            continue
+
+        analysis['completed_fields'].append(field_name)
+        value_len = len(str(field_value).strip())
+
+        # Classify detail level
+        if value_len < BRIEF_THRESHOLD:
+            analysis['brief_fields'].append(field_name)
+        elif value_len > DETAILED_THRESHOLD:
+            analysis['detailed_fields'].append(field_name)
+
+        # Map to ICF category
+        field_lower = field_name.lower()
+        if 'body_structure' in field_lower or 'structure' in field_lower:
+            analysis['body_structure_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'body_function' in field_lower or 'function' in field_lower:
+            analysis['body_function_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'activity_performance' in field_lower or 'performance' in field_lower:
+            analysis['activity_performance_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'activity_capacity' in field_lower or 'capacity' in field_lower:
+            analysis['activity_capacity_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'environmental' in field_lower:
+            analysis['environmental_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+        elif 'personal' in field_lower:
+            analysis['personal_status'] = 'detailed' if value_len > DETAILED_THRESHOLD else 'brief'
+
+    # Determine priority focus
+    if len(analysis['incomplete_fields']) > 3:
+        analysis['priority_focus'] = 'complete_remaining_fields'
+    elif len(analysis['brief_fields']) > 2:
+        analysis['priority_focus'] = 'expand_brief_responses'
+    elif analysis['completed_fields']:
+        analysis['priority_focus'] = 'ensure_comprehensiveness'
+    else:
+        analysis['priority_focus'] = 'complete_all_fields'
+
+    return analysis
+
+
+def analyze_initial_plan_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Analyze existing initial plan (assessment plan) inputs to guide adaptive suggestions.
+
+    Initial plan fields vary but typically include specific assessment categories
+    (e.g., ROM tests, strength tests, special tests, neurological tests).
+
+    Returns analysis indicating which assessment categories are already planned
+    and whether the plan is comprehensive.
+
+    Args:
+        inputs: Dict of current form field values
+
+    Returns:
+        Dict containing analysis of assessment plan completeness
+    """
+    analysis = {
+        'completed_fields': [],
+        'incomplete_fields': [],
+        'comprehensive_fields': [],  # Detailed test plans
+        'minimal_fields': [],  # Brief mentions only
+        'priority_focus': 'complete_comprehensive_plan'
+    }
+
+    if not inputs:
+        return analysis
+
+    MINIMAL_THRESHOLD = 40  # Less than 40 chars = minimal
+    COMPREHENSIVE_THRESHOLD = 120  # More than 120 chars = comprehensive
+
+    for field_name, field_value in inputs.items():
+        if not field_value or len(str(field_value).strip()) < 3:
+            analysis['incomplete_fields'].append(field_name)
+            continue
+
+        analysis['completed_fields'].append(field_name)
+        value_len = len(str(field_value).strip())
+
+        if value_len < MINIMAL_THRESHOLD:
+            analysis['minimal_fields'].append(field_name)
+        elif value_len > COMPREHENSIVE_THRESHOLD:
+            analysis['comprehensive_fields'].append(field_name)
+
+    # Determine priority
+    if len(analysis['incomplete_fields']) > 0:
+        analysis['priority_focus'] = 'complete_remaining_categories'
+    elif len(analysis['minimal_fields']) > 2:
+        analysis['priority_focus'] = 'expand_minimal_plans'
+    else:
+        analysis['priority_focus'] = 'refine_and_finalize'
+
+    return analysis
+
+
+def analyze_treatment_plan_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Analyze existing treatment plan inputs to guide adaptive suggestions.
+
+    Treatment plan has 4 fields:
+    - treatment_plan (interventions)
+    - goal_targeted (which SMART goals)
+    - reasoning (clinical rationale)
+    - reference (evidence/literature)
+
+    Returns analysis indicating which fields are complete and how they relate to each other.
+
+    Args:
+        inputs: Dict of current form field values
+
+    Returns:
+        Dict containing analysis of treatment plan completeness and coherence
+    """
+    analysis = {
+        'treatment_plan_status': 'untested',
+        'goal_targeted_status': 'untested',
+        'reasoning_status': 'untested',
+        'reference_status': 'untested',
+        'completed_fields': [],
+        'incomplete_fields': [],
+        'priority_focus': 'complete_all_components'
+    }
+
+    if not inputs:
+        return analysis
+
+    BRIEF_THRESHOLD = 50
+    DETAILED_THRESHOLD = 150
+
+    for field_name, field_value in inputs.items():
+        if not field_value or len(str(field_value).strip()) < 3:
+            analysis['incomplete_fields'].append(field_name)
+            continue
+
+        analysis['completed_fields'].append(field_name)
+        value_len = len(str(field_value).strip())
+
+        field_lower = field_name.lower()
+        status = 'detailed' if value_len > DETAILED_THRESHOLD else ('brief' if value_len < BRIEF_THRESHOLD else 'adequate')
+
+        if 'treatment_plan' in field_lower and 'goal' not in field_lower and 'reasoning' not in field_lower:
+            analysis['treatment_plan_status'] = status
+        elif 'goal' in field_lower:
+            analysis['goal_targeted_status'] = status
+        elif 'reasoning' in field_lower:
+            analysis['reasoning_status'] = status
+        elif 'reference' in field_lower:
+            analysis['reference_status'] = status
+
+    # Determine priority based on logical flow
+    if analysis['treatment_plan_status'] == 'untested':
+        analysis['priority_focus'] = 'define_interventions_first'
+    elif analysis['goal_targeted_status'] == 'untested':
+        analysis['priority_focus'] = 'link_to_goals'
+    elif analysis['reasoning_status'] == 'untested':
+        analysis['priority_focus'] = 'justify_with_reasoning'
+    elif analysis['reference_status'] == 'untested':
+        analysis['priority_focus'] = 'add_evidence_base'
+    else:
+        analysis['priority_focus'] = 'refine_and_integrate'
+
+    return analysis
+
+
 def detect_body_region(presenting_complaint: str) -> Optional[str]:
     """
     Detect the primary body region from the presenting complaint.
@@ -291,12 +706,16 @@ def get_subjective_field_prompt(
     age_sex: str,
     present_hist: str,
     past_hist: str,
-    existing_inputs: Dict[str, Any]
+    existing_inputs: Dict[str, Any],
+    patho_data: Optional[Dict[str, Any]] = None
 ) -> str:
     """
     IMPROVED: Provides BOTH questions AND clinical reasoning guidance specific to the ICF component.
     This gives the physiotherapist actionable direction rather than just generic questions.
     Uses ICF Core Sets for evidence-based, condition-specific guidance.
+
+    NEW: Includes pathophysiological mechanism context to guide examination approach based on
+    pain mechanism, severity, and irritability. This helps identify contraindications early.
     """
 
     icf_names = {
@@ -445,6 +864,69 @@ Provide 2-3 questions about PERSONAL ACTIVITIES/LIFESTYLE ONLY and 2-3 clinical 
 
     specific_guidance = field_specific_guidance.get(field, "")
 
+    # NEW: Add pathophysiological mechanism context (helps identify contraindications)
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_type = patho_data.get('pain_type', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_mechanism, pain_type, pain_severity, pain_irritability]):
+            patho_context = "\n\nPAIN MECHANISM & CONTRAINDICATION CONSIDERATIONS:\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source: {pain_mechanism}\n"
+            if pain_type:
+                patho_context += f"- Pain Type: {pain_type}\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            if healing_stage:
+                patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
+            patho_context += "\nIMPORTANT: Consider contraindications based on pain mechanism and irritability when suggesting examination approaches.\n"
+
+    # NEW: Intra-form adaptive context - analyze ICF completeness
+    intra_form_context = ""
+    if existing_inputs:
+        analysis = analyze_subjective_findings(existing_inputs)
+
+        if analysis['completed_fields']:
+            intra_form_context = "\n\n🔄 INTRA-FORM ADAPTIVE CONTEXT (ICF Framework Completeness):\n\n"
+
+            # Show ICF domains completed
+            intra_form_context += "ICF DOMAINS COMPLETED:\n"
+            for field_name in analysis['completed_fields']:
+                is_brief = field_name in analysis['brief_fields']
+                is_detailed = field_name in analysis['detailed_fields']
+                status = "⚡ DETAILED" if is_detailed else ("⚠️ BRIEF" if is_brief else "✅ ADEQUATE")
+                intra_form_context += f"- {field_name.replace('_', ' ').title()}: {status}\n"
+
+            intra_form_context += "\n🎯 ADAPTIVE GUIDANCE:\n\n"
+
+            # Guidance based on what's completed
+            if analysis['brief_fields']:
+                intra_form_context += f"⚠️ BRIEF RESPONSES DETECTED: {', '.join([f.replace('_', ' ').title() for f in analysis['brief_fields']])}\n"
+                intra_form_context += "   → If this field is one of the brief ones, encourage more detail and specific examples.\n\n"
+
+            if analysis['incomplete_fields']:
+                intra_form_context += f"📝 REMAINING FIELDS: {', '.join([f.replace('_', ' ').title() for f in analysis['incomplete_fields']])}\n"
+                intra_form_context += "   → Complete these to ensure comprehensive ICF documentation.\n\n"
+
+            # Priority focus
+            intra_form_context += f"💡 PRIORITY: {analysis['priority_focus'].replace('_', ' ').title()}\n\n"
+
+            # Specific guidance based on priority
+            if analysis['priority_focus'] == 'expand_brief_responses':
+                intra_form_context += "⚡ GUIDANCE: Several fields have minimal detail. Encourage elaboration with specific examples.\n"
+            elif analysis['priority_focus'] == 'complete_remaining_fields':
+                intra_form_context += "⚡ GUIDANCE: Focus on completing unfilled ICF domains for comprehensive assessment.\n"
+            elif analysis['priority_focus'] == 'ensure_comprehensiveness':
+                intra_form_context += "⚡ GUIDANCE: Most fields completed. Ensure depth and clinical relevance in remaining fields.\n"
+
+            intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
     return f"""
 {SYSTEM_ROLES['icf_specialist']}
 
@@ -455,6 +937,8 @@ PATIENT SNAPSHOT
 
 OTHER SUBJECTIVE FINDINGS ALREADY GATHERED
 {existing if existing else 'None recorded yet.'}
+{patho_context}
+{intra_form_context}
 
 TARGET ICF COMPONENT: {component}
 {icf_core_guidance}
@@ -580,10 +1064,14 @@ def get_patient_perspectives_field_prompt(
     past_hist: str,
     subjective_inputs: Optional[Dict[str, Any]] = None,
     existing_perspectives: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     FIELD-SPECIFIC patient perspectives prompts based on Common Sense Model (CSM).
     Provides targeted questions and clinical reasoning for each perspective component.
+
+    NEW: Includes pathophysiological mechanism context to tailor perspective questions
+    to pain type and mechanism (e.g., neurogenic vs somatic pain affects expectations).
 
     Endpoint: /api/ai_suggestion/perspectives/<field>
     """
@@ -809,6 +1297,26 @@ Provide 2-3 specific questions identifying emotional responses and distress patt
 
     specific_guidance = field_specific_guidance.get(field, "")
 
+    # NEW: Add pathophysiological mechanism context (helps tailor perspective questions)
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_type = patho_data.get('pain_type', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+
+        if any([pain_mechanism, pain_type, pain_severity]):
+            patho_context = "\n\nPAIN MECHANISM CONTEXT:\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source: {pain_mechanism}\n"
+            if pain_type:
+                patho_context += f"- Pain Type: {pain_type}\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            patho_context += "\nNOTE: Tailor perspective questions to pain mechanism (e.g., neurogenic pain may affect timeline expectations differently than acute somatic pain).\n"
+
     return f"""
 {SYSTEM_ROLES['biopsychosocial']}
 
@@ -822,6 +1330,7 @@ SUBJECTIVE FINDINGS ALREADY GATHERED
 
 OTHER PATIENT PERSPECTIVES ALREADY GATHERED
 {existing if existing else 'None recorded yet.'}
+{patho_context}
 
 TARGET CSM COMPONENT: {component}
 
@@ -973,10 +1482,13 @@ def get_provisional_diagnosis_field_prompt(
     assessments: Optional[Dict[str, Any]] = None,
     objective_findings: Optional[Dict[str, Any]] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     IMPROVED: Field-specific provisional diagnosis guidance with body region-specific differential diagnoses.
     Provides evidence-based diagnostic reasoning for each field based on clinical presentation.
+
+    NEW: Integrates pain mechanism classification into differential diagnosis reasoning.
 
     Endpoint: /api/ai_suggestion/provisional_diagnosis/<field>
     """
@@ -1579,6 +2091,23 @@ TARGET FIELD: {field_label}
 Provide clinically relevant, evidence-based suggestions for this field based on the patient's presentation and diagnostic reasoning.
 """)
 
+    # NEW: Add pathophysiological mechanism context for diagnosis integration
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_type = patho_data.get('pain_type', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_mechanism, pain_type, healing_stage]):
+            patho_context = "\n\nPAIN MECHANISM CLASSIFICATION (INTEGRATE INTO DIAGNOSIS):\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source: {pain_mechanism}\n"
+            if pain_type:
+                patho_context += f"- Pain Type: {pain_type}\n"
+            if healing_stage:
+                patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
+            patho_context += "\nIMPORTANT: Integrate pain mechanism into provisional diagnosis (e.g., 'subacromial impingement with nociceptive pain mechanism' or 'lumbar radiculopathy with neurogenic pain').\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1587,6 +2116,7 @@ Provide clinically relevant, evidence-based suggestions for this field based on 
 
 {context}
 {icf_guidance}
+{patho_context}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️  MANDATORY FIRST STEP - PATIENT DATA ANALYSIS
@@ -1765,10 +2295,15 @@ def get_objective_assessment_field_prompt(
     perspectives: Optional[Dict[str, Any]] = None,
     provisional_diagnoses: Optional[str] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
+    existing_inputs: Optional[Dict[str, str]] = None,  # NEW: Current form inputs for adaptive AI
 ) -> str:
     """
     IMPROVED: Field-specific objective assessment planning guidance.
     Provides comprehensive, body region-specific test recommendations based on all previous data.
+
+    NEW: Includes pain mechanism context to guide test selection and approach.
+    NEW: INTRA-FORM ADAPTIVE AI - Adapts suggestions based on previous fields filled on THIS form.
 
     Endpoint: /api/ai_suggestion/objective_assessment/<field>
     """
@@ -2169,10 +2704,90 @@ GENERAL MUSCULOSKELETAL OBJECTIVE ASSESSMENT:
 - Assess activity limitations
 """
 
+    # NEW: Add pathophysiological mechanism context
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+
+        if any([pain_mechanism, pain_severity, pain_irritability]):
+            patho_context = "\n\nPAIN MECHANISM CONTEXT FOR ASSESSMENT APPROACH:\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source Classification: {pain_mechanism}\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            patho_context += "\nNOTE: Consider pain mechanism when selecting test approach (e.g., neurogenic pain requires gentle neurodynamic testing).\n"
+
+    # NEW: Intra-form adaptive context - learn from fields already filled on THIS form
+    intra_form_context = ""
+    if existing_inputs:
+        analysis = analyze_objective_findings(existing_inputs)
+
+        if analysis['tested_fields']:
+            intra_form_context = "\n\n🔄 INTRA-FORM ADAPTIVE CONTEXT (Learning from previous fields on THIS objective assessment form):\n\n"
+
+            # Show what's been tested and findings
+            intra_form_context += "FIELDS ALREADY COMPLETED ON THIS FORM:\n"
+            for field_name in analysis['tested_fields']:
+                field_value = existing_inputs.get(field_name, '')
+                # Determine status indicator
+                if field_name in str(analysis['clear_areas']):
+                    status = "✅ CLEAR"
+                elif field_name in str(analysis['abnormal_areas']):
+                    status = "⚠️ ABNORMAL"
+                else:
+                    status = "📝 TESTED"
+
+                # Truncate long values
+                display_value = field_value[:80] + "..." if len(field_value) > 80 else field_value
+                intra_form_context += f"- {field_name.replace('_', ' ').title()}: {status}\n"
+                intra_form_context += f"  Input: \"{display_value}\"\n"
+
+            intra_form_context += "\n🎯 ADAPTIVE GUIDANCE FOR THIS FIELD:\n\n"
+
+            # Conservative approach - always mention but adjust emphasis
+            if analysis['clear_areas']:
+                intra_form_context += f"✅ AREAS ALREADY CLEARED: {', '.join(analysis['clear_areas'])}\n"
+                intra_form_context += "   → These areas show normal findings. Tone down suggestions for these (brief mention OK).\n"
+                intra_form_context += "   → CONSERVATIVE NOTE: If clinically feasible and time permits, brief reassessment is acceptable for thoroughness.\n\n"
+
+            if analysis['abnormal_areas']:
+                intra_form_context += f"⚠️ AREAS WITH ABNORMAL FINDINGS: {', '.join(analysis['abnormal_areas'])}\n"
+                intra_form_context += "   → DIG DEEPER: Provide detailed, specific tests to further investigate these findings.\n"
+                intra_form_context += "   → Suggest tests that correlate with abnormal findings already documented.\n\n"
+
+            if analysis['untested_fields']:
+                intra_form_context += f"🔍 AREAS NOT YET TESTED: {', '.join(analysis['untested_fields'])}\n"
+                intra_form_context += "   → If relevant to this field, provide comprehensive suggestions.\n\n"
+
+            # Priority focus guidance
+            intra_form_context += f"💡 PRIORITY FOCUS: {analysis['priority_focus'].replace('_', ' ').title()}\n\n"
+
+            # Special cases
+            if analysis['priority_focus'] == 'neural' and analysis['proximal_status'] == 'clear' and analysis['distal_status'] == 'clear':
+                intra_form_context += "⚡ CLINICAL REASONING: Proximal and distal joints cleared → Consider neurogenic source.\n"
+                intra_form_context += "   Suggest comprehensive neurological assessment (dermatomes, myotomes, reflexes, neurodynamics).\n\n"
+            elif analysis['has_findings']:
+                intra_form_context += "⚡ CLINICAL REASONING: Abnormal findings detected → Focus on confirming/ruling out suspected pathology.\n"
+                intra_form_context += "   Suggest tests that provide differential diagnostic value.\n\n"
+            elif len(analysis['clear_areas']) >= 2:
+                intra_form_context += "⚡ CLINICAL REASONING: Multiple areas cleared → Consider referred pain, neural, or systemic causes.\n"
+                intra_form_context += "   Don't over-test cleared structures; focus on untested areas and alternative diagnoses.\n\n"
+
+            # Conservative reminder
+            intra_form_context += "🔔 CONSERVATIVE APPROACH: Even for cleared areas, include brief mention like:\n"
+            intra_form_context += "   'Proximal joint already assessed and clear, but if time permits, brief screen acceptable for completeness.'\n"
+            intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
 {icf_guidance}
+{patho_context}
+{intra_form_context}
 
 {field_guidance}
 
@@ -3058,6 +3673,8 @@ def get_initial_plan_field_prompt(
     diagnosis: Optional[str] = None,
     selection: Optional[str] = None,
     perspectives: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
+    existing_inputs: Optional[Dict[str, str]] = None,  # NEW: Current form inputs for adaptive AI
 ) -> str:
     """
     IMPROVED: Field-specific ASSESSMENT planning guidance (not treatment planning).
@@ -3067,6 +3684,8 @@ def get_initial_plan_field_prompt(
     - Proximal and distal joint assessment recommendations
     - Test modifications based on patient perspectives (fear, pain, expectations)
     - Specific restrictions and precautions
+    - NEW: Contraindications based on pain mechanism, severity, and irritability
+    - NEW: INTRA-FORM ADAPTIVE AI - Learns from previous fields on THIS form
 
     Endpoint: /api/ai_suggestion/initial_plan/<field>
     """
@@ -3305,6 +3924,70 @@ CLINICAL REASONING TO PROVIDE:
             if awareness == 'Unaware':
                 modification_guidance += "- Limited consequence awareness: Educate during testing about what you're assessing and why\n"
 
+    # NEW: Add pathophysiological mechanism context for contraindication warnings
+    patho_contraindications = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_mechanism, pain_severity, pain_irritability]):
+            patho_contraindications = "\n\n⚠️ CONTRAINDICATION WARNINGS (PAIN MECHANISM BASED):\n"
+            if pain_severity:
+                try:
+                    severity_num = int(pain_severity)
+                    if severity_num >= 7:
+                        patho_contraindications += f"- HIGH PAIN SEVERITY ({severity_num}/10): Limit aggressive testing, prioritize gentle examination\n"
+                except (ValueError, TypeError):
+                    pass
+            if pain_irritability and 'high' in str(pain_irritability).lower():
+                patho_contraindications += "- HIGH IRRITABILITY: Avoid provocative tests that may flare symptoms significantly\n"
+            if healing_stage and 'acute' in str(healing_stage).lower():
+                patho_contraindications += "- ACUTE HEALING STAGE: Protect healing tissues, avoid end-range stressing\n"
+            if pain_mechanism:
+                if 'neurogenic' in str(pain_mechanism).lower():
+                    patho_contraindications += "- NEUROGENIC PAIN: Caution with neurodynamic testing, may provoke significant symptoms\n"
+                elif 'visceral' in str(pain_mechanism).lower():
+                    patho_contraindications += "- VISCERAL PAIN SUSPECTED: Contraindicated for musculoskeletal testing - requires medical referral\n"
+            patho_contraindications += "\n⚠️ MANDATORY: Flag any contraindicated tests based on above warnings.\n"
+
+    # NEW: Intra-form adaptive context - analyze assessment plan completeness
+    intra_form_context = ""
+    if existing_inputs:
+        analysis = analyze_initial_plan_findings(existing_inputs)
+
+        if analysis['completed_fields']:
+            intra_form_context = "\n\n🔄 INTRA-FORM ADAPTIVE CONTEXT (Assessment Plan Completeness):\n\n"
+
+            # Show completed categories
+            intra_form_context += "ASSESSMENT CATEGORIES ALREADY PLANNED:\n"
+            for field_name in analysis['completed_fields']:
+                is_minimal = field_name in analysis['minimal_fields']
+                is_comprehensive = field_name in analysis['comprehensive_fields']
+                status = "⚡ COMPREHENSIVE" if is_comprehensive else ("⚠️ MINIMAL" if is_minimal else "✅ ADEQUATE")
+                intra_form_context += f"- {field_name.replace('_', ' ').title()}: {status}\n"
+
+            intra_form_context += "\n🎯 ADAPTIVE GUIDANCE:\n\n"
+
+            if analysis['minimal_fields']:
+                intra_form_context += f"⚠️ MINIMAL DETAIL DETECTED: {', '.join([f.replace('_', ' ').title() for f in analysis['minimal_fields']])}\n"
+                intra_form_context += "   → If this field is one of them, provide more specific test details (e.g., exact ROM measurements, specific special tests).\n\n"
+
+            if analysis['incomplete_fields']:
+                intra_form_context += f"📝 REMAINING CATEGORIES: {', '.join([f.replace('_', ' ').title() for f in analysis['incomplete_fields']])}\n"
+                intra_form_context += "   → Complete these to ensure comprehensive assessment plan.\n\n"
+
+            # Priority guidance
+            intra_form_context += f"💡 PRIORITY: {analysis['priority_focus'].replace('_', ' ').title()}\n\n"
+
+            if analysis['priority_focus'] == 'expand_minimal_plans':
+                intra_form_context += "⚡ GUIDANCE: Several categories have minimal detail. Provide specific test names and parameters.\n"
+            elif analysis['priority_focus'] == 'complete_remaining_categories':
+                intra_form_context += "⚡ GUIDANCE: Fill in remaining assessment categories for comprehensive examination planning.\n"
+
+            intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
@@ -3313,6 +3996,8 @@ CLINICAL REASONING TO PROVIDE:
 TARGET ASSESSMENT CATEGORY: {component}
 {selection_context}
 {modification_guidance}
+{patho_contraindications}
+{intra_form_context}
 
 {specific_guidance}
 
@@ -3482,10 +4167,13 @@ def get_smart_goals_field_prompt(
     perspectives: Optional[Dict[str, Any]] = None,
     diagnosis: Optional[str] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     IMPROVED: Field-specific SMART goals guidance with body region-specific ICF participation goals.
     Provides evidence-based, condition-specific goal-setting recommendations.
+
+    NEW: Adjusts goal timeframes and expectations based on pain severity, irritability, and healing stage.
 
     Endpoint: /api/ai_suggestion/smart_goals/<field>
     """
@@ -4213,10 +4901,31 @@ TARGET FIELD: {field_label}
 Provide clinically relevant, evidence-based SMART goal suggestions for this field based on the patient's presentation, diagnosis, and patient priorities.
 """)
 
+    # NEW: Add pathophysiological mechanism context for realistic goal setting
+    patho_context = ""
+    if patho_data:
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_severity, pain_irritability, healing_stage]):
+            patho_context = "\n\nPAIN & HEALING CONTEXT FOR GOAL TIMEFRAMES:\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            if healing_stage:
+                patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
+            patho_context += "\nIMPORTANT: Adjust goal timeframes based on severity and healing stage.\n"
+            patho_context += "- High severity/irritability → Conservative timelines, stage goals carefully\n"
+            patho_context += "- Acute healing → Protect tissue, don't overpromise quick return to high-level activity\n"
+            patho_context += "- Chronic → May need longer timeframes, address psychosocial factors\n"
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
 {icf_participation_guidance}
+{patho_context}
 
 {specific_guidance}
 
@@ -4324,10 +5033,16 @@ def get_treatment_plan_field_prompt(
     diagnosis: Optional[str] = None,
     goals: Optional[Dict[str, Any]] = None,
     clinical_flags: Optional[Dict[str, Any]] = None,
+    patho_data: Optional[Dict[str, Any]] = None,
+    existing_inputs: Optional[Dict[str, str]] = None,  # NEW: Current form inputs for adaptive AI
 ) -> str:
     """
     IMPROVED: Body region-specific treatment interventions for each field.
     Provides evidence-based, condition-specific treatment recommendations.
+
+    NEW: Tailors treatment interventions to pain mechanism (e.g., neurogenic vs somatic pain
+    requires different approaches) and respects irritability levels.
+    NEW: INTRA-FORM ADAPTIVE AI - Learns from previous fields on THIS form
 
     Endpoint: /api/ai_suggestion/treatment_plan/<field>
     """
@@ -4602,6 +5317,99 @@ GENERAL MUSCULOSKELETAL TREATMENT INTERVENTIONS:
 - Ergonomic advice
 """
 
+    # NEW: Add pathophysiological mechanism context for treatment selection
+    patho_context = ""
+    if patho_data:
+        pain_mechanism = patho_data.get('possible_source', '')
+        pain_type = patho_data.get('pain_type', '')
+        pain_severity = patho_data.get('pain_severity', '')
+        pain_irritability = patho_data.get('pain_irritability', '')
+        healing_stage = patho_data.get('stage_healing', '')
+
+        if any([pain_mechanism, pain_type, pain_severity, pain_irritability, healing_stage]):
+            patho_context = "\n\n⚕️ PAIN MECHANISM CONTEXT FOR TREATMENT SELECTION:\n"
+            if pain_mechanism:
+                patho_context += f"- Pain Source Classification: {pain_mechanism}\n"
+            if pain_type:
+                patho_context += f"- Pain Type: {pain_type}\n"
+            if pain_severity:
+                patho_context += f"- Pain Severity (VAS): {pain_severity}/10\n"
+            if pain_irritability:
+                patho_context += f"- Pain Irritability: {pain_irritability}\n"
+            if healing_stage:
+                patho_context += f"- Tissue Healing Stage: {healing_stage}\n"
+
+            patho_context += "\n🎯 TREATMENT IMPLICATIONS:\n"
+
+            # Pain mechanism-specific treatment guidance
+            if pain_mechanism:
+                if 'neurogenic' in str(pain_mechanism).lower():
+                    patho_context += "- NEUROGENIC PAIN: Prioritize graded exposure, pain education, neural mobilization (gentle), avoid aggressive stretching\n"
+                elif 'visceral' in str(pain_mechanism).lower():
+                    patho_context += "- VISCERAL PAIN SUSPECTED: Treatment contraindicated - medical referral required\n"
+                elif 'somatic referred' in str(pain_mechanism).lower():
+                    patho_context += "- SOMATIC REFERRED: Treat source region, consider myofascial trigger points, educate on referred pain patterns\n"
+                elif 'somatic local' in str(pain_mechanism).lower():
+                    patho_context += "- SOMATIC LOCAL: Direct treatment appropriate, manual therapy + exercise, load management\n"
+
+            # Irritability-based treatment modifications
+            if pain_irritability:
+                if 'present' in str(pain_irritability).lower() or 'high' in str(pain_irritability).lower():
+                    patho_context += "- HIGH IRRITABILITY: Gentle progression, avoid flare-ups, prioritize education and desensitization\n"
+                else:
+                    patho_context += "- LOW IRRITABILITY: More aggressive treatment appropriate, can progress quickly\n"
+
+            # Healing stage-based modifications
+            if healing_stage:
+                if 'acute' in str(healing_stage).lower():
+                    patho_context += "- ACUTE STAGE: Protect healing tissues, PRICE principles, avoid end-range stress, gentle AROM\n"
+                elif 'subacute' in str(healing_stage).lower():
+                    patho_context += "- SUBACUTE STAGE: Progressive loading, functional exercises, manual therapy appropriate\n"
+                elif 'chronic' in str(healing_stage).lower():
+                    patho_context += "- CHRONIC STAGE: Focus on graded exposure, pain education, address fear-avoidance, functional restoration\n"
+
+    # NEW: Intra-form adaptive context - analyze treatment plan completeness and coherence
+    intra_form_context = ""
+    if existing_inputs:
+        analysis = analyze_treatment_plan_findings(existing_inputs)
+
+        if analysis['completed_fields']:
+            intra_form_context = "\n\n🔄 INTRA-FORM ADAPTIVE CONTEXT (Treatment Plan Coherence):\n\n"
+
+            # Show completed components
+            intra_form_context += "TREATMENT PLAN COMPONENTS COMPLETED:\n"
+            for field_name in analysis['completed_fields']:
+                field_lower = field_name.lower()
+                if 'treatment_plan' in field_lower and 'goal' not in field_lower:
+                    status = analysis['treatment_plan_status'].upper()
+                elif 'goal' in field_lower:
+                    status = analysis['goal_targeted_status'].upper()
+                elif 'reasoning' in field_lower:
+                    status = analysis['reasoning_status'].upper()
+                elif 'reference' in field_lower:
+                    status = analysis['reference_status'].upper()
+                else:
+                    status = "COMPLETED"
+                intra_form_context += f"- {field_name.replace('_', ' ').title()}: {status}\n"
+
+            intra_form_context += "\n🎯 ADAPTIVE GUIDANCE:\n\n"
+
+            # Priority-based guidance
+            intra_form_context += f"💡 PRIORITY: {analysis['priority_focus'].replace('_', ' ').title()}\n\n"
+
+            if analysis['priority_focus'] == 'define_interventions_first':
+                intra_form_context += "⚡ GUIDANCE: Treatment plan is the foundation. Provide specific interventions with dosage parameters.\n"
+            elif analysis['priority_focus'] == 'link_to_goals':
+                intra_form_context += "⚡ GUIDANCE: Treatment plan defined. Now explicitly link interventions to SMART goals.\n"
+            elif analysis['priority_focus'] == 'justify_with_reasoning':
+                intra_form_context += "⚡ GUIDANCE: Treatment and goals documented. Provide clinical reasoning and evidence base.\n"
+            elif analysis['priority_focus'] == 'add_evidence_base':
+                intra_form_context += "⚡ GUIDANCE: Add literature references to support your treatment approach.\n"
+            elif analysis['priority_focus'] == 'refine_and_integrate':
+                intra_form_context += "⚡ GUIDANCE: All components present. Ensure coherence and integration across all fields.\n"
+
+            intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
     # Field-specific guidance
     field_specific_guidance = {
         'treatment_plan': f"""
@@ -4760,6 +5568,8 @@ Provide clinically relevant, evidence-based suggestions for this field based on 
 
 {context}
 {icf_participation_guidance}
+{patho_context}
+{intra_form_context}
 
 {specific_guidance}
 
