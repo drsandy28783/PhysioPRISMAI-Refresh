@@ -9292,10 +9292,27 @@ def pricing():
 
 
 @app.route('/scheduling-info')
+@login_required
 def scheduling_info():
     """Display scheduling app information and features page"""
     try:
-        return render_template('scheduling_info.html')
+        from subscription_manager import get_user_subscription
+
+        # Get user subscription status
+        subscription, _ = get_user_subscription(session['user_id'])
+
+        # Check if user has access (paid subscription or active plan)
+        has_access = False
+        plan_type = subscription.get('plan_type', 'free_trial') if subscription else 'free_trial'
+
+        # Allow access for paid subscriptions (not free trial)
+        if plan_type in ['monthly', 'quarterly', 'annual', 'lifetime']:
+            has_access = True
+
+        return render_template('scheduling_info.html',
+                             has_access=has_access,
+                             plan_type=plan_type,
+                             subscription=subscription)
     except Exception as e:
         logger.error(f"Error loading scheduling info page: {e}", exc_info=True)
         flash('Error loading page. Please try again.', 'error')

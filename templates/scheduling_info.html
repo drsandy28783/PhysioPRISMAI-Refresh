@@ -209,9 +209,19 @@
   <div class="hero-section">
     <h1>📅 Appointment Scheduling</h1>
     <p>Streamline your practice with integrated appointment management</p>
+    {% if has_access %}
     <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button">
       Open Scheduling App →
     </a>
+    {% else %}
+    <div style="background: rgba(231, 76, 60, 0.2); border: 2px solid #e74c3c; border-radius: 12px; padding: 24px; margin: 20px auto; max-width: 600px;">
+      <h3 style="margin-bottom: 12px; font-size: 24px;">Premium Feature</h3>
+      <p style="margin-bottom: 20px; font-size: 16px;">Appointment Scheduling is available with paid subscriptions only.</p>
+      <a href="{{ url_for('pricing') }}" class="cta-button" style="background: #e74c3c;">
+        Upgrade to Access →
+      </a>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Key Features -->
@@ -354,13 +364,30 @@
   <!-- Getting Started -->
   <div class="section-header">
     <h2>Ready to Get Started?</h2>
+    {% if has_access %}
     <p>Your integrated scheduling solution is just one click away</p>
+    {% else %}
+    <p>Upgrade to a paid plan to unlock appointment scheduling</p>
+    {% endif %}
   </div>
 
   <div style="text-align: center; margin: 40px 0;">
+    {% if has_access %}
     <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button" style="font-size: 20px; padding: 20px 50px;">
       Launch Scheduling App →
     </a>
+    {% else %}
+    <div style="max-width: 600px; margin: 0 auto; padding: 40px; background: #fff3cd; border-radius: 12px; border: 2px solid #ffc107;">
+      <h3 style="color: #856404; margin-bottom: 16px;">Upgrade Required</h3>
+      <p style="color: #856404; margin-bottom: 24px; font-size: 16px;">
+        To access the Appointment Scheduling feature, please upgrade to one of our paid plans.
+        Choose from Monthly, Quarterly, or Annual subscriptions.
+      </p>
+      <a href="{{ url_for('pricing') }}" class="cta-button" style="background: #f39c12; font-size: 18px; padding: 16px 40px;">
+        View Pricing Plans →
+      </a>
+    </div>
+    {% endif %}
   </div>
 
   <!-- FAQ Section -->
