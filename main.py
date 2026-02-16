@@ -9291,6 +9291,17 @@ def pricing():
         return render_template('pricing.html', current_subscription=None)
 
 
+@app.route('/scheduling-info')
+def scheduling_info():
+    """Display scheduling app information and features page"""
+    try:
+        return render_template('scheduling_info.html')
+    except Exception as e:
+        logger.error(f"Error loading scheduling info page: {e}", exc_info=True)
+        flash('Error loading page. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
+
+
 @app.route('/free-trial')
 def free_trial():
     """Display free trial landing page"""

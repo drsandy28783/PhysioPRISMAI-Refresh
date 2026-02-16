@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+{% block title %}Appointment Scheduling – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  .scheduling-info {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  .hero-section {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, #1a5f5a 0%, #4a7c7a 100%);
+    border-radius: 16px;
+    color: white;
+    margin-bottom: 50px;
+  }
+
+  .hero-section h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    font-weight: 700;
+  }
+
+  .hero-section p {
+    font-size: 20px;
+    margin-bottom: 30px;
+    opacity: 0.95;
+  }
+
+  .cta-button {
+    display: inline-block;
+    background: white;
+    color: #1a5f5a;
+    padding: 16px 40px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 18px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin: 50px 0;
+  }
+
+  .feature-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }
+
+  .feature-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+  }
+
+  .feature-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 12px;
+  }
+
+  .feature-description {
+    color: #7f8c8d;
+    line-height: 1.6;
+  }
+
+  .section-header {
+    text-align: center;
+    margin: 60px 0 40px 0;
+  }
+
+  .section-header h2 {
+    font-size: 36px;
+    color: #2c3e50;
+    margin-bottom: 12px;
+  }
+
+  .section-header p {
+    font-size: 18px;
+    color: #7f8c8d;
+  }
+
+  .how-it-works {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 40px;
+    margin: 40px 0;
+  }
+
+  .steps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+  }
+
+  .step {
+    text-align: center;
+  }
+
+  .step-number {
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    background: #1a5f5a;
+    color: white;
+    border-radius: 50%;
+    line-height: 60px;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+
+  .step-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+  }
+
+  .step-description {
+    color: #7f8c8d;
+    line-height: 1.6;
+  }
+
+  .benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 30px 0;
+  }
+
+  .benefits-list li {
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .benefits-list li::before {
+    content: "✓";
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    background: #27ae60;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 30px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .screenshot-placeholder {
+    background: #ecf0f1;
+    border-radius: 12px;
+    padding: 60px;
+    text-align: center;
+    margin: 40px 0;
+    border: 2px dashed #bdc3c7;
+  }
+
+  @media (max-width: 768px) {
+    .hero-section h1 {
+      font-size: 32px;
+    }
+
+    .hero-section p {
+      font-size: 16px;
+    }
+
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .steps-container {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="scheduling-info">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <h1>📅 Appointment Scheduling</h1>
+    <p>Streamline your practice with integrated appointment management</p>
+    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button">
+      Open Scheduling App →
+    </a>
+  </div>
+
+  <!-- Key Features -->
+  <div class="section-header">
+    <h2>Key Features</h2>
+    <p>Everything you need to manage patient appointments efficiently</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📆</div>
+      <div class="feature-title">Multiple Calendar Views</div>
+      <div class="feature-description">
+        Switch between Day, Week, and Month views to manage your schedule the way you prefer. Get a bird's-eye view or focus on the details.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🔍</div>
+      <div class="feature-title">Smart Patient Search</div>
+      <div class="feature-description">
+        Quickly find patients by name or phone number with real-time autocomplete. Your existing patient database is automatically synced.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">⏱️</div>
+      <div class="feature-title">Flexible Scheduling</div>
+      <div class="feature-description">
+        Book appointments in 30, 45, or 60-minute slots. Set appointment types (Initial, Follow-up, Treatment) and add clinical notes.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🔐</div>
+      <div class="feature-title">Secure & Private</div>
+      <div class="feature-description">
+        Built with the same security standards as the main PhysiologicPRISM app. Your patient data remains completely secure and private.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🔄</div>
+      <div class="feature-title">Real-Time Sync</div>
+      <div class="feature-description">
+        Appointments sync instantly with your patient records. Changes appear immediately across all devices and sessions.
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <div class="feature-title">Mobile Optimized</div>
+      <div class="feature-description">
+        Works perfectly on desktop, tablet, and mobile. Install as a Progressive Web App (PWA) for a native app experience.
+      </div>
+    </div>
+  </div>
+
+  <!-- How It Works -->
+  <div class="section-header">
+    <h2>How It Works</h2>
+    <p>Get started in minutes with these simple steps</p>
+  </div>
+
+  <div class="how-it-works">
+    <div class="steps-container">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-title">Access the App</div>
+        <div class="step-description">
+          Click the "📅 Schedule" link in your dashboard or navigation menu. Your PhysiologicPRISM login works automatically.
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-title">Choose Your View</div>
+        <div class="step-description">
+          Select Day, Week, or Month view based on your preference. Navigate between dates using the arrow buttons or "Today" button.
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-title">Book Appointments</div>
+        <div class="step-description">
+          Click "New Appointment", search for the patient, select date/time, set duration and type, add notes, and save.
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-title">Manage & Edit</div>
+        <div class="step-description">
+          View appointment details by clicking on any scheduled slot. Edit, reschedule, or cancel appointments as needed.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benefits -->
+  <div class="section-header">
+    <h2>Why Use Scheduling?</h2>
+    <p>Benefits for your practice</p>
+  </div>
+
+  <ul class="benefits-list">
+    <li>
+      <div>
+        <strong>Save Time:</strong> Stop managing appointments in spreadsheets or paper calendars. Everything is digital and searchable.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Reduce No-Shows:</strong> Clear visual schedule helps you send timely reminders to patients about upcoming appointments.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Better Planning:</strong> See your entire schedule at a glance. Identify busy periods and optimize your time.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Integrated Workflow:</strong> Patient data from your assessments is automatically available when booking appointments.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Professional Image:</strong> Modern, digital scheduling system shows patients you value their time and use current technology.
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>No Extra Cost:</strong> Included with your PhysiologicPRISM subscription. No additional fees or per-appointment charges.
+      </div>
+    </li>
+  </ul>
+
+  <!-- Getting Started -->
+  <div class="section-header">
+    <h2>Ready to Get Started?</h2>
+    <p>Your integrated scheduling solution is just one click away</p>
+  </div>
+
+  <div style="text-align: center; margin: 40px 0;">
+    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button" style="font-size: 20px; padding: 20px 50px;">
+      Launch Scheduling App →
+    </a>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="section-header" style="margin-top: 80px;">
+    <h2>Frequently Asked Questions</h2>
+  </div>
+
+  <div class="how-it-works">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <div style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 10px;">Do I need a separate login?</h3>
+        <p style="color: #7f8c8d; line-height: 1.6;">
+          No! The scheduling app uses the same Firebase authentication as your main PhysiologicPRISM account.
+          Just click the link and you'll be automatically signed in.
+        </p>
+      </div>
+
+      <div style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 10px;">Can I access it on my mobile device?</h3>
+        <p style="color: #7f8c8d; line-height: 1.6;">
+          Yes! The scheduling app is fully responsive and works on all devices. You can also install it as a PWA
+          for an app-like experience on your phone or tablet.
+        </p>
+      </div>
+
+      <div style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 10px;">Is my patient data secure?</h3>
+        <p style="color: #7f8c8d; line-height: 1.6;">
+          Absolutely. The scheduling app uses the same Azure Cosmos DB database and security protocols as the main app.
+          All data is encrypted, and only you can see your patients' appointments.
+        </p>
+      </div>
+
+      <div style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 10px;">Can I send appointment reminders to patients?</h3>
+        <p style="color: #7f8c8d; line-height: 1.6;">
+          Currently, you can view upcoming appointments and manually notify patients. SMS/WhatsApp reminder automation
+          is planned for a future update (Phase 2).
+        </p>
+      </div>
+
+      <div style="margin-bottom: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 10px;">What if a patient isn't in my system yet?</h3>
+        <p style="color: #7f8c8d; line-height: 1.6;">
+          You'll need to add the patient to PhysiologicPRISM first (using the "Add Patient" feature).
+          Once added, they'll immediately appear in the scheduling app's patient search.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Support -->
+  <div class="section-header" style="margin-top: 60px;">
+    <h2>Need Help?</h2>
+    <p>We're here to assist you</p>
+  </div>
+
+  <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 12px;">
+    <p style="font-size: 18px; color: #2c3e50; margin-bottom: 20px;">
+      If you have questions or need assistance with the scheduling app, please contact support.
+    </p>
+    <p style="color: #7f8c8d;">
+      Email: <a href="mailto:support@physiologicprism.com" style="color: #1a5f5a; text-decoration: none; font-weight: 600;">support@physiologicprism.com</a>
+    </p>
+  </div>
+
+</div>
+{% endblock %}
