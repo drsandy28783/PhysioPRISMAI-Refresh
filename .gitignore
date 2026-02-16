@@ -183,3 +183,6 @@ coverage.xml
 SCHEMA_AUDIT.md
 COMPLETE_AI_FIX_SUMMARY.md
 FREE_TRIAL_IMPLEMENTATION.md
+
+# Documentation and utilities archive (not for deployment)
+../_Documentation_And_Utilities/
