@@ -281,7 +281,10 @@ def require_auth(f):
         # Fall back to session-based authentication
         user_id = session.get('user_id')
         if not user_id:
-            # No session and no valid bearer token
+            # API paths must always return 401 JSON — never redirect to login page.
+            # HTML redirect is only appropriate for browser-facing web routes.
+            if request.path.startswith('/api/'):
+                return jsonify({'error': 'Authentication required'}), 401
             return redirect('/login') if request.accept_mimetypes.accept_html else (jsonify({'error': 'Authentication required'}), 401)
 
         # Validate session

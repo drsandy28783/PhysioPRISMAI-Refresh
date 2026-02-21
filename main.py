@@ -7435,7 +7435,7 @@ def clinical_flags_suggest(patient_id):
 
     try:
         suggestion = get_ai_suggestion(prompt)
-        return jsonify({'suggestions': suggestion})
+        return jsonify({'suggestion': suggestion})
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
     except Exception:
@@ -7784,6 +7784,8 @@ def treatment_plan_summary(patient_id):
     """
     # 1) Load patient demographics
     pat_doc = db.collection('patients').document(patient_id).get()
+    if not pat_doc.exists:
+        return jsonify({'error': f'Patient {patient_id} not found'}), 404
     patient_info = pat_doc.to_dict() if pat_doc.exists else {}
 
     # Helper to fetch the latest entry from a collection
