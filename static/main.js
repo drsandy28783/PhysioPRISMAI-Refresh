@@ -797,9 +797,9 @@ if (document.getElementById('clinical-flags-form')) {
               body: JSON.stringify({ previous: allPrev, field, text })
             }
           );
-          const { suggestions, error } = await res.json();
+          const { suggestion, error } = await res.json();
           if (error) throw new Error(error);
-          AIModal.showContent(suggestions);
+          AIModal.showContent(suggestion);
         } catch (e) {
           AIModal.showError(e.message);
         }
@@ -987,7 +987,7 @@ document.querySelectorAll('.ai-btn[data-screen="smart_goals"]').forEach(btn => {
             perspectives: context.perspectives || {},
             assessments: context.assessments || {}
           },
-          patient_goals: input.value
+          input: input.value
         })
       });
       const { suggestion, error } = await resp.json();

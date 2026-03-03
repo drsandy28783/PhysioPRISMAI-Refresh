@@ -383,7 +383,7 @@ except Exception as e:
 # ─────────────────────────────────────────────────────
 
 
-def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None, patient_context: str = "") -> str:
     """
     Sends a prompt to Azure OpenAI GPT-4o and returns the assistant's reply.
     Uses intelligent caching to reduce costs and build training data.
@@ -392,6 +392,7 @@ def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None) ->
     Args:
         prompt: The sanitized prompt (PHI-safe)
         metadata: Optional metadata for cache analytics (endpoint, tags, etc.)
+        patient_context: Patient-specific context (e.g., age/sex) to ensure unique cache per patient
 
     Returns:
         str: AI response (from cache or fresh API call)
@@ -411,7 +412,8 @@ def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None) ->
             prompt=prompt,
             model=model,
             openai_client=client,
-            metadata=metadata or {}
+            metadata=metadata or {},
+            patient_context=patient_context
         )
         return response
 
@@ -7434,7 +7436,7 @@ def clinical_flags_suggest(patient_id):
     prompt = hard_limits(prompt, 3)
 
     try:
-        suggestion = get_ai_suggestion(prompt)
+        suggestion = get_ai_suggestion(prompt, patient_context=age_sex)
         return jsonify({'suggestion': suggestion})
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
@@ -7501,7 +7503,7 @@ def objective_assessment_field_suggest(field):
     prompt = hard_limits(prompt, 10)  # Increased limit for comprehensive assessment planning
 
     try:
-        suggestion = get_ai_suggestion(prompt).strip()
+        suggestion = get_ai_suggestion(prompt, patient_context=age_sex).strip()
         logger.info(f"🧠 [server] ObjectiveAssessment suggestion for '{field}': {suggestion}")
         return jsonify({'suggestion': suggestion})
     except OpenAIError as e:
@@ -7593,7 +7595,7 @@ def provisional_diagnosis_suggest(patient_id):
                 )
 
                 try:
-                    suggestion = get_ai_suggestion(prompt).strip()
+                    suggestion = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
                     logger.info(f"🤖 [server] provisional_diagnosis_suggest → {suggestion[:100]}...")
                     return jsonify({'suggestion': suggestion})
                 except OpenAIError as e:
@@ -7669,7 +7671,7 @@ def ai_smart_goals(field):
     )
 
     try:
-        suggestion = get_ai_suggestion(base_prompt).strip()
+        suggestion = get_ai_suggestion(base_prompt, patient_context=age_sex).strip()
         return jsonify({'suggestion': suggestion})
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable'}), 503
@@ -7764,7 +7766,7 @@ def treatment_plan_suggest(field):
     )
 
     try:
-        suggestion = get_ai_suggestion(prompt).strip()
+        suggestion = get_ai_suggestion(prompt, patient_context=age_sex).strip()
         logger.info(f"🧠 [server] TreatmentPlan suggestion for '{field}': {suggestion}")
         return jsonify({ 'field': field, 'suggestion': suggestion })
     except OpenAIError:
@@ -7879,7 +7881,7 @@ def treatment_plan_summary(patient_id):
     prompt = hard_limits(prompt, 5, "paragraph summary")
 
     try:
-        summary = get_ai_suggestion(prompt).strip()
+        summary = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
         return jsonify({ 'summary': summary })
     except OpenAIError:
         return jsonify({ 'error': 'AI service unavailable. Please try again later.' }), 503
