@@ -324,6 +324,33 @@ class TreatmentPlanSchema(Schema):
         required=False,
         allow_none=True,
         validate=[
+            validate.Length(max=10000),  # Increased from 5000 to accommodate AI-generated content
+            validate_no_html
+        ]
+    )
+
+    goal_targeted = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=5000),
+            validate_no_html
+        ]
+    )
+
+    reasoning = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
+            validate.Length(max=10000),  # Increased to accommodate detailed AI-generated reasoning
+            validate_no_html
+        ]
+    )
+
+    reference = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[
             validate.Length(max=5000),
             validate_no_html
         ]

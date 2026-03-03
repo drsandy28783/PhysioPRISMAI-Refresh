@@ -28,20 +28,21 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
       {% set fields = [
-        ['treatment_plan', 'Treatment Plan', 'Enter treatment plan…'],
-        ['goal_targeted', 'Goal Targeted', "Enter the goal you're targeting…"],
-        ['reasoning', 'Reasoning', 'Enter your clinical reasoning…'],
-        ['reference', 'Reference (Article/Book/Literature)', 'Enter references…']
+        ['treatment_plan', 'Treatment Plan', 'Enter treatment plan…', 10000],
+        ['goal_targeted', 'Goal Targeted', "Enter the goal you're targeting…", 5000],
+        ['reasoning', 'Reasoning', 'Enter your clinical reasoning…', 10000],
+        ['reference', 'Reference (Article/Book/Literature)', 'Enter references…', 5000]
       ] %}
 
-      {% for name,label,placeholder in fields %}
+      {% for name,label,placeholder,maxlength in fields %}
         <div class="field-block">
           <label for="{{ name }}">{{ label }}:</label>
           <div class="control-group">
-            <textarea id="{{ name }}" name="{{ name }}" class="input-field" rows="3" placeholder="{{ placeholder }}" data-voice-enabled>{{ request.form[name] or '' }}</textarea>
+            <textarea id="{{ name }}" name="{{ name }}" class="input-field" rows="3" placeholder="{{ placeholder }}" maxlength="{{ maxlength }}" data-voice-enabled>{{ request.form[name] or '' }}</textarea>
             <button type="button" class="ai-btn" data-field="{{ name }}" title="Ask AI for suggestions">🧠</button>
           </div>
           <div id="{{ name }}_popup" class="ai-popup"></div>
+          <small style="color: #666;">Max {{ maxlength }} characters</small>
         </div>
       {% endfor %}
 

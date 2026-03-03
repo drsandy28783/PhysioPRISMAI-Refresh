@@ -7229,7 +7229,7 @@ def ai_initial_plan_summary():
         return jsonify({'error': 'Invalid request data', 'details': result}), 400
 
     previous = data.get('previous', {})
-    inputs = data.get('assessments', {})
+    inputs = data.get('inputs', {})
 
     # Sanitize patient data to protect PHI
     age_sex = sanitize_age_sex(previous.get("age_sex", ""))
@@ -9279,7 +9279,7 @@ def icon_test():
 def pricing():
     """Display pricing and subscription plans page"""
     try:
-        from subscription_manager import get_user_subscription
+        from subscription_manager import get_user_subscription, PLANS, AI_CALL_PACKS
 
         # Get current subscription if user is logged in
         current_subscription = None
@@ -9287,7 +9287,10 @@ def pricing():
             subscription, _ = get_user_subscription(session['user_id'])
             current_subscription = subscription
 
-        return render_template('pricing.html', current_subscription=current_subscription)
+        return render_template('pricing.html',
+                             current_subscription=current_subscription,
+                             plans=PLANS,
+                             ai_call_packs=AI_CALL_PACKS)
 
     except Exception as e:
         logger.error(f"Error loading pricing page: {e}", exc_info=True)

@@ -605,6 +605,9 @@ if (document.getElementById('perspectives-form')) {
         });
         const { summary, error } = await res.json();
         if (error) throw new Error(error);
+        if (!summary || summary.trim() === '') {
+          throw new Error('No summary generated. Please ensure assessment fields are filled in.');
+        }
         AIModal.showContent(summary);
       } catch (e) {
         AIModal.showError(e.message);
@@ -1074,6 +1077,8 @@ if (genBtn) {
       const data = await resp.json();
       if (data.error) {
         AIModal.showError(data.error);
+      } else if (!data.summary || data.summary.trim() === '') {
+        AIModal.showError('No summary generated. Please ensure all assessment sections are completed and saved.');
       } else {
         AIModal.showContent(data.summary);
       }
