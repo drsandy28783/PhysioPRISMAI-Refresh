@@ -219,6 +219,9 @@ class AzureOpenAIError(Exception):
     """Azure OpenAI API error"""
     pass
 
+# Alias for backward compatibility
+OpenAIError = AzureOpenAIError
+
 class CosmosDBError(Exception):
     """Cosmos DB error"""
     pass
