@@ -45,14 +45,14 @@
     {% endif %}
 
     <h3>Add New Follow-Up</h3>
-    <form method="POST" action="{{ url_for('follow_ups', patient_id=patient.patient_id) }}">
+    <form id="followup-form" method="POST" action="{{ url_for('follow_ups', patient_id=patient.patient_id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <label>Session Number:</label>
       <input type="number" name="session_number" class="input-field" value="{{ followups|length + 1 }}" readonly>
 
       <label>Date:</label>
-      <input type="date" name="session_date" class="input-field" required>
+      <input type="date" id="session_date" name="session_date" class="input-field" required>
 
       <label>Grade of Achievement:</label>
       <select name="grade" class="input-field" required>

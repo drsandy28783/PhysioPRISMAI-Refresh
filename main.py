@@ -7804,12 +7804,12 @@ def treatment_plan_summary(patient_id):
 
     # 2) Pull in each screen's data
     subj      = fetch_latest('subjective_examination')       # e.g. pain, history
-    persp     = fetch_latest('subjective_perspectives')      # ICF beliefs
-    assess    = fetch_latest('subjective_assessments')       # initial plan choices
-    patho     = fetch_latest('pathophysiological_mechanism')
-    chronic   = fetch_latest('chronic_disease_factors')
+    persp     = fetch_latest('patient_perspectives')         # ICF beliefs (FIXED: was 'subjective_perspectives')
+    assess    = fetch_latest('initial_plan')                 # initial plan choices (FIXED: was 'subjective_assessments')
+    patho     = fetch_latest('patho_mechanism')              # (FIXED: was 'pathophysiological_mechanism')
+    chronic   = fetch_latest('chronic_diseases')             # (FIXED: was 'chronic_disease_factors')
     flags     = fetch_latest('clinical_flags')
-    objective = fetch_latest('objective_assessment')
+    objective = fetch_latest('objective_assessments')        # (FIXED: was 'objective_assessment')
     prov_dx   = fetch_latest('provisional_diagnosis')
     goals     = fetch_latest('smart_goals')
     tx_plan   = fetch_latest('treatment_plan')

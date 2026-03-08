@@ -318,7 +318,7 @@
     </div>
     <div class="info-item">
       <span class="info-label">Chief Complaint</span>
-      <span class="info-value">{{ patient.chief_complaint or 'Not recorded' }}</span>
+      <span class="info-value">{{ patient.present_history or patient.chief_complaint or 'Not recorded' }}</span>
     </div>
   </div>
 

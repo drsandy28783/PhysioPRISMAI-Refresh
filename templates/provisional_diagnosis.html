@@ -27,7 +27,7 @@
 {% block content %}
 <div class="container">
   <h2>Provisional Diagnosis for {{ patient_id }}</h2>
-  <form method="POST" action="{{ url_for('provisional_diagnosis', patient_id=patient_id) }}">
+  <form id="provisional-diagnosis-form" method="POST" action="{{ url_for('provisional_diagnosis', patient_id=patient_id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     {% set fields = [

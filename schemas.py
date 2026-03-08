@@ -34,8 +34,8 @@ def validate_no_html(value):
     # Check for common XSS patterns
     xss_patterns = [
         r'javascript:',
-        r'on\w+\s*=',  # onclick, onload, etc.
-        r'<\s*\w+[^>]*on\w+',  # tags with event handlers
+        r'\bon\w+\s*=',  # onclick=, onload=, etc. (word boundary to avoid false positives)
+        r'<\s*\w+[^>]*\son\w+\s*=',  # tags with event handlers
     ]
     for pattern in xss_patterns:
         if re.search(pattern, value, re.IGNORECASE):
@@ -351,7 +351,7 @@ class TreatmentPlanSchema(Schema):
         required=False,
         allow_none=True,
         validate=[
-            validate.Length(max=5000),
+            validate.Length(max=10000),  # Increased to accommodate AI-generated references
             validate_no_html
         ]
     )
