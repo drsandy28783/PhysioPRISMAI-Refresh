@@ -3280,10 +3280,13 @@ def get_clinical_flags_prompt(
     perspectives: Optional[Dict[str, Any]] = None,
     patho_data: Optional[Dict[str, Any]] = None,
     chronic_factors: Optional[Dict[str, Any]] = None,
+    field: Optional[str] = None,  # NEW: Specific flag field requested
 ) -> str:
     """
     IMPROVED: Comprehensive clinical flags screening covering ALL 5 flag types.
     Critical for identifying serious pathology, psychosocial barriers, and occupational risks.
+
+    NEW: Can now return field-specific guidance when field parameter is provided.
 
     Endpoint: /api/ai_suggestion/clinical_flags/<patient_id>/suggest
     """
@@ -3309,15 +3312,41 @@ def get_clinical_flags_prompt(
         if factors:
             chronic_context = f"\n\nIDENTIFIED MAINTENANCE FACTORS:\n{factors}\n"
 
+    # Field-specific task guidance
+    task_guidance = ""
+    if field and 'blue' in field.lower():
+        task_guidance = """
+TASK:
+Focus SPECIFICALLY on 🔵 **BLUE FLAGS** - WORK-RELATED PERCEPTUAL/ATTITUDINAL FACTORS.
+
+Identify individual's perceptions and beliefs about their work and its relationship to their injury.
+
+**Key Blue Flag Indicators to Assess:**
+1. **Job Satisfaction:** Does the patient feel satisfied or dissatisfied with their current work?
+2. **Belief That Work is Harmful:** Does the patient believe their work caused or is worsening their condition?
+3. **Belief They Cannot Do Their Job:** Does the patient feel incapable of performing their job duties?
+4. **Poor Workplace Support:** Does the patient feel unsupported by supervisor or colleagues?
+5. **Job Stress:** High workplace demands, time pressure, or lack of control
+6. **Negative Return-to-Work Expectations:** Does the patient expect their employer won't accommodate them?
+7. **Fear of Re-Injury at Work:** Anxiety about returning to work activities
+
+RESPONSE FORMAT:
+Provide a list of Blue Flags identified (if any), with specific patient details supporting each flag.
+If no Blue Flags are identified, state "None identified" or "Not applicable - not work-related injury".
+"""
+    else:
+        task_guidance = """
+TASK:
+Perform COMPREHENSIVE CLINICAL FLAGS SCREENING across ALL 5 flag categories.
+This is a CRITICAL SAFETY screening to identify serious pathology, barriers to recovery, and occupational risks.
+"""
+
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
 {patho_context}
 {chronic_context}
-
-TASK:
-Perform COMPREHENSIVE CLINICAL FLAGS SCREENING across ALL 5 flag categories.
-This is a CRITICAL SAFETY screening to identify serious pathology, barriers to recovery, and occupational risks.
+{task_guidance}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -5644,19 +5673,25 @@ Intervention 3: [Specific technique] - [Sets/reps/frequency] - [Rationale]
 [How yellow flags/psychosocial factors are addressed]
 ''' if field == 'reasoning' else ''}
 
-{f'''For 'reference' field:
+{f'''For 'reference' field - RETURN ONLY LITERATURE CITATIONS (NO TREATMENT PLAN):
+
+⚠️ IMPORTANT: Provide ONLY formatted literature references. Do NOT include treatment plan details, interventions, or clinical reasoning. ONLY citations.
+
 **Clinical Practice Guidelines:**
-1. [Guideline citation]
+1. [Organization Name, Year. Guideline Title. Available from: URL/DOI]
 
 **Systematic Reviews/Meta-Analyses:**
-1. [Author, Year, Title, Journal]
-2. [Author, Year, Title, Journal]
+1. [Lead Author et al., Year. Review Title. Journal Name. Volume(Issue):Pages. DOI]
+2. [Lead Author et al., Year. Review Title. Journal Name. Volume(Issue):Pages. DOI]
 
 **Key RCTs (if applicable):**
-1. [Author, Year, Title, Journal]
+1. [Lead Author et al., Year. Study Title. Journal Name. Volume(Issue):Pages. DOI]
 
-**Pain Science/Psychosocial References (if yellow flags):**
-1. [Reference for fear-avoidance, pain neuroscience education, etc.]
+**Pain Science/Psychosocial References (if yellow flags present):**
+1. [Lead Author et al., Year. Title. Journal Name. Volume(Issue):Pages. DOI]
+
+**Example Format:**
+"Childs JD et al., 2008. Neck pain: Clinical practice guidelines. J Orthop Sports Phys Ther. 38(9):A1-A34. doi:10.2519/jospt.2008.0303"
 ''' if field == 'reference' else ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

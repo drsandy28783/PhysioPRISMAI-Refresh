@@ -942,6 +942,17 @@ def get_usage_stats(user_id: str) -> Dict:
         voice_minutes_limit = subscription.get('voice_minutes_limit', 0)
         tokens = subscription.get('ai_tokens_balance', 0)
 
+        # Safeguard: Ensure no negative limits (data corruption protection)
+        if ai_calls_limit < 0:
+            logger.warning(f"User {user_id} has negative ai_calls_limit: {ai_calls_limit}. Setting to default.")
+            ai_calls_limit = FREE_TRIAL_AI_CALLS  # Use default from free trial
+        if patients_limit < 0:
+            logger.warning(f"User {user_id} has negative patients_limit: {patients_limit}. Setting to default.")
+            patients_limit = FREE_TRIAL_PATIENTS
+        if voice_minutes_limit < 0:
+            logger.warning(f"User {user_id} has negative voice_minutes_limit: {voice_minutes_limit}. Setting to default.")
+            voice_minutes_limit = FREE_TRIAL_VOICE_MINUTES
+
         # Calculate percentages
         patients_percent = (patients_used / patients_limit * 100) if patients_limit > 0 else 0
         ai_percent = (ai_calls_used / ai_calls_limit * 100) if ai_calls_limit > 0 else 0

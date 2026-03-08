@@ -4409,7 +4409,7 @@ def dashboard():
         plan_info = PLANS.get(plan_type, {})
 
         # Get total patient count (all time) - optimized query
-        patients_ref = db.collection('patients').where('created_by', '==', user_email)
+        patients_ref = db.collection('patients').where('physio_id', '==', user_email)
         patient_docs = list(patients_ref.stream())
         total_patients = len(patient_docs)
 
@@ -6008,6 +6008,16 @@ def treatment_plan(patient_id):
         db.collection('treatment_plan').add(entry)
         return redirect('/dashboard')
 
+    # GET: Fetch saved treatment plan data
+    saved_data = {}
+    try:
+        saved_docs = db.collection('treatment_plan').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if saved_docs:
+            saved_data = saved_docs[0].to_dict()
+            logger.info(f"Loaded saved treatment plan for {patient_id}: {list(saved_data.keys())}")
+    except Exception as e:
+        logger.warning(f"Could not fetch saved treatment plan for patient {patient_id}: {e}")
+
     # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
     patho_data = {}
     try:
@@ -6017,7 +6027,7 @@ def treatment_plan(patient_id):
     except Exception as e:
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
-    return render_template('treatment_plan.html', patient_id=patient_id, patho_data=patho_data)
+    return render_template('treatment_plan.html', patient_id=patient_id, patho_data=patho_data, saved_data=saved_data)
 
 @app.route('/follow_ups/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
@@ -7397,10 +7407,13 @@ def ai_chronic_factors():
 def clinical_flags_suggest(patient_id):
     data = request.get_json() or {}
 
+    # Get the specific field that was clicked
+    field = data.get('field', 'clinical_flags')
+
     # Validate AI request
     is_valid, result = validate_json(AIPromptSchema, {
         'patient_id': patient_id,
-        'field': 'clinical_flags',
+        'field': field,
         'context': {
             'previous': str(data.get('previous', {})),
             'inputs': str(data.get('inputs', {}))
@@ -7434,7 +7447,8 @@ def clinical_flags_suggest(patient_id):
         subjective=subjective,
         perspectives=perspectives,
         patho_data=patho_data,
-        chronic_factors=chronic_factors
+        chronic_factors=chronic_factors,
+        field=field  # NEW: Pass field to get field-specific guidance
     )
     prompt = hard_limits(prompt, 3)
 
