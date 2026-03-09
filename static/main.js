@@ -940,19 +940,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           };
 
+          // Create abort controller for timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
           const res = await fetch(
             `/provisional_diagnosis_suggest/${getPatientId()}?field=${field}`,
             {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify(patientData)
+              body: JSON.stringify(patientData),
+              signal: controller.signal
             }
           );
+
+          clearTimeout(timeoutId);
+
           const { suggestion } = await res.json();
           AIModal.showContent(suggestion || 'No suggestion available.');
         } catch (err) {
           console.error(err);
-          AIModal.showError('Error fetching suggestion');
+          if (err.name === 'AbortError') {
+            AIModal.showError('Request timed out. The AI is taking longer than expected. Please try again or simplify your request.');
+          } else {
+            AIModal.showError('Error fetching suggestion. Please try again.');
+          }
         }
       });
     });

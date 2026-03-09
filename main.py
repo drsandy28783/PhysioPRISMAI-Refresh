@@ -7658,11 +7658,11 @@ def provisional_diagnosis_suggest(patient_id):
                             .get()
                     return coll[0].to_dict() if coll else {}
 
-                # Fetch all relevant patient data
+                # Fetch all relevant patient data (FIXED: Correct collection names)
                 subjective_data = fetch_latest('subjective_examination')
-                perspectives_data = fetch_latest('subjective_perspectives')
-                initial_plan_data = fetch_latest('subjective_assessments')
-                objective_data = fetch_latest('objective_assessment')
+                perspectives_data = fetch_latest('patient_perspectives')  # FIXED: was subjective_perspectives
+                initial_plan_data = fetch_latest('initial_plan')  # FIXED: was subjective_assessments
+                objective_data = fetch_latest('objective_assessments')  # FIXED: was objective_assessment
                 clinical_flags_data = fetch_latest('clinical_flags')
                 patho_data = fetch_latest('patho_mechanism')  # NEW: Fetch pain mechanism data
 
@@ -7695,6 +7695,10 @@ def provisional_diagnosis_suggest(patient_id):
                     clinical_flags=sanitized_clinical_flags,
                     patho_data=sanitized_patho  # NEW: Pass pain mechanism context
                 )
+
+                # Apply hard limits to prevent timeout with very large prompts
+                prompt = hard_limits(prompt, 3)
+                logger.debug(f"[Provisional Diagnosis] Prompt length: {len(prompt)} characters")
 
                 try:
                     suggestion = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
