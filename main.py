@@ -7702,8 +7702,20 @@ def provisional_diagnosis_suggest(patient_id):
                     patho_data=sanitized_patho  # NEW: Pass pain mechanism context
                 )
 
-                # Log prompt size for monitoring (removed hard_limits to preserve detailed clinical output)
+                # Log prompt size for monitoring
                 logger.info(f"[Provisional Diagnosis] Generating suggestion for field '{field}', prompt length: {len(prompt)} chars")
+
+                # Limit prompt size to prevent timeout (Azure OpenAI has token limits ~128k, but large prompts can timeout)
+                MAX_PROMPT_CHARS = 15000  # ~3750 tokens, conservative to prevent timeouts
+                if len(prompt) > MAX_PROMPT_CHARS:
+                    logger.warning(f"[Provisional Diagnosis] Prompt too large ({len(prompt)} chars), truncating to {MAX_PROMPT_CHARS}")
+                    # Intelligent truncation: keep beginning (system + critical data) and end (field instructions)
+                    prompt_lines = prompt.split('\n')
+                    if len(prompt_lines) > 200:
+                        # Keep first 120 lines and last 80 lines
+                        truncated_prompt = '\n'.join(prompt_lines[:120] + ["\n--- [Additional patient data truncated for prompt size] ---\n"] + prompt_lines[-80:])
+                        prompt = truncated_prompt[:MAX_PROMPT_CHARS]
+                        logger.info(f"[Provisional Diagnosis] Truncated prompt to {len(prompt)} chars")
 
                 try:
                     suggestion = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
