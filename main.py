@@ -7651,12 +7651,18 @@ def provisional_diagnosis_suggest(patient_id):
 
                 # Helper to fetch the latest entry from a collection
                 def fetch_latest(collection_name):
-                    coll = db.collection(collection_name) \
-                            .where('patient_id', '==', patient_id) \
-                            .order_by('timestamp', direction='DESCENDING') \
-                            .limit(1) \
-                            .get()
-                    return coll[0].to_dict() if coll else {}
+                    try:
+                        coll = db.collection(collection_name) \
+                                .where('patient_id', '==', patient_id) \
+                                .order_by('timestamp', direction='DESCENDING') \
+                                .limit(1) \
+                                .get()
+                        if coll and len(coll) > 0:
+                            return coll[0].to_dict()
+                        return {}
+                    except Exception as e:
+                        logger.warning(f"Could not fetch from {collection_name}: {e}")
+                        return {}
 
                 # Fetch all relevant patient data (FIXED: Correct collection names)
                 subjective_data = fetch_latest('subjective_examination')
@@ -7697,18 +7703,18 @@ def provisional_diagnosis_suggest(patient_id):
                 )
 
                 # Log prompt size for monitoring (removed hard_limits to preserve detailed clinical output)
-                logger.debug(f"[Provisional Diagnosis] Prompt length: {len(prompt)} characters")
+                logger.info(f"[Provisional Diagnosis] Generating suggestion for field '{field}', prompt length: {len(prompt)} chars")
 
                 try:
                     suggestion = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
-                    logger.info(f"🤖 [server] provisional_diagnosis_suggest → {suggestion[:100]}...")
+                    logger.info(f"✅ [Provisional Diagnosis] Successfully generated {len(suggestion)} chars: {suggestion[:100]}...")
                     return jsonify({'suggestion': suggestion})
                 except OpenAIError as e:
-                    logger.error(f"OpenAI API error in provisional_diagnosis_suggest: {e}", exc_info=True)
+                    logger.error(f"❌ [Provisional Diagnosis] OpenAI API error: {str(e)}", exc_info=True)
                     return jsonify({'suggestion': 'AI service unavailable. Please try again later.'}), 503
                 except Exception as e:
-                    logger.error(f"Unexpected error in provisional_diagnosis_suggest: {e}", exc_info=True)
-                    return jsonify({'suggestion': ''}), 500
+                    logger.error(f"❌ [Provisional Diagnosis] Unexpected error: {str(e)}", exc_info=True)
+                    return jsonify({'suggestion': f'Error: {str(e)}'}), 500
 
 
 
