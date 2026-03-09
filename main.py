@@ -7696,8 +7696,7 @@ def provisional_diagnosis_suggest(patient_id):
                     patho_data=sanitized_patho  # NEW: Pass pain mechanism context
                 )
 
-                # Apply hard limits to prevent timeout with very large prompts
-                prompt = hard_limits(prompt, 3)
+                # Log prompt size for monitoring (removed hard_limits to preserve detailed clinical output)
                 logger.debug(f"[Provisional Diagnosis] Prompt length: {len(prompt)} characters")
 
                 try:
