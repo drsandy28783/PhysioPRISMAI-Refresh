@@ -677,7 +677,20 @@ def api_ai_initial_plan_summary():
         past_hist = sanitize_clinical_text(previous.get('past_history', ''))
         subjective = sanitize_subjective_data(previous.get('subjective', {}))
         diagnosis = sanitize_clinical_text(previous.get('provisional_diagnosis', ''))
-        plan_fields = sanitize_subjective_data(inputs)
+
+        # Format plan_fields: inputs come as {'field': {'choice': '...', 'details': '...'}}
+        # Convert to {'field': 'choice - details'} format for AI prompt
+        plan_fields = {}
+        for field_name, field_data in inputs.items():
+            if isinstance(field_data, dict):
+                choice = field_data.get('choice', '').strip()
+                details = field_data.get('details', '').strip()
+                if choice:
+                    plan_fields[field_name] = f"{choice}" + (f" - {details}" if details else "")
+            elif field_data:
+                plan_fields[field_name] = str(field_data)
+
+        plan_fields = sanitize_subjective_data(plan_fields)
 
         # Use centralized prompt
         prompt = get_initial_plan_summary_prompt(
@@ -695,7 +708,7 @@ def api_ai_initial_plan_summary():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        return jsonify({'summary': suggestion}), 200
 
     except Exception as e:
         logger.error(f"AI initial plan summary error: {e}")

@@ -7252,7 +7252,20 @@ def ai_initial_plan_summary():
     past_hist = sanitize_clinical_text(previous.get("past_history", ""))
     subjective = sanitize_subjective_data(previous.get("subjective", {}))
     diagnosis = sanitize_clinical_text(previous.get("provisional_diagnosis", ""))
-    plan_fields = sanitize_subjective_data(inputs)
+
+    # Format plan_fields: inputs come as {'field': {'choice': '...', 'details': '...'}}
+    # Convert to {'field': 'choice - details'} format for AI prompt
+    plan_fields = {}
+    for field_name, field_data in inputs.items():
+        if isinstance(field_data, dict):
+            choice = field_data.get('choice', '').strip()
+            details = field_data.get('details', '').strip()
+            if choice:
+                plan_fields[field_name] = f"{choice}" + (f" - {details}" if details else "")
+        elif field_data:
+            plan_fields[field_name] = str(field_data)
+
+    plan_fields = sanitize_subjective_data(plan_fields)
 
     # Use centralized prompt from ai_prompts.py
     prompt = get_initial_plan_summary_prompt(
@@ -7265,11 +7278,23 @@ def ai_initial_plan_summary():
     )
 
     try:
+        logger.info(f"[Initial Plan Summary] Generating summary for patient {data.get('patient_id', 'unknown')}")
+        logger.debug(f"[Initial Plan Summary] Prompt length: {len(prompt)} characters")
+
         summary = get_ai_suggestion(prompt)
+
+        logger.info(f"[Initial Plan Summary] Summary generated, length: {len(summary) if summary else 0} characters")
+
+        if not summary or summary.strip() == '':
+            logger.warning(f"[Initial Plan Summary] AI returned empty summary for patient {data.get('patient_id', 'unknown')}")
+            return jsonify({'error': 'AI returned an empty summary. Please ensure all assessment fields are properly filled.'}), 400
+
         return jsonify({'summary': summary})
-    except OpenAIError:
+    except OpenAIError as e:
+        logger.error(f"[Initial Plan Summary] OpenAI error: {str(e)}")
         return jsonify({'error':'AI service unavailable.'}), 503
-    except Exception:
+    except Exception as e:
+        logger.error(f"[Initial Plan Summary] Unexpected error: {str(e)}", exc_info=True)
         return jsonify({'error':'Unexpected error.'}), 500
 
 @app.route('/api/ai_suggestion/patho/possible_source', methods=['POST'])
