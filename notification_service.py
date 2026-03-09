@@ -60,8 +60,13 @@ class NotificationService:
             Notification ID if successful, None otherwise
         """
         try:
+            # SECURITY: Validate user_id is provided and not empty
+            if not user_id or not isinstance(user_id, str) or not user_id.strip():
+                logger.error(f"[SECURITY] Attempted to create notification without valid user_id! Title: {title}")
+                raise ValueError("user_id is required and cannot be empty")
+
             notification_data = {
-                'user_id': user_id,
+                'user_id': user_id.strip(),  # Ensure no whitespace
                 'title': title,
                 'message': message,
                 'type': notification_type,
@@ -76,7 +81,7 @@ class NotificationService:
             notification_ref = db.collection('notifications').add(notification_data)
             notification_id = notification_ref[1].id
 
-            logger.info(f"Created notification {notification_id} for user {user_id}")
+            logger.info(f"Created notification {notification_id} for user {user_id} (title: {title})")
             return notification_id
 
         except Exception as e:
@@ -103,6 +108,8 @@ class NotificationService:
             List of notification dictionaries
         """
         try:
+            logger.info(f"[NOTIFICATION QUERY] Getting notifications for user_id: {user_id} (unread_only={unread_only}, category={category}, limit={limit})")
+
             query = db.collection('notifications').where('user_id', '==', user_id)
 
             if unread_only:
@@ -120,8 +127,19 @@ class NotificationService:
                 notification = doc.to_dict()
                 notification['id'] = doc.id
                 notifications.append(notification)
+                # Log each notification to see what user_id it has
+                logger.debug(f"[NOTIFICATION] Retrieved notification {doc.id} with user_id={notification.get('user_id')} for query user_id={user_id}")
 
             logger.info(f"Retrieved {len(notifications)} notifications for user {user_id}")
+
+            # Add security check - filter out any notifications that don't belong to this user
+            # This is a safety net in case the database query isn't working correctly
+            filtered_notifications = [n for n in notifications if n.get('user_id') == user_id]
+            if len(filtered_notifications) != len(notifications):
+                logger.error(f"[SECURITY ALERT] Query returned {len(notifications)} notifications but only {len(filtered_notifications)} belong to user {user_id}! This indicates a database query bug!")
+                # Return only the notifications that belong to this user
+                return filtered_notifications
+
             return notifications
 
         except Exception as e:

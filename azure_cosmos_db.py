@@ -110,6 +110,10 @@ class CosmosDBQuery:
         if self.limit_count:
             query += f" OFFSET 0 LIMIT {self.limit_count}"
 
+        # Log the query for debugging (especially for notifications)
+        logger.debug(f"[COSMOS QUERY] SQL: {query}")
+        logger.debug(f"[COSMOS QUERY] Parameters: {self.parameters}")
+
         # Execute query
         try:
             items = list(self.container.query_items(
@@ -117,6 +121,8 @@ class CosmosDBQuery:
                 parameters=self.parameters,
                 enable_cross_partition_query=True
             ))
+
+            logger.debug(f"[COSMOS QUERY] Returned {len(items)} items")
 
             return [CosmosDBDocument(item['id'], item, True) for item in items]
         except exceptions.CosmosHttpResponseError as e:
