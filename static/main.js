@@ -594,22 +594,33 @@ if (document.getElementById('perspectives-form')) {
           perspectives: context.perspectives || {}
         };
 
+        const requestPayload = {
+          patient_id: currentPatientId,
+          previous: allPrev,
+          inputs: currentAssessments
+        };
+
+        console.log('[Initial Plan Summary] Request payload:', requestPayload);
+
         const res = await fetch('/api/ai_suggestion/initial_plan_summary', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({
-            patient_id: currentPatientId,
-            previous: allPrev,
-            inputs: currentAssessments
-          })
+          body: JSON.stringify(requestPayload)
         });
-        const { summary, error } = await res.json();
+
+        console.log('[Initial Plan Summary] Response status:', res.status);
+
+        const responseData = await res.json();
+        console.log('[Initial Plan Summary] Response data:', responseData);
+
+        const { summary, error } = responseData;
         if (error) throw new Error(error);
         if (!summary || summary.trim() === '') {
           throw new Error('No summary generated. Please ensure assessment fields are filled in.');
         }
         AIModal.showContent(summary);
       } catch (e) {
+        console.error('[Initial Plan Summary] Error:', e);
         AIModal.showError(e.message);
       }
     });
