@@ -20,6 +20,7 @@
 
     {% set flags = [
       ['red_flags',    'Red Flags',    'Any red-flag symptoms or history…'],
+      ['orange_flags', 'Orange Flags (Symptoms S/O Psychiatric Illness)', 'Any psychiatric symptoms or concerns…'],
       ['yellow_flags', 'Yellow Flags (Psychosocial)', 'Any psychosocial risk factors…'],
       ['black_flags',  'Black Flags (Systems/Environment)', 'Any workplace or system-level barriers…'],
       ['blue_flags',   'Blue Flags (Work-Related)', 'Any work-related attitudes or demands…']
@@ -28,19 +29,18 @@
     {% for name, label, placeholder in flags %}
       <div class="field-block" id="{{ name }}_block">
         <label for="{{ name }}">{{ label }}</label>
-        <div class="control-group">
-          <textarea id="{{ name }}" name="{{ name }}"
-                    class="input-field" rows="3"
-                    placeholder="{{ placeholder }}" data-voice-enabled>{{ request.form[name] or '' }}</textarea>
-          <button type="button" class="ai-btn" title="Ask AI follow-up"
-                  data-field="{{ name }}">🧠</button>
-        </div>
+        <textarea id="{{ name }}" name="{{ name }}"
+                  class="input-field" rows="3"
+                  placeholder="{{ placeholder }}" data-voice-enabled>{{ request.form[name] or '' }}</textarea>
         <div id="{{ name }}_hint" class="ai-hint"></div>
       </div>
     {% endfor %}
 
-    <div style="margin-top:24px; display:flex; gap:12px;">
+    <div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
       <button type="submit" class="button">Save &amp; Continue</button>
+      <button type="button" id="gen_flags_suggestions" class="button" style="background:#17a2b8;">
+        🧠 AI Suggestions for All Flags
+      </button>
       <a href="{{ url_for('chronic_disease',patient_id=patient_id) }}"
          class="button-secondary">← Back</a>
     </div>

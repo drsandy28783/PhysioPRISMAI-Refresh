@@ -771,52 +771,48 @@ if (document.getElementById('clinical-flags-form')) {
     });
   })();
 
-  // Wire up AI buttons (ONLY on clinical flags page)
-  if (document.getElementById('flags-form') || document.querySelector('[name="red_flags"]')) {
-    document.querySelectorAll('.ai-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const field = btn.dataset.field;
+  // Single AI button for all flags suggestions
+  document.getElementById('gen_flags_suggestions')?.addEventListener('click', async () => {
+    AIModal.show('AI Suggestions for Clinical Flags');
+
+    try {
+      // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+      const context = await getPatientContext(currentPatientId);
+
+      // Collect all flag field values
+      const flagFields = ['red_flags', 'orange_flags', 'yellow_flags', 'black_flags', 'blue_flags'];
+      const flagsData = {};
+      flagFields.forEach(field => {
         const fieldEl = document.getElementById(field);
-        if (!fieldEl) {
-          console.warn(`Field element '${field}' not found`);
-          return;
-        }
-        const text = fieldEl.value.trim();
-
-        // Show modal
-        const fieldTitle = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        AIModal.show(`AI Suggestions: ${fieldTitle}`);
-
-        try {
-          // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
-          const context = await getPatientContext(currentPatientId);
-
-          const allPrev = {
-            age_sex: context.age_sex || '',
-            present_history: context.present_history || '',
-            past_history: context.past_history || '',
-            subjective: context.subjective || {},
-            perspectives: context.perspectives || {},
-            assessments: context.assessments || {}
-          };
-
-          const res = await fetch(
-            `/api/ai_suggestion/clinical_flags/${getPatientId() || 'unknown'}/suggest`,
-            {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({ previous: allPrev, field, text })
-            }
-          );
-          const { suggestion, error } = await res.json();
-          if (error) throw new Error(error);
-          AIModal.showContent(suggestion);
-        } catch (e) {
-          AIModal.showError(e.message);
+        if (fieldEl) {
+          flagsData[field] = fieldEl.value.trim();
         }
       });
-    });
-  } // Close if (flags-form check)
+
+      const allPrev = {
+        age_sex: context.age_sex || '',
+        present_history: context.present_history || '',
+        past_history: context.past_history || '',
+        subjective: context.subjective || {},
+        perspectives: context.perspectives || {},
+        assessments: context.assessments || {}
+      };
+
+      const res = await fetch(
+        `/api/ai_suggestion/clinical_flags_all/${getPatientId() || 'unknown'}`,
+        {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ previous: allPrev, flags: flagsData })
+        }
+      );
+      const { suggestion, error } = await res.json();
+      if (error) throw new Error(error);
+      AIModal.showContent(suggestion);
+    } catch (e) {
+      AIModal.showError(e.message);
+    }
+  });
 }
 // ——— AI on Objective Assessment screen ———
 if (document.getElementById('objective-assessment-form')) {

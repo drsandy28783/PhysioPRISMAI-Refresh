@@ -5819,12 +5819,13 @@ def clinical_flags(patient_id):
         entry = {
             'patient_id': patient_id,
             'red_flags':     request.form.get('red_flags', ''),
+            'orange_flags':  request.form.get('orange_flags', ''),
             'yellow_flags':  request.form.get('yellow_flags', ''),
             'black_flags':   request.form.get('black_flags', ''),
             'blue_flags':    request.form.get('blue_flags', ''),
             'timestamp':     SERVER_TIMESTAMP
         }
-        db.collection('clinical_flags').add(entry) 
+        db.collection('clinical_flags').add(entry)
         return redirect(url_for('objective_assessment', patient_id=patient_id))
 
 
@@ -7474,6 +7475,65 @@ def clinical_flags_suggest(patient_id):
         patho_data=patho_data,
         chronic_factors=chronic_factors,
         field=field  # NEW: Pass field to get field-specific guidance
+    )
+    prompt = hard_limits(prompt, 3)
+
+    try:
+        suggestion = get_ai_suggestion(prompt, patient_context=age_sex)
+        return jsonify({'suggestion': suggestion})
+    except OpenAIError:
+        return jsonify({'error':'AI service unavailable.'}), 503
+    except Exception:
+        return jsonify({'error':'Unexpected error.'}), 500
+
+
+@app.route('/api/ai_suggestion/clinical_flags_all/<patient_id>', methods=['POST'])
+@csrf.exempt  # CSRF exempt because using Firebase bearer token auth
+@require_firebase_auth
+@require_ai_quota
+def clinical_flags_all_suggest(patient_id):
+    """Comprehensive AI suggestions for all clinical flags at once"""
+    data = request.get_json() or {}
+
+    # Validate AI request
+    is_valid, result = validate_json(AIPromptSchema, {
+        'patient_id': patient_id,
+        'field': 'clinical_flags_all',
+        'context': {
+            'previous': str(data.get('previous', {})),
+            'flags': str(data.get('flags', {}))
+        }
+    })
+
+    if not is_valid:
+        logger.warning(f"AI suggestion validation failed: {result}")
+        return jsonify({'error': 'Invalid request data', 'details': result}), 400
+
+    previous = data.get('previous', {})
+
+    # Sanitize patient data to protect PHI
+    age_sex = sanitize_age_sex(previous.get("age_sex", ""))
+    present_hist = sanitize_clinical_text(previous.get("present_history", ""))
+    past_hist = sanitize_clinical_text(previous.get("past_history", ""))
+    subjective = sanitize_subjective_data(previous.get("subjective", {}))
+    perspectives = sanitize_subjective_data(previous.get("perspectives", {}))
+
+    # Get pathophysiology data for red flag screening
+    patho_data = previous.get("patho_data", {})
+
+    # Get chronic factors for psychosocial context
+    chronic_factors = previous.get("chronic_factors", {})
+
+    # Use centralized prompt from ai_prompts.py (comprehensive flags screening)
+    prompt = get_clinical_flags_prompt(
+        age_sex=age_sex,
+        present_hist=present_hist,
+        past_hist=past_hist,
+        subjective=subjective,
+        perspectives=perspectives,
+        patho_data=patho_data,
+        chronic_factors=chronic_factors,
+        field=None  # No specific field - comprehensive screening
     )
     prompt = hard_limits(prompt, 3)
 
