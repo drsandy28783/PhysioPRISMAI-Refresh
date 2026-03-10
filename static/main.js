@@ -1087,23 +1087,34 @@ if (document.getElementById('treatment-plan-form') || document.querySelector('[n
 const genBtn = document.getElementById('gen_summary');
 if (genBtn) {
   genBtn.addEventListener('click', async () => {
+    console.log('[Treatment Summary] Button clicked');
     AIModal.show('Treatment Summary');
 
     try {
-      const resp = await fetch(
-        `/api/ai_suggestion/treatment_plan_summary/${getPatientId()}`
-      );
+      const url = `/api/ai_suggestion/treatment_plan_summary/${getPatientId()}`;
+      console.log('[Treatment Summary] Fetching:', url);
+
+      const resp = await fetch(url);
+      console.log('[Treatment Summary] Response status:', resp.status);
+      console.log('[Treatment Summary] Response headers:', [...resp.headers.entries()]);
+
       const data = await resp.json();
+      console.log('[Treatment Summary] Response data:', data);
+
       if (data.error) {
+        console.error('[Treatment Summary] Error from server:', data.error);
         AIModal.showError(data.error);
       } else if (!data.summary || data.summary.trim() === '') {
+        console.error('[Treatment Summary] Empty summary received');
         AIModal.showError('No summary generated. Please ensure all assessment sections are completed and saved.');
       } else {
+        console.log('[Treatment Summary] Summary received, length:', data.summary.length);
         AIModal.showContent(data.summary);
       }
     } catch (err) {
-      console.error(err);
-      AIModal.showError('Error generating summary');
+      console.error('[Treatment Summary] Exception caught:', err);
+      console.error('[Treatment Summary] Error stack:', err.stack);
+      AIModal.showError('Error generating summary: ' + err.message);
     }
   });
 }
