@@ -7907,20 +7907,29 @@ def treatment_plan_summary(patient_id):
     Gathers every saved screen for this patient and asks the AI to
     produce a concise treatment‑plan summary.
     """
+    logger.info(f"🧠 [server] treatment_plan_summary for patient {patient_id}")
+
     # 1) Load patient demographics
     pat_doc = db.collection('patients').document(patient_id).get()
     if not pat_doc.exists:
+        logger.warning(f"[Treatment Summary] Patient {patient_id} not found")
         return jsonify({'error': f'Patient {patient_id} not found'}), 404
     patient_info = pat_doc.to_dict() if pat_doc.exists else {}
 
     # Helper to fetch the latest entry from a collection
     def fetch_latest(collection_name):
-        coll = db.collection(collection_name) \
-                .where('patient_id', '==', patient_id) \
-                .order_by('timestamp', direction='DESCENDING') \
-                .limit(1) \
-                .get()
-        return coll[0].to_dict() if coll else {}
+        try:
+            coll = db.collection(collection_name) \
+                    .where('patient_id', '==', patient_id) \
+                    .order_by('timestamp', direction='DESCENDING') \
+                    .limit(1) \
+                    .get()
+            if coll and len(coll) > 0:
+                return coll[0].to_dict()
+            return {}
+        except Exception as e:
+            logger.warning(f"[Treatment Summary] Could not fetch from {collection_name}: {e}")
+            return {}
 
     # 2) Pull in each screen's data
     subj      = fetch_latest('subjective_examination')       # e.g. pain, history
@@ -7933,6 +7942,11 @@ def treatment_plan_summary(patient_id):
     prov_dx   = fetch_latest('provisional_diagnosis')
     goals     = fetch_latest('smart_goals')
     tx_plan   = fetch_latest('treatment_plan')
+
+    # Log what data was found
+    logger.info(f"[Treatment Summary] Data fetched - subj: {bool(subj)}, persp: {bool(persp)}, assess: {bool(assess)}, "
+                f"patho: {bool(patho)}, chronic: {bool(chronic)}, flags: {bool(flags)}, objective: {bool(objective)}, "
+                f"prov_dx: {bool(prov_dx)}, goals: {bool(goals)}, tx_plan: {bool(tx_plan)}")
 
     # Sanitize patient demographics
     sanitized_age_sex = sanitize_age_sex(patient_info.get('age_sex', ''))
@@ -7998,18 +8012,33 @@ def treatment_plan_summary(patient_id):
         + "\n\n"
 
         "Using all of the above, create a concise treatment plan summary "
-        "that links the patient's history, exam findings, goals, and interventions."
+        "that links the patient's history, exam findings, goals, and interventions.\n\n"
+        "Format: A cohesive 2-3 paragraph summary (maximum 300 words) covering:\n"
+        "1. Patient presentation and key findings\n"
+        "2. Clinical reasoning and diagnosis\n"
+        "3. Treatment approach and goals"
     )
 
-    prompt = hard_limits(prompt, 5, "paragraph summary")
+    # Log prompt size for monitoring
+    logger.info(f"[Treatment Summary] Generating summary, prompt length: {len(prompt)} chars")
 
     try:
         summary = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
+
+        # Validate that AI returned a non-empty summary
+        if not summary or summary.strip() == '':
+            logger.warning(f"[Treatment Summary] AI returned empty summary for patient {patient_id}")
+            logger.warning(f"[Treatment Summary] Prompt was: {prompt[:500]}...")
+            return jsonify({'error': 'AI returned an empty summary. Please ensure all assessment sections are completed and saved.'}), 400
+
+        logger.info(f"✅ [Treatment Summary] Successfully generated {len(summary)} chars: {summary[:100]}...")
         return jsonify({ 'summary': summary })
-    except OpenAIError:
+    except OpenAIError as e:
+        logger.error(f"❌ [Treatment Summary] OpenAI API error: {str(e)}", exc_info=True)
         return jsonify({ 'error': 'AI service unavailable. Please try again later.' }), 503
-    except Exception:
-        return jsonify({ 'error': 'An unexpected error occurred.' }), 500
+    except Exception as e:
+        logger.error(f"❌ [Treatment Summary] Unexpected error: {str(e)}", exc_info=True)
+        return jsonify({ 'error': f'An unexpected error occurred: {str(e)}' }), 500
 
 
 @app.route('/ai/followup_suggestion/<patient_id>', methods=['POST'])
