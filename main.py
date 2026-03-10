@@ -6043,38 +6043,59 @@ def follow_ups(patient_id):
 
     # 2) handle new entry
     if request.method == 'POST':
-        # Validate follow-up data
-        form_data = {
-            'patient_id': patient_id,
-            'followup_date': request.form.get('session_date', ''),
-            'subjective_findings': request.form.get('belief_treatment', ''),
-            'objective_findings': request.form.get('belief_feedback', ''),
-            'treatment_given': request.form.get('treatment_plan', '')
-        }
+        try:
+            # Validate follow-up data
+            form_data = {
+                'patient_id': patient_id,
+                'followup_date': request.form.get('session_date', ''),
+                'subjective_findings': request.form.get('belief_treatment', ''),
+                'objective_findings': request.form.get('belief_feedback', ''),
+                'treatment_given': request.form.get('treatment_plan', '')
+            }
 
-        is_valid, result = validate_data(FollowUpSchema, form_data)
-        if not is_valid:
-            # Show detailed validation errors to user
-            logger.warning(f"Follow-Up validation failed: {result}")
-            for field, errors in result.items():
-                for error in errors:
-                    flash(f'{field.replace("_", " ").title()}: {error}', 'error')
+            is_valid, result = validate_data(FollowUpSchema, form_data)
+            if not is_valid:
+                # Show detailed validation errors to user
+                logger.warning(f"Follow-Up validation failed: {result}")
+                for field, errors in result.items():
+                    for error in errors:
+                        flash(f'{field.replace("_", " ").title()}: {error}', 'error')
+                return redirect(f'/follow_ups/{patient_id}')
+
+            # Safely parse session_number
+            session_number_str = request.form.get('session_number', '').strip()
+            if not session_number_str:
+                flash('Session number is required', 'error')
+                logger.error(f"Follow-Up save error: Missing session_number for patient {patient_id}")
+                return redirect(f'/follow_ups/{patient_id}')
+
+            try:
+                session_number = int(session_number_str)
+            except ValueError:
+                flash('Session number must be a valid number', 'error')
+                logger.error(f"Follow-Up save error: Invalid session_number '{session_number_str}' for patient {patient_id}")
+                return redirect(f'/follow_ups/{patient_id}')
+
+            entry = {
+                'patient_id':      patient_id,
+                'session_number':  session_number,
+                'session_date':    result.get('followup_date', request.form['session_date']),
+                'grade':           request.form.get('grade', ''),
+                'perception':      result.get('subjective_findings', request.form.get('belief_treatment', '')),
+                'feedback':        result.get('objective_findings', request.form.get('belief_feedback', '')),
+                'treatment_plan':  result.get('treatment_given', request.form.get('treatment_plan', '')),
+                'timestamp':       SERVER_TIMESTAMP
+            }
+            db.collection('follow_ups').add(entry)
+            log_action(session['user_id'], 'Add Follow-Up',
+                       f"Follow-up #{entry['session_number']} for {patient_id}")
+            flash('Follow-up session saved successfully', 'success')
             return redirect(f'/follow_ups/{patient_id}')
 
-        entry = {
-            'patient_id':      patient_id,
-            'session_number':  int(request.form['session_number']),
-            'session_date':    result.get('followup_date', request.form['session_date']),
-            'grade':           request.form['grade'],
-            'perception':      result.get('subjective_findings', request.form['belief_treatment']),
-            'feedback':        result.get('objective_findings', request.form['belief_feedback']),
-            'treatment_plan':  result.get('treatment_given', request.form['treatment_plan']),
-            'timestamp':       SERVER_TIMESTAMP
-        }
-        db.collection('follow_ups').add(entry)
-        log_action(session['user_id'], 'Add Follow-Up',
-                   f"Follow-up #{entry['session_number']} for {patient_id}")
-        return redirect(f'/follow_ups/{patient_id}')
+        except Exception as e:
+            logger.error(f"Follow-Up save error for patient {patient_id}: {str(e)}", exc_info=True)
+            flash(f'Error saving follow-up: {str(e)}', 'error')
+            return redirect(f'/follow_ups/{patient_id}')
 
     # 3) on GET, pull all existing
     docs = (db.collection('follow_ups')
