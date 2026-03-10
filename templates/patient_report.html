@@ -922,4 +922,12 @@
     </p>
   </div>
 </div>
+
+<script nonce="{{ csp_nonce() }}">
+  // Print Report Button Handler
+  document.getElementById('print-report-btn').addEventListener('click', function() {
+    window.print();
+  });
+</script>
+
 {% endblock %}
