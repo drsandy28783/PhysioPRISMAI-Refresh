@@ -3,7 +3,7 @@
 
 {% block head %}
 <style>
-  .field-block { position: relative; margin-top: 20px; }
+  .field-block { position: relative; margin-top: 20px; width: 100%; }
   .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
 
   .input-field {
@@ -87,10 +87,7 @@
         🩺 Generate Provisional Diagnosis
       </button>
       <button type="submit" class="button">Save &amp; Continue</button>
-      <a href="{{ url_for('clinical_flags', patient_id=patient_id) }}"
-         class="button-secondary">
-        &larr; Back to Flags
-      </a>
+      <a href="{{ url_for('clinical_flags', patient_id=patient_id) }}" class="button">&larr; Back to Clinical Flags</a>
     </div>
   </form>
 </div>

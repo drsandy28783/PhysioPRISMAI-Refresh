@@ -3,10 +3,10 @@
 
 {% block head %}
 <style>
-  .field-block { position: relative; margin-top: 20px; }
+  .field-block { position: relative; margin-top: 20px; width: 100%; }
   .slider-container { display: flex; align-items: center; gap: 12px; }
-  .control-group { display: flex; align-items: flex-start; gap: 8px; }
-  .control-group .input-field { flex: 1; }
+  .control-group { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
+  .control-group .input-field { flex: 1; width: 100%; }
   .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; flex-shrink: 0; margin-top: 0.5rem; }
   .ai-popup {
     position: absolute;
@@ -101,7 +101,7 @@
 
     <div style="margin-top:24px; display:flex; gap:12px;">
       <button type="submit" class="button">Save &amp; Continue</button>
-      <a href="{{ url_for('add_patient') }}" class="button-secondary">&larr; Back to Add Patient</a>
+      <a href="{{ url_for('add_patient') }}" class="button">&larr; Back to Add Patient</a>
     </div>
   </form>
 </div>

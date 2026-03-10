@@ -3,10 +3,10 @@
 
 {% block head %}
 <style>
-  .field-block { position: relative; margin-top: 20px; }
+  .field-block { position: relative; margin-top: 20px; width: 100%; }
   .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
-  .control-group { display: flex; align-items: flex-start; gap: 8px; }
-  .control-group .input-field { flex: 1; }
+  .control-group { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
+  .control-group .input-field { flex: 1; width: 100%; }
   .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
   .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; flex-shrink: 0; margin-top: 0.5rem; }
   .ai-popup {
@@ -49,9 +49,7 @@
       <div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
         <button type="submit" class="button">Save &amp; Complete Assessment</button>
         <button type="button" class="button" id="gen_summary">⚡ Generate Summary</button>
-        <a href="{{ url_for('smart_goals', patient_id=patient_id) }}" class="button-secondary">
-          &larr; Back to SMART Goals
-        </a>
+        <a href="{{ url_for('smart_goals', patient_id=patient_id) }}" class="button">&larr; Back to SMART Goals</a>
       </div>
     </form>
   </div>
