@@ -1138,7 +1138,7 @@ def api_ai_treatment_plan_summary(patient_id):
             'user_id': user_email
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        return jsonify({'summary': suggestion}), 200
 
     except Exception as e:
         logger.error(f"AI treatment summary error: {e}")
