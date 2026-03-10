@@ -479,7 +479,6 @@
             <a href="{{ url_for('follow_ups', patient_id=patient.patient_id) }}" class="button green">Add Follow-Up</a>
             <a href="{{ url_for('view_follow_ups', patient_id=patient.patient_id) }}" class="button green">View Follow-Ups</a>
             <a href="{{ url_for('patient_report', patient_id=patient.patient_id) }}" class="button">Report</a>
-            <a href="{{ url_for('download_report', patient_id=patient.patient_id) }}" class="button">PDF</a>
           </td>
         </tr>
         {% endfor %}
