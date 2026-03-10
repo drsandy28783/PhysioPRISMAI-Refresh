@@ -6076,10 +6076,18 @@ def follow_ups(patient_id):
                 logger.error(f"Follow-Up save error: Invalid session_number '{session_number_str}' for patient {patient_id}")
                 return redirect(f'/follow_ups/{patient_id}')
 
+            # Get session_date and ensure it's a string
+            session_date = result.get('followup_date', request.form.get('session_date', ''))
+            # If validator returned a date object, convert to string
+            if hasattr(session_date, 'isoformat'):
+                session_date = session_date.isoformat()
+            elif hasattr(session_date, 'strftime'):
+                session_date = session_date.strftime('%Y-%m-%d')
+
             entry = {
                 'patient_id':      patient_id,
                 'session_number':  session_number,
-                'session_date':    result.get('followup_date', request.form['session_date']),
+                'session_date':    str(session_date),
                 'grade':           request.form.get('grade', ''),
                 'perception':      result.get('subjective_findings', request.form.get('belief_treatment', '')),
                 'feedback':        result.get('objective_findings', request.form.get('belief_feedback', '')),
@@ -6094,7 +6102,8 @@ def follow_ups(patient_id):
 
         except Exception as e:
             logger.error(f"Follow-Up save error for patient {patient_id}: {str(e)}", exc_info=True)
-            flash(f'Error saving follow-up: {str(e)}', 'error')
+            # User-friendly error message without technical details
+            flash('Unable to save follow-up session. Please ensure all fields are filled correctly and try again.', 'error')
             return redirect(f'/follow_ups/{patient_id}')
 
     # 3) on GET, pull all existing
@@ -6348,7 +6357,8 @@ def download_report(patient_id):
 
     except Exception as e:
         logger.error(f"❌ PDF download error for patient {patient_id}: {str(e)}", exc_info=True)
-        flash(f"Error downloading PDF report: {str(e)}", "error")
+        # User-friendly error message without technical details
+        flash("Unable to download PDF report. Please try again or contact support if the issue persists.", "error")
         return redirect(url_for('view_patients'))
 @app.route('/manage_users')
 @login_required()
