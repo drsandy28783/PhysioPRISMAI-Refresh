@@ -6254,7 +6254,7 @@ def download_report(patient_id):
             logger.error(f"PDF download: Patient {patient_id} not found")
             return redirect(url_for('view_patients'))
 
-        patient = patient.to_dict()
+        patient = doc.to_dict()
         if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
             flash("Access denied", "error")
             logger.warning(f"PDF download: Unauthorized access attempt for patient {patient_id} by {session.get('user_id')}")
