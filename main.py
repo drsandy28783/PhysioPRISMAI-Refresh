@@ -6237,85 +6237,119 @@ def patient_report(patient_id):
 @app.route('/download_report/<path:patient_id>')
 @login_required()
 def download_report(patient_id):
-    # 1) Fetch patient record and check permissions
-    doc = db.collection('patients').document(patient_id).get()
-    if not doc.exists:
-        return "Patient not found.", 404
-    patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
-        return "Access denied.", 403
+    try:
+        # 1) Fetch patient record and check permissions
+        doc = db.collection('patients').document(patient_id).get()
+        if not doc.exists:
+            flash("Patient not found", "error")
+            logger.error(f"PDF download: Patient {patient_id} not found")
+            return redirect(url_for('view_patients'))
 
-    # 2) Fetch all assessment sections
-    def fetch_one(coll):
-        result = db.collection(coll) \
-                     .where('patient_id', '==', patient_id) \
-                     .limit(1).get()
-        return result[0].to_dict() if result else {}
+        patient = patient.to_dict()
+        if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+            flash("Access denied", "error")
+            logger.warning(f"PDF download: Unauthorized access attempt for patient {patient_id} by {session.get('user_id')}")
+            return redirect(url_for('view_patients'))
 
-    def fetch_all(coll):
-        docs = db.collection(coll).where('patient_id', '==',
-                                         patient_id).order_by('timestamp', direction='DESCENDING').get()
-        return [d.to_dict() for d in docs] if docs else []
+        # 2) Fetch all assessment sections
+        def fetch_one(coll):
+            try:
+                result = db.collection(coll) \
+                             .where('patient_id', '==', patient_id) \
+                             .limit(1).get()
+                return result[0].to_dict() if result else {}
+            except Exception as e:
+                logger.warning(f"PDF download: Could not fetch {coll} for patient {patient_id}: {e}")
+                return {}
 
-    subjective = fetch_one('subjective_examination')
-    perspectives = fetch_one('patient_perspectives')
-    initial_plan = fetch_one('initial_plan')
-    patho_mechanism = fetch_one('patho_mechanism')
-    chronic_diseases = fetch_one('chronic_diseases')
-    clinical_flags = fetch_one('clinical_flags')
-    objective = fetch_one('objective_assessments')
-    diagnosis = fetch_one('provisional_diagnosis')
-    goals = fetch_one('smart_goals')
-    treatment = fetch_one('treatment_plan')
-    follow_ups = fetch_all('follow_ups')
+        def fetch_all(coll):
+            try:
+                docs = db.collection(coll).where('patient_id', '==',
+                                                 patient_id).order_by('timestamp', direction='DESCENDING').get()
+                return [d.to_dict() for d in docs] if docs else []
+            except Exception as e:
+                logger.warning(f"PDF download: Could not fetch {coll} list for patient {patient_id}: {e}")
+                return []
 
-    # Get therapist info
-    therapist_doc = db.collection('users').document(patient.get('physio_id', '')).get()
-    therapist = therapist_doc.to_dict() if therapist_doc.exists else {}
+        subjective = fetch_one('subjective_examination')
+        perspectives = fetch_one('patient_perspectives')
+        initial_plan = fetch_one('initial_plan')
+        patho_mechanism = fetch_one('patho_mechanism')
+        chronic_diseases = fetch_one('chronic_diseases')
+        clinical_flags = fetch_one('clinical_flags')
+        objective = fetch_one('objective_assessments')
+        diagnosis = fetch_one('provisional_diagnosis')
+        goals = fetch_one('smart_goals')
+        treatment = fetch_one('treatment_plan')
+        follow_ups = fetch_all('follow_ups')
 
-    # Get current date/time for report
-    from datetime import datetime as dt
-    report_date = dt.now().strftime('%d %b %Y %I:%M %p')
+        # Get therapist info
+        try:
+            therapist_doc = db.collection('users').document(patient.get('physio_id', '')).get()
+            therapist = therapist_doc.to_dict() if therapist_doc.exists else {}
+        except Exception as e:
+            logger.warning(f"PDF download: Could not fetch therapist info for patient {patient_id}: {e}")
+            therapist = {}
 
-    # 3) Render the HTML template
-    rendered = render_template(
-        'patient_report.html',
-        patient=patient,
-        subjective=subjective,
-        perspectives=perspectives,
-        initial_plan=initial_plan,
-        patho_mechanism=patho_mechanism,
-        chronic_diseases=chronic_diseases,
-        clinical_flags=clinical_flags,
-        objective=objective,
-        diagnosis=diagnosis,
-        goals=goals,
-        treatment=treatment,
-        follow_ups=follow_ups,
-        therapist=therapist,
-        report_date=report_date
-    )
+        # Get current date/time for report
+        from datetime import datetime as dt
+        report_date = dt.now().strftime('%d %b %Y %I:%M %p')
 
-    # 4) Generate PDF
-    pdf = io.BytesIO()
-    pisa_status = pisa.CreatePDF(io.StringIO(rendered), dest=pdf)
-    if pisa_status.err:
-        return "Error generating PDF", 500
+        # 3) Render the HTML template
+        try:
+            rendered = render_template(
+                'patient_report.html',
+                patient=patient,
+                subjective=subjective,
+                perspectives=perspectives,
+                initial_plan=initial_plan,
+                patho_mechanism=patho_mechanism,
+                chronic_diseases=chronic_diseases,
+                clinical_flags=clinical_flags,
+                objective=objective,
+                diagnosis=diagnosis,
+                goals=goals,
+                treatment=treatment,
+                follow_ups=follow_ups,
+                therapist=therapist,
+                report_date=report_date
+            )
+        except Exception as e:
+            logger.error(f"PDF download: Template rendering failed for patient {patient_id}: {e}", exc_info=True)
+            flash("Error generating PDF report. Please ensure all patient data is complete.", "error")
+            return redirect(url_for('patient_report', patient_id=patient_id))
 
-    # 5) Return the PDF
-    response = make_response(pdf.getvalue())
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = (
-        f'attachment; filename={patient_id}_report.pdf'
-    )
-    log_action(
-        session.get('user_id'),
-        'Download Report',
-        f"Downloaded PDF report for patient {patient_id}"
-    )
-    return response
+        # 4) Generate PDF
+        try:
+            pdf = io.BytesIO()
+            pisa_status = pisa.CreatePDF(io.StringIO(rendered), dest=pdf)
+            if pisa_status.err:
+                logger.error(f"PDF download: PDF generation failed for patient {patient_id}, pisa error code: {pisa_status.err}")
+                flash("Error generating PDF file. Please try again.", "error")
+                return redirect(url_for('patient_report', patient_id=patient_id))
+        except Exception as e:
+            logger.error(f"PDF download: PDF creation exception for patient {patient_id}: {e}", exc_info=True)
+            flash("Error creating PDF file. Please try again.", "error")
+            return redirect(url_for('patient_report', patient_id=patient_id))
 
+        # 5) Return the PDF
+        response = make_response(pdf.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = (
+            f'attachment; filename={patient_id}_report.pdf'
+        )
+        log_action(
+            session.get('user_id'),
+            'Download Report',
+            f"Downloaded PDF report for patient {patient_id}"
+        )
+        logger.info(f"✅ PDF download successful for patient {patient_id}")
+        return response
 
+    except Exception as e:
+        logger.error(f"❌ PDF download error for patient {patient_id}: {str(e)}", exc_info=True)
+        flash(f"Error downloading PDF report: {str(e)}", "error")
+        return redirect(url_for('view_patients'))
 @app.route('/manage_users')
 @login_required()
 def manage_users():
