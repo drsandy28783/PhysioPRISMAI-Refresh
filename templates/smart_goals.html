@@ -6,7 +6,8 @@
   .field-block { position: relative; margin-top: 20px; width: 100%; }
   .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
   .control-group { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
-  .control-group .input-field { flex: 1; }
+  .control-group .input-field,
+  .control-group textarea { flex: 1; width: auto; min-width: 0; }
   .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
   .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; flex-shrink: 0; margin-top: 0.5rem; }
   .ai-popup { position: absolute; top: 2.5rem; right: 0; max-width: 300px; background: #fff; padding: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none; z-index: 100; }
