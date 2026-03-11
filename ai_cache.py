@@ -720,7 +720,7 @@ def get_ai_suggestion_with_cache(
                 "content": prompt
             }],
             temperature=0.2,  # Low temperature for consistent, deterministic clinical responses
-            max_tokens=1500  # Increased from 200 to allow complete clinical responses
+            max_tokens=2500  # Increased to 2500 to handle longer prompts with past history
         )
 
         # Azure OpenAI client returns dict with 'text' field (not 'choices')
@@ -732,5 +732,9 @@ def get_ai_suggestion_with_cache(
         return response
 
     except Exception as e:
-        logger.error(f"Error calling AI API: {e}", exc_info=True)
+        # Enhanced error logging with prompt length for debugging
+        prompt_length = len(prompt) if prompt else 0
+        logger.error(f"Error calling AI API (prompt length: {prompt_length} chars): {e}", exc_info=True)
+        logger.error(f"Error type: {type(e).__name__}")
+        logger.error(f"Error details: {str(e)}")
         return "AI service temporarily unavailable. Please try again."

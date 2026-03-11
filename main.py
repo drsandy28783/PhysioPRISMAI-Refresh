@@ -421,8 +421,19 @@ def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None, pa
         return response
 
     except (AzureOpenAIError, Exception) as e:
-        logger.error(f"Azure OpenAI API error: {e}")
-        return "AI service temporarily unavailable. Please try again."
+        # Enhanced error logging for debugging
+        error_type = type(e).__name__
+        error_msg = str(e)
+        logger.error(f"Azure OpenAI API error [{error_type}]: {error_msg}")
+        logger.error(f"Prompt length: {len(prompt)} chars, Patient context: {patient_context}")
+
+        # Return user-friendly error message
+        if "timeout" in error_msg.lower():
+            return "AI request timed out. Please try again with a shorter description."
+        elif "token" in error_msg.lower() and "limit" in error_msg.lower():
+            return "Request too large. Please shorten your medical history and try again."
+        else:
+            return "AI service temporarily unavailable. Please try again."
 
 
 def log_action(user_id: str, action: str, details: Optional[Dict[str, Any]] = None) -> None:

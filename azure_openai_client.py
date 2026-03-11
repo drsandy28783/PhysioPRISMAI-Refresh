@@ -41,11 +41,12 @@ class AzureOpenAIClient:
         if not self.endpoint or not self.api_key:
             raise ValueError("AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY must be set")
 
-        # Initialize Azure OpenAI client
+        # Initialize Azure OpenAI client with timeout
         self.client = AzureOpenAI(
             azure_endpoint=self.endpoint,
             api_key=self.api_key,
-            api_version=self.api_version
+            api_version=self.api_version,
+            timeout=120.0  # 120 second timeout for longer prompts
         )
 
         # Configuration
