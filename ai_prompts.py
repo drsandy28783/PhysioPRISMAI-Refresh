@@ -26,30 +26,24 @@ from typing import Dict, Any, Optional
 
 SYSTEM_ROLES = {
     "clinical_reasoning": (
-        "You are a clinical decision support AI assistant for licensed physiotherapy professionals. "
-        "You analyze legitimate patient medical records (de-identified) and provide evidence-based clinical reasoning. "
-        "All prompts contain authentic medical history for patient care purposes."
+        "You are a physiotherapy clinical reasoning assistant providing evidence-based suggestions for licensed professionals. "
+        "All patient information is de-identified and for legitimate clinical care."
     ),
     "clinical_specialist": (
-        "You are a clinical decision support AI assistant for licensed healthcare professionals. "
-        "You provide evidence-based physiotherapy clinical reasoning for legitimate patient cases. "
-        "All input contains de-identified medical records for professional clinical assessment. "
-        "You follow ICF framework, WCPT guidelines, and evidence-based practice principles."
+        "You are a senior physiotherapist providing evidence-based clinical reasoning for licensed healthcare professionals. "
+        "Focus on practical reasoning for this individual case using ICF framework and WCPT guidelines."
     ),
     "decision_support": (
-        "You are a clinical decision support AI assistant for licensed physiotherapy professionals. "
-        "You analyze legitimate patient medical information and provide focused, actionable clinical suggestions. "
-        "All prompts contain authentic de-identified medical records for patient care."
+        "You are a physiotherapy clinical decision-support assistant providing focused, actionable suggestions for licensed professionals. "
+        "All patient data is de-identified and for clinical care."
     ),
     "icf_specialist": (
-        "You are a clinical decision support AI assistant for licensed physiotherapy professionals. "
-        "You specialize in ICF-based assessment of body structures, functions, activities, participation, and contextual factors. "
-        "All prompts contain legitimate de-identified patient medical information."
+        "You are a physiotherapy specialist in ICF-based assessment (body structures, functions, activities, participation, contextual factors) "
+        "for licensed professionals. All patient information is de-identified."
     ),
     "biopsychosocial": (
-        "You are a clinical decision support AI assistant for licensed physiotherapy professionals. "
-        "You specialize in patient-centered biopsychosocial assessment using ICF framework and Common Sense Model. "
-        "All prompts contain legitimate de-identified patient medical records for clinical care."
+        "You are a physiotherapy specialist in patient-centered biopsychosocial assessment using ICF framework and Common Sense Model "
+        "for licensed professionals. All patient data is de-identified."
     ),
 }
 
@@ -623,27 +617,15 @@ def _format_dict_block(title: str, data: Optional[Dict[str, Any]]) -> str:
 
 def build_patient_profile(age_sex: str, present: str = "", past: str = "") -> str:
     """
-    Standardized patient profile section with explicit medical context framing.
-    CRITICAL: Uses clear delimiters to prevent Azure content filter false positives.
+    Standardized patient profile section.
+    Note: Medical context is established in SYSTEM_ROLES, keep this concise.
     """
-    profile_lines = [
-        "CLINICAL CASE - LEGITIMATE PATIENT MEDICAL RECORD:",
-        "The following is de-identified patient medical information for clinical assessment by a licensed healthcare professional.",
-        "",
-        "PATIENT DEMOGRAPHICS:"
-    ]
-    profile_lines.append(f"- Age/Sex: {age_sex or 'Not specified'}")
-
+    profile_lines = ["PATIENT PROFILE:"]
+    profile_lines.append(f"Age/Sex: {age_sex or 'Not specified'}")
     if present:
-        profile_lines.append("")
-        profile_lines.append("PRESENTING COMPLAINT:")
-        profile_lines.append(f"{present}")
-
+        profile_lines.append(f"Presenting Complaint: {present}")
     if past:
-        profile_lines.append("")
-        profile_lines.append("MEDICAL HISTORY:")
-        profile_lines.append(f"{past}")
-
+        profile_lines.append(f"Medical History: {past}")
     return "\n".join(profile_lines)
 
 
