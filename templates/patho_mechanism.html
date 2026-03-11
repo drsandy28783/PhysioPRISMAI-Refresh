@@ -7,7 +7,8 @@
   .slider-container { display: flex; align-items: center; gap: 12px; }
   .control-group { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
   .control-group .input-field,
-  .control-group textarea { flex: 1 !important; width: auto !important; min-width: 0; }
+  .control-group textarea { width: 100% !important; }
+  .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
   .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; flex-shrink: 0; margin-top: 0.5rem; }
   .ai-popup {
     position: absolute;
@@ -100,9 +101,9 @@
       </select>
     </div>
 
-    <div style="margin-top:24px; display:flex; gap:12px;">
+    <div style="margin-top:24px; display:flex; gap:12px; align-items:stretch;">
       <button type="submit" class="button">Save &amp; Continue</button>
-      <a href="{{ url_for('add_patient') }}" class="button">&larr; Back to Add Patient</a>
+      <a href="{{ url_for('add_patient') }}" class="button" style="display: inline-flex; align-items: center;">&larr; Back to Add Patient</a>
     </div>
   </form>
 </div>

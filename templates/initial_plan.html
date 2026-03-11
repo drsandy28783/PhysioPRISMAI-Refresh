@@ -7,7 +7,8 @@
   .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
   .control-group { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
   .control-group .input-field,
-  .control-group textarea { flex: 1 !important; width: auto !important; min-width: 0; }
+  .control-group textarea { width: 100% !important; }
+  .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
   .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; flex-shrink: 0; margin-top: 0.5rem; }
 </style>
 {% endblock %}
@@ -50,12 +51,12 @@
         </div>
       {% endfor %}
 
-      <div style="margin-top:24px; display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
+      <div style="margin-top:24px; display:flex; gap:12px; align-items:stretch; flex-wrap: wrap;">
         <button type="button" id="gen_initial_summary" class="button" style="font-size:0.9em; padding:0.5rem 1rem;">
           Generate Assessment Summary
         </button>
         <button type="submit" class="button">Save &amp; Continue</button>
-        <a href="{{ url_for('perspectives', patient_id=patient_id) }}" class="button">&larr; Back to Patient Perspectives</a>
+        <a href="{{ url_for('perspectives', patient_id=patient_id) }}" class="button" style="display: inline-flex; align-items: center;">&larr; Back to Patient Perspectives</a>
       </div>
     </form>
   </div>

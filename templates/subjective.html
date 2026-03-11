@@ -7,7 +7,7 @@
   .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
   .control-group { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
   .control-group .input-field,
-  .control-group textarea { flex: 1 !important; width: auto !important; min-width: 0; }
+  .control-group textarea { width: 100% !important; }
   .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; flex-shrink: 0; margin-top: 0.5rem; }
   .ai-popup { position: absolute; top: 2.5rem; right: 0; max-width: 300px; background: #fff; border: 1px solid #ccc; padding: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none; z-index: 100; }
 </style>
@@ -43,10 +43,10 @@
       </div>
       {% endfor %}
 
-      <div style="display:flex; align-items:center; gap:12px; margin-top:16px; flex-wrap: wrap;">
+      <div style="display:flex; align-items:stretch; gap:12px; margin-top:16px; flex-wrap: wrap;">
         <button type="submit" class="button">Save &amp; Continue</button>
         <button type="button" id="gen_subjective_dx" class="button" title="Generate subjective diagnosis">🩺 Generate Diagnosis</button>
-        <a href="{{ url_for('patho_mechanism', patient_id=patient_id) }}" class="button">&larr; Back to Pathophysiological Mechanism</a>
+        <a href="{{ url_for('patho_mechanism', patient_id=patient_id) }}" class="button" style="display: inline-flex; align-items: center;">&larr; Back to Pathophysiological Mechanism</a>
       </div>
     </form>
   </div>

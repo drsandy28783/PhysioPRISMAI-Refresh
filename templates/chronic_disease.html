@@ -3,10 +3,11 @@
 
 {% block head %}
 <style>
-  .field-block { margin-top: 20px; position: relative; }
+  .field-block { margin-top: 20px; position: relative; width: 100%; }
   .field-block label { display: block; margin-bottom: 6px; font-weight: 500; }
   .checkbox-group { display: block; }
   .checkbox-inline { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
   .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; margin-left: 8px; }
   .ai-popup { position: absolute; background: #fff; border: 1px solid #ccc; padding: 8px; max-width: 280px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none; z-index: 100; }
 </style>
@@ -45,9 +46,9 @@
         <div id="specific_factors_popup" class="ai-popup"></div>
       </div>
 
-      <div style="margin-top:24px; display:flex; gap:12px;">
+      <div style="margin-top:24px; display:flex; gap:12px; align-items:stretch;">
         <button type="submit" class="button">Save &amp; Continue</button>
-        <a href="{{ url_for('initial_plan', patient_id=patient_id) }}" class="button">&larr; Back to Initial Plan</a>
+        <a href="{{ url_for('initial_plan', patient_id=patient_id) }}" class="button" style="display: inline-flex; align-items: center;">&larr; Back to Initial Plan</a>
       </div>
     </form>
   </div>
