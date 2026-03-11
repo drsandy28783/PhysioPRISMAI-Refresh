@@ -336,8 +336,11 @@ textarea.input-field {
 .control-group .input-field,
 .control-group textarea,
 .control-group select {
-  width: 100% !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
   margin: 0;
+  box-sizing: border-box;
 }
 
 /* AI suggestion button */
@@ -346,7 +349,7 @@ textarea.input-field {
   border: none;
   font-size: 1.2em;
   cursor: pointer;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   margin-top: 0.5rem;
   padding: 0;
 }
