@@ -326,18 +326,30 @@ document.addEventListener('DOMContentLoaded', () => {
     AIModal.show('Provisional Diagnosis');
 
     try {
+      // Create abort controller for timeout (60 seconds for longer prompts with past history)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
       const res  = await fetch('/api/ai_suggestion/provisional_diagnosis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       AIModal.showContent(data.suggestion);
     } catch (err) {
-      AIModal.showError(err.message);
+      if (err.name === 'AbortError') {
+        AIModal.showError('Request timed out. The AI is taking longer than expected. Please try again or simplify your request.');
+      } else {
+        AIModal.showError(err.message || 'Error generating diagnosis. Please try again.');
+      }
     }
   });
 });
