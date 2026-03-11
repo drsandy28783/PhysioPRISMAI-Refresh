@@ -2,6 +2,14 @@
 
 {% block title %}Add Patient – Physiologic PRISM{% endblock %}
 
+{% block head %}
+<style>
+  .form-group { width: 100%; }
+  .form-group .input-field { width: 100% !important; }
+  .form-group textarea { width: 100% !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <h2>Add New Patient</h2>
@@ -90,7 +98,7 @@
                 class="button"
                 title="Generate provisional diagnosis"
             >🩺 Generate Diagnosis</button>
-            <a href="{{ url_for('dashboard') }}" class="button" style="display: inline-flex; align-items: center; background:#ccc; color:#000;">Back to Dashboard</a>
+            <a href="{{ url_for('dashboard') }}" class="button" style="display: inline-flex; align-items: center;">Back to Dashboard</a>
         </div>
     </form>
 </div>
