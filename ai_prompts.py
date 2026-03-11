@@ -4115,12 +4115,12 @@ def get_initial_plan_summary_prompt(
     plan_fields: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
-    Summarize the initial assessment plan (physical examination strategy).
+    Summarize the specific assessment selections made by the clinician.
 
     Endpoint: /api/ai_suggestion/initial_plan_summary
     """
     context = build_clinical_context(age_sex, present_hist, past_hist, subjective=subjective, diagnosis=diagnosis)
-    plan_block = _format_dict_block("Initial Assessment Plan Components", plan_fields)
+    plan_block = _format_dict_block("ASSESSMENT SELECTIONS MADE BY CLINICIAN", plan_fields)
 
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
@@ -4129,16 +4129,18 @@ def get_initial_plan_summary_prompt(
 {plan_block}
 
 TASK:
-Provide a concise summary of the initial assessment approach for this case, focusing on the physical examination strategy.
+Summarize the specific assessment plan that has been selected above. This is NOT a generic assessment strategy - these are the ACTUAL decisions made about which tests to perform.
 
 MANDATORY RULES:
-1. Synthesize the assessment plan components into a coherent 4-5 sentence summary.
-2. Include: assessment priorities, key examination tests to perform, clinical reasoning for test selection, and any safety considerations or precautions.
-3. Focus on WHAT will be examined and WHY, not treatment interventions.
-4. Keep practical and clinically focused on the physical examination strategy.
+1. Summarize ONLY the specific assessment selections listed above (mandatory assessments, precautions, contraindications).
+2. Explain the clinical reasoning for these specific selections based on the case presentation.
+3. Highlight any tests marked "Assessment with precaution" and explain the safety considerations.
+4. Note any tests that are "Absolutely Contraindicated" and briefly explain why they should be avoided.
+5. Keep focused on the SPECIFIC selections made, not generic assessment recommendations.
+6. Write in 4-5 sentences synthesizing the chosen assessment approach.
 
 OUTPUT:
-[4-5 sentence assessment plan summary explaining the physical examination approach]
+[4-5 sentence summary of the SPECIFIC assessment selections made and their clinical reasoning]
 """
 
 
