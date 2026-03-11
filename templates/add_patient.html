@@ -96,6 +96,11 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
+  // CRITICAL: Set patient ID for AI suggestions on new patient page
+  // Without this, getPatientId() returns '' which fails backend validation (min length 1)
+  // This matches the ID used by draft autosave for consistency
+  window.currentPatientId = 'new_patient';
+
   let draftAutoSave;
   let isNavigating = false;  // Flag to prevent beforeunload warnings
 
