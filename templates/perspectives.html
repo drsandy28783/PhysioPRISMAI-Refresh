@@ -1,30 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Patient Perspectives – Physiologic PRISM{% endblock %}
 
-{% block head %}
-<style>
-  .field-block { position: relative; margin-top: 20px; width: 100%; }
-  .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
-  .control-group { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
-  .control-group .input-field,
-  .control-group textarea { width: 100% !important; }
-  .ai-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; padding: 0; flex-shrink: 0; margin-top: 0.5rem; }
-  .ai-popup {
-    position: absolute;
-    top: 100%; right: 0;
-    background: #fff;
-    border: 1px solid #ccc;
-    padding: 8px;
-    max-width: 280px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    display: none;
-    z-index: 100;
-    margin-top: 4px;
-  }
-  .input-field { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container">
   <h2>Patient Perspectives for {{ patient_id }}</h2>
@@ -57,9 +33,9 @@
     </div>
     {% endfor %}
 
-    <div style="margin-top:24px; display:flex; gap:12px; align-items:stretch; flex-wrap: wrap;">
+    <div class="assessment-button-container">
       <button type="submit" class="button">Save &amp; Continue</button>
-      <a href="{{ url_for('subjective', patient_id=patient_id) }}" class="button" style="display: inline-flex; align-items: center;">&larr; Back to Subjective Examination</a>
+      <a href="{{ url_for('subjective', patient_id=patient_id) }}" class="button">&larr; Back to Subjective Examination</a>
     </div>
   </form>
 </div>
