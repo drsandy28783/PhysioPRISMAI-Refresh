@@ -4115,12 +4115,12 @@ def get_initial_plan_summary_prompt(
     plan_fields: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
-    Summarize the initial treatment plan.
+    Summarize the initial assessment plan (physical examination strategy).
 
     Endpoint: /api/ai_suggestion/initial_plan_summary
     """
     context = build_clinical_context(age_sex, present_hist, past_hist, subjective=subjective, diagnosis=diagnosis)
-    plan_block = _format_dict_block("Initial Plan Components", plan_fields)
+    plan_block = _format_dict_block("Initial Assessment Plan Components", plan_fields)
 
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
@@ -4129,15 +4129,16 @@ def get_initial_plan_summary_prompt(
 {plan_block}
 
 TASK:
-Provide a concise summary of the initial treatment approach for this case.
+Provide a concise summary of the initial assessment approach for this case, focusing on the physical examination strategy.
 
 MANDATORY RULES:
-1. Synthesize the plan components into a coherent 4-5 sentence summary.
-2. Include: main treatment focus, key interventions, expected timeline, and patient education priorities.
-3. Keep practical and implementation-focused.
+1. Synthesize the assessment plan components into a coherent 4-5 sentence summary.
+2. Include: assessment priorities, key examination tests to perform, clinical reasoning for test selection, and any safety considerations or precautions.
+3. Focus on WHAT will be examined and WHY, not treatment interventions.
+4. Keep practical and clinically focused on the physical examination strategy.
 
 OUTPUT:
-[4-5 sentence treatment plan summary]
+[4-5 sentence assessment plan summary explaining the physical examination approach]
 """
 
 
