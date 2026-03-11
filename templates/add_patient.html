@@ -62,7 +62,7 @@
 
         <div class="form-group">
             <label for="past_history">Past History:</label>
-            <div style="display: flex; align-items: flex-start; gap: 8px;">
+            <div style="display: flex; align-items: flex-start; gap: 8px; width: 100%;">
                 <textarea
                     class="input-field"
                     id="past_history"
@@ -70,7 +70,7 @@
                     rows="3"
                     required
                     placeholder="Enter any past medical or surgical history"
-                    style="flex: 1;"
+                    style="width: 100% !important;"
                 >{{ request.form.past_history or '' }}</textarea>
                 <button
                     type="button"
@@ -82,7 +82,7 @@
             </div>
         </div>
 
-        <div class="form-group" style="display: flex; gap:12px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: row; gap:12px; align-items: stretch; flex-wrap: wrap; margin-top: 16px;">
             <button type="submit" class="button">Save Patient & Next</button>
             <button
                 type="button"
@@ -90,7 +90,7 @@
                 class="button"
                 title="Generate provisional diagnosis"
             >🩺 Generate Diagnosis</button>
-            <a href="{{ url_for('dashboard') }}" class="button" style="background:#ccc; color:#000;">Back to Dashboard</a>
+            <a href="{{ url_for('dashboard') }}" class="button" style="display: inline-flex; align-items: center; background:#ccc; color:#000;">Back to Dashboard</a>
         </div>
     </form>
 </div>
