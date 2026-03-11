@@ -710,11 +710,17 @@ def get_ai_suggestion_with_cache(
             return "AI service not configured."
 
         # Use create_chat_completion for Azure OpenAI
+        # CRITICAL: Use medical/clinical system prompt to avoid content filter false positives
         resp = openai_client.create_chat_completion(
             model=model,
             messages=[{
                 "role": "system",
-                "content": "You are a helpful clinical reasoning assistant."
+                "content": (
+                    "You are a clinical decision support AI assistant for licensed healthcare professionals. "
+                    "You provide evidence-based suggestions for physiotherapy assessment and treatment planning. "
+                    "All prompts contain legitimate medical history and clinical information for patient care. "
+                    "You follow ICF framework, WCPT guidelines, and evidence-based practice principles."
+                )
             }, {
                 "role": "user",
                 "content": prompt
@@ -734,7 +740,18 @@ def get_ai_suggestion_with_cache(
     except Exception as e:
         # Enhanced error logging with prompt length for debugging
         prompt_length = len(prompt) if prompt else 0
+        error_msg = str(e)
         logger.error(f"Error calling AI API (prompt length: {prompt_length} chars): {e}", exc_info=True)
         logger.error(f"Error type: {type(e).__name__}")
-        logger.error(f"Error details: {str(e)}")
-        return "AI service temporarily unavailable. Please try again."
+        logger.error(f"Error details: {error_msg}")
+
+        # Handle specific Azure OpenAI errors with user-friendly messages
+        if "content_filter" in error_msg.lower() or "ResponsibleAIPolicyViolation" in error_msg:
+            logger.warning(f"Azure content filter triggered (false positive on medical text)")
+            return "Your medical history text triggered a content safety filter. Please rephrase any potentially sensitive medical details and try again."
+        elif "timeout" in error_msg.lower():
+            return "AI request timed out. Please try again with a shorter description."
+        elif "token" in error_msg.lower() and "limit" in error_msg.lower():
+            return "Request too large. Please shorten your medical history and try again."
+        else:
+            return "AI service temporarily unavailable. Please try again."

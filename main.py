@@ -427,8 +427,11 @@ def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None, pa
         logger.error(f"Azure OpenAI API error [{error_type}]: {error_msg}")
         logger.error(f"Prompt length: {len(prompt)} chars, Patient context: {patient_context}")
 
-        # Return user-friendly error message
-        if "timeout" in error_msg.lower():
+        # Return user-friendly error message based on error type
+        if "content_filter" in error_msg.lower() or "ResponsibleAIPolicyViolation" in error_msg:
+            logger.warning(f"Azure content filter triggered (false positive on medical text)")
+            return "Your medical history text triggered a content safety filter. Please rephrase any potentially sensitive medical details and try again."
+        elif "timeout" in error_msg.lower():
             return "AI request timed out. Please try again with a shorter description."
         elif "token" in error_msg.lower() and "limit" in error_msg.lower():
             return "Request too large. Please shorten your medical history and try again."
