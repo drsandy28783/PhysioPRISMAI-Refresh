@@ -4115,32 +4115,37 @@ def get_initial_plan_summary_prompt(
     plan_fields: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
-    Summarize the specific assessment selections made by the clinician.
+    Analyze the documented examination findings and provide clinical interpretation with provisional diagnosis.
 
     Endpoint: /api/ai_suggestion/initial_plan_summary
     """
     context = build_clinical_context(age_sex, present_hist, past_hist, subjective=subjective, diagnosis=diagnosis)
-    plan_block = _format_dict_block("ASSESSMENT SELECTIONS MADE BY CLINICIAN", plan_fields)
+    findings_block = _format_dict_block("PHYSICAL EXAMINATION FINDINGS DOCUMENTED", plan_fields)
 
     return f"""{SYSTEM_ROLES['clinical_specialist']}
 
 {context}
 
-{plan_block}
+{findings_block}
 
 TASK:
-Summarize the specific assessment plan that has been selected above. This is NOT a generic assessment strategy - these are the ACTUAL decisions made about which tests to perform.
+Analyze the physical examination findings documented above and provide a clinical interpretation summary with provisional diagnosis.
 
 MANDATORY RULES:
-1. Summarize ONLY the specific assessment selections listed above (mandatory assessments, precautions, contraindications).
-2. Explain the clinical reasoning for these specific selections based on the case presentation.
-3. Highlight any tests marked "Assessment with precaution" and explain the safety considerations.
-4. Note any tests that are "Absolutely Contraindicated" and briefly explain why they should be avoided.
-5. Keep focused on the SPECIFIC selections made, not generic assessment recommendations.
-6. Write in 4-5 sentences synthesizing the chosen assessment approach.
+1. Identify and summarize the KEY POSITIVE FINDINGS from the examination (abnormal tests, limitations, pain patterns).
+2. Note any KEY NEGATIVE FINDINGS that help rule out differential diagnoses.
+3. Interpret what these findings indicate clinically (which structures are involved, severity, stage).
+4. Provide a PROVISIONAL DIAGNOSIS based on the examination findings and clinical presentation.
+5. If findings are limited or unclear, state that additional assessment may be needed.
+6. Keep focused on analyzing the ACTUAL FINDINGS documented in the details above.
+
+STRUCTURE YOUR RESPONSE:
+- First 2-3 sentences: Summarize key positive and negative findings
+- Next 1-2 sentences: Clinical interpretation of what these findings indicate
+- Final sentence: Provisional diagnosis or working impression
 
 OUTPUT:
-[4-5 sentence summary of the SPECIFIC assessment selections made and their clinical reasoning]
+[6-8 sentence clinical interpretation summary ending with provisional diagnosis]
 """
 
 
