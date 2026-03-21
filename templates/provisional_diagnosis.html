@@ -47,8 +47,8 @@
   window.currentPatientId = '{{ patient_id }}';
 
   let draftAutoSave;
-  document.addEventListener('DOMContentLoaded', function() {
-    draftAutoSave = new DraftAutoSave('provisional_diagnosis', '{{ patient_id }}', {
+  document.addEventListener('DOMContentLoaded', async function() {
+    draftAutoSave = await initDraftAutoSave('provisional_diagnosis', '{{ patient_id }}', {
       saveDelay: 2000
     });
     console.log('Draft auto-save initialized for provisional diagnosis');

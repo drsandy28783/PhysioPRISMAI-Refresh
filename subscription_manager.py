@@ -763,28 +763,98 @@ def upgrade_subscription(user_id: str, plan_type: str, subscription_id: str = No
         return False
 
 
-def cancel_subscription(user_id: str) -> bool:
+def cancel_subscription(user_id: str, reason: str = None, feedback: str = None) -> bool:
     """
     Cancel user's subscription (will remain active until period end).
 
     Args:
         user_id: User's email or Firebase UID
+        reason: Optional cancellation reason
+        feedback: Optional user feedback
 
     Returns:
         bool: Success status
     """
     try:
-        db.collection('subscriptions').document(user_id).update({
+        update_data = {
             'status': 'cancelled',
             'cancelled_at': SERVER_TIMESTAMP,
             'updated_at': SERVER_TIMESTAMP
-        })
+        }
 
-        logger.info(f"Cancelled subscription for {user_id}")
+        # Add cancellation reason/feedback if provided
+        if reason:
+            update_data['cancellation_reason'] = reason
+        if feedback:
+            update_data['cancellation_feedback'] = feedback
+
+        db.collection('subscriptions').document(user_id).update(update_data)
+
+        logger.info(f"Cancelled subscription for {user_id} (reason: {reason})")
         return True
 
     except Exception as e:
         logger.error(f"Error cancelling subscription for {user_id}: {e}")
+        return False
+
+
+def log_cancellation_analytics(user_id: str, subscription_data: Dict, reason: str = None,
+                               feedback: str = None) -> bool:
+    """
+    Log cancellation analytics for business insights.
+
+    Args:
+        user_id: User's email or Firebase UID
+        subscription_data: Current subscription data
+        reason: Cancellation reason
+        feedback: User feedback
+
+    Returns:
+        bool: Success status
+    """
+    try:
+        from datetime import datetime, timezone
+
+        # Calculate subscription lifetime
+        signup_date = subscription_data.get('created_at')
+        if signup_date and hasattr(signup_date, 'timestamp'):
+            signup_timestamp = signup_date
+        else:
+            signup_timestamp = datetime.now(timezone.utc)
+
+        lifetime_days = (datetime.now(timezone.utc) - signup_timestamp.replace(tzinfo=timezone.utc)).days
+
+        # Prepare analytics data
+        analytics_data = {
+            'user_id': user_id,
+            'subscription_id': subscription_data.get('subscription_id'),
+            'plan_type': subscription_data.get('plan_type'),
+            'cancelled_at': SERVER_TIMESTAMP,
+            'signup_date': signup_date,
+            'lifetime_days': lifetime_days,
+            'cancellation_reason': reason or 'not_specified',
+            'cancellation_feedback': feedback or '',
+            'ai_tokens_balance': subscription_data.get('ai_tokens_balance', 0),
+            'patients_created': subscription_data.get('patients_created_this_month', 0),
+            'ai_calls_used': subscription_data.get('ai_calls_this_month', 0),
+            'current_period_end': subscription_data.get('current_period_end'),
+            'reactivated': False,
+            'reactivated_at': None
+        }
+
+        # Calculate total revenue (if available)
+        price_amount = subscription_data.get('price_amount', 0)
+        months_subscribed = max(1, lifetime_days // 30)
+        analytics_data['estimated_lifetime_revenue'] = price_amount * months_subscribed
+
+        # Store in cancellation_analytics collection
+        db.collection('cancellation_analytics').add(analytics_data)
+
+        logger.info(f"Logged cancellation analytics for {user_id} (reason: {reason}, lifetime: {lifetime_days} days)")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error logging cancellation analytics for {user_id}: {e}")
         return False
 
 

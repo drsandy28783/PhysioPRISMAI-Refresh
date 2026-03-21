@@ -60,8 +60,8 @@
   window.currentPatientId = '{{ patient_id }}';
 
   let draftAutoSave;
-  document.addEventListener('DOMContentLoaded', function() {
-    draftAutoSave = new DraftAutoSave('treatment_plan', '{{ patient_id }}', {
+  document.addEventListener('DOMContentLoaded', async function() {
+    draftAutoSave = await initDraftAutoSave('treatment_plan', '{{ patient_id }}', {
       saveDelay: 2000
     });
     console.log('Draft auto-save initialized for treatment plan');

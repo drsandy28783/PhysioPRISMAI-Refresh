@@ -136,15 +136,19 @@
     }
   });
 
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', async function() {
     // For new patient form, use 'new_patient' as the patient ID
-    draftAutoSave = new DraftAutoSave('add_patient', 'new_patient', {
+    draftAutoSave = await initDraftAutoSave('add_patient', 'new_patient', {
       saveDelay: 2000,
       onRestore: function(data) {
         console.log('Draft restored for new patient:', data);
       }
     });
-    console.log('Draft auto-save initialized for add patient form');
+    if (draftAutoSave) {
+      console.log('Draft auto-save initialized for add patient form');
+    } else {
+      console.error('Failed to initialize draft auto-save for add patient form');
+    }
 
     // FIX: Prevent "Leave site?" popup by handling form submission via AJAX
     const form = document.getElementById('add-patient-form');

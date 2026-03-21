@@ -46,8 +46,8 @@
     // Initialize Draft Auto-Save
     let draftAutoSave;
 
-    document.addEventListener('DOMContentLoaded', function() {
-      draftAutoSave = new DraftAutoSave('subjective', '{{ patient_id }}', {
+    document.addEventListener('DOMContentLoaded', async function() {
+      draftAutoSave = await initDraftAutoSave('subjective', '{{ patient_id }}', {
         saveDelay: 2000, // Save 2 seconds after user stops typing
         onRestore: function(data) {
           console.log('Draft restored with data:', data);
@@ -56,6 +56,9 @@
           console.log('Draft saved:', data);
         }
       });
+      if (!draftAutoSave) {
+        console.error('Failed to initialize draft auto-save');
+      }
 
       console.log('Draft auto-save initialized for subjective examination');
     });

@@ -229,10 +229,173 @@
         border: 1px solid #bee5eb;
     }
 
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
     .loading {
         text-align: center;
         padding: 40px;
         color: #7f8c8d;
+    }
+
+    /* Cancellation Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        overflow-y: auto;
+    }
+
+    .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-dialog {
+        background: white;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 90%;
+        margin: 20px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 20px 25px;
+        border-bottom: 2px solid #ecf0f1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title {
+        font-size: 1.5em;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+        color: #7f8c8d;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+    }
+
+    .modal-close:hover {
+        color: #2c3e50;
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .cancel-step {
+        display: none;
+    }
+
+    .cancel-step.active {
+        display: block;
+    }
+
+    .form-check {
+        margin-bottom: 12px;
+    }
+
+    .form-check-input {
+        margin-right: 10px;
+    }
+
+    .form-check-label {
+        color: #2c3e50;
+        cursor: pointer;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 1em;
+        margin-top: 8px;
+    }
+
+    .form-label {
+        color: #2c3e50;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .modal-footer {
+        padding: 15px 25px;
+        border-top: 1px solid #ecf0f1;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    .cancel-info-card {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+
+    .cancel-info-card h6 {
+        color: #856404;
+        margin-bottom: 10px;
+    }
+
+    .cancel-info-card ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+
+    .cancel-info-card li {
+        color: #856404;
+        margin: 5px 0;
+    }
+
+    .success-icon {
+        text-align: center;
+        color: #27ae60;
+        font-size: 4em;
+        margin: 20px 0;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .text-muted {
+        color: #7f8c8d;
+    }
+
+    .mb-2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+
+    .py-4 {
+        padding: 2rem 0;
     }
 
     .error-message {
@@ -339,8 +502,111 @@
             <button class="action-btn btn-success" id="buy-tokens-btn">
                 Buy AI Tokens
             </button>
+            <button class="action-btn btn-secondary" id="exportDataBtn">
+                Export Patient Data
+            </button>
             <button class="action-btn btn-danger" id="cancelBtn">
                 Cancel Subscription
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cancellation Modal -->
+<div class="modal" id="cancelModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h5 class="modal-title">Cancel Subscription</h5>
+            <button class="modal-close" onclick="closeCancelModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Step 1: Reason Survey -->
+            <div id="cancelStep1" class="cancel-step active">
+                <h6>We're sorry to see you go!</h6>
+                <p class="text-muted">Help us improve by sharing why you're canceling:</p>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="cancelReason" value="too_expensive" id="reason1">
+                        <label class="form-check-label" for="reason1">Too expensive</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="cancelReason" value="not_using" id="reason2">
+                        <label class="form-check-label" for="reason2">Not using the platform enough</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="cancelReason" value="missing_features" id="reason3">
+                        <label class="form-check-label" for="reason3">Missing features I need</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="cancelReason" value="found_alternative" id="reason4">
+                        <label class="form-check-label" for="reason4">Found a better alternative</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="cancelReason" value="technical_issues" id="reason5">
+                        <label class="form-check-label" for="reason5">Technical issues/bugs</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="cancelReason" value="other" id="reason6">
+                        <label class="form-check-label" for="reason6">Other</label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Additional feedback (optional):</label>
+                    <textarea class="form-control" id="cancelFeedback" rows="3"
+                              placeholder="What could we do better?"></textarea>
+                </div>
+            </div>
+
+            <!-- Step 2: Confirmation -->
+            <div id="cancelStep2" class="cancel-step">
+                <div class="cancel-info-card">
+                    <h6>⚠️ Confirm Cancellation</h6>
+                    <p class="mb-2">Your subscription will be cancelled:</p>
+                    <ul class="mb-0">
+                        <li><strong>Access until:</strong> <span id="confirmActiveUntil">-</span></li>
+                        <li><strong>No future charges</strong> will be made</li>
+                        <li><strong>Data retained for 90 days</strong> after expiry</li>
+                        <li><strong><span id="confirmTokens">0</span> AI tokens</strong> will be preserved</li>
+                    </ul>
+                </div>
+
+                <div class="card" style="border: 1px solid #3498db; padding: 15px; margin-bottom: 15px;">
+                    <h6 style="color: #2c3e50;">Need a Break?</h6>
+                    <p class="text-muted mb-2" style="font-size: 0.95em;">
+                        You can re-subscribe anytime using your existing account.
+                        Your patient data will be waiting for you (for 90 days).
+                    </p>
+                    <a href="/pricing" class="action-btn btn-primary" style="font-size: 0.9em; padding: 8px 16px;">
+                        View Other Plans
+                    </a>
+                </div>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div id="cancelStep3" class="cancel-step">
+                <div class="text-center py-4">
+                    <div class="success-icon">✓</div>
+                    <h5>Subscription Cancelled</h5>
+                    <p class="text-muted">
+                        You'll continue to have access until
+                        <strong id="successActiveUntil">-</strong>
+                    </p>
+                    <p class="text-muted">
+                        A confirmation email has been sent to your email address.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="action-btn btn-secondary" id="cancelModalBackBtn" onclick="cancelStepBack()">Go Back</button>
+            <button class="action-btn btn-primary" id="cancelModalContinueBtn" onclick="cancelStepContinue()">Continue</button>
+            <button class="action-btn btn-danger" id="cancelModalConfirmBtn" onclick="confirmCancellation()" style="display: none;">
+                Confirm Cancellation
+            </button>
+            <button class="action-btn btn-primary" id="cancelModalCloseBtn" onclick="closeCancelModalAndReload()" style="display: none;">
+                Close
             </button>
         </div>
     </div>
@@ -354,6 +620,10 @@ document.getElementById('view-plans-btn').addEventListener('click', function() {
 
 document.getElementById('buy-tokens-btn').addEventListener('click', function() {
     window.location.href = '/checkout?type=tokens&package=popular';
+});
+
+document.getElementById('exportDataBtn').addEventListener('click', function() {
+    window.location.href = '/api/export-patient-data';
 });
 
 document.getElementById('cancelBtn').addEventListener('click', cancelSubscription);
@@ -402,12 +672,22 @@ function displaySubscription(subscription, usage) {
 
     if (subscription.expires_at) {
         const expiryDate = new Date(subscription.expires_at._seconds * 1000);
-        document.getElementById('planRenews').textContent = expiryDate.toLocaleDateString();
+        const expiryDateStr = expiryDate.toLocaleDateString();
+        document.getElementById('planRenews').textContent = expiryDateStr;
 
-        // Show warning if expiring soon (within 7 days)
-        const daysUntilExpiry = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
-        if (daysUntilExpiry <= 7 && daysUntilExpiry > 0) {
-            showAlert('warning', `Your subscription expires in ${daysUntilExpiry} days. Please renew to continue using all features.`);
+        // Show alerts based on subscription status
+        if (subscription.status === 'cancelled') {
+            // Show cancelled alert
+            showAlert('warning', `⚠️ Subscription Cancelled - You still have access to all features until ${expiryDateStr}. No future charges will be made.`);
+        } else if (subscription.status === 'expired') {
+            // Show expired alert
+            showAlert('danger', `❌ Subscription Expired - Your subscription ended on ${expiryDateStr}. <a href="/pricing" style="color: #721c24; text-decoration: underline; font-weight: bold;">Re-subscribe now</a> to continue.`);
+        } else {
+            // Show warning if expiring soon (within 7 days)
+            const daysUntilExpiry = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+            if (daysUntilExpiry <= 7 && daysUntilExpiry > 0) {
+                showAlert('warning', `Your subscription expires in ${daysUntilExpiry} days. Please renew to continue using all features.`);
+            }
         }
     }
 
@@ -417,7 +697,7 @@ function displaySubscription(subscription, usage) {
     // Usage stats
     displayUsage(usage);
 
-    // Hide cancel button for free trial or expired subscriptions
+    // Hide cancel button for free trial, cancelled, or expired subscriptions
     if (subscription.plan_type === 'free_trial' || subscription.status !== 'active') {
         document.getElementById('cancelBtn').style.display = 'none';
     }
@@ -466,14 +746,98 @@ function showAlert(type, message) {
     const alertsContainer = document.getElementById('alertsContainer');
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type}`;
-    alertDiv.textContent = message;
+    alertDiv.innerHTML = message; // Use innerHTML to support HTML links
     alertsContainer.appendChild(alertDiv);
 }
 
-async function cancelSubscription() {
-    if (!confirm('Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing period.')) {
-        return;
+// Cancellation Modal Functions
+let currentCancelStep = 1;
+
+function cancelSubscription() {
+    // Reset to step 1 and show modal
+    currentCancelStep = 1;
+    showCancelStep(1);
+    document.getElementById('cancelModal').classList.add('show');
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelModal').classList.remove('show');
+    // Reset form
+    document.querySelectorAll('input[name="cancelReason"]').forEach(r => r.checked = false);
+    document.getElementById('cancelFeedback').value = '';
+}
+
+function closeCancelModalAndReload() {
+    closeCancelModal();
+    loadDashboard(); // Reload to show updated status
+}
+
+function showCancelStep(step) {
+    // Hide all steps
+    document.querySelectorAll('.cancel-step').forEach(s => s.classList.remove('active'));
+
+    // Show current step
+    document.getElementById('cancelStep' + step).classList.add('active');
+
+    // Update footer buttons
+    const backBtn = document.getElementById('cancelModalBackBtn');
+    const continueBtn = document.getElementById('cancelModalContinueBtn');
+    const confirmBtn = document.getElementById('cancelModalConfirmBtn');
+    const closeBtn = document.getElementById('cancelModalCloseBtn');
+
+    if (step === 1) {
+        backBtn.style.display = 'none';
+        continueBtn.style.display = 'inline-block';
+        confirmBtn.style.display = 'none';
+        closeBtn.style.display = 'none';
+    } else if (step === 2) {
+        backBtn.style.display = 'inline-block';
+        continueBtn.style.display = 'none';
+        confirmBtn.style.display = 'inline-block';
+        closeBtn.style.display = 'none';
+    } else if (step === 3) {
+        backBtn.style.display = 'none';
+        continueBtn.style.display = 'none';
+        confirmBtn.style.display = 'none';
+        closeBtn.style.display = 'inline-block';
     }
+
+    currentCancelStep = step;
+}
+
+function cancelStepContinue() {
+    if (currentCancelStep === 1) {
+        // Validate reason selected
+        const reason = document.querySelector('input[name="cancelReason"]:checked');
+        if (!reason) {
+            alert('Please select a reason for canceling');
+            return;
+        }
+
+        // Populate confirmation details
+        if (subscriptionData && subscriptionData.subscription) {
+            const sub = subscriptionData.subscription;
+            const activeUntil = sub.expires_at ?
+                new Date(sub.expires_at._seconds * 1000).toLocaleDateString() : '-';
+            const tokens = subscriptionData.usage?.tokens_balance || 0;
+
+            document.getElementById('confirmActiveUntil').textContent = activeUntil;
+            document.getElementById('confirmTokens').textContent = tokens;
+        }
+
+        showCancelStep(2);
+    }
+}
+
+function cancelStepBack() {
+    if (currentCancelStep === 2) {
+        showCancelStep(1);
+    }
+}
+
+async function confirmCancellation() {
+    const reason = document.querySelector('input[name="cancelReason"]:checked')?.value;
+    const feedback = document.getElementById('cancelFeedback').value;
 
     try {
         const response = await fetch('/api/subscription/cancel', {
@@ -481,19 +845,24 @@ async function cancelSubscription() {
             headers: {
                 'Authorization': 'Bearer ' + (localStorage.getItem('idToken') || ''),
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({ reason, feedback })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            alert(data.message || 'Subscription cancelled successfully');
-            loadDashboard(); // Reload to show updated status
+            // Show success step
+            const activeUntil = data.active_until ?
+                new Date(data.active_until).toLocaleDateString() : '-';
+            document.getElementById('successActiveUntil').textContent = activeUntil;
+            showCancelStep(3);
         } else {
             throw new Error(data.error || 'Failed to cancel subscription');
         }
     } catch (error) {
         showError('Failed to cancel subscription: ' + error.message);
+        closeCancelModal();
     }
 }
 

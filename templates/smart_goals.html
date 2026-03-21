@@ -50,8 +50,8 @@
   window.currentPatientId = '{{ patient_id }}';
 
   let draftAutoSave;
-  document.addEventListener('DOMContentLoaded', function() {
-    draftAutoSave = new DraftAutoSave('smart_goals', '{{ patient_id }}', {
+  document.addEventListener('DOMContentLoaded', async function() {
+    draftAutoSave = await initDraftAutoSave('smart_goals', '{{ patient_id }}', {
       saveDelay: 2000
     });
     console.log('Draft auto-save initialized for SMART goals');

@@ -1266,6 +1266,155 @@ def send_invoice_email(invoice_data: Dict[str, Any], pdf_base64: Optional[str] =
         return False
 
 
+def send_subscription_cancellation_email(user_email: str, user_name: str, subscription_data: Dict[str, Any]) -> bool:
+    """
+    Send subscription cancellation confirmation email to user.
+
+    Args:
+        user_email: User's email address
+        user_name: User's name
+        subscription_data: Dictionary containing subscription information
+            - plan_name: str
+            - current_period_end: datetime
+            - ai_tokens_balance: int
+            - cancellation_date: datetime
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        # Format dates
+        cancelled_date = subscription_data.get('cancellation_date', '')
+        if hasattr(cancelled_date, 'strftime'):
+            cancelled_date = cancelled_date.strftime('%B %d, %Y')
+        elif cancelled_date:
+            cancelled_date = str(cancelled_date)
+
+        active_until = subscription_data.get('current_period_end', '')
+        if hasattr(active_until, 'strftime'):
+            active_until_str = active_until.strftime('%B %d, %Y')
+            data_deletion_date = (active_until + __import__('datetime').timedelta(days=90)).strftime('%B %d, %Y')
+        else:
+            active_until_str = str(active_until)
+            data_deletion_date = 'within 90 days after expiry'
+
+        plan_name = subscription_data.get('plan_name', 'Subscription')
+        ai_tokens = subscription_data.get('ai_tokens_balance', 0)
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f39c12; }}
+                .info-section {{ margin: 20px 0; }}
+                .info-row {{ margin: 12px 0; padding: 10px 0; border-bottom: 1px solid #eee; }}
+                .info-row:last-child {{ border-bottom: none; }}
+                .label {{ font-weight: bold; color: #e67e22; }}
+                .divider {{ border-top: 2px solid #e67e22; margin: 25px 0; }}
+                .section-title {{ color: #e67e22; font-size: 1.2em; font-weight: bold; margin: 20px 0 10px 0; }}
+                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; line-height: 1.8; }}
+                .button {{ display: inline-block; padding: 12px 30px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 10px 5px; }}
+                .sad-emoji {{ font-size: 48px; text-align: center; margin: 20px 0; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Subscription Cancelled</h1>
+                </div>
+                <div class="content">
+                    <div class="sad-emoji">😔</div>
+
+                    <p>Dear {user_name},</p>
+                    <p>Your {APP_NAME} subscription has been successfully cancelled.</p>
+
+                    <div class="info-box">
+                        <div class="section-title">━━━ Subscription Details ━━━</div>
+                        <div class="info-row">
+                            <div><span class="label">Plan:</span> {plan_name}</div>
+                        </div>
+                        <div class="info-row">
+                            <div><span class="label">Cancelled on:</span> {cancelled_date}</div>
+                        </div>
+                        <div class="info-row">
+                            <div><span class="label">Access until:</span> {active_until_str} (11:59 PM)</div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="section-title">━━━ What Happens Next ━━━</div>
+                        <div class="info-section">
+                            <p><strong>✓ No future charges will be made</strong></p>
+                            <p style="margin-left: 20px; color: #666;">Your subscription has been cancelled on the payment provider. You will not be charged again.</p>
+                        </div>
+                        <div class="info-section">
+                            <p><strong>✓ Continue using all features until {active_until_str}</strong></p>
+                            <p style="margin-left: 20px; color: #666;">You still have full access to all premium features until your current billing period ends.</p>
+                        </div>
+                        <div class="info-section">
+                            <p><strong>✓ Your {ai_tokens} remaining AI tokens will be preserved</strong></p>
+                            <p style="margin-left: 20px; color: #666;">Any purchased AI tokens will remain in your account and can be used when you re-subscribe.</p>
+                        </div>
+                        <div class="info-section">
+                            <p><strong>✓ All patient data retained for 90 days (until {data_deletion_date})</strong></p>
+                            <p style="margin-left: 20px; color: #666;">Your patient records will be safely stored for 90 days after your subscription expires. Re-subscribe within this time to retain all your data.</p>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="info-box" style="border-left-color: #3498db; background: #ebf5fb;">
+                        <h3 style="color: #3498db; margin-top: 0;">💙 Changed Your Mind?</h3>
+                        <p style="color: #2c3e50;">You can re-subscribe anytime using your existing account. Your patient data will be waiting for you (for 90 days).</p>
+                        <div style="text-align: center; margin-top: 20px;">
+                            <a href="{APP_URL}/pricing" class="button">Browse Plans</a>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="info-box" style="border-left-color: #27ae60; background: #e8f8f5;">
+                        <h3 style="color: #27ae60; margin-top: 0;">📦 Export Your Data</h3>
+                        <p style="color: #2c3e50;">Download a backup of your patient records before {data_deletion_date}:</p>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <a href="{APP_URL}/subscription-dashboard" class="button" style="background: #27ae60;">Export Patient Data</a>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 40px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #ddd;">
+                        <p style="margin: 0; color: #666; font-style: italic; text-align: center;">
+                            We're sorry to see you go! If you have any feedback or questions,
+                            just reply to this email. We'd love to hear from you.
+                        </p>
+                    </div>
+
+                    <div class="footer">
+                        <p>— The {APP_NAME} Team</p>
+                        <p>Support: {SUPPORT_EMAIL}</p>
+                        <p>© 2025 {APP_NAME}. All rights reserved.</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return send_email(
+            to=user_email,
+            subject=f"Subscription Cancelled - {APP_NAME}",
+            html=html
+        )
+
+    except Exception as e:
+        logger.error(f"Error in send_subscription_cancellation_email: {str(e)}")
+        return False
+
+
 def send_blog_lead_notification(lead_data: Dict[str, Any]) -> bool:
     """
     Send notification to super admin when new blog lead is captured.

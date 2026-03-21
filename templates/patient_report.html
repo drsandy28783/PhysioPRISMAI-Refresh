@@ -432,6 +432,19 @@
           <td>{{ initial_plan.neuro_dynamic_examination_details or '-' }}</td>
         </tr>
       </table>
+
+      {% if ai_initial_plan_summary %}
+      <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #4caf50;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <span style="font-size: 24px;">🧠</span>
+          <h3 style="color: #2e7d32; margin: 0; font-size: 16px; font-weight: 600;">AI Clinical Insights: Assessment Strategy</h3>
+        </div>
+        <div class="field-value" style="color: #1b5e20; line-height: 1.7;">{{ ai_initial_plan_summary }}</div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #a5d6a7; font-size: 12px; color: #558b2f; font-style: italic;">
+          AI-generated clinical analysis based on patient assessment findings and provisional diagnosis
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -606,6 +619,19 @@
         <div class="field-label">Time Duration / Timeframe</div>
         <div class="field-value">{{ goals.time_duration or 'Not documented' }}</div>
       </div>
+
+      {% if ai_smart_goals_summary %}
+      <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #2196f3;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <span style="font-size: 24px;">🎯</span>
+          <h3 style="color: #1565c0; margin: 0; font-size: 16px; font-weight: 600;">AI Clinical Insights: Evidence-Based SMART Goals</h3>
+        </div>
+        <div class="field-value" style="color: #0d47a1; line-height: 1.7;">{{ ai_smart_goals_summary }}</div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #90caf9; font-size: 12px; color: #1976d2; font-style: italic;">
+          AI-generated goal recommendations based on ICF framework, patient perspectives, and clinical findings
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -631,14 +657,27 @@
         <div class="field-label">Evidence / References</div>
         <div class="field-value">{{ treatment.reference or 'Not documented' }}</div>
       </div>
+
+      {% if ai_treatment_plan_summary %}
+      <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ff9800;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <span style="font-size: 24px;">💡</span>
+          <h3 style="color: #e65100; margin: 0; font-size: 16px; font-weight: 600;">AI Clinical Insights: Comprehensive Treatment Strategy</h3>
+        </div>
+        <div class="field-value" style="color: #bf360c; line-height: 1.7;">{{ ai_treatment_plan_summary }}</div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ffcc80; font-size: 12px; color: #f57c00; font-style: italic;">
+          AI-generated treatment synthesis integrating all assessment findings, goals, and evidence-based practice
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
 
-  <!-- 10. Patient Progress Summary (Visual) -->
+  <!-- 11. Patient Progress Summary (Visual) -->
   {% if follow_ups and follow_ups|length > 0 %}
   <div class="report-section page-break">
-    <h2 class="section-header">📊 10. Patient Progress Summary</h2>
+    <h2 class="section-header">📊 11. Patient Progress Summary</h2>
     <div class="section-content">
 
       <!-- Progress Comparison: Initial vs Current -->
@@ -858,10 +897,10 @@
   </script>
   {% endif %}
 
-  <!-- 11. Follow-up Sessions -->
+  <!-- 12. Follow-up Sessions -->
   {% if follow_ups %}
   <div class="report-section page-break">
-    <h2 class="section-header">11. Follow-up Sessions ({{ follow_ups|length }})</h2>
+    <h2 class="section-header">12. Follow-up Sessions ({{ follow_ups|length }})</h2>
     <div class="section-content">
       {% for followup in follow_ups %}
       <div class="followup-card">

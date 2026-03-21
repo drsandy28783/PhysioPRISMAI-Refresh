@@ -6240,6 +6240,93 @@ def patient_report(patient_id):
     from datetime import datetime as dt
     report_date = dt.now().strftime('%d %b %Y %I:%M %p')
 
+    # Generate AI summaries for comprehensive reporting
+    from ai_prompts import (
+        get_initial_plan_summary_prompt,
+        get_smart_goals_prompt,
+        get_treatment_plan_summary_prompt
+    )
+
+    ai_initial_plan_summary = ""
+    ai_smart_goals_summary = ""
+    ai_treatment_plan_summary = ""
+
+    # Only generate AI summaries if data exists
+    try:
+        # 1. Initial Plan Summary
+        if initial_plan:
+            age_sex = sanitize_age_sex(patient.get("age_sex", ""))
+            present_hist = sanitize_clinical_text(patient.get("present_history", ""))
+            past_hist = sanitize_clinical_text(patient.get("past_history", ""))
+            subjective_data = sanitize_subjective_data(subjective)
+            diagnosis_text = sanitize_clinical_text(diagnosis.get("likelihood", "") if diagnosis else "")
+
+            # Format plan_fields from initial_plan data
+            plan_fields = {}
+            for field_name, field_value in initial_plan.items():
+                if field_name not in ['patient_id', 'timestamp', 'physio_id']:
+                    if field_value:
+                        plan_fields[field_name] = str(field_value)
+            plan_fields = sanitize_subjective_data(plan_fields)
+
+            prompt = get_initial_plan_summary_prompt(
+                age_sex=age_sex,
+                present_hist=present_hist,
+                past_hist=past_hist,
+                subjective=subjective_data,
+                diagnosis=diagnosis_text,
+                plan_fields=plan_fields
+            )
+            ai_initial_plan_summary = get_ai_suggestion(prompt, patient_context=age_sex)
+            logger.info(f"[Patient Report] Generated Initial Plan Summary for {patient_id}")
+
+        # 2. SMART Goals Summary
+        if goals and subjective:
+            age_sex = sanitize_age_sex(patient.get("age_sex", ""))
+            present_hist = sanitize_clinical_text(patient.get("present_history", ""))
+            past_hist = sanitize_clinical_text(patient.get("past_history", ""))
+            subjective_data = sanitize_subjective_data(subjective)
+            perspectives_data = sanitize_subjective_data(perspectives)
+            diagnosis_text = sanitize_clinical_text(diagnosis.get("likelihood", "") if diagnosis else "")
+
+            prompt = get_smart_goals_prompt(
+                age_sex=age_sex,
+                present_hist=present_hist,
+                past_hist=past_hist,
+                subjective=subjective_data,
+                perspectives=perspectives_data,
+                diagnosis=diagnosis_text
+            )
+            ai_smart_goals_summary = get_ai_suggestion(prompt, patient_context=age_sex)
+            logger.info(f"[Patient Report] Generated SMART Goals Summary for {patient_id}")
+
+        # 3. Treatment Plan Summary
+        if treatment or goals or diagnosis:
+            age_sex = sanitize_age_sex(patient.get("age_sex", ""))
+            present_hist = sanitize_clinical_text(patient.get("present_history", ""))
+            past_hist = sanitize_clinical_text(patient.get("past_history", ""))
+            subjective_data = sanitize_subjective_data(subjective)
+            diagnosis_text = sanitize_clinical_text(diagnosis.get("likelihood", "") if diagnosis else "")
+            goals_data = sanitize_subjective_data(goals)
+            treatment_fields = sanitize_subjective_data(treatment)
+
+            prompt = get_treatment_plan_summary_prompt(
+                patient_id=patient_id,
+                age_sex=age_sex,
+                present_hist=present_hist,
+                past_hist=past_hist,
+                subjective=subjective_data,
+                diagnosis=diagnosis_text,
+                goals=goals_data,
+                treatment_fields=treatment_fields
+            )
+            ai_treatment_plan_summary = get_ai_suggestion(prompt, patient_context=age_sex)
+            logger.info(f"[Patient Report] Generated Treatment Plan Summary for {patient_id}")
+
+    except Exception as e:
+        logger.error(f"[Patient Report] Error generating AI summaries for {patient_id}: {str(e)}")
+        # Continue rendering report even if AI summaries fail
+
     return render_template('patient_report.html',
                            patient=patient,
                            subjective=subjective,
@@ -6254,7 +6341,10 @@ def patient_report(patient_id):
                            treatment=treatment,
                            follow_ups=follow_ups,
                            therapist=therapist,
-                           report_date=report_date)
+                           report_date=report_date,
+                           ai_initial_plan_summary=ai_initial_plan_summary,
+                           ai_smart_goals_summary=ai_smart_goals_summary,
+                           ai_treatment_plan_summary=ai_treatment_plan_summary)
 
 
 @app.route('/download_report/<path:patient_id>')
@@ -9443,7 +9533,8 @@ def api_tokens_verify():
 def api_subscription_cancel():
     """Cancel user's subscription"""
     try:
-        from subscription_manager import cancel_subscription
+        from subscription_manager import cancel_subscription, get_user_subscription
+        from razorpay_integration import cancel_razorpay_subscription
 
         data = request.get_json() or {}
 
@@ -9457,22 +9548,150 @@ def api_subscription_cancel():
         if not is_valid:
             return jsonify({'error': 'Invalid cancellation data', 'details': result}), 400
 
-        # Log cancellation reason if provided
-        if result.get('reason'):
-            logger.info(f"Subscription cancellation reason: {result['reason']}")
-
         user_id = session.get('user_id')
-        success = cancel_subscription(user_id)
 
-        if success:
-            logger.info(f"Subscription cancelled for {user_id}")
-            return jsonify({'message': 'Subscription cancelled successfully'}), 200
+        # Get current subscription details
+        subscription = get_user_subscription(user_id)
+        if not subscription:
+            return jsonify({'error': 'No active subscription found'}), 404
+
+        # Check if already cancelled or expired
+        if subscription.get('status') in ['cancelled', 'expired']:
+            return jsonify({'error': f"Subscription already {subscription.get('status')}"}), 400
+
+        # Cancel on Razorpay side first (stops future billing)
+        razorpay_sub_id = subscription.get('subscription_id')
+        razorpay_success = True
+
+        if razorpay_sub_id and razorpay_sub_id.startswith('sub_'):
+            razorpay_success = cancel_razorpay_subscription(razorpay_sub_id)
+            if not razorpay_success:
+                logger.error(f"Failed to cancel Razorpay subscription {razorpay_sub_id}")
+                return jsonify({'error': 'Failed to cancel on payment provider'}), 500
+        else:
+            logger.info(f"No Razorpay subscription ID found for {user_id}, skipping Razorpay cancellation")
+
+        # Update database status with reason/feedback
+        db_success = cancel_subscription(
+            user_id,
+            reason=result.get('reason'),
+            feedback=result.get('feedback')
+        )
+
+        if db_success:
+            # Log cancellation analytics
+            try:
+                from subscription_manager import log_cancellation_analytics
+                log_cancellation_analytics(
+                    user_id,
+                    subscription,
+                    reason=result.get('reason'),
+                    feedback=result.get('feedback')
+                )
+            except Exception as e:
+                logger.error(f"Failed to log cancellation analytics: {e}")
+                # Don't fail the cancellation if analytics fails
+            logger.info(f"Subscription cancelled for {user_id} (reason: {result.get('reason')})")
+
+            # Send cancellation confirmation email
+            try:
+                from email_service import send_subscription_cancellation_email
+                user_name = session.get('user_name', 'User')
+                email_data = {
+                    'plan_name': subscription.get('plan_type', 'Subscription').replace('_', ' ').title(),
+                    'current_period_end': subscription.get('current_period_end'),
+                    'ai_tokens_balance': subscription.get('ai_tokens_balance', 0),
+                    'cancellation_date': __import__('datetime').datetime.now()
+                }
+                send_subscription_cancellation_email(user_id, user_name, email_data)
+            except Exception as e:
+                logger.error(f"Failed to send cancellation email: {e}")
+                # Don't fail the cancellation if email fails
+
+            # Return success with subscription details
+            active_until = subscription.get('current_period_end')
+            return jsonify({
+                'success': True,
+                'message': 'Subscription cancelled successfully',
+                'active_until': active_until.isoformat() if active_until else None,
+                'ai_tokens_balance': subscription.get('ai_tokens_balance', 0)
+            }), 200
         else:
             return jsonify({'error': 'Failed to cancel subscription'}), 500
 
     except Exception as e:
         logger.error(f"Error cancelling subscription: {e}", exc_info=True)
         return jsonify({'error': 'Failed to cancel subscription'}), 500
+
+
+@app.route('/api/export-patient-data', methods=['GET'])
+@require_auth
+def export_patient_data():
+    """Export all patient data for the user as JSON"""
+    try:
+        user_id = session.get('user_id')
+
+        # Get all patients for this user
+        patients_ref = db.collection('patients').where('user_id', '==', user_id).stream()
+
+        export_data = {
+            'export_date': __import__('datetime').datetime.now().isoformat(),
+            'user_id': user_id,
+            'patients': []
+        }
+
+        for patient_doc in patients_ref:
+            patient_data = patient_doc.to_dict()
+            patient_id = patient_doc.id
+
+            # Get all assessments for this patient
+            assessments_ref = db.collection('assessments')\
+                .where('patient_id', '==', patient_id)\
+                .stream()
+
+            assessments = []
+            for assessment_doc in assessments_ref:
+                assessment_data = assessment_doc.to_dict()
+                # Convert Firestore timestamps to strings
+                for key, value in assessment_data.items():
+                    if hasattr(value, 'isoformat'):
+                        assessment_data[key] = value.isoformat()
+                assessments.append(assessment_data)
+
+            # Convert patient timestamps to strings
+            for key, value in patient_data.items():
+                if hasattr(value, 'isoformat'):
+                    patient_data[key] = value.isoformat()
+
+            export_data['patients'].append({
+                'patient_info': patient_data,
+                'assessments': assessments,
+                'assessment_count': len(assessments)
+            })
+
+        # Create JSON export
+        import json
+        from flask import Response
+        json_data = json.dumps(export_data, indent=2, default=str)
+
+        # Generate filename with timestamp
+        timestamp = __import__('datetime').datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'physiologicprism_data_{timestamp}.json'
+
+        logger.info(f"Exporting data for {user_id}: {len(export_data['patients'])} patients")
+
+        return Response(
+            json_data,
+            mimetype='application/json',
+            headers={
+                'Content-Disposition': f'attachment; filename={filename}',
+                'Content-Type': 'application/json'
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Error exporting patient data: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to export data'}), 500
 
 
 # ═══════════════════════════════════════════════════════════════════

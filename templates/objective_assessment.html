@@ -52,8 +52,8 @@
   // Initialize Draft Auto-Save
   let draftAutoSave;
 
-  document.addEventListener('DOMContentLoaded', function() {
-    draftAutoSave = new DraftAutoSave('objective', '{{ patient_id }}', {
+  document.addEventListener('DOMContentLoaded', async function() {
+    draftAutoSave = await initDraftAutoSave('objective', '{{ patient_id }}', {
       saveDelay: 2000,
       onRestore: function(data) {
         console.log('Draft restored:', data);

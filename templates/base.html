@@ -154,7 +154,38 @@
     <script defer src="{{ url_for('static', filename='assessmentProgress.js') }}?v=4" nonce="{{ csp_nonce() }}"></script>
 
     <!-- Draft Auto-Save System -->
-    <script defer src="{{ url_for('static', filename='draftAutoSave.js') }}?v=4" nonce="{{ csp_nonce() }}"></script>
+    <script defer src="{{ url_for('static', filename='draftAutoSave.js') }}?v=5" nonce="{{ csp_nonce() }}"></script>
+
+    <!-- Draft Auto-Save Helper - ensures DraftAutoSave is ready -->
+    <script nonce="{{ csp_nonce() }}">
+      // Helper function to safely initialize DraftAutoSave
+      window.initDraftAutoSave = function(formType, patientId, options) {
+        return new Promise((resolve) => {
+          // Check if DraftAutoSave is already loaded
+          if (typeof DraftAutoSave !== 'undefined') {
+            const instance = new DraftAutoSave(formType, patientId, options);
+            resolve(instance);
+            return;
+          }
+
+          // Wait for DraftAutoSave to be defined
+          const checkInterval = setInterval(() => {
+            if (typeof DraftAutoSave !== 'undefined') {
+              clearInterval(checkInterval);
+              const instance = new DraftAutoSave(formType, patientId, options);
+              resolve(instance);
+            }
+          }, 50); // Check every 50ms
+
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            console.error('DraftAutoSave failed to load');
+            resolve(null);
+          }, 5000);
+        });
+      };
+    </script>
 
     <!-- Form Change Tracker (must load before version-check) -->
     <script defer src="{{ url_for('static', filename='form-change-tracker.js') }}?v=6" nonce="{{ csp_nonce() }}"></script>
