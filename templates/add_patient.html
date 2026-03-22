@@ -65,12 +65,13 @@
                 rows="3"
                 required
                 placeholder="Brief description of current complaint"
+                data-voice-enabled
             >{{ request.form.present_history or '' }}</textarea>
         </div>
 
         <div class="form-group">
             <label for="past_history">Past History:</label>
-            <div style="display: flex; align-items: flex-start; gap: 8px; width: 100%;">
+            <div class="control-group">
                 <textarea
                     class="input-field"
                     id="past_history"
@@ -78,14 +79,13 @@
                     rows="3"
                     required
                     placeholder="Enter any past medical or surgical history"
-                    style="width: 100% !important;"
+                    data-voice-enabled
                 >{{ request.form.past_history or '' }}</textarea>
                 <button
                     type="button"
                     id="suggest_questions"
                     class="ai-btn"
                     title="Suggest follow-up questions"
-                    style="background:none; border:none; font-size:1.2em; cursor:pointer; flex-shrink:0; margin-top:0.5rem;"
                 >🧠</button>
             </div>
         </div>
