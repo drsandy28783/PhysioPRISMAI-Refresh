@@ -325,6 +325,12 @@ textarea.input-field {
   font-weight: 500;
 }
 
+/* Voice recorder inline container should be full width */
+.field-block .voice-recorder-inline {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Control group for input + AI button layout */
 .control-group {
   display: flex;
@@ -341,6 +347,14 @@ textarea.input-field {
   width: 100%;
   margin: 0;
   box-sizing: border-box;
+}
+
+/* Voice recorder inline container should take full width in control-group */
+.control-group .voice-recorder-inline {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
 }
 
 /* AI suggestion button */
