@@ -21,7 +21,7 @@ from typing import Dict, Optional
 from io import BytesIO
 from xhtml2pdf import pisa
 # Firebase removed - using Azure Cosmos DB
-from azure_cosmos_db import SERVER_TIMESTAMP
+from azure_cosmos_db import get_cosmos_db, SERVER_TIMESTAMP
 
 logger = logging.getLogger("app.invoice")
 
