@@ -22,7 +22,7 @@ import logging
 from typing import Dict, Optional, Tuple
 import razorpay
 # Firebase removed - using Azure Cosmos DB
-from azure_cosmos_db import SERVER_TIMESTAMP
+from azure_cosmos_db import get_cosmos_db, SERVER_TIMESTAMP
 
 logger = logging.getLogger("app.razorpay")
 
