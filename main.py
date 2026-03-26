@@ -11175,7 +11175,7 @@ def csp_violation_report():
 # ═══════════════════════════════════════════════════════════════════
 
 @app.route('/api/transcribe', methods=['POST'])
-@login_required()
+@require_auth
 @require_voice_quota
 def api_transcribe_audio():
     """
