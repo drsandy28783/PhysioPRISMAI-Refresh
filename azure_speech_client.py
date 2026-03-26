@@ -143,10 +143,22 @@ class AzureSpeechClient:
             }
             ext = ext_map.get(content_type, '.wav')
 
-            # Create temp file
+            # Create temp file for input
             with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
                 temp_file.write(audio_blob)
-                temp_path = temp_file.name
+                temp_input_path = temp_file.name
+
+            # Convert to WAV if not already WAV format
+            if content_type != 'audio/wav':
+                temp_wav_path = self._convert_to_wav(temp_input_path)
+                # Clean up original file
+                try:
+                    os.remove(temp_input_path)
+                except:
+                    pass
+                temp_path = temp_wav_path
+            else:
+                temp_path = temp_input_path
 
             # Transcribe from temp file
             result = self.transcribe_from_file(temp_path)
@@ -165,6 +177,63 @@ class AzureSpeechClient:
                 'text': '',
                 'error': str(e)
             }
+
+
+    def _convert_to_wav(self, input_path: str) -> str:
+        """
+        Convert audio file to WAV format (16kHz, 16-bit, mono PCM)
+        Azure Speech SDK requires proper WAV format
+
+        Args:
+            input_path: Path to input audio file
+
+        Returns:
+            Path to converted WAV file
+        """
+        import tempfile
+        import subprocess
+
+        # Create temp WAV file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+            output_path = temp_file.name
+
+        try:
+            # Try using ffmpeg first (most reliable)
+            subprocess.run([
+                'ffmpeg',
+                '-i', input_path,
+                '-acodec', 'pcm_s16le',  # 16-bit PCM
+                '-ar', '16000',           # 16kHz sample rate
+                '-ac', '1',               # Mono
+                '-y',                     # Overwrite output
+                output_path
+            ], check=True, capture_output=True)
+
+            return output_path
+
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # ffmpeg not available, try pydub
+            try:
+                from pydub import AudioSegment
+
+                # Load audio file
+                audio = AudioSegment.from_file(input_path)
+
+                # Convert to WAV: 16kHz, mono, 16-bit
+                audio = audio.set_frame_rate(16000)
+                audio = audio.set_channels(1)
+                audio = audio.set_sample_width(2)  # 16-bit
+
+                # Export as WAV
+                audio.export(output_path, format='wav')
+
+                return output_path
+
+            except ImportError:
+                # Neither ffmpeg nor pydub available
+                # Return original path and hope Azure can handle it
+                os.remove(output_path)
+                return input_path
 
 
     def transcribe_continuous(self, audio_file_path: str, callback=None) -> Dict:
