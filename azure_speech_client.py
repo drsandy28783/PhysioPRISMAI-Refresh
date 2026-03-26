@@ -88,7 +88,7 @@ class AzureSpeechClient:
                     'success': True,
                     'text': result.text,
                     'confidence': self._get_confidence(result),
-                    'duration': result.duration.total_seconds() if result.duration else 0
+                    'duration': self._get_duration(result)
                 }
             elif result.reason == speechsdk.ResultReason.NoMatch:
                 return {
@@ -322,6 +322,32 @@ class AzureSpeechClient:
             return 0.9  # Default high confidence if not available
         except:
             return 0.9
+
+
+    def _get_duration(self, result) -> float:
+        """
+        Extract duration from result
+
+        Args:
+            result: SpeechRecognitionResult
+
+        Returns:
+            Duration in seconds (float)
+        """
+        try:
+            if hasattr(result, 'duration'):
+                duration = result.duration
+                # duration is an integer representing ticks (100-nanosecond intervals)
+                # or it could be a timedelta object depending on SDK version
+                if isinstance(duration, int):
+                    # Convert ticks to seconds (1 tick = 100 nanoseconds)
+                    return duration / 10_000_000.0
+                elif hasattr(duration, 'total_seconds'):
+                    # timedelta object
+                    return duration.total_seconds()
+            return 0.0
+        except:
+            return 0.0
 
 
     def get_supported_languages(self) -> list:
