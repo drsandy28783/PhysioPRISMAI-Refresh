@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, g
 from azure_cosmos_db import get_cosmos_db, get_patient_safe, SERVER_TIMESTAMP
 from app_auth import require_firebase_auth, require_auth
+from quota_middleware import require_patient_quota
 from firebase_admin import auth
 from functools import wraps
 from rate_limiter import redis_client, redis_available
@@ -1191,6 +1192,7 @@ def api_get_patient_comprehensive_report(patient_id):
 
 @mobile_api.route('/patients', methods=['POST'])
 @require_auth
+@require_patient_quota
 def api_create_patient():
     """
     Create a new patient
@@ -2832,6 +2834,361 @@ def api_download_invoice(invoice_id):
     except Exception as e:
         logger.error(f'Error downloading invoice: {e}', exc_info=True)
         return jsonify({'success': False, 'error': 'Failed to download invoice'}), 500
+
+
+@mobile_api.route('/patients/<patient_id>/export-pdf', methods=['GET'])
+@require_firebase_auth
+def api_export_patient_report_pdf(patient_id):
+    """
+    Export comprehensive patient report as PDF (returns base64 encoded PDF)
+
+    Response:
+    {
+        "success": true,
+        "pdf_base64": "JVBERi0xLjQKJeLjz9MK...",
+        "filename": "patient_report_john_doe.pdf"
+    }
+    """
+    try:
+        user = g.user
+        user_email = user.get('email')
+
+        if not user_email:
+            return jsonify({'success': False, 'error': 'User email not found'}), 400
+
+        # 1) Fetch patient record and check permissions
+        doc = db.collection('patients').document(patient_id).get()
+        if not doc.exists:
+            return jsonify({'success': False, 'error': 'Patient not found'}), 404
+
+        patient = doc.to_dict()
+
+        # Get user info to check permissions
+        user_doc = db.collection('users').document(user_email).get()
+        if not user_doc.exists:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        user_data = user_doc.to_dict()
+        user_role = user_data.get('role', 'solo_physio')
+
+        # Check permissions: must be the patient's physio or an admin
+        if user_role not in ['institute_admin', 'super_admin'] and patient.get('physio_id') != user_email:
+            logger.warning(f'Unauthorized PDF export attempt: {user_email} tried to export patient {patient_id}')
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+        # 2) Fetch all assessment sections
+        def fetch_one(coll):
+            try:
+                result = db.collection(coll) \
+                             .where('patient_id', '==', patient_id) \
+                             .limit(1).get()
+                return result[0].to_dict() if result else {}
+            except Exception as e:
+                logger.warning(f"Could not fetch {coll} for patient {patient_id}: {e}")
+                return {}
+
+        def fetch_all(coll):
+            try:
+                docs = db.collection(coll).where('patient_id', '==',
+                                                 patient_id).order_by('timestamp', direction='DESCENDING').get()
+                return [d.to_dict() for d in docs] if docs else []
+            except Exception as e:
+                logger.warning(f"Could not fetch {coll} list for patient {patient_id}: {e}")
+                return []
+
+        subjective = fetch_one('subjective_examination')
+        perspectives = fetch_one('patient_perspectives')
+        initial_plan = fetch_one('initial_plan')
+        patho_mechanism = fetch_one('patho_mechanism')
+        chronic_diseases = fetch_one('chronic_diseases')
+        clinical_flags = fetch_one('clinical_flags')
+        objective = fetch_one('objective_assessments')
+        diagnosis = fetch_one('provisional_diagnosis')
+        goals = fetch_one('smart_goals')
+        treatment = fetch_one('treatment_plan')
+        follow_ups = fetch_all('follow_ups')
+
+        # Get therapist info
+        try:
+            therapist_doc = db.collection('users').document(patient.get('physio_id', '')).get()
+            therapist = therapist_doc.to_dict() if therapist_doc.exists else {}
+        except Exception as e:
+            logger.warning(f"Could not fetch therapist info for patient {patient_id}: {e}")
+            therapist = {}
+
+        # Get current date/time for report
+        from datetime import datetime as dt
+        report_date = dt.now().strftime('%d %b %Y %I:%M %p')
+
+        # 3) Render the HTML template
+        from flask import render_template
+        try:
+            rendered = render_template(
+                'patient_report.html',
+                patient=patient,
+                subjective=subjective,
+                perspectives=perspectives,
+                initial_plan=initial_plan,
+                patho_mechanism=patho_mechanism,
+                chronic_diseases=chronic_diseases,
+                clinical_flags=clinical_flags,
+                objective=objective,
+                diagnosis=diagnosis,
+                goals=goals,
+                treatment=treatment,
+                follow_ups=follow_ups,
+                therapist=therapist,
+                report_date=report_date
+            )
+        except Exception as e:
+            logger.error(f"Template rendering failed for patient {patient_id}: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': 'Error generating report template'}), 500
+
+        # 4) Generate PDF
+        import io
+        from xhtml2pdf import pisa
+        import base64
+
+        try:
+            pdf = io.BytesIO()
+            pisa_status = pisa.CreatePDF(io.StringIO(rendered), dest=pdf)
+            if pisa_status.err:
+                logger.error(f"PDF generation failed for patient {patient_id}, pisa error code: {pisa_status.err}")
+                return jsonify({'success': False, 'error': 'Error generating PDF file'}), 500
+        except Exception as e:
+            logger.error(f"PDF creation exception for patient {patient_id}: {e}", exc_info=True)
+            return jsonify({'success': False, 'error': 'Error creating PDF file'}), 500
+
+        # 5) Convert PDF to base64 for mobile transmission
+        pdf_content = pdf.getvalue()
+        pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+
+        # Create filename from patient name
+        patient_name = patient.get('name', 'patient').replace(' ', '_').lower()
+        filename = f"patient_report_{patient_name}.pdf"
+
+        log_audit('mobile_export_patient_pdf', {
+            'email': user_email,
+            'patient_id': patient_id,
+            'patient_name': patient.get('name')
+        })
+
+        return jsonify({
+            'success': True,
+            'pdf_base64': pdf_base64,
+            'filename': filename
+        }), 200
+
+    except Exception as e:
+        logger.error(f'Error exporting patient report PDF: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to export patient report'}), 500
+
+
+#────────────────────────────────────────────────────────────────────────────
+# GDPR DATA DELETION ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@mobile_api.route('/gdpr/deletion-status', methods=['GET'])
+@require_firebase_auth
+def api_get_deletion_status():
+    """
+    Get current data deletion status for user
+
+    Response:
+    {
+        "success": true,
+        "deletion_requested": false,
+        "deletion_request_date": null,
+        "scheduled_deletion_date": null,
+        "days_remaining": null
+    }
+    """
+    try:
+        user = g.user
+        user_email = user.get('email')
+
+        if not user_email:
+            return jsonify({'success': False, 'error': 'User email not found'}), 400
+
+        # Get user data
+        user_ref = db.collection('users').document(user_email)
+        user_doc = user_ref.get()
+
+        if not user_doc.exists:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        user_data = user_doc.to_dict()
+
+        deletion_requested = user_data.get('deletion_requested', False)
+        deletion_request_date = user_data.get('deletion_request_date')
+        scheduled_deletion_date = user_data.get('scheduled_deletion_date')
+
+        # Calculate days remaining if deletion is scheduled
+        days_remaining = None
+        if deletion_requested and scheduled_deletion_date:
+            try:
+                from datetime import datetime as dt, timezone
+                scheduled = dt.fromisoformat(scheduled_deletion_date.replace('Z', '+00:00'))
+                now = dt.now(timezone.utc)
+                days_remaining = (scheduled - now).days
+            except Exception as e:
+                logger.warning(f'Error calculating days remaining: {e}')
+
+        return jsonify({
+            'success': True,
+            'deletion_requested': deletion_requested,
+            'deletion_request_date': deletion_request_date.isoformat() if deletion_request_date else None,
+            'scheduled_deletion_date': scheduled_deletion_date,
+            'days_remaining': days_remaining
+        }), 200
+
+    except Exception as e:
+        logger.error(f'Error getting deletion status: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to get deletion status'}), 500
+
+
+@mobile_api.route('/gdpr/request-deletion', methods=['POST'])
+@require_firebase_auth
+def api_request_data_deletion():
+    """
+    Request account and data deletion (GDPR Right to Erasure)
+
+    Body:
+    {
+        "reason": "optional reason for deletion",
+        "confirm_email": "user@example.com",
+        "password": "user password"
+    }
+
+    Response:
+    {
+        "success": true,
+        "scheduled_deletion_date": "2025-04-24T10:30:00Z",
+        "days_until_deletion": 30
+    }
+    """
+    try:
+        user = g.user
+        user_email = user.get('email')
+
+        if not user_email:
+            return jsonify({'success': False, 'error': 'User email not found'}), 400
+
+        # Get user data
+        user_ref = db.collection('users').document(user_email)
+        user_doc = user_ref.get()
+
+        if not user_doc.exists:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        user_data = user_doc.to_dict()
+
+        # Check if deletion is already pending
+        if user_data.get('deletion_requested', False):
+            return jsonify({'success': False, 'error': 'Deletion request already pending'}), 400
+
+        # Get request data
+        data = request.get_json()
+        deletion_reason = data.get('reason', '').strip()
+        confirm_email = data.get('confirm_email', '').strip().lower()
+        password = data.get('password', '')
+
+        # Verify email confirmation
+        if confirm_email != user_email.lower():
+            return jsonify({'success': False, 'error': 'Email confirmation does not match'}), 400
+
+        # Verify password
+        from app_auth import check_password_hash
+        if not check_password_hash(user_data.get('password_hash', ''), password):
+            return jsonify({'success': False, 'error': 'Incorrect password'}), 401
+
+        # Calculate scheduled deletion date (30 days from now)
+        from datetime import datetime as dt, timezone, timedelta
+        scheduled_deletion = dt.now(timezone.utc) + timedelta(days=30)
+
+        # Mark account for deletion
+        user_ref.update({
+            'deletion_requested': True,
+            'deletion_request_date': SERVER_TIMESTAMP,
+            'scheduled_deletion_date': scheduled_deletion.isoformat(),
+            'deletion_reason': deletion_reason,
+            'active': 0  # Deactivate account immediately
+        })
+
+        # Log the deletion request
+        log_audit('request_data_deletion', {
+            'email': user_email,
+            'reason': deletion_reason or 'Not provided',
+            'scheduled_date': scheduled_deletion.strftime('%Y-%m-%d')
+        })
+
+        return jsonify({
+            'success': True,
+            'scheduled_deletion_date': scheduled_deletion.isoformat(),
+            'days_until_deletion': 30,
+            'message': 'Your account deletion request has been submitted. Your account is now deactivated.'
+        }), 200
+
+    except Exception as e:
+        logger.error(f'Error requesting data deletion: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to request data deletion'}), 500
+
+
+@mobile_api.route('/gdpr/cancel-deletion', methods=['POST'])
+@require_firebase_auth
+def api_cancel_data_deletion():
+    """
+    Cancel account deletion during the 30-day grace period
+
+    Response:
+    {
+        "success": true,
+        "message": "Your account deletion request has been cancelled."
+    }
+    """
+    try:
+        user = g.user
+        user_email = user.get('email')
+
+        if not user_email:
+            return jsonify({'success': False, 'error': 'User email not found'}), 400
+
+        # Get user data
+        user_ref = db.collection('users').document(user_email)
+        user_doc = user_ref.get()
+
+        if not user_doc.exists:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        user_data = user_doc.to_dict()
+
+        # Check if deletion is pending
+        if not user_data.get('deletion_requested', False):
+            return jsonify({'success': False, 'error': 'No deletion request found'}), 400
+
+        # Cancel the deletion request
+        user_ref.update({
+            'deletion_requested': False,
+            'deletion_request_date': None,
+            'scheduled_deletion_date': None,
+            'deletion_cancelled_at': SERVER_TIMESTAMP,
+            'active': 1  # Reactivate account
+        })
+
+        # Log the cancellation
+        log_audit('cancel_data_deletion', {
+            'email': user_email,
+            'message': 'User cancelled account deletion request during grace period'
+        })
+
+        return jsonify({
+            'success': True,
+            'message': 'Your account deletion request has been cancelled. Your account is now active again.'
+        }), 200
+
+    except Exception as e:
+        logger.error(f'Error cancelling data deletion: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to cancel data deletion'}), 500
 
 
 #────────────────────────────────────────────────────────────────────────────

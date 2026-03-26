@@ -13,7 +13,7 @@ import logging
 from flask import Blueprint, request, jsonify, g
 from azure_cosmos_db import get_cosmos_db, get_patient_safe
 from app_auth import require_firebase_auth, require_auth
-from quota_middleware import require_voice_quota
+from quota_middleware import require_voice_quota, require_ai_quota
 import re
 
 # Import centralized AI prompts
@@ -366,6 +366,7 @@ def get_ai_suggestion_safe(prompt, metadata=None, patient_context="", user_id=No
 
 @mobile_api_ai.route('/past_questions', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_past_questions():
     """AI suggestions for past history questions"""
     try:
@@ -394,6 +395,7 @@ def api_ai_past_questions():
 
 @mobile_api_ai.route('/provisional_diagnosis', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_provisional_diagnosis():
     """AI provisional diagnosis based on all available data"""
     try:
@@ -434,6 +436,7 @@ def api_ai_provisional_diagnosis():
 
 @mobile_api_ai.route('/subjective/<field>', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_subjective_field(field):
     """AI suggestions for subjective examination fields"""
     try:
@@ -473,6 +476,7 @@ def api_ai_subjective_field(field):
 
 @mobile_api_ai.route('/subjective_diagnosis', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_subjective_diagnosis():
     """AI diagnostic suggestions based on subjective examination"""
     try:
@@ -506,6 +510,7 @@ def api_ai_subjective_diagnosis():
 
 @mobile_api_ai.route('/perspectives/<field>', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_perspectives_field(field):
     """
     HIPAA-COMPLIANT: AI suggestions for patient perspectives fields (CSM components).
@@ -566,6 +571,7 @@ def api_ai_perspectives_field(field):
 
 @mobile_api_ai.route('/patient_perspectives', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_patient_perspectives():
     """AI suggestions for patient perspectives (LEGACY - prefer /perspectives/<field>)"""
     try:
@@ -602,6 +608,7 @@ def api_ai_patient_perspectives():
 
 @mobile_api_ai.route('/initial_plan/<field>', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_initial_plan_field(field):
     """
     HIPAA-COMPLIANT: AI suggestions for initial ASSESSMENT plan fields.
@@ -662,6 +669,7 @@ def api_ai_initial_plan_field(field):
 
 @mobile_api_ai.route('/initial_plan_summary', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_initial_plan_summary():
     """AI summary of initial treatment plan"""
     try:
@@ -717,6 +725,7 @@ def api_ai_initial_plan_summary():
 
 @mobile_api_ai.route('/patho_possible_source', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_patho_source():
     """AI suggestions for PAIN SOURCE CLASSIFICATION (IMPROVED - now provides specific pain mechanism analysis)"""
     try:
@@ -771,6 +780,7 @@ def api_ai_patho_source():
 
 @mobile_api_ai.route('/chronic_factors_suggest', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_chronic_factors():
     """AI suggestions for MAINTENANCE FACTORS using biopsychosocial framework (IMPROVED)"""
     try:
@@ -823,6 +833,7 @@ def api_ai_chronic_factors():
 
 @mobile_api_ai.route('/clinical_flags_suggest', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_clinical_flags():
     """AI suggestions for comprehensive clinical flags screening - ALL 5 flag types (IMPROVED)"""
     try:
@@ -870,6 +881,7 @@ def api_ai_clinical_flags():
 
 @mobile_api_ai.route('/objective_assessment', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_objective_assessment():
     """IMPROVED: AI suggestions for objective assessment with body region-specific test recommendations"""
     try:
@@ -915,6 +927,7 @@ def api_ai_objective_assessment():
 
 @mobile_api_ai.route('/provisional_diagnosis/<field>', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_provisional_diagnosis_field(field):
     """IMPROVED: AI suggestions for specific provisional diagnosis fields with body region-specific differential diagnoses"""
     try:
@@ -961,6 +974,7 @@ def api_ai_provisional_diagnosis_field(field):
 
 @mobile_api_ai.route('/smart_goals', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_smart_goals():
     """AI suggestions for SMART goals (LEGACY - general goals)"""
     try:
@@ -1003,6 +1017,7 @@ def api_ai_smart_goals():
 
 @mobile_api_ai.route('/smart_goals/<field>', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_smart_goals_field(field):
     """IMPROVED: AI suggestions for SMART goals fields with body region-specific ICF participation guidance"""
     try:
@@ -1047,6 +1062,7 @@ def api_ai_smart_goals_field(field):
 
 @mobile_api_ai.route('/treatment_plan/<field>', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_treatment_plan_field(field):
     """IMPROVED: AI suggestions for treatment plan fields with body region-specific interventions"""
     try:
@@ -1094,6 +1110,7 @@ def api_ai_treatment_plan_field(field):
 
 @mobile_api_ai.route('/treatment_plan_summary/<patient_id>', methods=['GET'])
 @require_auth
+@require_ai_quota
 def api_ai_treatment_plan_summary(patient_id):
     """Get AI summary of treatment plan for a patient"""
     try:
@@ -1147,6 +1164,7 @@ def api_ai_treatment_plan_summary(patient_id):
 
 @mobile_api_ai.route('/followup', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_followup():
     """AI suggestions for follow-up visit (LEGACY - prefer /followup/<field>)"""
     try:
@@ -1212,6 +1230,7 @@ def api_ai_followup():
 
 @mobile_api_ai.route('/followup/<field>', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_followup_field(field):
     """
     IMPROVED: AI suggestions for follow-up field with body region-specific progression strategies.
@@ -1304,6 +1323,7 @@ def api_ai_followup_field(field):
 
 @mobile_api_ai.route('/field/<field>', methods=['POST'])
 @require_auth
+@require_ai_quota
 def api_ai_generic_field(field):
     """Generic AI suggestions for any field"""
     try:

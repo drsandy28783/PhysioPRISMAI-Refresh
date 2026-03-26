@@ -5419,6 +5419,7 @@ def export_audit_logs():
 
 @app.route('/add_patient', methods=['GET', 'POST'])
 @login_required()
+@require_patient_quota
 def add_patient():
     if request.method == 'POST':
         # ─── INPUT VALIDATION ─────────────────────────────────────────
@@ -8832,6 +8833,69 @@ def super_admin_users():
         logger.error(f"Error loading users: {e}", exc_info=True)
         flash("Error loading users", "error")
         return redirect('/super_admin_dashboard')
+
+
+@app.route('/super_admin/fix_subscription', methods=['POST'])
+@super_admin_required()
+def super_admin_fix_subscription():
+    """Fix Super Admin subscription to have unlimited quotas"""
+    try:
+        from datetime import datetime, timezone
+
+        # Get Super Admin email from session
+        user_email = session.get('user_email')
+
+        logger.info(f"Fixing subscription for Super Admin: {user_email}")
+
+        # Get current subscription
+        sub_ref = db.collection('subscriptions').document(user_email)
+        sub_doc = sub_ref.get()
+
+        if not sub_doc.exists:
+            # Create new subscription
+            new_subscription = {
+                'user_id': user_email,
+                'plan_type': 'super_admin',
+                'status': 'active',
+                'current_period_start': datetime.now(timezone.utc).isoformat(),
+                'current_period_end': datetime(2099, 12, 31, tzinfo=timezone.utc).isoformat(),
+                'price_amount': 0,
+                'currency': 'INR',
+                'patients_created_this_month': 0,
+                'patients_limit': -1,  # UNLIMITED
+                'ai_calls_this_month': 0,
+                'ai_calls_limit': -1,  # UNLIMITED
+                'voice_minutes_used_this_month': 0,
+                'voice_minutes_limit': -1,  # UNLIMITED
+                'ai_tokens_balance': 0,
+                'ai_tokens_purchased_total': 0,
+                'max_users': 1,
+                'created_at': SERVER_TIMESTAMP,
+                'updated_at': SERVER_TIMESTAMP
+            }
+            sub_ref.set(new_subscription)
+            flash("Created Super Admin subscription with unlimited quotas", "success")
+        else:
+            # Update existing subscription
+            updates = {
+                'plan_type': 'super_admin',
+                'status': 'active',
+                'patients_limit': -1,  # UNLIMITED
+                'ai_calls_limit': -1,  # UNLIMITED
+                'voice_minutes_limit': -1,  # UNLIMITED
+                'current_period_end': datetime(2099, 12, 31, tzinfo=timezone.utc).isoformat(),
+                'updated_at': SERVER_TIMESTAMP
+            }
+            sub_ref.update(updates)
+            flash("Updated Super Admin subscription to unlimited quotas", "success")
+
+        logger.info(f"✅ Fixed Super Admin subscription for {user_email}")
+        return jsonify({'success': True, 'message': 'Subscription fixed successfully'})
+
+    except Exception as e:
+        logger.error(f"Error fixing Super Admin subscription: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/super_admin/deactivate/<user_email>', methods=['POST'])
 @super_admin_required()
