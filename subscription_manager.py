@@ -60,8 +60,8 @@ PLANS = {
     },
     'solo': {
         'name': 'Solo Professional',
-        'price': 4200,  # $50 USD (~₹4,200) - 94% profit margin, competitive internationally
-        'price_usd': 50,  # For international markets
+        'price': 4750,  # $57 USD (~₹4,750) - 94% profit margin, competitive internationally
+        'price_usd': 57,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 250,  # Increased from 50 - great value proposition
@@ -101,8 +101,8 @@ PLANS = {
     },
     'team_10': {
         'name': 'Team Pro (10 Users)',
-        'price': 37799,  # $450 USD (~₹37,799) - 10% volume discount ($45/user)
-        'price_usd': 450,  # For international markets
+        'price': 39999,  # $476 USD (~₹39,999) - 10% volume discount ($47.60/user)
+        'price_usd': 476,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 2500,  # 250 AI calls per user × 10 users
@@ -121,8 +121,8 @@ PLANS = {
     },
     'institute_15': {
         'name': 'Institute (15 Users)',
-        'price': 53599,  # $637.50 USD (~₹53,599) - 15% volume discount ($42.50/user)
-        'price_usd': 638,  # For international markets
+        'price': 64999,  # $774 USD (~₹64,999) - 15% volume discount ($51.60/user)
+        'price_usd': 774,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 3750,  # 250 AI calls per user × 15 users
@@ -141,8 +141,8 @@ PLANS = {
     },
     'institute_20': {
         'name': 'Institute Plus (20 Users)',
-        'price': 71399,  # $850 USD (~₹71,399) - 15% volume discount ($42.50/user)
-        'price_usd': 850,  # For international markets
+        'price': 84999,  # $1,012 USD (~₹84,999) - 15% volume discount ($50.60/user)
+        'price_usd': 1012,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 5000,  # 250 AI calls per user × 20 users
