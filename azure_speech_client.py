@@ -139,7 +139,10 @@ class AzureSpeechClient:
                 'audio/webm': '.webm',
                 'audio/ogg': '.ogg',
                 'audio/mp3': '.mp3',
-                'audio/mpeg': '.mp3'
+                'audio/mpeg': '.mp3',
+                'audio/m4a': '.m4a',
+                'audio/mp4': '.m4a',
+                'audio/x-m4a': '.m4a'
             }
             ext = ext_map.get(content_type, '.wav')
 
