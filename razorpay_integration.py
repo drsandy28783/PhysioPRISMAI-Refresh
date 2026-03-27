@@ -95,9 +95,9 @@ def create_subscription_checkout(user_id: str, plan_type: str, user_name: str = 
             'plan_id': razorpay_plan_id,
             'customer_notify': 1,
             'quantity': 1,
-            'total_count': 600,  # 50 years for monthly plans - effectively indefinite for SaaS
-            # 600 months = 50 years, well within Razorpay's end_time limit (2121)
-            # Customer can cancel anytime before that
+            'total_count': 360,  # 30 years for monthly plans (maximum for UPI payment method)
+            # Razorpay UPI limit: 30 years maximum (360 months)
+            # Still effectively indefinite for SaaS - customer can cancel anytime
             'notes': {
                 'user_id': user_id,
                 'plan_type': plan_type
