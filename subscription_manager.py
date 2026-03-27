@@ -712,8 +712,8 @@ def upgrade_subscription(user_id: str, plan_type: str, subscription_id: str = No
             'plan_type': plan_type,
             'status': 'active',
             'subscription_id': subscription_id,
-            'current_period_start': now,
-            'current_period_end': period_end,
+            'current_period_start': now.isoformat(),  # Convert to ISO string for JSON serialization
+            'current_period_end': period_end.isoformat(),  # Convert to ISO string for JSON serialization
             'price_amount': plan['price'],
             'currency': plan['currency'],
             'patients_created_this_month': 0,
