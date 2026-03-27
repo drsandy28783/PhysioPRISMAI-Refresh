@@ -165,7 +165,8 @@ class CosmosDBDocumentReference:
                     return CosmosDBDocument(self.id, items[0], True)
                 else:
                     return CosmosDBDocument(self.id, {}, False)
-            except Exception:
+            except Exception as e:
+                logger.error(f"Error in fallback query for document {self.id}: {e} (type: {type(e).__name__})", exc_info=True)
                 return CosmosDBDocument(self.id, {}, False)
         except Exception as e:
             # Log the actual error for debugging

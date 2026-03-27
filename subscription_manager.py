@@ -697,6 +697,8 @@ def upgrade_subscription(user_id: str, plan_type: str, subscription_id: str = No
         bool: Success status
     """
     try:
+        logger.info(f"[UPGRADE START] user_id={user_id}, plan_type={plan_type}, subscription_id={subscription_id}")
+
         if plan_type not in PLANS:
             logger.error(f"Invalid plan type: {plan_type}")
             return False
@@ -724,42 +726,70 @@ def upgrade_subscription(user_id: str, plan_type: str, subscription_id: str = No
             'updated_at': SERVER_TIMESTAMP
         }
 
+        logger.info(f"[UPGRADE] Prepared subscription data")
+
         # Check if subscription already exists
-        sub_ref = db.collection('subscriptions').document(user_id)
-        sub_doc = sub_ref.get()
+        try:
+            logger.info(f"[UPGRADE] Getting collection reference...")
+            sub_ref = db.collection('subscriptions').document(user_id)
+            logger.info(f"[UPGRADE] Fetching existing document...")
+            sub_doc = sub_ref.get()
+            logger.info(f"[UPGRADE] Document exists: {sub_doc.exists}")
+        except Exception as e:
+            logger.error(f"[UPGRADE] Error getting subscription document: {e}", exc_info=True)
+            raise
 
         if sub_doc.exists:
             # Update existing subscription
-            existing_tokens = sub_doc.to_dict().get('ai_tokens_balance', 0)
-            subscription_data['ai_tokens_balance'] = existing_tokens  # Preserve tokens
-            sub_ref.update(subscription_data)
+            try:
+                logger.info(f"[UPGRADE] Updating existing subscription...")
+                existing_tokens = sub_doc.to_dict().get('ai_tokens_balance', 0)
+                subscription_data['ai_tokens_balance'] = existing_tokens  # Preserve tokens
+                sub_ref.update(subscription_data)
+                logger.info(f"[UPGRADE] Successfully updated subscription")
+            except Exception as e:
+                logger.error(f"[UPGRADE] Error updating subscription: {e}", exc_info=True)
+                raise
         else:
             # Create new subscription
-            subscription_data['created_at'] = SERVER_TIMESTAMP
-            subscription_data['ai_tokens_balance'] = 0
-            subscription_data['ai_tokens_purchased_total'] = 0
-            sub_ref.set(subscription_data)
+            try:
+                logger.info(f"[UPGRADE] Creating new subscription...")
+                subscription_data['created_at'] = SERVER_TIMESTAMP
+                subscription_data['ai_tokens_balance'] = 0
+                subscription_data['ai_tokens_purchased_total'] = 0
+                sub_ref.set(subscription_data)
+                logger.info(f"[UPGRADE] Successfully created subscription")
+            except Exception as e:
+                logger.error(f"[UPGRADE] Error creating subscription: {e}", exc_info=True)
+                raise
 
         # Log transaction
         if transaction_data:
-            db.collection('payment_transactions').add({
-                'user_id': user_id,
-                'type': 'subscription',
-                'plan_type': plan_type,
-                'amount': plan['price'],
-                'currency': plan['currency'],
-                'gateway_payment_id': payment_id,
-                'subscription_id': subscription_id,
-                'status': 'success',
-                'created_at': SERVER_TIMESTAMP,
-                **transaction_data
-            })
+            try:
+                logger.info(f"[UPGRADE] Logging payment transaction...")
+                db.collection('payment_transactions').add({
+                    'user_id': user_id,
+                    'type': 'subscription',
+                    'plan_type': plan_type,
+                    'amount': plan['price'],
+                    'currency': plan['currency'],
+                    'gateway_payment_id': payment_id,
+                    'subscription_id': subscription_id,
+                    'status': 'success',
+                    'created_at': SERVER_TIMESTAMP,
+                    **transaction_data
+                })
+                logger.info(f"[UPGRADE] Transaction logged successfully")
+            except Exception as e:
+                logger.error(f"[UPGRADE] Error logging transaction: {e}", exc_info=True)
+                # Don't raise - subscription is already created/updated
+                logger.warning(f"[UPGRADE] Transaction logging failed but subscription was updated")
 
-        logger.info(f"Upgraded {user_id} to {plan_type} plan")
+        logger.info(f"[UPGRADE SUCCESS] {user_id} upgraded to {plan_type} plan")
         return True
 
     except Exception as e:
-        logger.error(f"Error upgrading subscription for {user_id}: {e}", exc_info=True)
+        logger.error(f"[UPGRADE FAILED] Error upgrading subscription for {user_id}: {e}", exc_info=True)
         return False
 
 
