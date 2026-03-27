@@ -759,7 +759,7 @@ def upgrade_subscription(user_id: str, plan_type: str, subscription_id: str = No
         return True
 
     except Exception as e:
-        logger.error(f"Error upgrading subscription for {user_id}: {e}")
+        logger.error(f"Error upgrading subscription for {user_id}: {e}", exc_info=True)
         return False
 
 
