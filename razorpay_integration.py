@@ -139,25 +139,27 @@ def verify_subscription_payment(razorpay_payment_id: str, razorpay_subscription_
         bool: True if signature is valid
     """
     if not razorpay_client:
+        logger.error("Razorpay client not initialized")
         return False
 
     try:
-        # Verify signature
-        params = {
-            'razorpay_payment_id': razorpay_payment_id,
-            'razorpay_subscription_id': razorpay_subscription_id,
-            'razorpay_signature': razorpay_signature
-        }
+        # For subscription payments, verify using subscription_id + payment_id
+        # Razorpay generates signature as: hmac_sha256(payment_id + "|" + subscription_id, secret)
+        generated_signature = hmac.new(
+            RAZORPAY_KEY_SECRET.encode('utf-8'),
+            f"{razorpay_payment_id}|{razorpay_subscription_id}".encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
 
-        razorpay_client.utility.verify_payment_signature(params)
-        logger.info(f"Verified subscription payment: {razorpay_payment_id}")
-        return True
+        if generated_signature == razorpay_signature:
+            logger.info(f"Verified subscription payment: {razorpay_payment_id}")
+            return True
+        else:
+            logger.error("Signature verification failed: Signature mismatch")
+            return False
 
-    except razorpay.errors.SignatureVerificationError as e:
-        logger.error(f"Signature verification failed: {e}")
-        return False
     except Exception as e:
-        logger.error(f"Error verifying payment: {e}")
+        logger.error(f"Error verifying payment: {str(e)}")
         return False
 
 
