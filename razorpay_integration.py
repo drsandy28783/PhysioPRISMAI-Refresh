@@ -95,9 +95,9 @@ def create_subscription_checkout(user_id: str, plan_type: str, user_name: str = 
             'plan_id': razorpay_plan_id,
             'customer_notify': 1,
             'quantity': 1,
-            'total_count': 9999,  # Very high number for indefinite subscription (renews until cancelled)
-            # 9999 cycles = 833 years for monthly - effectively indefinite
-            # This is standard for SaaS products - customer can cancel anytime
+            'total_count': 1200,  # Maximum allowed by Razorpay (100 years for monthly plans)
+            # Razorpay maximum is 1200 cycles = 100 years for monthly - effectively indefinite
+            # Customer can cancel anytime before that
             'notes': {
                 'user_id': user_id,
                 'plan_type': plan_type
