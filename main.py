@@ -5228,7 +5228,23 @@ def register_with_institute():
 
     # GET method: show list of institutes (unique from admin users)
     admins = db.collection('users').where('is_admin', '==', 1).stream()
-    institutes = list({admin.to_dict().get('institute') for admin in admins})
+
+    # Collect institutes with counts
+    institute_dict = {}
+    for admin in admins:
+        admin_data = admin.to_dict()
+        institute = admin_data.get('institute')
+        if institute:  # Filter out None/empty values
+            if institute in institute_dict:
+                institute_dict[institute] += 1
+            else:
+                institute_dict[institute] = 1
+
+    # Sort alphabetically and create list of dicts with name and count
+    institutes = [
+        {'name': inst, 'count': count}
+        for inst, count in sorted(institute_dict.items(), key=lambda x: x[0].lower())
+    ]
 
     return render_template('register_with_institute.html', institutes=institutes)
     
