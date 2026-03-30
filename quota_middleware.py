@@ -78,10 +78,13 @@ def require_patient_quota(f):
             else:
                 response, status_code = result, 200
 
-            # Only deduct if request was successful (2xx status)
-            if 200 <= status_code < 300:
+            # Only deduct if:
+            # 1. Request was successful (2xx status)
+            # 2. It was a POST request (actual creation, not just viewing the form)
+            from flask import request
+            if request.method == 'POST' and 200 <= status_code < 300:
                 deduct_patient_usage(user_id)
-                logger.info(f"Deducted patient quota for {user_id}")
+                logger.info(f"Deducted patient quota for {user_id} after successful patient creation")
 
             return result
 
@@ -140,9 +143,12 @@ def require_ai_quota(f):
             else:
                 response, status_code = result, 200
 
-            # Only deduct if request was successful (2xx status)
+            # Only deduct if:
+            # 1. Request was successful (2xx status)
+            # 2. It was a POST request (AI suggestions are always POST)
             # Also check if it was a cache hit (no deduction needed)
-            if 200 <= status_code < 300:
+            from flask import request
+            if request.method == 'POST' and 200 <= status_code < 300:
                 # Check if response indicates cache hit
                 cache_hit = False
                 if hasattr(g, 'cache_hit'):
