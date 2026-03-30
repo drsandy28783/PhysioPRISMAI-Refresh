@@ -882,6 +882,8 @@ csp = {
         "'self'",
         # NOTE: 'unsafe-inline' removed - we use nonces instead for better security
         'https://www.gstatic.com',  # Firebase
+        'https://apis.google.com',  # Google API for Firebase Auth
+        'https://accounts.google.com',  # Google Sign-In
         'https://www.googletagmanager.com',  # Google Analytics
         'https://checkout.razorpay.com',  # Razorpay payment checkout
         'https://cdn.jsdelivr.net',  # Chart.js CDN
