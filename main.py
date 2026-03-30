@@ -5434,7 +5434,7 @@ def export_audit_logs():
 
 
 @app.route('/add_patient', methods=['GET', 'POST'])
-@login_required()
+@require_auth
 @require_patient_quota
 def add_patient():
     if request.method == 'POST':
