@@ -112,6 +112,15 @@
         waitForAuth().then(async user => {
             if (user) {
                 console.log('User already signed in with Firebase, verifying session...');
+
+                // Clear any stale error messages from previous sessions
+                hideMessages();
+
+                // Show loading message
+                successDiv.textContent = 'Already logged in, redirecting...';
+                successDiv.style.display = 'block';
+                loginButton.disabled = true;
+
                 // Verify backend session is valid
                 try {
                     const idToken = await user.getIdToken();
@@ -131,10 +140,14 @@
                     } else {
                         // Session not valid, show login form
                         console.log('Session verification failed, showing login form');
+                        hideMessages();
+                        loginButton.disabled = false;
                     }
                 } catch (error) {
                     console.error('Error verifying session:', error);
                     // Show login form on error
+                    hideMessages();
+                    loginButton.disabled = false;
                 }
             }
         });

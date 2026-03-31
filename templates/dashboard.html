@@ -357,7 +357,20 @@
       </div>
       {% endif %}
 
-      {% if analytics.usage_stats.ai_percent > 80 %}
+      {% if analytics.usage_stats.ai_percent >= 100 %}
+      <div class="alert-box" style="margin-top: 16px; background-color: #f8d7da; border-left-color: #dc3545; color: #721c24;">
+        <span style="font-size: 20px;">🚫</span>
+        <div>
+          <strong>AI Quota Exhausted:</strong> You've used all {{ analytics.usage_stats.ai_calls_limit }} AI calls for this month.
+          {% if analytics.usage_stats.get('tokens_balance', 0) == 0 %}
+          To continue using AI features,
+          <a href="{{ url_for('pricing') }}" style="color: #721c24; text-decoration: underline; font-weight: 700;">upgrade to a paid plan</a>
+          or
+          <a href="{{ url_for('pricing') }}" style="color: #721c24; text-decoration: underline; font-weight: 700;">purchase AI call packs</a>.
+          {% endif %}
+        </div>
+      </div>
+      {% elif analytics.usage_stats.ai_percent > 80 %}
       <div class="alert-box warning" style="margin-top: 16px;">
         <span style="font-size: 20px;">⚠️</span>
         <div>
@@ -366,6 +379,18 @@
           or
           <a href="{{ url_for('pricing') }}" style="color: #856404; text-decoration: underline; font-weight: 600;">purchase AI call packs</a>
           to continue using AI features.
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Patient Quota Exhaustion Alert -->
+      {% if analytics.usage_stats.patients_limit != -1 and analytics.usage_stats.patients_percent >= 100 %}
+      <div class="alert-box" style="margin-top: 16px; background-color: #f8d7da; border-left-color: #dc3545; color: #721c24;">
+        <span style="font-size: 20px;">🚫</span>
+        <div>
+          <strong>Patient Quota Exhausted:</strong> You've reached your monthly limit of {{ analytics.usage_stats.patients_limit }} patients.
+          To add more patients,
+          <a href="{{ url_for('pricing') }}" style="color: #721c24; text-decoration: underline; font-weight: 700;">upgrade to a paid plan with unlimited patients</a>.
         </div>
       </div>
       {% endif %}

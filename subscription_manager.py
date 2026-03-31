@@ -252,6 +252,42 @@ def get_user_subscription(user_id: str) -> Dict:
             subscription = sub_doc.to_dict()
             subscription['user_id'] = user_id
 
+            # DATA INTEGRITY FIX: Validate and correct free trial limits
+            # Some subscriptions may have incorrect limits (e.g., 250 instead of 25 AI calls)
+            # Skip super admin accounts (they have unlimited quotas intentionally)
+            is_super_admin = (user_id == 'drsandeep@physiologicprism.com' or
+                            subscription.get('ai_calls_limit') == -1)
+
+            if subscription.get('plan_type') == 'free_trial' and not is_super_admin:
+                needs_fix = False
+                fixes = {}
+
+                # Check AI calls limit
+                if subscription.get('ai_calls_limit') != FREE_TRIAL_AI_CALLS:
+                    logger.warning(f"Correcting ai_calls_limit for {user_id}: {subscription.get('ai_calls_limit')} -> {FREE_TRIAL_AI_CALLS}")
+                    fixes['ai_calls_limit'] = FREE_TRIAL_AI_CALLS
+                    needs_fix = True
+
+                # Check patients limit
+                if subscription.get('patients_limit') != FREE_TRIAL_PATIENTS:
+                    logger.warning(f"Correcting patients_limit for {user_id}: {subscription.get('patients_limit')} -> {FREE_TRIAL_PATIENTS}")
+                    fixes['patients_limit'] = FREE_TRIAL_PATIENTS
+                    needs_fix = True
+
+                # Check voice minutes limit
+                if subscription.get('voice_minutes_limit') != FREE_TRIAL_VOICE_MINUTES:
+                    logger.warning(f"Correcting voice_minutes_limit for {user_id}: {subscription.get('voice_minutes_limit')} -> {FREE_TRIAL_VOICE_MINUTES}")
+                    fixes['voice_minutes_limit'] = FREE_TRIAL_VOICE_MINUTES
+                    needs_fix = True
+
+                # Apply fixes if needed
+                if needs_fix:
+                    fixes['updated_at'] = SERVER_TIMESTAMP
+                    db.collection('subscriptions').document(user_id).update(fixes)
+                    # Update local subscription object
+                    subscription.update(fixes)
+                    logger.info(f"Fixed trial subscription limits for {user_id}")
+
             # Check if subscription is expired
             if subscription.get('status') == 'active':
                 if subscription.get('plan_type') == 'free_trial':
@@ -468,9 +504,60 @@ def check_ai_limit(user_id: str) -> Tuple[bool, bool, str]:
         return False, False, "Error checking AI quota. Please try again."
 
 
-def deduct_patient_usage(user_id: str) -> bool:
+def increment_patient_usage_atomic(user_id: str) -> Tuple[bool, int, str]:
     """
-    Deduct one patient from user's quota.
+    Atomically increment patient usage counter and check limit.
+    Uses pessimistic locking to prevent race conditions.
+
+    Args:
+        user_id: User's email or Firebase UID
+
+    Returns:
+        tuple: (success: bool, new_count: int, message: str)
+    """
+    try:
+        sub_ref = db.collection('subscriptions').document(user_id)
+        sub_doc = sub_ref.get()
+
+        if not sub_doc.exists:
+            return False, 0, "Subscription not found"
+
+        subscription = sub_doc.to_dict()
+        current_count = subscription.get('patients_created_this_month', 0)
+        limit = subscription.get('patients_limit', 0)
+
+        # Calculate new count
+        new_count = current_count + 1
+
+        # Check limit AFTER increment (pessimistic locking)
+        if limit != -1 and new_count > limit:
+            return False, current_count, f"Patient limit reached ({limit}). Cannot create more patients this month."
+
+        # Atomically increment
+        sub_ref.update({
+            'patients_created_this_month': new_count,
+            'updated_at': SERVER_TIMESTAMP
+        })
+
+        logger.info(f"Incremented patient usage for {user_id}: {current_count} → {new_count}")
+
+        # Check and send quota notifications
+        try:
+            check_and_notify_quota(user_id, 'patients')
+        except Exception as e:
+            logger.warning(f"Failed to check quota notifications: {e}")
+
+        return True, new_count, ""
+
+    except Exception as e:
+        logger.error(f"Error incrementing patient usage for {user_id}: {e}")
+        return False, 0, "Error updating quota"
+
+
+def decrement_patient_usage_atomic(user_id: str) -> bool:
+    """
+    Atomically decrement patient usage counter (rollback).
+    Used when patient creation fails after quota was deducted.
 
     Args:
         user_id: User's email or Firebase UID
@@ -486,27 +573,39 @@ def deduct_patient_usage(user_id: str) -> bool:
             return False
 
         subscription = sub_doc.to_dict()
-        patients_created = subscription.get('patients_created_this_month', 0)
+        current_count = subscription.get('patients_created_this_month', 0)
 
-        # Update count
+        # Decrement (but not below 0)
+        new_count = max(0, current_count - 1)
+
         sub_ref.update({
-            'patients_created_this_month': patients_created + 1,
+            'patients_created_this_month': new_count,
             'updated_at': SERVER_TIMESTAMP
         })
 
-        logger.info(f"Deducted patient usage for {user_id}: {patients_created + 1}")
-
-        # Check and send quota notifications
-        try:
-            check_and_notify_quota(user_id, 'patients')
-        except Exception as e:
-            logger.warning(f"Failed to check quota notifications: {e}")
-
+        logger.info(f"Rolled back patient usage for {user_id}: {current_count} → {new_count}")
         return True
 
     except Exception as e:
-        logger.error(f"Error deducting patient usage for {user_id}: {e}")
+        logger.error(f"Error rolling back patient usage for {user_id}: {e}")
         return False
+
+
+def deduct_patient_usage(user_id: str) -> bool:
+    """
+    DEPRECATED: Use increment_patient_usage_atomic() instead.
+    Kept for backward compatibility.
+
+    Deduct one patient from user's quota.
+
+    Args:
+        user_id: User's email or Firebase UID
+
+    Returns:
+        bool: Success status
+    """
+    success, _, _ = increment_patient_usage_atomic(user_id)
+    return success
 
 
 def deduct_ai_usage(user_id: str, use_token: bool = False, cache_hit: bool = False) -> bool:

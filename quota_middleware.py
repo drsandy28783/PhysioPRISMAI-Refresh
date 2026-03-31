@@ -26,7 +26,9 @@ from subscription_manager import (
     deduct_patient_usage,
     deduct_ai_usage,
     deduct_voice_usage,
-    get_user_subscription
+    get_user_subscription,
+    increment_patient_usage_atomic,
+    decrement_patient_usage_atomic
 )
 
 logger = logging.getLogger("app.quota_middleware")
@@ -35,6 +37,7 @@ logger = logging.getLogger("app.quota_middleware")
 def require_patient_quota(f):
     """
     Decorator to check patient creation quota before executing function.
+    Uses atomic increment to prevent race conditions.
 
     Usage:
         @app.route('/add_patient')
@@ -56,37 +59,47 @@ def require_patient_quota(f):
             if not user_id:
                 return jsonify({'error': 'User not authenticated'}), 401
 
-            # Check patient quota
-            can_create, message = check_patient_limit(user_id)
+            # Only enforce quota for POST requests (actual creation, not viewing form)
+            from flask import request
+            if request.method != 'POST':
+                # GET request - just render form, no quota check
+                return f(*args, **kwargs)
 
-            if not can_create:
-                logger.warning(f"Patient quota exceeded for {user_id}: {message}")
+            # ATOMIC INCREMENT: Increment counter FIRST (pessimistic locking)
+            # This prevents race conditions where multiple requests check at same time
+            success, new_count, error_message = increment_patient_usage_atomic(user_id)
+
+            if not success:
+                logger.warning(f"Patient quota check failed for {user_id}: {error_message}")
                 return jsonify({
                     'error': 'Quota exceeded',
-                    'message': message,
+                    'message': error_message,
                     'quota_type': 'patients',
                     'action_required': 'upgrade'
                 }), 403
 
-            # Deduct usage after successful patient creation
-            # Store original function result
-            result = f(*args, **kwargs)
+            # Quota incremented successfully - proceed with patient creation
+            try:
+                result = f(*args, **kwargs)
 
-            # Check if the response indicates success
-            if isinstance(result, tuple):
-                response, status_code = result[0], result[1] if len(result) > 1 else 200
-            else:
-                response, status_code = result, 200
+                # Check if the response indicates success
+                if isinstance(result, tuple):
+                    response, status_code = result[0], result[1] if len(result) > 1 else 200
+                else:
+                    response, status_code = result, 200
 
-            # Only deduct if:
-            # 1. Request was successful (2xx status)
-            # 2. It was a POST request (actual creation, not just viewing the form)
-            from flask import request
-            if request.method == 'POST' and 200 <= status_code < 300:
-                deduct_patient_usage(user_id)
-                logger.info(f"Deducted patient quota for {user_id} after successful patient creation")
+                # If creation failed (4xx or 5xx status), rollback the quota
+                if status_code >= 400:
+                    logger.warning(f"Patient creation failed (status {status_code}), rolling back quota for {user_id}")
+                    decrement_patient_usage_atomic(user_id)
 
-            return result
+                return result
+
+            except Exception as e:
+                # Patient creation failed - rollback the quota increment
+                logger.error(f"Patient creation exception for {user_id}, rolling back quota: {e}")
+                decrement_patient_usage_atomic(user_id)
+                raise
 
         except Exception as e:
             logger.error(f"Error in patient quota middleware: {e}")
