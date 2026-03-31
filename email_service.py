@@ -19,7 +19,7 @@ resend.api_key = os.environ.get('RESEND_API_KEY', '')
 FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@physiologicprism.com')
 SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@physiologicprism.com')
 SUPER_ADMIN_EMAIL = os.environ.get('SUPER_ADMIN_EMAIL', 'drsandeep@physiologicprism.com')
-SUPER_ADMIN_NAME = os.environ.get('SUPER_ADMIN_NAME', 'Dr Sandeep Rao')
+SUPER_ADMIN_NAME = os.environ.get('SUPER_ADMIN_NAME', 'Dr Roopa Rao')
 APP_NAME = os.environ.get('APP_NAME', 'PhysiologicPRISM')
 APP_URL = os.environ.get('APP_URL', 'https://physiologicprism.com')
 

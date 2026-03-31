@@ -119,10 +119,10 @@ The question isn't whether AI belongs in physiotherapy practice. It's whether yo
 
 ---
 
-*Dr. Sandeep Rao is the founder of PhysiologicPRISM and creator of the PRISM Clinical Reasoning Framework. [Learn more about our platform](/pricing) or [contact us](mailto:support@physiologicprism.com) for a personalized demo.*
+*Dr Roopa Rao is the founder of PhysiologicPRISM and creator of the PRISM Clinical Reasoning Framework. [Learn more about our platform](/pricing) or [contact us](mailto:support@physiologicprism.com) for a personalized demo.*
             ''',
             'excerpt': 'Discover how AI-powered clinical decision support systems are transforming physiotherapy practice — from smarter assessments to evidence-based treatment suggestions.',
-            'author': 'Dr. Sandeep Rao',
+            'author': 'Dr Roopa Rao',
             'tags': ['Artificial Intelligence', 'AI', 'Clinical Decision Support', 'Innovation', 'Evidence-Based Practice'],
             'status': 'published',
             'meta_description': 'Discover how AI-powered clinical decision support systems are transforming physiotherapy practice — from smarter assessments to evidence-based treatment suggestions.',

@@ -205,7 +205,7 @@ Experience the difference AI-powered history taking makes:
 *PhysiologicPRISM: Designed by physiotherapists, for physiotherapists. Our AI enhances your clinical expertise without replacing professional judgment.*
                 ''',
                 'excerpt': 'Discover how AI-powered patient history taking in PhysiologicPRISM ensures comprehensive, consistent assessments while reducing documentation time by 50%.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Patient History', 'AI-Powered', 'Clinical Assessment', 'Documentation', 'Red Flags', 'Subjective Examination'],
                 'status': 'published',
                 'meta_description': 'Transform patient history taking with AI. PhysiologicPRISM generates condition-specific questions, screens for red flags, and ensures comprehensive assessment in half the time.',
@@ -397,7 +397,7 @@ Experience smarter clinical reasoning:
 *PhysiologicPRISM: Enhancing clinical expertise with intelligent assistance. Your judgment, amplified.*
                 ''',
                 'excerpt': 'Master pathophysiological analysis with AI assistance. PhysiologicPRISM identifies pain sources, provides differential reasoning, and screens for red flags in minutes.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Pathophysiology', 'Clinical Reasoning', 'Pain Analysis', 'AI-Powered', 'Differential Diagnosis'],
                 'status': 'published',
                 'meta_description': 'AI-powered pathophysiological mechanism analysis for physiotherapy. Identify pain sources, differentiate mechanisms, and document clinical reasoning in minutes.',
@@ -631,7 +631,7 @@ Experience the confidence of AI-assisted diagnosis:
 *PhysiologicPRISM: Professional-grade clinical reasoning, accessible to every physiotherapist.*
                 ''',
                 'excerpt': 'Formulate confident provisional diagnoses with AI assistance. PhysiologicPRISM synthesizes assessment data, provides probability assessments, and documents comprehensive clinical reasoning.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Provisional Diagnosis', 'Clinical Reasoning', 'AI-Powered', 'Differential Diagnosis', 'Clinical Decision-Making'],
                 'status': 'published',
                 'meta_description': 'AI-assisted provisional diagnosis for physiotherapy. Synthesize assessment findings, evaluate differential diagnoses, and document clinical reasoning with confidence.',
@@ -893,7 +893,7 @@ Experience evidence-based treatment planning:
 *PhysiologicPRISM: Evidence-based practice, simplified. Your expertise, amplified.*
                 ''',
                 'excerpt': 'Create comprehensive, evidence-based treatment plans in minutes. PhysiologicPRISM AI suggests interventions, provides clinical reasoning, and cites supporting research.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Treatment Planning', 'Evidence-Based Practice', 'AI-Powered', 'Clinical Guidelines', 'Interventions'],
                 'status': 'published',
                 'meta_description': 'AI-powered treatment planning for physiotherapy. Generate evidence-based intervention plans with clinical reasoning and research references in minutes.',

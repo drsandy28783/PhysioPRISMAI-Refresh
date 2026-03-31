@@ -83,7 +83,7 @@ PhysiologicPRISM supports clinical reasoning through:
 Strong clinical reasoning skills develop over time through practice, reflection, and continuous learning. PhysiologicPRISM is designed to support this process by providing structure and evidence-based guidance.
                 ''',
                 'excerpt': 'Learn about the clinical reasoning process in physiotherapy and how structured documentation supports better clinical decision-making.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Clinical Reasoning', 'Evidence-Based Practice', 'Assessment'],
                 'status': 'published',
                 'meta_description': 'Clinical reasoning framework for physiotherapists - learn how to make better clinical decisions through structured assessment and evidence-based practice.',
@@ -153,7 +153,7 @@ PhysiologicPRISM structures history taking to ensure:
 Mastering history taking is essential for every physiotherapist. Structured documentation tools like PhysiologicPRISM help ensure comprehensive, consistent patient assessment.
                 ''',
                 'excerpt': 'Master the art of patient history taking with this comprehensive guide for physiotherapists.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Assessment', 'Patient History', 'Documentation'],
                 'status': 'published',
                 'meta_description': 'Learn comprehensive history taking techniques for physiotherapy practice - structured approach to patient assessment and documentation.',
@@ -247,7 +247,7 @@ PhysiologicPRISM enhances objective assessment through:
 Thorough objective assessment is essential for evidence-based physiotherapy practice. Systematic documentation ensures nothing is missed and creates a strong foundation for treatment planning.
                 ''',
                 'excerpt': 'A comprehensive guide to conducting systematic objective assessments in physiotherapy practice.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Assessment', 'Objective Examination', 'Clinical Skills'],
                 'status': 'published',
                 'meta_description': 'Master objective assessment techniques in physiotherapy - systematic approach to physical examination and functional testing.',
@@ -371,7 +371,7 @@ PhysiologicPRISM supports evidence-based practice through:
 Evidence-based treatment planning ensures optimal patient outcomes by combining the best available evidence with clinical expertise and patient preferences.
                 ''',
                 'excerpt': 'Learn how to create effective, evidence-based treatment plans that integrate research, clinical expertise, and patient preferences.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Treatment Planning', 'Evidence-Based Practice', 'Clinical Guidelines'],
                 'status': 'published',
                 'meta_description': 'Evidence-based treatment planning in physiotherapy - integrate research evidence, clinical expertise, and patient preferences for optimal outcomes.',
@@ -516,7 +516,7 @@ PhysiologicPRISM enhances documentation through:
 Excellent documentation is a cornerstone of professional physiotherapy practice. Digital tools like PhysiologicPRISM make it easier to maintain high-quality records while saving time.
                 ''',
                 'excerpt': 'Essential guide to digital documentation for physiotherapists - best practices for accurate, complete, and HIPAA-compliant clinical records.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Documentation', 'HIPAA', 'Best Practices', 'EMR'],
                 'status': 'published',
                 'meta_description': 'Digital documentation best practices for physiotherapists - learn how to create accurate, complete, and HIPAA-compliant clinical records.',

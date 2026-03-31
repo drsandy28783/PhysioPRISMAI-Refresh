@@ -10413,7 +10413,7 @@ PhysiologicPRISM supports clinical reasoning through:
 Strong clinical reasoning skills develop over time through practice, reflection, and continuous learning. PhysiologicPRISM is designed to support this process by providing structure and evidence-based guidance.
                 ''',
                 'excerpt': 'Learn about the clinical reasoning process in physiotherapy and how structured documentation supports better clinical decision-making.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Clinical Reasoning', 'Evidence-Based Practice', 'Assessment'],
                 'status': 'published',
                 'meta_description': 'Clinical reasoning framework for physiotherapists - learn how to make better clinical decisions through structured assessment and evidence-based practice.',
@@ -10483,7 +10483,7 @@ PhysiologicPRISM structures history taking to ensure:
 Mastering history taking is essential for every physiotherapist. Structured documentation tools like PhysiologicPRISM help ensure comprehensive, consistent patient assessment.
                 ''',
                 'excerpt': 'Master the art of patient history taking with this comprehensive guide for physiotherapists.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Assessment', 'Patient History', 'Documentation'],
                 'status': 'published',
                 'meta_description': 'Learn comprehensive history taking techniques for physiotherapy practice - structured approach to patient assessment and documentation.',
@@ -10576,7 +10576,7 @@ Objective findings should be:
 Systematic objective assessment provides the evidence base for clinical reasoning. PhysiologicPRISM supports comprehensive, efficient documentation of objective findings.
                 ''',
                 'excerpt': 'A systematic guide to objective assessment in physiotherapy practice with evidence-based measurement tools.',
-                'author': 'Dr. Sandeep Rao',
+                'author': 'Dr Roopa Rao',
                 'tags': ['Objective Assessment', 'Clinical Measurement', 'Outcome Measures'],
                 'status': 'published',
                 'meta_description': 'Comprehensive guide to objective assessment for physiotherapists - learn systematic examination techniques and outcome measures.',

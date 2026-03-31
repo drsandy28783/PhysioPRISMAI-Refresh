@@ -179,7 +179,7 @@ Ready to see how AI can enhance your goal-setting process? Experience the differ
 *PhysiologicPRISM is designed by physiotherapists, for physiotherapists. Our AI assistance is trained on evidence-based clinical guidelines and always keeps you in control of clinical decisions.*
             ''',
             'excerpt': 'Discover how AI-powered SMART goal setting in PhysiologicPRISM helps physiotherapists create comprehensive, ICF-aligned patient goals in minutes while improving treatment outcomes.',
-            'author': 'Dr. Sandeep Rao',
+            'author': 'Dr Roopa Rao',
             'tags': ['SMART Goals', 'AI-Powered', 'Treatment Planning', 'ICF Framework', 'Patient-Centered Care', 'Clinical Documentation', 'Evidence-Based Practice'],
             'status': 'published',
             'meta_description': 'Transform physiotherapy goal setting with AI. Learn how PhysiologicPRISM creates ICF-aligned, patient-centered SMART goals in minutes, saving time while improving outcomes.',
