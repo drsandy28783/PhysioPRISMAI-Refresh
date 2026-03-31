@@ -508,12 +508,14 @@
         {% endif %}
     </div>
 
-    <!-- Free Trial Info -->
+    <!-- Free Trial Info - Only show to non-logged-in users -->
+    {% if not session.get('user_id') %}
     <div style="text-align: center; margin: 40px auto; max-width: 600px; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
         <h3 style="margin: 0 0 10px 0; font-size: 1.5em;">🎁 Start Your Free Trial</h3>
         <p style="margin: 0; font-size: 1.1em;">14 days free • 5 patients • 25 AI calls • All features</p>
         <p style="margin: 10px 0 0 0; font-size: 0.9em; opacity: 0.9;">No credit card required</p>
     </div>
+    {% endif %}
 
     <!-- Solo Professional Plan -->
     <div style="text-align: center; margin: 50px 0 30px 0;">
