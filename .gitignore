@@ -187,5 +187,12 @@ FREE_TRIAL_IMPLEMENTATION.md
 # Documentation and utilities archive (not for deployment)
 ../_Documentation_And_Utilities/
 
-# Marketing documentation (local working files)
-docs/
+# Marketing documentation (local working files) - but allow critical technical docs
+docs/*.pdf
+docs/automated_video_creation_guide.md
+docs/investor-pitch-deck.md
+docs/invideo_prompts_for_screenshots.md
+docs/link_in_bio_strategy.md
+docs/short_form_video_scripts_per_screen.md
+docs/social_media_captions_and_hashtags.md
+docs/social_media_content_all_blogs.md
