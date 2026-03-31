@@ -886,6 +886,7 @@ csp = {
         'https://accounts.google.com',  # Google Sign-In
         'https://www.googletagmanager.com',  # Google Analytics
         'https://checkout.razorpay.com',  # Razorpay payment checkout
+        'https://cdn.razorpay.com',  # Razorpay risk detection and additional scripts
         'https://cdn.jsdelivr.net',  # Chart.js CDN
     ],
     'style-src': [
