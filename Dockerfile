@@ -12,7 +12,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Cache buster - change this value to force rebuild
-ARG CACHE_BUST=2026-03-26-voice-typing-ffmpeg-v1.2.0
+ARG CACHE_BUST=2026-03-30-quota-fixes-launch-ready-v2.0.0
 
 # Copy application files explicitly (avoids permission issues)
 COPY templates ./templates
