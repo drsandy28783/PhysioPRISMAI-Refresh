@@ -37,13 +37,13 @@ def update_blog_authors():
 
             old_authors.add(current_author)
 
-            # Check if author needs to be updated
-            if current_author in ['Dr. Sandeep Rao', 'Dr Sandeep Rao']:
+            # Check if author needs to be updated (any variation of Sandeep)
+            if 'sandeep' in current_author.lower():
                 # Update the author
                 post_data['author'] = 'Dr Roopa Rao'
                 blog_collection.document(post_id).set(post_data)
-                print(f"✓ UPDATED: {title}")
-                print(f"  Changed: '{current_author}' → 'Dr Roopa Rao'")
+                print(f"[OK] UPDATED: {title}")
+                print(f"     Changed: '{current_author}' -> 'Dr Roopa Rao'")
                 updated_count += 1
             else:
                 print(f"  OK (no change needed): {title} (author: {current_author})")
@@ -58,12 +58,12 @@ def update_blog_authors():
         print(f"{'='*60}")
 
         if updated_count > 0:
-            print(f"\n✓ Successfully updated {updated_count} blog post(s) author to 'Dr Roopa Rao'!")
+            print(f"\n[SUCCESS] Updated {updated_count} blog post(s) author to 'Dr Roopa Rao'!")
         else:
-            print("\n✓ All blog posts already have the correct author name!")
+            print("\n[SUCCESS] All blog posts already have the correct author name!")
 
     except Exception as e:
-        print(f"\n✗ Error updating blog post authors: {e}")
+        print(f"\n[ERROR] Error updating blog post authors: {e}")
         import traceback
         traceback.print_exc()
 
