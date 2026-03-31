@@ -135,15 +135,15 @@ What typically takes 15-20 minutes per patient can now be accomplished in 3-5 mi
 7. **Establish Timeframes**: Set realistic target dates
 8. **Save and Continue**: Move on to [treatment planning](/blog/evidence-based-treatment-planning) with clear objectives
 
-## Real-World Impact
+## How This Can Help Your Practice
 
-Physiotherapists using PhysiologicPRISM's AI-powered goal setting report:
+PhysiologicPRISM's AI-powered goal setting can:
 
-- **70% reduction** in time spent on goal documentation
-- **Improved patient engagement** through more personalized, meaningful goals
-- **Better treatment outcomes** from clearer, more specific objectives
-- **Enhanced insurance compliance** with comprehensive, well-documented goals
-- **Reduced clinical stress** from streamlined documentation
+- Reduce time spent on goal documentation
+- Support more personalized, meaningful goals for patient engagement
+- Help create clearer, more specific treatment objectives
+- Provide comprehensive, well-documented goals for insurance compliance
+- Streamline your clinical documentation workflow
 
 ## Evidence-Based Practice Integration
 

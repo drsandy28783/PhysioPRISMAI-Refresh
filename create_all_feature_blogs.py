@@ -157,15 +157,15 @@ The history flows naturally into [pathophysiological mechanism analysis](/blog/p
 
 All information auto-saves, preventing data loss if interrupted.
 
-## Real-World Impact
+## How This Can Help Your Practice
 
-Physiotherapists using PhysiologicPRISM's AI-powered history taking report:
+PhysiologicPRISM's AI-powered history taking can:
 
-- **50% reduction** in history-taking time
-- **Zero missed red flags** through systematic AI prompts
-- **Improved patient satisfaction** from better eye contact and engagement
-- **Enhanced clinical reasoning** from more comprehensive data
-- **Better treatment outcomes** from thorough initial assessment
+- Save valuable time during patient assessments
+- Help ensure comprehensive red flag screening through systematic prompts
+- Allow more eye contact and engagement with patients
+- Support thorough data collection for clinical reasoning
+- Provide a strong foundation for treatment planning
 
 ## Integration with Complete Assessment
 
@@ -352,15 +352,15 @@ Pathophysiological analysis sits at the heart of the assessment process:
 - Informs [provisional diagnosis](/blog/ai-provisional-diagnosis)
 - Directs [treatment selection](/blog/ai-treatment-planning)
 
-## Real-World Clinical Impact
+## How This Can Help Your Practice
 
-Physiotherapists using AI-powered pathophysiological analysis report:
+PhysiologicPRISM's AI-powered pathophysiological analysis can:
 
-- **65% reduction** in analysis time
-- **Improved diagnostic accuracy** through systematic differential reasoning
-- **Enhanced clinical confidence** from evidence-based support
-- **Better patient education** using clear AI-generated explanations
-- **Stronger documentation** meeting professional standards
+- Streamline the analysis process
+- Support systematic differential reasoning
+- Provide evidence-based clinical support
+- Generate clear explanations for patient education
+- Help create documentation that meets professional standards
 
 ## The Complete Clinical Reasoning Journey
 
@@ -585,15 +585,15 @@ Provisional diagnosis synthesizes all previous assessment components:
 - Informs prognosis discussion
 - Establishes outcome measures
 
-## Real-World Impact
+## How This Can Help Your Practice
 
-Physiotherapists using AI-assisted provisional diagnosis report:
+PhysiologicPRISM's AI-assisted provisional diagnosis can:
 
-- **40% reduction** in diagnostic formulation time
-- **Increased diagnostic confidence** through systematic reasoning
-- **Improved documentation quality** meeting all professional standards
-- **Enhanced patient communication** using clear AI-generated explanations
-- **Reduced medico-legal risk** through comprehensive differential documentation
+- Streamline the diagnostic formulation process
+- Support systematic clinical reasoning
+- Help create documentation that meets professional standards
+- Provide clear explanations for patient communication
+- Support comprehensive differential documentation
 
 ## The Complete Assessment Journey
 
@@ -847,15 +847,15 @@ Treatment planning synthesizes the entire assessment process:
 - Plan modification based on response
 - Patient education and home program
 
-## Real-World Impact
+## How This Can Help Your Practice
 
-Physiotherapists using AI-powered treatment planning report:
+PhysiologicPRISM's AI-powered treatment planning can:
 
-- **75% reduction** in planning and documentation time
-- **Improved patient outcomes** through evidence-based interventions
-- **Enhanced clinical confidence** from research-supported decisions
-- **Better insurance approval rates** with detailed documentation
-- **Reduced clinical stress** from simplified workflow
+- Reduce time spent on planning and documentation
+- Support selection of evidence-based interventions
+- Provide research-supported decision making
+- Help create detailed documentation for insurance requirements
+- Simplify your clinical workflow
 
 ## The Complete Clinical Journey
 
