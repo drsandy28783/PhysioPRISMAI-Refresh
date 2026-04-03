@@ -174,6 +174,9 @@
               <td>{{ post.views or 0 }}</td>
               <td>
                 <div class="post-actions">
+                  {% if post.status == 'published' and post.slug %}
+                    <a href="{{ url_for('blog_detail', slug=post.slug) }}" class="btn btn-primary" target="_blank">View</a>
+                  {% endif %}
                   <a href="{{ url_for('blog_edit', post_id=post.id) }}" class="btn btn-secondary">Edit</a>
                   <button class="btn btn-danger delete-post-btn" data-post-id="{{ post.id }}" data-post-title="{{ post.title }}">Delete</button>
                 </div>

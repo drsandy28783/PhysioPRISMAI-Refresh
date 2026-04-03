@@ -176,6 +176,9 @@
              value="{{ post.slug if post else '' }}"
              placeholder="auto-generated-from-title">
       <div class="form-help">Leave blank to auto-generate from title. Use lowercase letters, numbers, and hyphens only.</div>
+      <div class="form-help" style="margin-top: 0.5rem; color: #7cb342; font-weight: 500;">
+        URL Preview: <span id="url-preview">{{ request.url_root }}blog/post/your-slug-here</span>
+      </div>
     </div>
 
     <div class="form-group">
@@ -228,4 +231,44 @@
     </div>
   </form>
 </div>
+
+<script nonce="{{ csp_nonce() }}">
+// Auto-generate slug from title
+const titleInput = document.getElementById('title');
+const slugInput = document.getElementById('slug');
+const urlPreview = document.getElementById('url-preview');
+const baseUrl = '{{ request.url_root }}blog/post/';
+
+function generateSlug(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove non-word chars except spaces and hyphens
+    .replace(/[\s_]+/g, '-')  // Replace spaces and underscores with hyphens
+    .replace(/--+/g, '-')     // Replace multiple hyphens with single hyphen
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+}
+
+function updateUrlPreview() {
+  const slug = slugInput.value || generateSlug(titleInput.value);
+  urlPreview.textContent = baseUrl + (slug || 'your-slug-here');
+}
+
+// Auto-generate slug when title changes (only if slug is empty)
+titleInput.addEventListener('input', function() {
+  if (!slugInput.value || !slugInput.dataset.userEdited) {
+    slugInput.value = generateSlug(this.value);
+    updateUrlPreview();
+  }
+});
+
+// Mark slug as user-edited if they manually change it
+slugInput.addEventListener('input', function() {
+  slugInput.dataset.userEdited = 'true';
+  updateUrlPreview();
+});
+
+// Initialize URL preview
+updateUrlPreview();
+</script>
 {% endblock %}
