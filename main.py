@@ -924,6 +924,7 @@ csp = {
     'frame-src': [
         "'self'",
         'https://accounts.google.com',  # Google Sign-In
+        'https://physiologicprism-474610.firebaseapp.com',  # Firebase Auth iframe
         'https://api.razorpay.com',  # Razorpay checkout iframe
         'https://checkout.razorpay.com',  # Razorpay checkout iframe
     ],
