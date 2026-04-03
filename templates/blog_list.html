@@ -208,7 +208,7 @@
   {% if posts %}
     <div class="blog-grid">
       {% for post in posts %}
-        <a href="{{ url_for('blog_post', post_id=post.id) }}" class="blog-card">
+        <a href="{{ url_for('blog_detail', slug=post.slug) }}" class="blog-card">
           <div class="blog-card-content">
             <h2 class="blog-card-title">{{ post.title }}</h2>
             <p class="blog-card-excerpt">{{ post.excerpt }}</p>

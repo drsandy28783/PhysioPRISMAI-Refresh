@@ -10025,7 +10025,7 @@ def blog_list():
 
 @app.route('/blog/<post_id>')
 def blog_post(post_id):
-    """Display individual blog post"""
+    """Redirect UUID-based URLs to slug-based URLs for better SEO"""
     try:
         post_ref = db.collection('blog_posts').document(post_id)
         post_doc = post_ref.get()
@@ -10035,6 +10035,12 @@ def blog_post(post_id):
             return redirect(url_for('blog_list'))
 
         post = post_doc.to_dict()
+
+        # Redirect to slug-based URL if slug exists (permanent redirect for SEO)
+        if post.get('slug'):
+            return redirect(url_for('blog_detail', slug=post['slug']), code=301)
+
+        # Fallback: show post directly if no slug exists (shouldn't happen)
         post['id'] = post_doc.id
 
         # Only show published posts (unless user is super admin)
