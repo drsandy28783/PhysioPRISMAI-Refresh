@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRISM Framework - PhysiologicPRISM</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #F8F9FA;
+        }
+
+        /* Hide app navbar on marketing pages */
+        body > .navbar {
+            display: none !important;
+        }
+
+        /* Marketing Navbar */
+        .homepage-navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .homepage-navbar .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: #1a5f5a;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .homepage-navbar .logo img {
+            height: 40px;
+            width: auto;
+        }
+
+        .homepage-navbar .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .homepage-navbar .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .homepage-navbar .nav-links a:hover {
+            color: #1a5f5a;
+        }
+
+        .homepage-navbar .cta-btn {
+            background: linear-gradient(135deg, #1a5f5a 0%, #2d8b7f 100%);
+            color: white !important;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .homepage-navbar .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(26, 95, 90, 0.3);
+        }
+
+        /* Hero Section */
+        .framework-hero {
+            background: linear-gradient(135deg, #1a5f5a 0%, #2d8b7f 100%);
+            padding: 5rem 2rem 4rem;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .framework-hero::before {
+            content: '©';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            font-size: 400px;
+            opacity: 0.05;
+            font-weight: bold;
+        }
+
+        .framework-hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .copyright-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+        }
+
+        .framework-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .framework-hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Content Section */
+        .framework-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #1a5f5a;
+        }
+
+        .feature-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #666;
+        }
+
+        /* Legal Box */
+        .legal-box {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #1a5f5a;
+        }
+
+        .legal-icon {
+            font-size: 4rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .legal-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1a5f5a;
+        }
+
+        .legal-text {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .legal-disclaimer {
+            font-size: 0.875rem;
+            color: #666;
+            font-style: italic;
+            margin-top: 1rem;
+        }
+
+        /* Footer */
+        .framework-footer {
+            background: #1a5f5a;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .framework-footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .framework-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .framework-hero h1 {
+                font-size: 2rem;
+            }
+
+            .framework-hero p {
+                font-size: 1.125rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .homepage-navbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .homepage-navbar .nav-links {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Marketing Navbar -->
+    <nav class="homepage-navbar">
+        <a href="/" class="logo">
+            <img src="/static/logo.png" alt="PhysiologicPRISM">
+            <span>PhysiologicPRISM</span>
+        </a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/security">Security</a>
+            <a href="/blog">Blog</a>
+            <a href="/login" class="cta-btn">Sign in</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="framework-hero">
+        <div class="framework-hero-content">
+            <div class="copyright-badge">© PROTECTED INTELLECTUAL PROPERTY</div>
+            <h1>Built on a Copyrighted Clinical Reasoning Framework</h1>
+            <p>
+                PhysiologicPRISM is not just another EMR. It's a proprietary methodology and application structure developed, refined, and legally protected by a practicing physiotherapist.
+            </p>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <section class="framework-content">
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">📜</span>
+                <h3 class="feature-title">Copyrighted PRISM Framework</h3>
+                <p class="feature-text">
+                    The PRISM Clinical Reasoning Framework is a registered copyright. This structured, evidence-based methodology represents years of clinical practice, academic research, and iterative refinement.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🏗️</span>
+                <h3 class="feature-title">Proprietary App Architecture</h3>
+                <p class="feature-text">
+                    The application's workflow logic, module sequencing, data structures, and documentation assistance patterns are proprietary intellectual property specifically designed for physiotherapy clinical reasoning.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🔬</span>
+                <h3 class="feature-title">Evidence-Based Methodology</h3>
+                <p class="feature-text">
+                    Developed by a physiotherapist with years of clinical experience, the framework integrates ICF standards, biopsychosocial models, and contemporary pain science into a cohesive system.
+                </p>
+            </div>
+        </div>
+
+        <!-- Legal Information Box -->
+        <div class="legal-box">
+            <div class="legal-icon">⚖️</div>
+            <h3 class="legal-title">Legal Protection & Intellectual Property</h3>
+            <p class="legal-text">
+                <strong>PhysiologicPRISM</strong> and the <strong>PRISM Clinical Reasoning Framework</strong> are protected by copyright law.
+            </p>
+            <p class="legal-text">
+                The methodology, workflow structure, module design, clinical prompts, and application logic are the exclusive intellectual property of <strong>PHYSIOLOGICPRISM LLP</strong>.
+            </p>
+            <p class="legal-disclaimer">
+                © 2025 PHYSIOLOGICPRISM LLP. All rights reserved. Unauthorized reproduction, distribution, or derivative works are prohibited.
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="framework-footer">
+        <p>&copy; 2025 PhysiologicPRISM. All rights reserved. | <a href="/">Back to Home</a></p>
+    </footer>
+</body>
+</html>

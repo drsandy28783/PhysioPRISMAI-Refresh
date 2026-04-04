@@ -87,6 +87,9 @@
     color: #333;
     line-height: 1.5;
     margin-bottom: 32px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .hero-cta-group {
@@ -196,15 +199,18 @@
   .pain-points li {
     font-size: 18px;
     color: #333;
-    margin-bottom: 16px;
-    padding-left: 32px;
+    margin-bottom: 20px;
+    padding-left: 40px;
     position: relative;
+    font-weight: 500;
+    line-height: 1.5;
   }
 
   .pain-points li:before {
-    content: "❌";
+    content: "⚠️";
     position: absolute;
     left: 0;
+    font-size: 20px;
   }
 
   .solution-text {
@@ -368,6 +374,33 @@
     text-align: center;
     margin-bottom: 24px;
     line-height: 1.6;
+  }
+
+  /* Trust Building Section */
+  .trust-section {
+    background: white;
+    border-radius: 12px;
+    padding: 48px 32px;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+    border-left: 4px solid #1a5f5a;
+  }
+
+  .trust-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 20px;
+    line-height: 1.3;
+  }
+
+  .trust-description {
+    font-size: 18px;
+    color: #555;
+    line-height: 1.7;
+    max-width: 650px;
+    margin: 0 auto;
   }
 
   /* Partnership Callout */
@@ -722,9 +755,9 @@
 <!-- 1. Hero Section -->
 <section class="hero-section">
   <div class="hero-content">
-    <h1 class="hero-headline">Structured clinical documentation for physiotherapists.</h1>
+    <h1 class="hero-headline">Never miss a clinical insight again.</h1>
     <p class="hero-subheadline">
-      PhysiologicPRISM helps physiotherapists perform complete, compliant, and clinically defensible assessments through a copyrighted clinical reasoning workflow and smart documentation tools.
+      Structure your clinical reasoning, reduce cognitive load, and generate defensible documentation — all in one system.
     </p>
     <div class="hero-cta-group">
       <a href="{{ url_for('request_access') }}" class="btn-primary">Request early access</a>
@@ -737,12 +770,13 @@
 <!-- 2. Problem / Pain Section -->
 <section class="section">
   <div class="problem-section">
-    <h2 class="problem-title">Clinical reasoning is taught well—but documented poorly.</h2>
+    <h2 class="problem-title">Clinical reasoning is taught well — but breaks down in practice.</h2>
     <ul class="pain-points">
-      <li>Assessments are fragmented across notes, forms, and memory.</li>
-      <li>ICF and clinical reasoning frameworks rarely appear in real documentation.</li>
-      <li>Busy clinicians miss flags, psychosocial factors, or key history details.</li>
-      <li>Documentation is often incomplete, non-standardised, and hard to defend.</li>
+      <li>Important questions get missed under time pressure</li>
+      <li>Assessments become inconsistent between patients</li>
+      <li>Psychosocial factors are often overlooked</li>
+      <li>Notes don't reflect actual clinical reasoning</li>
+      <li>Decisions become harder to justify and defend</li>
     </ul>
     <p class="solution-text">
       ✓ PhysiologicPRISM turns best-practice reasoning into a structured, repeatable workflow.
@@ -752,34 +786,41 @@
 
 <!-- 3. Core UVP / Value Pillars -->
 <section class="section section-alt">
-  <h2 class="section-title">What makes PhysiologicPRISM different</h2>
+  <h2 class="section-title">Why physiotherapists use PRISM</h2>
   <div class="pillars-grid">
     <div class="pillar-card">
-      <div class="pillar-icon">📋</div>
-      <h3 class="pillar-title">Copyrighted clinical reasoning workflow</h3>
+      <div class="pillar-icon">🎯</div>
+      <h3 class="pillar-title">Never miss key clinical findings</h3>
       <p class="pillar-text">
-        A proprietary, physiotherapy-specific methodology developed and copyrighted by a practising physiotherapist. Not a generic EMR template, but a structured reasoning system refined over years of clinical work.
+        Guided prompts ensure red flags, psychosocial factors, and important history details are captured every time.
       </p>
     </div>
     <div class="pillar-card">
-      <div class="pillar-icon">✅</div>
-      <h3 class="pillar-title">Complete, structured assessments</h3>
+      <div class="pillar-icon">🧠</div>
+      <h3 class="pillar-title">Think systematically for every patient</h3>
       <p class="pillar-text">
-        From history to follow-up, PhysiologicPRISM guides you through a 15-module workflow that ensures no key component is missed — history, ICF-based subjective data, flags, diagnosis, SMART goals, treatment plan, and more.
+        Structured workflow keeps your clinical reasoning sharp and consistent, even during back-to-back appointments.
       </p>
     </div>
     <div class="pillar-card">
-      <div class="pillar-icon">🤖</div>
-      <h3 class="pillar-title">Smart Documentation Tools</h3>
+      <div class="pillar-icon">⚡</div>
+      <h3 class="pillar-title">Reduce cognitive overload during busy clinics</h3>
       <p class="pillar-text">
-        Intelligent documentation assistance at each step helps clinicians ask better questions, choose appropriate tests, and plan evidence-based treatment — while keeping full clinical control and judgement in human hands.
+        Let the system handle structure and prompts so you can focus on clinical decision-making and patient care.
       </p>
     </div>
     <div class="pillar-card">
-      <div class="pillar-icon">🔒</div>
-      <h3 class="pillar-title">Enterprise-grade security</h3>
+      <div class="pillar-icon">💬</div>
+      <h3 class="pillar-title">Capture biopsychosocial factors consistently</h3>
       <p class="pillar-text">
-        HIPAA/GDPR-ready design, encrypted data, access controls, audit logs, and de-identified AI processing — built for clinics, universities, and research environments.
+        Integrated prompts help you document patient perspectives, lifestyle factors, and psychosocial context.
+      </p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">📄</div>
+      <h3 class="pillar-title">Generate structured, defensible documentation</h3>
+      <p class="pillar-text">
+        Complete clinical records that clearly show your reasoning and decision-making process.
       </p>
     </div>
   </div>
@@ -791,118 +832,39 @@
   <div class="flow-container">
     <div class="flow-step">
       <div class="flow-step-number">1</div>
-      <h3 class="flow-step-title">Structured intake</h3>
-      <p class="flow-step-text">Guided history, ICF-based subjective data, and patient perspectives captured in a consistent format.</p>
+      <h3 class="flow-step-title">Capture everything that matters</h3>
+      <p class="flow-step-text">Structured intake ensures no missed history or blind spots.</p>
     </div>
     <div class="flow-step">
       <div class="flow-step-number">2</div>
-      <h3 class="flow-step-title">Plan & test</h3>
-      <p class="flow-step-text">Plan your examination, perform objective tests, and record findings with clear prompts.</p>
+      <h3 class="flow-step-title">Test with purpose</h3>
+      <p class="flow-step-text">Plan and perform assessments guided by clinical hypotheses.</p>
     </div>
     <div class="flow-step">
       <div class="flow-step-number">3</div>
-      <h3 class="flow-step-title">Reason & decide</h3>
-      <p class="flow-step-text">Documentation assistance for hypotheses, flags, pain mechanisms, and differential diagnosis.</p>
+      <h3 class="flow-step-title">Reason with clarity</h3>
+      <p class="flow-step-text">AI-assisted insights support your decisions without replacing your judgment.</p>
     </div>
     <div class="flow-step">
       <div class="flow-step-number">4</div>
-      <h3 class="flow-step-title">Treat, track, and improve</h3>
-      <p class="flow-step-text">Create SMART goals, build treatment plans, document follow-ups, and track outcomes over time.</p>
+      <h3 class="flow-step-title">Generate defensible documentation</h3>
+      <p class="flow-step-text">Clear, structured reports ready for clinical and legal use.</p>
     </div>
   </div>
+  <p style="text-align: center; font-size: 18px; color: #1a5f5a; font-weight: 600; margin-top: 32px; margin-bottom: 32px;">
+    All in minutes — without adding extra work.
+  </p>
   <div class="center-cta">
     <a href="{{ url_for('register') }}" class="btn-secondary">See full workflow →</a>
   </div>
 </section>
 
-<!-- 4.5. Copyrighted Framework & Proprietary Technology -->
-<section class="copyright-framework-section">
-  <div class="copyright-framework-content">
-
-    <!-- Header -->
-    <div class="copyright-hero-text">
-      <div class="copyright-badge">© PROTECTED INTELLECTUAL PROPERTY</div>
-      <h2 class="copyright-main-title">
-        Built on a Copyrighted Clinical Reasoning Framework
-      </h2>
-      <p class="copyright-subtitle">
-        PhysiologicPRISM is not just another EMR. It's a proprietary methodology and application structure developed, refined, and legally protected by a practicing physiotherapist.
-      </p>
-    </div>
-
-    <!-- Features Grid -->
-    <div class="copyright-features-grid">
-
-      <div class="copyright-feature-card">
-        <span class="copyright-feature-icon">📜</span>
-        <h3 class="copyright-feature-title">Copyrighted PRISM Framework</h3>
-        <p class="copyright-feature-text">
-          The PRISM Clinical Reasoning Framework is a registered copyright. This structured, evidence-based methodology represents years of clinical practice, academic research, and iterative refinement.
-        </p>
-      </div>
-
-      <div class="copyright-feature-card">
-        <span class="copyright-feature-icon">🏗️</span>
-        <h3 class="copyright-feature-title">Proprietary App Architecture</h3>
-        <p class="copyright-feature-text">
-          The application's workflow logic, module sequencing, data structures, and documentation assistance patterns are proprietary intellectual property specifically designed for physiotherapy clinical reasoning.
-        </p>
-      </div>
-
-      <div class="copyright-feature-card">
-        <span class="copyright-feature-icon">🔬</span>
-        <h3 class="copyright-feature-title">Evidence-Based Methodology</h3>
-        <p class="copyright-feature-text">
-          Developed by a physiotherapist with years of clinical experience, the framework integrates ICF standards, biopsychosocial models, and contemporary pain science into a cohesive system.
-        </p>
-      </div>
-
-    </div>
-
-    <!-- Highlight Box -->
-    <div class="copyright-highlight-box">
-      <div class="copyright-highlight-icon">⚖️</div>
-      <h3 class="copyright-highlight-title">Legal Protection & Intellectual Property</h3>
-      <p class="copyright-highlight-text">
-        <strong>PhysiologicPRISM</strong> and the <strong>PRISM Clinical Reasoning Framework</strong> are protected by copyright law.
-      </p>
-      <p class="copyright-highlight-text">
-        The methodology, workflow structure, module design, clinical prompts, and application logic are the exclusive intellectual property of <strong>PHYSIOLOGICPRISM LLP</strong>.
-      </p>
-      <p class="copyright-legal-text">
-        © 2025 PHYSIOLOGICPRISM LLP. All rights reserved. Unauthorized reproduction, distribution, or derivative works are prohibited.
-      </p>
-    </div>
-
-  </div>
-</section>
-
 <!-- 5. Who It's For -->
 <section class="section section-alt">
-  <h2 class="section-title">Built for modern physiotherapy practice.</h2>
-  <div class="segments-grid">
-    <div class="segment-card">
-      <div class="segment-icon">🏥</div>
-      <h3 class="segment-title">Clinics & Hospitals</h3>
-      <p class="segment-text">
-        Standardise assessments, improve documentation quality, and protect your practice with complete, defensible records.
-      </p>
-    </div>
-    <div class="segment-card">
-      <div class="segment-icon">🎓</div>
-      <h3 class="segment-title">Universities & Educators</h3>
-      <p class="segment-text">
-        Reinforce ICF and clinical reasoning frameworks with a tool that guides students step-by-step through real cases.
-      </p>
-    </div>
-    <div class="segment-card">
-      <div class="segment-icon">🔬</div>
-      <h3 class="segment-title">Researchers</h3>
-      <p class="segment-text">
-        Unlock structured, analysable clinical data that supports outcome studies, quality improvement, and publications.
-      </p>
-    </div>
-  </div>
+  <h2 class="section-title">Built for physiotherapists in clinical practice</h2>
+  <p class="section-subtitle" style="max-width: 700px; margin: 0 auto;">
+    Whether you're early in your career or managing a busy clinic, PRISM helps you think clearly, assess completely, and document confidently.
+  </p>
 </section>
 
 <!-- 6. Security & Compliance -->
@@ -925,7 +887,17 @@
   </div>
 </section>
 
-<!-- 7. Partnership Callout -->
+<!-- 7. Trust Building Section -->
+<section class="section">
+  <div class="trust-section">
+    <h2 class="trust-title">Built by a practicing physiotherapist</h2>
+    <p class="trust-description">
+      PRISM was created to bridge the gap between how clinical reasoning is taught — and how it is actually applied and documented in real practice.
+    </p>
+  </div>
+</section>
+
+<!-- 8. Partnership Callout -->
 <section class="section">
   <div class="partnership-callout">
     <h2 class="partnership-title">Interested in piloting PhysiologicPRISM?</h2>
@@ -936,7 +908,7 @@
   </div>
 </section>
 
-<!-- 8. Blog / Resources Teaser -->
+<!-- 9. Blog / Resources Teaser -->
 <section class="section section-alt">
   <h2 class="section-title">Clinical reasoning, done properly.</h2>
   <div class="blog-grid">
@@ -967,7 +939,7 @@
   </div>
 </section>
 
-<!-- 9. Footer -->
+<!-- 10. Footer -->
 <footer class="homepage-footer">
   <div class="footer-content">
     <div class="footer-section">
@@ -989,6 +961,7 @@
       <h3>Company</h3>
       <ul class="footer-links">
         <li><a href="mailto:contact@physioprism.com">Contact</a></li>
+        <li><a href="{{ url_for('framework_page') }}">PRISM Framework</a></li>
         <li><a href="{{ url_for('terms_of_service') }}">Terms of Service</a></li>
         <li><a href="{{ url_for('privacy_policy') }}">Privacy Policy</a></li>
       </ul>
@@ -1005,10 +978,6 @@
   <div class="footer-bottom">
     <p style="margin-bottom: 8px;">
       &copy; 2025 PhysiologicPRISM. All rights reserved.
-    </p>
-    <p style="font-size: 0.9em; opacity: 0.85; margin-bottom: 8px;">
-      PhysiologicPRISM is based on the PRISM Clinical Reasoning Framework,<br>
-      a copyrighted methodology developed by a practicing physiotherapist.
     </p>
     <p style="font-size: 0.85em; opacity: 0.75;">
       Built in India for physiotherapists worldwide.

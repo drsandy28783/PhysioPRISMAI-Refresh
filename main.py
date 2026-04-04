@@ -1487,6 +1487,11 @@ def security_page():
     """Display security and compliance page"""
     return render_template('security.html')
 
+@app.route('/framework')
+def framework_page():
+    """Display PRISM framework and intellectual property information"""
+    return render_template('framework.html')
+
 @app.route('/submit-access-request', methods=['POST'])
 @app.route('/api/submit-access-request', methods=['POST'])
 def submit_access_request():
