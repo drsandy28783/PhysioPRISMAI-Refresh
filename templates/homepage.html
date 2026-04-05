@@ -792,6 +792,103 @@
     text-align: center;
   }
 
+  /* Video Modal */
+  .video-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    animation: fadeIn 0.3s;
+  }
+
+  .video-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .video-modal-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    width: 1200px;
+  }
+
+  .video-modal video {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .video-modal-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    color: white;
+    font-size: 36px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+    transition: opacity 0.2s;
+  }
+
+  .video-modal-close:hover {
+    opacity: 0.7;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @media (max-width: 768px) {
+    .video-modal-content {
+      max-width: 95%;
+    }
+
+    .video-modal-close {
+      top: -50px;
+      font-size: 32px;
+    }
+  }
+
+  /* Workflow Link */
+  .workflow-link {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 15px;
+  }
+
+  .workflow-link a {
+    color: #1a5f5a;
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+
+  .workflow-link a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    .workflow-link {
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .hero-headline {
@@ -964,7 +1061,10 @@
     </p>
     <div class="hero-cta-group">
       <a href="{{ url_for('request_access') }}" class="btn-primary">Request early access</a>
-      <a href="#how-it-works" class="btn-secondary">Watch 2-minute demo</a>
+      <button id="watchVideoBtn" class="btn-secondary" style="border: 2px solid #1a5f5a;">Watch how it works</button>
+    </div>
+    <div class="workflow-link">
+      <a href="{{ url_for('static', filename='prism-workflow-demo.pdf') }}" target="_blank">Want to see the full clinical reasoning framework? View detailed workflow →</a>
     </div>
     <p class="credibility-text">Built by a practicing physiotherapist for real-world clinical practice.</p>
   </div>
@@ -1187,6 +1287,17 @@
     </p>
   </div>
 </footer>
+
+<!-- Video Modal -->
+<div id="videoModal" class="video-modal">
+  <div class="video-modal-content">
+    <button class="video-modal-close" id="closeVideoModal">&times;</button>
+    <video id="demoVideo" controls>
+      <source src="{{ url_for('static', filename='videos/how-it-works-demo.mp4') }}" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -1208,6 +1319,47 @@
         });
       }
     });
+  });
+
+  // Video modal functionality
+  const videoModal = document.getElementById('videoModal');
+  const watchVideoBtn = document.getElementById('watchVideoBtn');
+  const closeVideoModal = document.getElementById('closeVideoModal');
+  const demoVideo = document.getElementById('demoVideo');
+
+  // Open modal when button is clicked
+  if (watchVideoBtn) {
+    watchVideoBtn.addEventListener('click', function() {
+      videoModal.classList.add('active');
+      demoVideo.play();
+    });
+  }
+
+  // Close modal when X button is clicked
+  if (closeVideoModal) {
+    closeVideoModal.addEventListener('click', function() {
+      videoModal.classList.remove('active');
+      demoVideo.pause();
+      demoVideo.currentTime = 0;
+    });
+  }
+
+  // Close modal when clicking outside the video
+  videoModal.addEventListener('click', function(e) {
+    if (e.target === videoModal) {
+      videoModal.classList.remove('active');
+      demoVideo.pause();
+      demoVideo.currentTime = 0;
+    }
+  });
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && videoModal.classList.contains('active')) {
+      videoModal.classList.remove('active');
+      demoVideo.pause();
+      demoVideo.currentTime = 0;
+    }
   });
 </script>
 {% endblock %}
