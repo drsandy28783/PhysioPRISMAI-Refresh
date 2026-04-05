@@ -50,7 +50,8 @@ class AzureOpenAIClient:
         )
 
         # Configuration
-        self.temperature = float(os.getenv('AI_TEMPERATURE', '0.3'))
+        # Temperature lowered from 0.3 to 0.1 for hallucination prevention
+        self.temperature = float(os.getenv('AI_TEMPERATURE', '0.1'))
         self.max_tokens = int(os.getenv('AI_MAX_TOKENS', '2000'))
 
     def create_chat_completion(

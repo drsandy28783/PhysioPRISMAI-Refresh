@@ -65,6 +65,52 @@ ICF_FRAMEWORK_GUIDE = (
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
+# HALLUCINATION PREVENTION - DATA GROUNDING RULE
+# ─────────────────────────────────────────────────────────────────────────────
+
+DATA_GROUNDING_RULE = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ CRITICAL: DATA GROUNDING RULE - PREVENT HALLUCINATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+YOU MUST DISTINGUISH BETWEEN:
+1. ASKING QUESTIONS to gather missing information ✅ CORRECT
+2. STATING FACTS about the patient ❌ ONLY IF EXPLICITLY PROVIDED ABOVE
+
+STRICT PROHIBITIONS - NEVER INVENT:
+❌ Patient's occupation (e.g., "as a teacher", "desk worker", "construction worker")
+❌ Patient's sports/hobbies (e.g., "badminton player", "runner", "swimmer", "gardener")
+❌ Patient's lifestyle activities (e.g., "goes to gym", "plays tennis", "does yoga")
+❌ Mechanism of injury (unless explicitly stated in presenting complaint)
+❌ Past medical conditions (unless stated in past medical history)
+❌ Social details (married, children, family structure, living situation)
+❌ Environmental factors (home setup, workplace environment) unless provided
+❌ Medications, treatments, or previous interventions (unless stated)
+
+CORRECT VS INCORRECT EXAMPLES:
+
+✅ CORRECT: "Consider asking about overhead sports (e.g., badminton, tennis, swimming)"
+❌ WRONG: "As a badminton player, rotator cuff tendinopathy is likely"
+
+✅ CORRECT: "Explore occupational demands (desk-based vs manual labor vs overhead work)"
+❌ WRONG: "Given their desk job, postural factors are contributing"
+
+✅ CORRECT: "If patient has diabetes, consider delayed healing timeframes"
+❌ WRONG: "Given their diabetes and hypertension, risk factors are elevated"
+
+✅ CORRECT: "Ask about mechanism: twisting injury vs direct trauma vs gradual onset"
+❌ WRONG: "This appears to be a sports injury from running"
+
+KEY PRINCIPLE:
+- Use ONLY information explicitly provided in "PATIENT SNAPSHOT" or "PATIENT DATA" sections above
+- If information is missing, suggest questions to GATHER it
+- Use conditional language: "If patient has X..." or "Consider asking about Y..."
+- DO NOT fill gaps with plausible assumptions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ICF CORE SETS - Evidence-based categories for common conditions
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -694,6 +740,8 @@ MANDATORY RULES:
 4. Do NOT ask about names, dates of birth, addresses, or any identifiers.
 5. Open-ended or focused yes/no follow-up questions are both allowed if clinically appropriate.
 
+{DATA_GROUNDING_RULE}
+
 OUTPUT:
 - A numbered list, questions 1–5, one question per line, no extra text.
 """
@@ -1014,6 +1062,8 @@ STRICT RULES FOR YOUR RESPONSE:
    - Asking about patient identifiers
    - Vague or non-specific language
 
+{DATA_GROUNDING_RULE}
+
 OUTPUT (Follow this format exactly):
 """
 
@@ -1048,6 +1098,7 @@ MANDATORY RULES:
 4. Do NOT recommend objective tests yet (that comes next).
 5. Do NOT suggest treatment.
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT:
 1. [Diagnosis] - [Brief justification based on subjective findings]
 2. [Diagnosis] - [Brief justification]
@@ -1386,6 +1437,7 @@ STRICT RULES FOR YOUR RESPONSE:
    - Treatment recommendations or advice
    - Generic textbook questions not tied to this case
 
+{DATA_GROUNDING_RULE}
 OUTPUT (Follow this format exactly):
 """
 
@@ -1424,6 +1476,7 @@ MANDATORY RULES:
 3. Open-ended questions only.
 4. Do NOT give explanations or teaching content.
 
+{DATA_GROUNDING_RULE}
 OUTPUT:
 - Numbered list 1–3, one question per line.
 """
@@ -1467,6 +1520,7 @@ MANDATORY RULES:
 4. Keep concise (max 100 words total).
 5. Do NOT include treatment recommendations here.
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT:
 Primary Diagnosis: [Specific diagnosis]
 Contributing Factors: [2-3 key factors]
@@ -2279,6 +2333,7 @@ MANDATORY RULES:
 3. Order by priority (most important first)
 4. Do NOT suggest imaging unless for red flag concerns
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT:
 1. [Test name] - [What it assesses/rules out]
 2. [Test name] - [What it assesses/rules out]
@@ -2891,6 +2946,7 @@ MANDATORY RULES FOR YOUR RESPONSE:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT (Follow this exactly):
 
 **RECOMMENDED ASSESSMENT APPROACH:**
@@ -3036,6 +3092,7 @@ MANDATORY RULES:
 5. If visceral source is suspected, clearly state RED FLAG and recommend immediate medical referral
 6. Use evidence-based pain science and neurophysiology
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT (STRICT):
 
 Most Likely Pain Source: [Choose ONE: Somatic Local / Somatic Referred / Neurogenic / Visceral]
@@ -3242,6 +3299,7 @@ MANDATORY RULES:
 7. Use pain science language (central sensitization, fear-avoidance, etc.)
 8. Do NOT suggest treatments - only identify maintaining factors
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT (STRICT):
 
 Maintenance Factor Analysis:
@@ -3572,6 +3630,7 @@ MANDATORY RULES:
 6. Do NOT list generic possibilities - only flag what is actually present
 7. Connect flags to clinical findings and patient statements
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT (STRICT):
 
 🔴 RED FLAGS (Serious Pathology):
@@ -4102,6 +4161,7 @@ STRICT RULES FOR YOUR RESPONSE:
    - Vague suggestions without specifics
    - Forgetting proximal/distal joint screening
 
+{DATA_GROUNDING_RULE}
 OUTPUT (Follow this format exactly):
 """
 
@@ -4144,6 +4204,7 @@ STRUCTURE YOUR RESPONSE:
 - Next 1-2 sentences: Clinical interpretation of what these findings indicate
 - Final sentence: Provisional diagnosis or working impression
 
+{DATA_GROUNDING_RULE}
 OUTPUT:
 [6-8 sentence clinical interpretation summary ending with provisional diagnosis]
 """
@@ -4190,6 +4251,7 @@ MANDATORY RULES:
 3. Specify realistic timeframe (e.g., 2 weeks, 4 weeks, 6 weeks).
 4. Order by priority.
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT:
 1. [SMART goal with measurement and timeline]
 2. [SMART goal with measurement and timeline]
@@ -5584,6 +5646,7 @@ WHAT TO INCLUDE:
    - Pain science references (Explain Pain, pain neurophysiology)
    - Fear-Avoidance Model references (if yellow flags present)
 
+{DATA_GROUNDING_RULE}
 FORMAT:
 - Author(s), Year, Title, Journal
 - OR: Organization, Year, Guideline Title
@@ -5646,6 +5709,7 @@ MANDATORY RULES FOR YOUR RESPONSE:
 
 5. STRUCTURED OUTPUT
 
+{DATA_GROUNDING_RULE}
 OUTPUT FORMAT (depends on field):
 
 {f'''For 'treatment_plan' field:
@@ -5756,6 +5820,7 @@ MANDATORY RULES:
 4. Keep concise (6-8 sentences max)
 5. End with estimated treatment duration
 
+{DATA_GROUNDING_RULE}
 OUTPUT:
 [6-8 sentence comprehensive treatment plan]
 """
@@ -5801,6 +5866,7 @@ MANDATORY RULES:
 3. Each suggestion should be specific and actionable
 4. Consider: treatment progression, modification, or referral if appropriate
 
+{DATA_GROUNDING_RULE}
 OUTPUT:
 1. [Management suggestion based on progress]
 2. [Management suggestion based on progress]
@@ -6542,6 +6608,7 @@ MANDATORY RULES:
 2. Keep each suggestion short (max ~20 words).
 3. Do NOT invent or repeat PHI (names, dates of birth, addresses, IDs).
 
+{DATA_GROUNDING_RULE}
 OUTPUT:
 - Numbered list 1–3, one suggestion per line.
 """
