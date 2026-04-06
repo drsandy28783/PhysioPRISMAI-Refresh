@@ -1185,7 +1185,10 @@
     All in minutes — without adding extra work.
   </p>
   <div class="center-cta">
-    <a href="{{ url_for('register') }}" class="btn-secondary">See full workflow →</a>
+    <button id="watchVideoBtn2" class="btn-secondary" style="border: 2px solid #1a5f5a;">See full workflow →</button>
+  </div>
+  <div class="workflow-link">
+    <a href="{{ url_for('static', filename='prism-workflow-demo.pdf') }}" target="_blank">Want to see the full clinical reasoning framework? View detailed workflow →</a>
   </div>
 </section>
 
@@ -1351,12 +1354,21 @@
   // Video modal functionality
   const videoModal = document.getElementById('videoModal');
   const watchVideoBtn = document.getElementById('watchVideoBtn');
+  const watchVideoBtn2 = document.getElementById('watchVideoBtn2');
   const closeVideoModal = document.getElementById('closeVideoModal');
   const demoVideo = document.getElementById('demoVideo');
 
-  // Open modal when button is clicked
+  // Open modal when first button is clicked
   if (watchVideoBtn) {
     watchVideoBtn.addEventListener('click', function() {
+      videoModal.classList.add('active');
+      demoVideo.play();
+    });
+  }
+
+  // Open modal when second button is clicked
+  if (watchVideoBtn2) {
+    watchVideoBtn2.addEventListener('click', function() {
       videoModal.classList.add('active');
       demoVideo.play();
     });
