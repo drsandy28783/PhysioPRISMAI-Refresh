@@ -209,9 +209,18 @@
   <div class="hero-section">
     <h1>📅 Appointment Scheduling</h1>
     <p>Streamline your practice with integrated appointment management</p>
+
+    <!-- Development Notice Banner -->
+    <div style="background: rgba(243, 156, 18, 0.15); border: 2px solid #f39c12; border-radius: 12px; padding: 20px; margin: 20px auto; max-width: 700px;">
+      <h3 style="margin-bottom: 10px; font-size: 20px; color: #f39c12;">⚠️ Beta Testing Phase</h3>
+      <p style="margin-bottom: 0; font-size: 15px; color: #856404;">
+        This feature is currently in active development and testing. While your data is secure, you may encounter bugs or incomplete features. We recommend using this for testing purposes only.
+      </p>
+    </div>
+
     {% if has_access %}
-    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button">
-      Open Scheduling App →
+    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button" onclick="return confirmScheduleAccess();">
+      Open Scheduling App (BETA) →
     </a>
     {% elif is_trial_expired %}
     <div style="background: rgba(231, 76, 60, 0.2); border: 2px solid #e74c3c; border-radius: 12px; padding: 24px; margin: 20px auto; max-width: 600px;">
@@ -381,8 +390,8 @@
 
   <div style="text-align: center; margin: 40px 0;">
     {% if has_access %}
-    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button" style="font-size: 20px; padding: 20px 50px;">
-      Launch Scheduling App →
+    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button" style="font-size: 20px; padding: 20px 50px;" onclick="return confirmScheduleAccess();">
+      Launch Scheduling App (BETA) →
     </a>
     {% elif is_trial_expired %}
     <div style="max-width: 600px; margin: 0 auto; padding: 40px; background: rgba(231, 76, 60, 0.1); border-radius: 12px; border: 2px solid #e74c3c;">
@@ -472,4 +481,21 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+  function confirmScheduleAccess() {
+    return confirm(
+      '⚠️ Beta Testing Notice\n\n' +
+      'The Appointment Scheduling feature is currently in BETA testing and may have bugs or incomplete features.\n\n' +
+      'Features still being tested:\n' +
+      '• Calendar synchronization\n' +
+      '• Notification system\n' +
+      '• Mobile responsiveness\n\n' +
+      'Your data is safe, but you may encounter issues. We recommend using this feature for testing purposes only.\n\n' +
+      'Do you want to continue?'
+    );
+  }
+</script>
 {% endblock %}

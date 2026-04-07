@@ -548,8 +548,8 @@
       <span>📁</span> View All Patients
     </a>
     {% if analytics and analytics.status == 'active' and analytics.plan_type in ['free_trial', 'monthly', 'quarterly', 'annual', 'lifetime'] %}
-    <a href="{{ url_for('scheduling_info') }}" class="action-btn" style="background: #27ae60;">
-      <span>📅</span> Appointment Scheduling
+    <a href="{{ url_for('scheduling_info') }}" class="action-btn" style="background: #27ae60; position: relative;">
+      <span>📅</span> Appointment Scheduling <span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">BETA</span>
     </a>
     {% elif analytics and analytics.plan_type == 'free_trial' and analytics.status == 'expired' %}
     <a href="{{ url_for('scheduling_info') }}" class="action-btn" style="background: #e74c3c; position: relative;">
@@ -557,7 +557,7 @@
     </a>
     {% else %}
     <a href="{{ url_for('scheduling_info') }}" class="action-btn" style="background: #95a5a6; position: relative;">
-      <span>📅</span> Appointment Scheduling <span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">TRIAL</span>
+      <span>📅</span> Appointment Scheduling <span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">BETA</span>
     </a>
     {% endif %}
     <a href="{{ url_for('pricing') }}" class="action-btn secondary">
