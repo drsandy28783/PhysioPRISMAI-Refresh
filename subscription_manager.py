@@ -60,8 +60,8 @@ PLANS = {
     },
     'solo': {
         'name': 'Solo Professional',
-        'price': 4750,  # $57 USD (~₹4,750) - 94% profit margin, competitive internationally
-        'price_usd': 57,  # For international markets
+        'price': 4499,  # $50 USD (~₹4,499) - 94% profit margin, competitive internationally
+        'price_usd': 50,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 250,  # Increased from 50 - great value proposition
@@ -80,8 +80,8 @@ PLANS = {
     },
     'team_5': {
         'name': 'Team (5 Users)',
-        'price': 19999,  # $237.50 USD (~₹19,999) - 5% volume discount ($47.50/user)
-        'price_usd': 238,  # For international markets
+        'price': 20249,  # $225 USD (~₹20,249) - 10% tier discount (₹4,049/user vs ₹4,499)
+        'price_usd': 225,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 1250,  # 250 AI calls per user × 5 users
@@ -101,8 +101,8 @@ PLANS = {
     },
     'team_10': {
         'name': 'Team Pro (10 Users)',
-        'price': 39999,  # $476 USD (~₹39,999) - 10% volume discount ($47.60/user)
-        'price_usd': 476,  # For international markets
+        'price': 36449,  # $405 USD (~₹36,449) - 10% tier discount (₹3,644/user)
+        'price_usd': 405,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 2500,  # 250 AI calls per user × 10 users
@@ -121,8 +121,8 @@ PLANS = {
     },
     'institute_15': {
         'name': 'Institute (15 Users)',
-        'price': 64999,  # $774 USD (~₹64,999) - 15% volume discount ($51.60/user)
-        'price_usd': 774,  # For international markets
+        'price': 49199,  # $547 USD (~₹49,199) - 10% tier discount (₹3,280/user)
+        'price_usd': 547,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 3750,  # 250 AI calls per user × 15 users
@@ -141,8 +141,8 @@ PLANS = {
     },
     'institute_20': {
         'name': 'Institute Plus (20 Users)',
-        'price': 84999,  # $1,012 USD (~₹84,999) - 15% volume discount ($50.60/user)
-        'price_usd': 1012,  # For international markets
+        'price': 59049,  # $656 USD (~₹59,049) - 10% tier discount (₹2,952/user)
+        'price_usd': 656,  # For international markets
         'currency': 'INR',
         'patients_limit': -1,  # -1 = UNLIMITED
         'ai_calls_limit': 5000,  # 250 AI calls per user × 20 users
