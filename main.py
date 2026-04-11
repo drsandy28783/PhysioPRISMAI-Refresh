@@ -3403,6 +3403,19 @@ def edit_profile():
             # Security: Update user document
             user_ref.update(updates)
 
+            # Update Firebase Auth password if account exists
+            firebase_uid = user_data.get('firebase_uid')
+            if firebase_uid:
+                try:
+                    auth.update_user(
+                        firebase_uid,
+                        password=new_password
+                    )
+                    logger.info(f"Firebase Auth password updated for {user_email}")
+                except Exception as firebase_error:
+                    logger.warning(f"Failed to update Firebase Auth password for {user_email}: {str(firebase_error)}")
+                    # Continue - Cosmos DB password is updated
+
             # Security: Force logout after password change (best practice)
             # This invalidates the current session and requires re-login with new password
             session.clear()
