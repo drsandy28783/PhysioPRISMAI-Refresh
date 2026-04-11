@@ -523,6 +523,11 @@ def increment_patient_usage_atomic(user_id: str) -> Tuple[bool, int, str]:
             return False, 0, "Subscription not found"
 
         subscription = sub_doc.to_dict()
+
+        # Check subscription status FIRST - block expired subscriptions
+        if subscription.get('status') != 'active':
+            return False, 0, "Your subscription has expired. Please upgrade to continue adding patients."
+
         current_count = subscription.get('patients_created_this_month', 0)
         limit = subscription.get('patients_limit', 0)
 
