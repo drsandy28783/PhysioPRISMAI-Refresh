@@ -292,30 +292,50 @@ def get_user_subscription(user_id: str) -> Dict:
             if subscription.get('status') == 'active':
                 if subscription.get('plan_type') == 'free_trial':
                     trial_end = subscription.get('trial_end_date')
-                    if trial_end and isinstance(trial_end, datetime):
-                        # Make trial_end timezone-aware if it isn't already
-                        if trial_end.tzinfo is None:
-                            trial_end = trial_end.replace(tzinfo=timezone.utc)
-                        if datetime.now(timezone.utc) > trial_end:
-                            # Expire the trial
-                            db.collection('subscriptions').document(user_id).update({
-                                'status': 'expired',
-                                'updated_at': SERVER_TIMESTAMP
-                            })
-                            subscription['status'] = 'expired'
+                    if trial_end:
+                        # Handle both datetime objects and ISO strings
+                        if isinstance(trial_end, str):
+                            try:
+                                trial_end = datetime.fromisoformat(trial_end)
+                            except (ValueError, AttributeError):
+                                logger.error(f"Invalid trial_end_date format for {user_id}: {trial_end}")
+                                trial_end = None
+
+                        if trial_end and isinstance(trial_end, datetime):
+                            # Make trial_end timezone-aware if it isn't already
+                            if trial_end.tzinfo is None:
+                                trial_end = trial_end.replace(tzinfo=timezone.utc)
+                            if datetime.now(timezone.utc) > trial_end:
+                                # Expire the trial
+                                db.collection('subscriptions').document(user_id).update({
+                                    'status': 'expired',
+                                    'updated_at': SERVER_TIMESTAMP
+                                })
+                                subscription['status'] = 'expired'
+                                logger.info(f"Expired trial subscription for {user_id}")
                 else:
                     # Check if paid subscription is expired
                     period_end = subscription.get('current_period_end')
-                    if period_end and isinstance(period_end, datetime):
-                        # Make period_end timezone-aware if it isn't already
-                        if period_end.tzinfo is None:
-                            period_end = period_end.replace(tzinfo=timezone.utc)
-                        if datetime.now(timezone.utc) > period_end:
-                            db.collection('subscriptions').document(user_id).update({
-                                'status': 'expired',
-                                'updated_at': SERVER_TIMESTAMP
-                            })
-                            subscription['status'] = 'expired'
+                    if period_end:
+                        # Handle both datetime objects and ISO strings
+                        if isinstance(period_end, str):
+                            try:
+                                period_end = datetime.fromisoformat(period_end)
+                            except (ValueError, AttributeError):
+                                logger.error(f"Invalid current_period_end format for {user_id}: {period_end}")
+                                period_end = None
+
+                        if period_end and isinstance(period_end, datetime):
+                            # Make period_end timezone-aware if it isn't already
+                            if period_end.tzinfo is None:
+                                period_end = period_end.replace(tzinfo=timezone.utc)
+                            if datetime.now(timezone.utc) > period_end:
+                                db.collection('subscriptions').document(user_id).update({
+                                    'status': 'expired',
+                                    'updated_at': SERVER_TIMESTAMP
+                                })
+                                subscription['status'] = 'expired'
+                                logger.info(f"Expired paid subscription for {user_id}")
 
             return subscription
 
@@ -1341,31 +1361,47 @@ def check_subscription_reminders() -> Dict:
                 if plan_type == 'free_trial':
                     # Check trial expiry
                     trial_end = subscription.get('trial_end_date')
-                    if trial_end and isinstance(trial_end, datetime):
-                        # Make trial_end timezone-aware if it isn't already
-                        if trial_end.tzinfo is None:
-                            trial_end = trial_end.replace(tzinfo=timezone.utc)
-                        days_remaining = (trial_end - now).days
+                    if trial_end:
+                        # Handle both datetime objects and ISO strings
+                        if isinstance(trial_end, str):
+                            try:
+                                trial_end = datetime.fromisoformat(trial_end)
+                            except (ValueError, AttributeError):
+                                trial_end = None
 
-                        if days_remaining in reminder_days:
-                            notify_trial_expiring(user_id, days_remaining)
-                            summary['trial_expiring'] += 1
-                            logger.info(f"Sent trial expiring notification to {user_id} ({days_remaining} days)")
+                        if trial_end and isinstance(trial_end, datetime):
+                            # Make trial_end timezone-aware if it isn't already
+                            if trial_end.tzinfo is None:
+                                trial_end = trial_end.replace(tzinfo=timezone.utc)
+                            days_remaining = (trial_end - now).days
+
+                            if days_remaining in reminder_days:
+                                notify_trial_expiring(user_id, days_remaining)
+                                summary['trial_expiring'] += 1
+                                logger.info(f"Sent trial expiring notification to {user_id} ({days_remaining} days)")
                 else:
                     # Check subscription renewal
                     period_end = subscription.get('current_period_end')
-                    if period_end and isinstance(period_end, datetime):
-                        # Make period_end timezone-aware if it isn't already
-                        if period_end.tzinfo is None:
-                            period_end = period_end.replace(tzinfo=timezone.utc)
-                        days_remaining = (period_end - now).days
+                    if period_end:
+                        # Handle both datetime objects and ISO strings
+                        if isinstance(period_end, str):
+                            try:
+                                period_end = datetime.fromisoformat(period_end)
+                            except (ValueError, AttributeError):
+                                period_end = None
 
-                        if days_remaining in reminder_days:
-                            plan_name = PLANS.get(plan_type, {}).get('name', plan_type)
-                            renewal_date = period_end.strftime('%B %d, %Y')
-                            notify_renewal_reminder(user_id, plan_name, days_remaining, renewal_date)
-                            summary['renewal_reminders'] += 1
-                            logger.info(f"Sent renewal reminder to {user_id} ({days_remaining} days)")
+                        if period_end and isinstance(period_end, datetime):
+                            # Make period_end timezone-aware if it isn't already
+                            if period_end.tzinfo is None:
+                                period_end = period_end.replace(tzinfo=timezone.utc)
+                            days_remaining = (period_end - now).days
+
+                            if days_remaining in reminder_days:
+                                plan_name = PLANS.get(plan_type, {}).get('name', plan_type)
+                                renewal_date = period_end.strftime('%B %d, %Y')
+                                notify_renewal_reminder(user_id, plan_name, days_remaining, renewal_date)
+                                summary['renewal_reminders'] += 1
+                                logger.info(f"Sent renewal reminder to {user_id} ({days_remaining} days)")
 
             except Exception as e:
                 logger.error(f"Error processing subscription for {sub_doc.id}: {e}")
