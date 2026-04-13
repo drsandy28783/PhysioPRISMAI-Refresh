@@ -11,6 +11,14 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Start Your Free 14-Day Trial - PhysiologicPRISM">
 <meta property="og:description" content="Try PhysiologicPRISM free for 14 days. AI-powered clinical reasoning tools for physiotherapists. No credit card required.">
+<meta property="og:image" content="{{ url_for('static', filename='icons/icon-512x512.png', _external=True) }}">
+<meta property="og:url" content="{{ request.url.split('?')[0] }}">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Start Your Free 14-Day Trial - PhysiologicPRISM">
+<meta name="twitter:description" content="Try PhysiologicPRISM free for 14 days. AI-powered clinical reasoning tools for physiotherapists. No credit card required.">
+<meta name="twitter:image" content="{{ url_for('static', filename='icons/icon-512x512.png', _external=True) }}">
 
 <style>
   /* Hide the navbar on marketing pages */

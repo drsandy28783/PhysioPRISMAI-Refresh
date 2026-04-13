@@ -13,6 +13,8 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ post.title }}">
 <meta property="og:description" content="{{ post.meta_description }}">
+<meta property="og:image" content="{{ url_for('static', filename='icons/icon-512x512.png', _external=True) }}">
+<meta property="og:url" content="{{ request.url.split('?')[0] }}">
 {% if post.published_at %}
 <meta property="article:published_time" content="{{ post.published_at if post.published_at is string else post.published_at.isoformat() }}">
 {% endif %}
@@ -22,6 +24,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ post.title }}">
 <meta name="twitter:description" content="{{ post.meta_description }}">
+<meta name="twitter:image" content="{{ url_for('static', filename='icons/icon-512x512.png', _external=True) }}">
 
 <style>
   /* Hide the navbar on marketing pages */
