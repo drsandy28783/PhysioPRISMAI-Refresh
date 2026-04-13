@@ -9811,6 +9811,14 @@ def service_worker():
     response.headers['Expires'] = '0'
     return response
 
+@app.route('/robots.txt')
+def robots_txt():
+    """Serve robots.txt from root for search engine crawlers"""
+    from flask import send_from_directory
+    response = send_from_directory('static', 'robots.txt')
+    response.headers['Content-Type'] = 'text/plain'
+    return response
+
 @app.route('/offline')
 def offline():
     """Offline fallback page for PWA"""

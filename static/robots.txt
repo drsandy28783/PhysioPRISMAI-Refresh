@@ -1,0 +1,107 @@
+# Physiologic Prism - Robots.txt
+# Allow all search engines to crawl public pages
+
+User-agent: *
+
+# Disallow authentication and account management pages
+Disallow: /login
+Disallow: /register
+Disallow: /logout
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /resend-verification
+Disallow: /accept-updated-tos
+
+# Disallow profile and settings pages
+Disallow: /edit-profile
+Disallow: /setup-2fa
+Disallow: /enable-2fa
+Disallow: /disable-2fa
+Disallow: /verify-2fa
+Disallow: /export-data
+Disallow: /export-my-data
+Disallow: /request-data-deletion
+Disallow: /cancel-data-deletion
+
+# Disallow admin and super admin areas
+Disallow: /admin
+Disallow: /super_admin
+Disallow: /admin_dashboard
+Disallow: /super_admin_dashboard
+
+# Disallow user dashboards and patient management
+Disallow: /dashboard
+Disallow: /view_patients
+Disallow: /add_patient
+Disallow: /edit_patient
+Disallow: /patient
+Disallow: /subjective
+Disallow: /perspectives
+Disallow: /initial_plan
+Disallow: /patho_mechanism
+Disallow: /chronic_disease
+Disallow: /clinical_flags
+Disallow: /objective_assessment
+Disallow: /provisional_diagnosis
+Disallow: /smart_goals
+Disallow: /treatment_plan
+Disallow: /follow_ups
+Disallow: /view_follow_ups
+Disallow: /patient_report
+Disallow: /download_report
+
+# Disallow user management pages
+Disallow: /manage_users
+Disallow: /approve_physios
+Disallow: /audit_logs
+Disallow: /deactivate_user
+Disallow: /reactivate_user
+Disallow: /approve_user
+Disallow: /reject_user
+
+# Disallow all API endpoints
+Disallow: /api/
+
+# Disallow payment and subscription management
+Disallow: /razorpay/
+Disallow: /checkout
+Disallow: /subscription-dashboard
+Disallow: /my-invoices
+Disallow: /invoices/
+
+# Disallow cron jobs
+Disallow: /cron/
+
+# Disallow debug and test pages
+Disallow: /debug/
+Disallow: /sentry-debug
+Disallow: /sentry-test
+Disallow: /test-razorpay
+Disallow: /icon-test
+
+# Disallow notifications
+Disallow: /notifications
+
+# Disallow exports
+Disallow: /export
+
+# Disallow offline and service worker
+Disallow: /offline
+Disallow: /service-worker.js
+
+# Allow public pages (explicit for clarity)
+Allow: /
+Allow: /pricing
+Allow: /blog
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /refund-policy
+Allow: /security
+Allow: /framework
+Allow: /scheduling-info
+Allow: /free-trial
+Allow: /coming-soon
+
+# Sitemap location
+Sitemap: https://physiologicprism.com/sitemap.xml
