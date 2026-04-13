@@ -9819,6 +9819,99 @@ def robots_txt():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate dynamic sitemap.xml with all public pages and blog posts"""
+    from flask import Response
+    try:
+        base_url = 'https://physiologicprism.com'
+
+        # Static public pages with priorities and change frequencies
+        static_pages = [
+            {'url': '/', 'priority': '1.0', 'changefreq': 'daily'},
+            {'url': '/pilot-program', 'priority': '0.8', 'changefreq': 'monthly'},
+            {'url': '/security', 'priority': '0.7', 'changefreq': 'monthly'},
+            {'url': '/framework', 'priority': '0.8', 'changefreq': 'monthly'},
+            {'url': '/pricing', 'priority': '0.9', 'changefreq': 'weekly'},
+            {'url': '/blog', 'priority': '0.8', 'changefreq': 'daily'},
+            {'url': '/privacy-policy', 'priority': '0.5', 'changefreq': 'yearly'},
+            {'url': '/terms-of-service', 'priority': '0.5', 'changefreq': 'yearly'},
+            {'url': '/refund-policy', 'priority': '0.5', 'changefreq': 'yearly'},
+        ]
+
+        # Fetch all published blog posts from Firestore
+        posts_ref = db.collection('blog_posts').where('status', '==', 'published').limit(500)
+        posts_docs = posts_ref.stream()
+
+        blog_posts = []
+        for doc in posts_docs:
+            post_data = doc.to_dict()
+            if post_data.get('slug'):
+                # Get the published date for lastmod
+                lastmod = None
+                if post_data.get('published_at'):
+                    pub_date = post_data['published_at']
+                    if isinstance(pub_date, str):
+                        try:
+                            pub_date = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+                            lastmod = pub_date.strftime('%Y-%m-%d')
+                        except:
+                            pass
+                    elif hasattr(pub_date, 'strftime'):
+                        lastmod = pub_date.strftime('%Y-%m-%d')
+
+                blog_posts.append({
+                    'slug': post_data['slug'],
+                    'lastmod': lastmod
+                })
+
+        # Build XML sitemap
+        xml = ['<?xml version="1.0" encoding="UTF-8"?>']
+        xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+
+        # Add static pages
+        for page in static_pages:
+            xml.append('  <url>')
+            xml.append(f'    <loc>{base_url}{page["url"]}</loc>')
+            xml.append(f'    <changefreq>{page["changefreq"]}</changefreq>')
+            xml.append(f'    <priority>{page["priority"]}</priority>')
+            xml.append('  </url>')
+
+        # Add blog posts
+        for post in blog_posts:
+            xml.append('  <url>')
+            xml.append(f'    <loc>{base_url}/blog/post/{post["slug"]}</loc>')
+            if post['lastmod']:
+                xml.append(f'    <lastmod>{post["lastmod"]}</lastmod>')
+            xml.append('    <changefreq>monthly</changefreq>')
+            xml.append('    <priority>0.7</priority>')
+            xml.append('  </url>')
+
+        xml.append('</urlset>')
+
+        sitemap_xml = '\n'.join(xml)
+
+        logger.info(f"Generated sitemap with {len(static_pages)} static pages and {len(blog_posts)} blog posts")
+
+        return Response(
+            sitemap_xml,
+            mimetype='application/xml',
+            headers={'Content-Type': 'application/xml; charset=utf-8'}
+        )
+
+    except Exception as e:
+        logger.error(f"Error generating sitemap: {e}", exc_info=True)
+        # Return minimal sitemap on error
+        minimal_sitemap = '''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://physiologicprism.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>'''
+        return Response(minimal_sitemap, mimetype='application/xml')
+
 @app.route('/offline')
 def offline():
     """Offline fallback page for PWA"""
