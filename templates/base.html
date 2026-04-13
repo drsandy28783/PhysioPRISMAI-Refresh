@@ -32,6 +32,9 @@
     <meta name="description" content="AI-Powered Physiotherapy Practice Management System - Clinical reasoning, patient management, and comprehensive assessment tools">
     <meta name="keywords" content="physiotherapy, practice management, clinical reasoning, patient management, AI-powered, healthcare">
 
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.url.split('?')[0] }}">
+
     <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=6">
     <link rel="stylesheet" href="{{ url_for('static', filename='assessmentProgress.css') }}">
