@@ -9,6 +9,39 @@
 <meta name="keywords" content="{{ post.tags|join(', ') }}">
 {% endif %}
 
+<!-- Structured Data / Schema.org JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{ post.title }}",
+  "author": {
+    "@type": "Person",
+    "name": "{{ post.author }}"
+  },
+  {% if post.published_at %}
+  "datePublished": "{{ post.published_at if post.published_at is string else post.published_at.isoformat() }}",
+  {% endif %}
+  "description": "{{ post.meta_description }}",
+  "image": "{{ url_for('static', filename='icons/icon-512x512.png', _external=True) }}",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PhysiologicPRISM",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{{ url_for('static', filename='logo.png', _external=True) }}"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.url.split('?')[0] }}"
+  }
+  {% if post.tags %},
+  "keywords": "{{ post.tags|join(', ') }}"
+  {% endif %}
+}
+</script>
+
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="article">
 <meta property="og:title" content="{{ post.title }}">

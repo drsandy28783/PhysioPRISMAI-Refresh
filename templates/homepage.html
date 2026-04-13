@@ -4,6 +4,39 @@
 {% block og_description %}Revolutionize your physiotherapy practice with AI-powered clinical reasoning. Streamline documentation, enhance patient care, and save hours with intelligent PRISM-based assessments{% endblock %}
 
 {% block head %}
+<!-- Structured Data / Schema.org JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PhysiologicPRISM",
+  "description": "Structured clinical reasoning and documentation software for physiotherapists. AI-powered PRISM-based assessments that help capture biopsychosocial factors, reduce cognitive load, and generate defensible documentation.",
+  "applicationCategory": "MedicalApplication",
+  "operatingSystem": "Web-based (Windows, macOS, Linux, iOS, Android)",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/PreOrder",
+    "description": "Early access available for pilot program participants"
+  },
+  "url": "{{ url_for('index', _external=True) }}",
+  "image": "{{ url_for('static', filename='logo.png', _external=True) }}",
+  "provider": {
+    "@type": "Organization",
+    "name": "PhysiologicPRISM"
+  },
+  "featureList": [
+    "Structured clinical reasoning workflow",
+    "AI-powered clinical insights",
+    "Biopsychosocial assessment framework",
+    "Automated clinical documentation",
+    "HIPAA-ready architecture",
+    "GDPR-aligned data workflows"
+  ]
+}
+</script>
+
 <style>
   /* Hide the navbar on the homepage */
   body > .navbar { display: none !important; }
