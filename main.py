@@ -1460,11 +1460,7 @@ def super_admin_required():
 
 @app.route('/')
 def index():
-    # Redirect to homepage for now, or show old index for logged-in users
-    return redirect(url_for('homepage'))
-
-@app.route('/homepage')
-def homepage():
+    """Main homepage at root URL"""
     return render_template('homepage.html')
 
 @app.route('/welcome')
@@ -9893,7 +9889,7 @@ def free_trial():
     except Exception as e:
         logger.error(f"Error loading free trial page: {e}", exc_info=True)
         flash('Error loading page. Please try again.', 'error')
-        return redirect(url_for('homepage'))
+        return redirect(url_for('index'))
 
 
 @app.route('/checkout')

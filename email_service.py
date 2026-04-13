@@ -1122,7 +1122,7 @@ def send_early_access_confirmation(full_name: str, email: str, role: str, pilot_
                     <p>In the meantime, you can learn more about PhysiologicPRISM:</p>
                     <ul style="line-height: 2;">
                         <li>📚 <a href="{APP_URL}/pilot-program" style="color: #1a5f5a;">Learn about our Pilot Program</a></li>
-                        <li>🔒 <a href="{APP_URL}/homepage#security" style="color: #1a5f5a;">Security & Compliance</a></li>
+                        <li>🔒 <a href="{APP_URL}/#security" style="color: #1a5f5a;">Security & Compliance</a></li>
                         <li>📖 <a href="{APP_URL}/blog" style="color: #1a5f5a;">Read our Blog</a></li>
                     </ul>
 
