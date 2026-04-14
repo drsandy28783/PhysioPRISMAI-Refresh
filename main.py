@@ -11354,8 +11354,12 @@ def test_registration_email():
         from email_service import send_registration_notification
         from datetime import datetime
 
+        # Get SUPER_ADMIN_EMAIL from environment
+        super_admin_email = os.environ.get('SUPER_ADMIN_EMAIL', 'drsandeep@physiologicprism.com')
+
         logger.info("=" * 80)
         logger.info("TEST REGISTRATION EMAIL ENDPOINT CALLED")
+        logger.info(f"Will send test email to: {super_admin_email}")
         logger.info("=" * 80)
 
         result = send_registration_notification({
@@ -11370,14 +11374,14 @@ def test_registration_email():
         if result:
             return jsonify({
                 'success': True,
-                'message': f'Test email sent successfully to {SUPER_ADMIN_EMAIL}',
-                'recipient': os.environ.get('SUPER_ADMIN_EMAIL', 'Not set')
+                'message': f'Test email sent successfully to {super_admin_email}',
+                'recipient': super_admin_email
             }), 200
         else:
             return jsonify({
                 'success': False,
                 'message': 'Email sending failed - check application logs',
-                'recipient': os.environ.get('SUPER_ADMIN_EMAIL', 'Not set')
+                'recipient': super_admin_email
             }), 500
 
     except Exception as e:
