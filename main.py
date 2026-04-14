@@ -11346,6 +11346,47 @@ def get_patient_context(patient_id):
 # CSP VIOLATION REPORTING
 # ═══════════════════════════════════════════════════════════════════
 
+@app.route('/test-registration-email')
+@login_required(approved_only=False)  # Must be logged in but doesn't need approval
+def test_registration_email():
+    """Test endpoint to manually trigger registration notification email"""
+    try:
+        from email_service import send_registration_notification
+        from datetime import datetime
+
+        logger.info("=" * 80)
+        logger.info("TEST REGISTRATION EMAIL ENDPOINT CALLED")
+        logger.info("=" * 80)
+
+        result = send_registration_notification({
+            'name': 'Test User (Manual Trigger)',
+            'email': 'test-manual@example.com',
+            'phone': '+1234567890',
+            'institute': 'Test Institute',
+            'created_at': datetime.now().isoformat(),
+            'user_type': 'individual'
+        })
+
+        if result:
+            return jsonify({
+                'success': True,
+                'message': f'Test email sent successfully to {SUPER_ADMIN_EMAIL}',
+                'recipient': os.environ.get('SUPER_ADMIN_EMAIL', 'Not set')
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Email sending failed - check application logs',
+                'recipient': os.environ.get('SUPER_ADMIN_EMAIL', 'Not set')
+            }), 500
+
+    except Exception as e:
+        logger.error(f"Test email endpoint error: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'message': f'Exception: {str(e)}'
+        }), 500
+
 @app.route('/api/csp-report', methods=['POST'])
 def csp_violation_report():
     """
