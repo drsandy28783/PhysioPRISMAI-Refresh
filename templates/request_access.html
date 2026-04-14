@@ -423,4 +423,60 @@
     </div>
   </div>
 </div>
+
+<!-- PostHog Analytics - Track Form Submission -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+
+    if (form && typeof posthog !== 'undefined') {
+      form.addEventListener('submit', function(e) {
+        try {
+          // Get form data
+          const email = document.getElementById('email').value;
+          const fullName = document.getElementById('full_name').value;
+          const role = document.getElementById('role').value;
+          const organisation = document.getElementById('organisation').value;
+          const country = document.getElementById('country').value;
+          const useCase = document.getElementById('use_case').value;
+          const pilotInterest = document.getElementById('pilot_interest').checked;
+
+          // Identify the user in PostHog with their email
+          posthog.identify(email, {
+            email: email,
+            name: fullName,
+            role: role,
+            organisation: organisation,
+            country: country
+          });
+
+          // Track the form submission event
+          posthog.capture('request_access_submitted', {
+            role: role,
+            organisation: organisation,
+            country: country,
+            pilot_interest: pilotInterest,
+            use_case_length: useCase.length
+          });
+
+          // Set person properties for better tracking
+          posthog.people.set({
+            email: email,
+            name: fullName,
+            role: role,
+            organisation: organisation,
+            country: country,
+            pilot_interest: pilotInterest
+          });
+
+        } catch (error) {
+          console.log('PostHog tracking error:', error);
+          // Don't block form submission if tracking fails
+        }
+
+        // Form will submit normally after this
+      });
+    }
+  });
+</script>
 {% endblock %}
