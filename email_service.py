@@ -84,11 +84,7 @@ def send_registration_notification(user_data: Dict[str, Any]) -> bool:
     Returns:
         bool: True if email sent successfully, False otherwise
     """
-    logger.info(f"=" * 80)
-    logger.info(f"🔔 REGISTRATION NOTIFICATION - START")
-    logger.info(f"🔔 send_registration_notification called for: {user_data.get('name')} ({user_data.get('email')})")
-    logger.info(f"Email config: FROM={FROM_EMAIL}, TO={SUPER_ADMIN_EMAIL}, RESEND_KEY={'SET' if resend.api_key else 'NOT SET'}")
-    logger.info(f"User data: {user_data}")
+    logger.info(f"Sending registration notification for: {user_data.get('name')} ({user_data.get('email')})")
 
     try:
         user_type = user_data.get('user_type', 'individual')
@@ -164,24 +160,14 @@ def send_registration_notification(user_data: Dict[str, Any]) -> bool:
         else:
             subject_prefix = "👤 Individual - "
 
-        result = send_email(
+        return send_email(
             to=SUPER_ADMIN_EMAIL,
             subject=f"{subject_prefix}New Registration: {user_data.get('name')} - {APP_NAME}",
             html=html
         )
 
-        if result:
-            logger.info(f"✅ REGISTRATION NOTIFICATION - SUCCESS - Email sent to {SUPER_ADMIN_EMAIL}")
-        else:
-            logger.error(f"❌ REGISTRATION NOTIFICATION - FAILED - send_email returned False")
-
-        logger.info(f"=" * 80)
-        return result
-
     except Exception as e:
-        logger.error(f"=" * 80)
-        logger.error(f"❌ CRITICAL ERROR in send_registration_notification: {str(e)}", exc_info=True)
-        logger.error(f"=" * 80)
+        logger.error(f"Error in send_registration_notification: {str(e)}", exc_info=True)
         return False
 
 
