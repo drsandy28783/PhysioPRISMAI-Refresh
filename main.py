@@ -1708,16 +1708,21 @@ def register_individual():
 
         # Send notification to super admin
         try:
-            send_registration_notification({
+            logger.info(f"🔔 Attempting to send registration notification for {email}...")
+            notification_result = send_registration_notification({
                 'name': name,
                 'email': email,
                 'phone': phone,
                 'institute': institute,
                 'created_at': datetime.now().isoformat()
             })
+            if notification_result:
+                logger.info(f"✅ Registration notification sent successfully for {email}")
+            else:
+                logger.error(f"❌ Registration notification FAILED for {email} - send_registration_notification returned False")
         except Exception as email_error:
             # Log error but don't fail registration
-            logger.error(f"Failed to send registration notification for {email}: {email_error}")
+            logger.error(f"❌ CRITICAL: Exception when sending registration notification for {email}: {type(email_error).__name__}: {str(email_error)}", exc_info=True)
 
         flash("Registration successful! Your account is pending admin approval.", "success")
         return redirect('/login')
@@ -2930,18 +2935,23 @@ def api_register():
             # Log error but don't fail registration
             logger.error(f"Failed to send verification email to {email}: {verify_error}")
 
-        # Send notification to super admin via n8n
+        # Send notification to super admin
         try:
-            send_registration_notification({
+            logger.info(f"🔔 Attempting to send API registration notification for {email}...")
+            notification_result = send_registration_notification({
                 'name': name,
                 'email': email,
                 'phone': phone,
                 'institute': institute,
                 'created_at': datetime.now().isoformat()
             })
+            if notification_result:
+                logger.info(f"✅ API registration notification sent successfully for {email}")
+            else:
+                logger.error(f"❌ API registration notification FAILED for {email} - send_registration_notification returned False")
         except Exception as webhook_error:
             # Log error but don't fail registration
-            logger.error(f"Failed to send registration notification: {webhook_error}")
+            logger.error(f"❌ CRITICAL: Exception when sending API registration notification for {email}: {type(webhook_error).__name__}: {str(webhook_error)}", exc_info=True)
 
         return jsonify({
             'ok': True,
@@ -5211,7 +5221,8 @@ def register_with_institute():
 
         # Send notification to SUPER ADMIN (so they have visibility)
         try:
-            send_registration_notification({
+            logger.info(f"🔔 Attempting to send staff registration notification for {email}...")
+            notification_result = send_registration_notification({
                 'name': name,
                 'email': email,
                 'phone': phone,
@@ -5219,9 +5230,13 @@ def register_with_institute():
                 'created_at': datetime.now().isoformat(),
                 'user_type': 'institute_staff'
             })
+            if notification_result:
+                logger.info(f"✅ Staff registration notification sent successfully for {email}")
+            else:
+                logger.error(f"❌ Staff registration notification FAILED for {email} - send_registration_notification returned False")
         except Exception as email_error:
             # Log error but don't fail registration
-            logger.error(f"Failed to send staff registration notification to super admin for {email}: {email_error}")
+            logger.error(f"❌ CRITICAL: Exception when sending staff registration notification for {email}: {type(email_error).__name__}: {str(email_error)}", exc_info=True)
 
         # Also notify institute admin (they can approve)
         try:
