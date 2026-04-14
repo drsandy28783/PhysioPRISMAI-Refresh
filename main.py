@@ -922,6 +922,7 @@ csp = {
         'https://region1.google-analytics.com',  # Google Analytics
         'https://cdn.jsdelivr.net',  # Chart.js CDN (for source maps)
         'https://us.i.posthog.com',  # PostHog Analytics API
+        'https://us-assets.i.posthog.com',  # PostHog Assets (source maps, surveys)
     ],
     'frame-src': [
         "'self'",
