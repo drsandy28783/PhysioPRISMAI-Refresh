@@ -888,6 +888,7 @@ csp = {
         'https://checkout.razorpay.com',  # Razorpay payment checkout
         'https://cdn.razorpay.com',  # Razorpay risk detection and additional scripts
         'https://cdn.jsdelivr.net',  # Chart.js CDN
+        'https://us-assets.i.posthog.com',  # PostHog Analytics
     ],
     'style-src': [
         "'self'",
@@ -920,6 +921,7 @@ csp = {
         'https://analytics.google.com',  # Google Analytics
         'https://region1.google-analytics.com',  # Google Analytics
         'https://cdn.jsdelivr.net',  # Chart.js CDN (for source maps)
+        'https://us.i.posthog.com',  # PostHog Analytics API
     ],
     'frame-src': [
         "'self'",
