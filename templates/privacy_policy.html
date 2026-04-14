@@ -5,7 +5,7 @@
 <div class="container" style="max-width: 900px; margin: 0 auto;">
   <h1>Privacy Policy</h1>
   <p style="color: #7f8c8d; font-style: italic;">
-    <strong>Version 1.0</strong> | Last Updated: January 13, 2025
+    <strong>Version 1.1</strong> | Last Updated: April 14, 2026
   </p>
 
   <div style="background-color: #e8f5e9; padding: 16px; border-radius: 4px; margin: 20px 0;">
@@ -27,8 +27,9 @@
 
   <h3>2.2 Technical Data</h3>
   <ul>
-    <li><strong>Cookies:</strong> Session cookies (required for authentication), CSRF tokens (required for security)</li>
+    <li><strong>Cookies:</strong> Session cookies (required for authentication), CSRF tokens (required for security), analytics cookies (optional, for website improvement)</li>
     <li><strong>Logs:</strong> Audit trail logs of all user actions for security and compliance</li>
+    <li><strong>Analytics Data:</strong> Page views, clicks, navigation paths, session recordings (on public pages only), device information, browser type, geographic location (country-level)</li>
   </ul>
 
   <h2>3. Legal Basis for Processing (GDPR)</h2>
@@ -46,6 +47,7 @@
     <li><strong>Security:</strong> Monitor for unauthorized access, prevent fraud, maintain audit logs</li>
     <li><strong>Communication:</strong> Send account-related notifications (approval status, security alerts)</li>
     <li><strong>Compliance:</strong> Meet legal obligations for healthcare data retention and audit trails</li>
+    <li><strong>Analytics & Improvement:</strong> Analyze website usage patterns, understand user behavior, improve user experience (public pages only; no PHI collected)</li>
   </ul>
 
   <h2>5. Data Sharing</h2>
@@ -60,7 +62,13 @@
   <ul>
     <li><strong>Microsoft Azure:</strong> Cloud infrastructure and database hosting (BAA signed for HIPAA compliance)</li>
     <li><strong>OpenAI API:</strong> AI-powered suggestions (only if enabled; BAA required; data is anonymized)</li>
+    <li><strong>Google Analytics:</strong> Website analytics and visitor tracking (public pages only; no PHI collected). See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a></li>
+    <li><strong>PostHog:</strong> Product analytics, session replay, and user behavior tracking (public pages only; no PHI collected). See <a href="https://posthog.com/privacy" target="_blank" rel="noopener">PostHog's Privacy Policy</a></li>
   </ul>
+
+  <p style="background-color: #fff3cd; padding: 12px; border-left: 4px solid #ffc107; margin: 16px 0;">
+    <strong>Note on Analytics:</strong> Google Analytics and PostHog are only used on public marketing pages (homepage, blog, pricing). Once you log in to the application, these analytics tools are disabled and do not track your activity or patient data.
+  </p>
 
   <h2>6. Your Rights Under GDPR</h2>
   <p>As a data subject, you have the following rights:</p>
@@ -139,9 +147,21 @@
         <td>1 year</td>
         <td>Functional</td>
       </tr>
+      <tr>
+        <td>_ga, _ga_*</td>
+        <td>Google Analytics - Track website usage and visitor behavior</td>
+        <td>2 years</td>
+        <td>Analytics (Optional)</td>
+      </tr>
+      <tr>
+        <td>ph_*</td>
+        <td>PostHog Analytics - Track user interactions and session recordings</td>
+        <td>1 year</td>
+        <td>Analytics (Optional)</td>
+      </tr>
     </tbody>
   </table>
-  <p><strong>Note:</strong> All cookies are strictly necessary for the service to function. Disabling cookies will prevent login.</p>
+  <p><strong>Note:</strong> Session and CSRF cookies are strictly necessary for the service to function. Analytics cookies (Google Analytics and PostHog) are used on public pages only to improve user experience and are not used to track authenticated users or patient data.</p>
 
   <h2>10. International Data Transfers</h2>
   <p>Your data is stored in Microsoft Azure data centers. If you access the service from outside your region, your data may be transferred internationally. Microsoft Azure has appropriate safeguards in place (Standard Contractual Clauses).</p>
