@@ -1129,6 +1129,66 @@ class BlogPostSchema(Schema):
     published = fields.Bool(required=False, missing=False)
 
 
+# ─── FEEDBACK & REVIEW SCHEMAS ────────────────────────────────────────
+
+class FeedbackSchema(Schema):
+    """Feedback/review submission validation"""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    rating = fields.Int(
+        required=True,
+        validate=validate.Range(min=1, max=5, error='Rating must be between 1 and 5 stars')
+    )
+
+    category = fields.Str(
+        required=True,
+        validate=validate.OneOf(
+            ['general', 'features', 'usability', 'ai_quality', 'performance', 'support', 'bug_report'],
+            error='Invalid feedback category'
+        )
+    )
+
+    title = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=5, max=150),
+            validate_no_html
+        ]
+    )
+
+    message = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=10, max=2000),
+            validate_no_html
+        ]
+    )
+
+    contact_allowed = fields.Bool(required=False, missing=True)
+
+
+class FeedbackResponseSchema(Schema):
+    """Admin response to feedback validation"""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    feedback_id = fields.Str(
+        required=True,
+        validate=validate.Length(min=1, max=100)
+    )
+
+    response = fields.Str(
+        required=True,
+        validate=[
+            validate.Length(min=10, max=2000),
+            validate_no_html
+        ]
+    )
+
+
 # ─── NOTIFICATION & SCHEDULING SCHEMAS ────────────────────────────────
 
 class FollowUpScheduleSchema(Schema):
@@ -1393,6 +1453,10 @@ __all__ = [
     # Draft & Content Management
     'DraftSaveSchema',
     'BlogPostSchema',
+
+    # Feedback & Reviews
+    'FeedbackSchema',
+    'FeedbackResponseSchema',
 
     # Notifications
     'NotificationActionSchema',

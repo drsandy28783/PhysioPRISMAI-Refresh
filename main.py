@@ -10748,6 +10748,279 @@ Systematic objective assessment provides the evidence base for clinical reasonin
 
 
 # ═══════════════════════════════════════════════════════════════════
+# FEEDBACK & REVIEWS
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/feedback')
+@login_required()
+def feedback_page():
+    """Display feedback/review page"""
+    try:
+        user_email = session.get('user_id')
+
+        # Get user's submitted feedback
+        feedback_ref = db.collection('feedback').where('user_email', '==', user_email).order_by('created_at', direction='DESCENDING').limit(50)
+        feedback_docs = feedback_ref.stream()
+
+        user_feedback = []
+        for doc in feedback_docs:
+            feedback_data = doc.to_dict()
+            feedback_data['id'] = doc.id
+
+            # Format date
+            if feedback_data.get('created_at'):
+                created = feedback_data['created_at']
+                if isinstance(created, str):
+                    try:
+                        created = datetime.fromisoformat(created.replace('Z', '+00:00'))
+                    except:
+                        created = None
+                if created:
+                    feedback_data['created_at_formatted'] = created.strftime('%B %d, %Y at %I:%M %p')
+                else:
+                    feedback_data['created_at_formatted'] = 'Unknown'
+
+            user_feedback.append(feedback_data)
+
+        return render_template('feedback.html', user_feedback=user_feedback)
+    except Exception as e:
+        logger.error(f"Error loading feedback page: {e}")
+        flash('Error loading feedback page', 'error')
+        return redirect(url_for('dashboard'))
+
+
+@app.route('/api/feedback/submit', methods=['POST'])
+@login_required()
+def submit_feedback():
+    """Submit feedback/review"""
+    from schemas import FeedbackSchema, validate_json
+
+    try:
+        data = request.get_json() or {}
+
+        # Validate input
+        is_valid, result = validate_json(FeedbackSchema, data)
+        if not is_valid:
+            return jsonify({'ok': False, 'error': result}), 400
+
+        user_email = session.get('user_id')
+        user_name = session.get('user_name', 'Anonymous')
+
+        # Create feedback document
+        feedback_data = {
+            'user_email': user_email,
+            'user_name': user_name,
+            'rating': result['rating'],
+            'category': result['category'],
+            'title': result['title'],
+            'message': result['message'],
+            'contact_allowed': result.get('contact_allowed', True),
+            'status': 'pending',  # pending, reviewed, responded
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        # Save to database
+        feedback_ref = db.collection('feedback').document()
+        feedback_ref.set(feedback_data)
+
+        # Log action
+        log_action(user_email, 'Submit Feedback', f"Submitted {result['category']} feedback: {result['title']}")
+
+        return jsonify({
+            'ok': True,
+            'message': 'Thank you for your feedback! We appreciate your input.',
+            'feedback_id': feedback_ref.id
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error submitting feedback: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': 'Failed to submit feedback. Please try again.'}), 500
+
+
+@app.route('/admin/feedback')
+@super_admin_required()
+def admin_feedback():
+    """Admin view of all feedback (super admin only)"""
+    try:
+        # Get all feedback, ordered by date
+        feedback_ref = db.collection('feedback').order_by('created_at', direction='DESCENDING').limit(200)
+        feedback_docs = feedback_ref.stream()
+
+        all_feedback = []
+        category_counts = {}
+        rating_counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+        for doc in feedback_docs:
+            feedback_data = doc.to_dict()
+            feedback_data['id'] = doc.id
+
+            # Format date
+            if feedback_data.get('created_at'):
+                created = feedback_data['created_at']
+                if isinstance(created, str):
+                    try:
+                        created = datetime.fromisoformat(created.replace('Z', '+00:00'))
+                    except:
+                        created = None
+                if created:
+                    feedback_data['created_at_formatted'] = created.strftime('%B %d, %Y at %I:%M %p')
+                else:
+                    feedback_data['created_at_formatted'] = 'Unknown'
+
+            all_feedback.append(feedback_data)
+
+            # Count categories
+            category = feedback_data.get('category', 'general')
+            category_counts[category] = category_counts.get(category, 0) + 1
+
+            # Count ratings
+            rating = feedback_data.get('rating', 0)
+            if rating in rating_counts:
+                rating_counts[rating] += 1
+
+        # Calculate average rating
+        total_ratings = sum(rating_counts.values())
+        avg_rating = sum(rating * count for rating, count in rating_counts.items()) / total_ratings if total_ratings > 0 else 0
+
+        return render_template('admin_feedback.html',
+                             feedback=all_feedback,
+                             category_counts=category_counts,
+                             rating_counts=rating_counts,
+                             avg_rating=round(avg_rating, 2),
+                             total_feedback=len(all_feedback))
+    except Exception as e:
+        logger.error(f"Error loading admin feedback: {e}")
+        flash('Error loading feedback data', 'error')
+        return redirect(url_for('super_admin_dashboard'))
+
+
+@app.route('/api/feedback/<feedback_id>/respond', methods=['POST'])
+@super_admin_required()
+def respond_to_feedback(feedback_id):
+    """Admin response to feedback"""
+    from schemas import FeedbackResponseSchema, validate_json
+
+    try:
+        data = request.get_json() or {}
+
+        # Validate input
+        is_valid, result = validate_json(FeedbackResponseSchema, {
+            'feedback_id': feedback_id,
+            'response': data.get('response', '')
+        })
+        if not is_valid:
+            return jsonify({'ok': False, 'error': result}), 400
+
+        # Update feedback document
+        feedback_ref = db.collection('feedback').document(feedback_id)
+        feedback_doc = feedback_ref.get()
+
+        if not feedback_doc.exists:
+            return jsonify({'ok': False, 'error': 'Feedback not found'}), 404
+
+        user_email = session.get('user_id')
+
+        feedback_ref.update({
+            'status': 'responded',
+            'admin_response': result['response'],
+            'responded_by': user_email,
+            'responded_at': datetime.now(timezone.utc).isoformat(),
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        })
+
+        # Log action
+        log_action(user_email, 'Respond to Feedback', f"Responded to feedback {feedback_id}")
+
+        return jsonify({'ok': True, 'message': 'Response submitted successfully'}), 200
+
+    except Exception as e:
+        logger.error(f"Error responding to feedback: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': 'Failed to submit response'}), 500
+
+
+@app.route('/reviews')
+def public_reviews():
+    """Public page displaying positive reviews and testimonials"""
+    try:
+        # Get only public, positive reviews (4-5 stars)
+        feedback_ref = db.collection('feedback').where('is_public', '==', True).where('rating', '>=', 4).order_by('rating', direction='DESCENDING').order_by('created_at', direction='DESCENDING').limit(50)
+        feedback_docs = feedback_ref.stream()
+
+        reviews = []
+        total_reviews = 0
+        total_rating = 0
+        rating_counts = {5: 0, 4: 0}
+
+        for doc in feedback_docs:
+            review_data = doc.to_dict()
+            review_data['id'] = doc.id
+
+            # Format date
+            if review_data.get('created_at'):
+                created = review_data['created_at']
+                if isinstance(created, str):
+                    try:
+                        created = datetime.fromisoformat(created.replace('Z', '+00:00'))
+                    except:
+                        created = None
+                if created:
+                    review_data['created_at_formatted'] = created.strftime('%B %d, %Y')
+                else:
+                    review_data['created_at_formatted'] = 'Recently'
+
+            reviews.append(review_data)
+            total_reviews += 1
+            rating = review_data.get('rating', 0)
+            total_rating += rating
+            if rating in rating_counts:
+                rating_counts[rating] += 1
+
+        # Calculate average rating
+        avg_rating = round(total_rating / total_reviews, 1) if total_reviews > 0 else 0
+
+        return render_template('reviews.html',
+                             reviews=reviews,
+                             total_reviews=total_reviews,
+                             avg_rating=avg_rating,
+                             rating_counts=rating_counts)
+    except Exception as e:
+        logger.error(f"Error loading public reviews: {e}")
+        # Return page with empty reviews on error
+        return render_template('reviews.html', reviews=[], total_reviews=0, avg_rating=0, rating_counts={5: 0, 4: 0})
+
+
+@app.route('/api/feedback/<feedback_id>/toggle-public', methods=['POST'])
+@super_admin_required()
+def toggle_feedback_public(feedback_id):
+    """Toggle whether feedback is shown publicly"""
+    try:
+        feedback_ref = db.collection('feedback').document(feedback_id)
+        feedback_doc = feedback_ref.get()
+
+        if not feedback_doc.exists:
+            return jsonify({'ok': False, 'error': 'Feedback not found'}), 404
+
+        current_data = feedback_doc.to_dict()
+        is_public = current_data.get('is_public', False)
+
+        # Toggle the public status
+        feedback_ref.update({
+            'is_public': not is_public,
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        })
+
+        user_email = session.get('user_id')
+        log_action(user_email, 'Toggle Feedback Public', f"Set feedback {feedback_id} public status to {not is_public}")
+
+        return jsonify({'ok': True, 'is_public': not is_public}), 200
+
+    except Exception as e:
+        logger.error(f"Error toggling feedback public status: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': 'Failed to update feedback'}), 500
+
+
+# ═══════════════════════════════════════════════════════════════════
 # FOLLOW-UP REMINDER MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════
 

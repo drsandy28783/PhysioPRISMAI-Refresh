@@ -1,0 +1,385 @@
+{% extends "base_public.html" %}
+
+{% block title %}Reviews & Testimonials - Physio PRISM{% endblock %}
+
+{% block head %}
+<style>
+    .reviews-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 80px 20px 60px;
+        text-align: center;
+        margin-bottom: 60px;
+    }
+
+    .reviews-hero h1 {
+        font-size: 48px;
+        margin-bottom: 20px;
+        font-weight: 700;
+    }
+
+    .reviews-hero p {
+        font-size: 20px;
+        opacity: 0.95;
+        max-width: 600px;
+        margin: 0 auto 30px;
+    }
+
+    .rating-summary {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .rating-summary-score {
+        font-size: 64px;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+
+    .rating-summary-stars {
+        font-size: 32px;
+        color: #f39c12;
+        margin-bottom: 10px;
+    }
+
+    .rating-summary-text {
+        font-size: 16px;
+        color: #7f8c8d;
+    }
+
+    .reviews-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px 60px;
+    }
+
+    .reviews-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .stat-box {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+        text-align: center;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .stat-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+
+    .stat-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    .reviews-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 30px;
+        margin-top: 40px;
+    }
+
+    .review-card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .review-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .review-card::before {
+        content: '"';
+        position: absolute;
+        top: -10px;
+        left: 20px;
+        font-size: 120px;
+        color: #f0f0f0;
+        font-family: Georgia, serif;
+        line-height: 1;
+    }
+
+    .review-header {
+        position: relative;
+        z-index: 1;
+        margin-bottom: 20px;
+    }
+
+    .review-stars {
+        font-size: 20px;
+        color: #f39c12;
+        margin-bottom: 12px;
+    }
+
+    .review-category {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .review-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 15px 0 12px;
+        line-height: 1.4;
+    }
+
+    .review-message {
+        color: #555;
+        line-height: 1.7;
+        margin-bottom: 20px;
+        font-size: 15px;
+    }
+
+    .review-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 15px;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .review-author {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .review-author-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .review-author-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .review-author-name {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 14px;
+    }
+
+    .review-date {
+        font-size: 12px;
+        color: #95a5a6;
+    }
+
+    .verified-badge {
+        background: #e3f2fd;
+        color: #1565c0;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #95a5a6;
+    }
+
+    .empty-state-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        color: #7f8c8d;
+        margin-bottom: 15px;
+    }
+
+    .cta-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 20px;
+        text-align: center;
+        margin-top: 60px;
+        border-radius: 12px;
+    }
+
+    .cta-section h2 {
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+
+    .cta-section p {
+        font-size: 18px;
+        margin-bottom: 30px;
+        opacity: 0.95;
+    }
+
+    .cta-button {
+        display: inline-block;
+        padding: 16px 40px;
+        background: white;
+        color: #667eea;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 16px;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 768px) {
+        .reviews-hero h1 {
+            font-size: 36px;
+        }
+
+        .reviews-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .reviews-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reviews-hero">
+    <h1>What Our Users Say</h1>
+    <p>Real feedback from physiotherapists transforming their practice with PhysiologicPRISM</p>
+
+    <div class="rating-summary">
+        <div class="rating-summary-score">{{ avg_rating }}</div>
+        <div class="rating-summary-stars">
+            {% set full_stars = avg_rating|int %}
+            {% set has_half = (avg_rating - full_stars) >= 0.5 %}
+            {% for i in range(full_stars) %}★{% endfor %}
+            {% if has_half %}★{% endif %}
+            {% for i in range(5 - full_stars - (1 if has_half else 0)) %}☆{% endfor %}
+        </div>
+        <div class="rating-summary-text">Based on {{ total_reviews }} review{{ 's' if total_reviews != 1 else '' }}</div>
+    </div>
+</div>
+
+<div class="reviews-container">
+    <!-- Statistics -->
+    <div class="reviews-stats">
+        <div class="stat-box">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value">{{ rating_counts.get(5, 0) }}</div>
+            <div class="stat-label">5-Star Reviews</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-icon">👍</div>
+            <div class="stat-value">{{ total_reviews }}</div>
+            <div class="stat-label">Total Reviews</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-icon">💯</div>
+            <div class="stat-value">{{ ((rating_counts.get(5, 0) / total_reviews * 100)|round|int) if total_reviews > 0 else 0 }}%</div>
+            <div class="stat-label">Highly Satisfied</div>
+        </div>
+    </div>
+
+    <!-- Reviews Grid -->
+    {% if reviews %}
+    <div class="reviews-grid">
+        {% for review in reviews %}
+        <div class="review-card">
+            <div class="review-header">
+                <div class="review-stars">
+                    {% for i in range(review.rating) %}★{% endfor %}
+                    {% for i in range(5 - review.rating) %}☆{% endfor %}
+                </div>
+                <span class="review-category">{{ review.category.replace('_', ' ')|title }}</span>
+            </div>
+
+            <div class="review-title">{{ review.title }}</div>
+            <div class="review-message">{{ review.message }}</div>
+
+            <div class="review-footer">
+                <div class="review-author">
+                    <div class="review-author-avatar">
+                        {{ review.user_name[0]|upper if review.user_name else '?' }}
+                    </div>
+                    <div class="review-author-info">
+                        <div class="review-author-name">{{ review.user_name or 'Anonymous' }}</div>
+                        <div class="review-date">{{ review.created_at_formatted }}</div>
+                    </div>
+                </div>
+                <span class="verified-badge">
+                    ✓ Verified User
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">⭐</div>
+        <h3>No Reviews Yet</h3>
+        <p>Be the first to share your experience with PhysiologicPRISM!</p>
+    </div>
+    {% endif %}
+
+    <!-- Call to Action -->
+    <div class="cta-section">
+        <h2>Ready to Transform Your Practice?</h2>
+        <p>Join hundreds of physiotherapists already using PhysiologicPRISM</p>
+        <a href="{{ url_for('request_access') }}" class="cta-button">Get Started Free</a>
+    </div>
+</div>
+{% endblock %}
