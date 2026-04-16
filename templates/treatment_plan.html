@@ -53,6 +53,59 @@
         <a href="{{ url_for('smart_goals', patient_id=patient_id) }}" class="button" style="display: inline-flex; align-items: center;">&larr; Back to SMART Goals</a>
       </div>
     </form>
+
+    <!-- Schedule First Follow-up Section -->
+    <div style="margin-top: 40px; padding: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 2.5em;">📅</span>
+        <div>
+          <h3 style="margin: 0; color: white; font-size: 1.4em;">Schedule First Follow-up</h3>
+          <p style="margin: 4px 0 0 0; color: rgba(255,255,255,0.9); font-size: 0.95em;">Complete the treatment plan by booking the patient's first follow-up appointment</p>
+        </div>
+      </div>
+
+      <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">📆 Follow-up Date</label>
+            <input type="date" id="first_followup_date" class="input-field" required style="font-size: 1em;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">🕐 Time</label>
+            <input type="time" id="first_followup_time" class="input-field" value="10:00" required style="font-size: 1em;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">⏱️ Duration</label>
+            <select id="first_followup_duration" class="input-field" required style="font-size: 1em;">
+              <option value="30">30 minutes</option>
+              <option value="45" selected>45 minutes</option>
+              <option value="60">60 minutes</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" id="schedule-followup-btn" class="button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; padding: 12px 24px; font-size: 1em; border: none; display: flex; align-items: center; gap: 8px;">
+            <span>📅</span>
+            <span>Schedule Follow-up Appointment</span>
+          </button>
+        </div>
+
+        <div id="schedule-success-message" style="display: none; margin-top: 16px; padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; color: #155724;">
+          <strong>✅ Success!</strong> Follow-up appointment has been scheduled and added to your PhysioSchedule calendar.
+        </div>
+
+        <div id="schedule-error-message" style="display: none; margin-top: 16px; padding: 12px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; color: #721c24;">
+          <strong>⚠️ Error:</strong> <span id="error-text"></span>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.15); border-radius: 6px; border-left: 4px solid rgba(255,255,255,0.5);">
+        <p style="margin: 0; color: white; font-size: 0.9em;">
+          <strong>💡 Tip:</strong> After scheduling, the appointment will automatically appear in your PhysioSchedule app calendar. You'll receive reminders as the date approaches.
+        </p>
+      </div>
+    </div>
   </div>
 
 <script nonce="{{ csp_nonce() }}">
@@ -65,7 +118,117 @@
       saveDelay: 2000
     });
     console.log('Draft auto-save initialized for treatment plan');
+
+    // Add event listener for schedule follow-up button
+    document.getElementById('schedule-followup-btn').addEventListener('click', scheduleFirstFollowup);
   });
+
+  async function scheduleFirstFollowup() {
+    const dateInput = document.getElementById('first_followup_date');
+    const timeInput = document.getElementById('first_followup_time');
+    const durationInput = document.getElementById('first_followup_duration');
+    const successMessage = document.getElementById('schedule-success-message');
+    const errorMessage = document.getElementById('schedule-error-message');
+    const errorText = document.getElementById('error-text');
+    const scheduleBtn = document.getElementById('schedule-followup-btn');
+
+    // Validate inputs
+    if (!dateInput.value) {
+      errorText.textContent = 'Please select a follow-up date';
+      errorMessage.style.display = 'block';
+      successMessage.style.display = 'none';
+      dateInput.focus();
+      return;
+    }
+
+    if (!timeInput.value) {
+      errorText.textContent = 'Please select a time';
+      errorMessage.style.display = 'block';
+      successMessage.style.display = 'none';
+      timeInput.focus();
+      return;
+    }
+
+    // Validate date is in the future
+    const selectedDate = new Date(dateInput.value + 'T' + timeInput.value);
+    const now = new Date();
+    if (selectedDate < now) {
+      errorText.textContent = 'Follow-up date must be in the future';
+      errorMessage.style.display = 'block';
+      successMessage.style.display = 'none';
+      dateInput.focus();
+      return;
+    }
+
+    // Disable button and show loading state
+    const originalButtonHTML = scheduleBtn.innerHTML;
+    scheduleBtn.disabled = true;
+    scheduleBtn.innerHTML = '<span>⏳</span><span>Scheduling...</span>';
+    errorMessage.style.display = 'none';
+    successMessage.style.display = 'none';
+
+    try {
+      const response = await fetch('/api/patient/{{ patient_id }}/set_next_followup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          next_followup_date: dateInput.value,
+          followup_time: timeInput.value,
+          duration: parseInt(durationInput.value)
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.ok) {
+        // Show success message
+        successMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+
+        // Update button to show success
+        scheduleBtn.innerHTML = '<span>✅</span><span>Appointment Scheduled!</span>';
+        scheduleBtn.style.background = '#28a745';
+
+        // Scroll to success message
+        successMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Reset form after 3 seconds
+        setTimeout(() => {
+          scheduleBtn.innerHTML = originalButtonHTML;
+          scheduleBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+          scheduleBtn.disabled = false;
+
+          // Clear date/time fields
+          dateInput.value = '';
+          timeInput.value = '10:00';
+          durationInput.value = '45';
+
+          // Hide success message after 5 seconds
+          setTimeout(() => {
+            successMessage.style.display = 'none';
+          }, 2000);
+        }, 3000);
+
+      } else {
+        throw new Error(data.error || 'Failed to schedule appointment');
+      }
+
+    } catch (error) {
+      console.error('Error scheduling follow-up:', error);
+      errorText.textContent = error.message || 'Failed to schedule appointment. Please try again.';
+      errorMessage.style.display = 'block';
+      successMessage.style.display = 'none';
+
+      // Reset button
+      scheduleBtn.innerHTML = originalButtonHTML;
+      scheduleBtn.disabled = false;
+
+      // Scroll to error message
+      errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
 </script>
 {% endblock %}
 

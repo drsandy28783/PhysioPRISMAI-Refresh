@@ -104,15 +104,27 @@
 
     <!-- Schedule Next Follow-up -->
     <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
-      <h3 style="margin-top: 0; color: #2c3e50;">📅 Schedule Next Follow-up</h3>
-      <p style="color: #7f8c8d; margin-bottom: 16px;">Set a reminder for the patient's next appointment. You'll receive notifications as the date approaches.</p>
+      <h3 style="margin-top: 0; color: #2c3e50;">📅 Schedule Next Follow-up Appointment</h3>
+      <p style="color: #7f8c8d; margin-bottom: 16px;">Schedule the patient's next appointment. This will create an appointment in your calendar and send notifications.</p>
 
-      <div style="display: flex; gap: 12px; align-items: flex-end;">
-        <div style="flex: 1;">
-          <label>Next Follow-up Date:</label>
-          <input type="date" id="next_followup_date" class="input-field" value="{{ patient.next_followup_date or '' }}">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: flex-end;">
+        <div>
+          <label>Follow-up Date:</label>
+          <input type="date" id="next_followup_date" class="input-field" value="{{ patient.next_followup_date or '' }}" required>
         </div>
-        <button id="set-followup-btn" class="button" style="background: #3498db;">Set Reminder</button>
+        <div>
+          <label>Time:</label>
+          <input type="time" id="followup_time" class="input-field" value="10:00" required>
+        </div>
+        <div>
+          <label>Duration:</label>
+          <select id="followup_duration" class="input-field" required>
+            <option value="30" selected>30 minutes</option>
+            <option value="45">45 minutes</option>
+            <option value="60">60 minutes</option>
+          </select>
+        </div>
+        <button id="set-followup-btn" class="button" style="background: #3498db;">Schedule Appointment</button>
       </div>
 
       {% if patient.next_followup_date %}
@@ -139,9 +151,16 @@
 
       async function setNextFollowup() {
         const date = document.getElementById('next_followup_date').value;
+        const time = document.getElementById('followup_time').value;
+        const duration = document.getElementById('followup_duration').value;
 
         if (!date) {
           alert('Please select a date');
+          return;
+        }
+
+        if (!time) {
+          alert('Please select a time');
           return;
         }
 
@@ -152,21 +171,23 @@
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              next_followup_date: date
+              next_followup_date: date,
+              followup_time: time,
+              duration: parseInt(duration)
             })
           });
 
           const data = await response.json();
 
           if (data.ok) {
-            alert('Next follow-up reminder set successfully!');
+            alert('✅ Follow-up appointment scheduled successfully!\n\nDate: ' + date + '\nTime: ' + time + '\nDuration: ' + duration + ' minutes\n\nThe appointment has been added to your PhysioSchedule calendar.');
             location.reload();
           } else {
             alert('Error: ' + (data.error || 'Unknown error'));
           }
         } catch (error) {
           console.error('Error setting follow-up:', error);
-          alert('Error setting follow-up reminder');
+          alert('Error scheduling follow-up appointment');
         }
       }
 

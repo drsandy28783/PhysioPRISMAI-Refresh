@@ -11027,10 +11027,12 @@ def toggle_feedback_public(feedback_id):
 @app.route('/api/patient/<patient_id>/set_next_followup', methods=['POST'])
 @login_required()
 def set_next_followup(patient_id):
-    """Set next follow-up date for a patient"""
+    """Set next follow-up date for a patient and auto-create appointment in PhysioSchedule"""
     try:
         data = request.get_json() or {}
         next_followup_date = data.get('next_followup_date')
+        followup_time = data.get('followup_time', '10:00')  # Default to 10:00 AM if not specified
+        duration = data.get('duration', 30)  # Default 30 minutes
 
         if not next_followup_date:
             return jsonify({'ok': False, 'error': 'Missing next_followup_date'}), 400
@@ -11057,12 +11059,56 @@ def set_next_followup(patient_id):
             'updated_at': SERVER_TIMESTAMP
         })
 
+        # Auto-create appointment in PhysioSchedule app
+        try:
+            from datetime import datetime, timedelta
+            import uuid
+
+            # Calculate end time
+            start_time = datetime.strptime(followup_time, '%H:%M')
+            end_time = start_time + timedelta(minutes=int(duration))
+
+            appointment = {
+                'id': f"appt_{uuid.uuid4().hex[:12]}",
+                'physio_id': user_id,
+                'patient_id': patient_id,
+                'patient_name': patient.get('name', patient.get('patientName', '')),
+                'patient_phone': patient.get('phone', patient.get('contactDetails', '')),
+                'date': next_followup_date,
+                'time': followup_time,
+                'end_time': end_time.strftime('%H:%M'),
+                'duration': int(duration),
+                'type': 'followup',
+                'chief_complaint': 'Follow-up visit',
+                'notes': 'Auto-created from PhysiologicPRISM follow-up schedule',
+                'status': 'scheduled',
+                'checked_in_at': None,
+                'reminder_24h_sent': False,
+                'reminder_2h_sent': False,
+                'created_by': user_id,
+                'created_at': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat(),
+                'deleted': False,
+                'synced_from_recovery': True  # Flag to identify auto-synced appointments
+            }
+
+            # Create appointment in PhysioSchedule's appointments collection
+            db.collection('appointments').add(appointment)
+
+            logger.info(f"Auto-created appointment in PhysioSchedule for patient {patient_id} on {next_followup_date}")
+
+        except Exception as appt_error:
+            # Log error but don't fail the whole operation
+            logger.error(f"Failed to auto-create appointment in PhysioSchedule: {appt_error}", exc_info=True)
+            # Continue - patient record was still updated successfully
+
         log_action(user_id, 'Set Follow-up', f"Set next follow-up for {patient_id} on {next_followup_date}")
 
         return jsonify({
             'ok': True,
-            'message': 'Next follow-up date set successfully',
-            'next_followup_date': next_followup_date
+            'message': 'Next follow-up date set successfully and appointment created',
+            'next_followup_date': next_followup_date,
+            'appointment_created': True
         }), 200
 
     except Exception as e:
