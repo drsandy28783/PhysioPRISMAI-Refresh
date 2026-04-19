@@ -601,13 +601,13 @@
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     border-left: 4px solid #1a5f5a;
   }
 
   .blog-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   }
 
   .blog-title {
@@ -1034,6 +1034,30 @@
     }
   }
 
+  /* Scroll-triggered fade-in animations */
+  .fade-in-element {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .fade-in-element.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Stagger animation delays for sequential elements */
+  .pillar-card:nth-child(1) { transition-delay: 0s; }
+  .pillar-card:nth-child(2) { transition-delay: 0.1s; }
+  .pillar-card:nth-child(3) { transition-delay: 0.2s; }
+  .pillar-card:nth-child(4) { transition-delay: 0.3s; }
+  .pillar-card:nth-child(5) { transition-delay: 0.4s; }
+
+  .flow-step:nth-child(1) { transition-delay: 0s; }
+  .flow-step:nth-child(2) { transition-delay: 0.1s; }
+  .flow-step:nth-child(3) { transition-delay: 0.2s; }
+  .flow-step:nth-child(4) { transition-delay: 0.3s; }
+
   /* Responsive */
   @media (max-width: 768px) {
     .hero-headline {
@@ -1243,35 +1267,35 @@
 <section class="section section-alt">
   <h2 class="section-title">Why physiotherapists use PRISM</h2>
   <div class="pillars-grid">
-    <div class="pillar-card">
+    <div class="pillar-card fade-in-element">
       <div class="pillar-icon">🎯</div>
       <h3 class="pillar-title">Never miss key clinical findings</h3>
       <p class="pillar-text">
         Guided prompts ensure red flags, psychosocial factors, and important history details are captured every time.
       </p>
     </div>
-    <div class="pillar-card">
+    <div class="pillar-card fade-in-element">
       <div class="pillar-icon">🧠</div>
       <h3 class="pillar-title">Think systematically for every patient</h3>
       <p class="pillar-text">
         Structured workflow keeps your clinical reasoning sharp and consistent, even during back-to-back appointments.
       </p>
     </div>
-    <div class="pillar-card">
+    <div class="pillar-card fade-in-element">
       <div class="pillar-icon">⚡</div>
       <h3 class="pillar-title">Reduce cognitive overload during busy clinics</h3>
       <p class="pillar-text">
         Let the system handle structure and prompts so you can focus on clinical decision-making and patient care.
       </p>
     </div>
-    <div class="pillar-card">
+    <div class="pillar-card fade-in-element">
       <div class="pillar-icon">💬</div>
       <h3 class="pillar-title">Capture biopsychosocial factors consistently</h3>
       <p class="pillar-text">
         Integrated prompts help you document patient perspectives, lifestyle factors, and psychosocial context.
       </p>
     </div>
-    <div class="pillar-card">
+    <div class="pillar-card fade-in-element">
       <div class="pillar-icon">📄</div>
       <h3 class="pillar-title">Generate structured, defensible documentation</h3>
       <p class="pillar-text">
@@ -1285,22 +1309,22 @@
 <section class="section" id="how-it-works">
   <h2 class="section-title">From first question to defensible documentation.</h2>
   <div class="flow-container">
-    <div class="flow-step">
+    <div class="flow-step fade-in-element">
       <div class="flow-step-number">1</div>
       <h3 class="flow-step-title">Capture everything that matters</h3>
       <p class="flow-step-text">Structured intake ensures no missed history or blind spots.</p>
     </div>
-    <div class="flow-step">
+    <div class="flow-step fade-in-element">
       <div class="flow-step-number">2</div>
       <h3 class="flow-step-title">Test with purpose</h3>
       <p class="flow-step-text">Plan and perform assessments guided by clinical hypotheses.</p>
     </div>
-    <div class="flow-step">
+    <div class="flow-step fade-in-element">
       <div class="flow-step-number">3</div>
       <h3 class="flow-step-title">Reason with clarity</h3>
       <p class="flow-step-text">AI-assisted insights support your decisions without replacing your judgment.</p>
     </div>
-    <div class="flow-step">
+    <div class="flow-step fade-in-element">
       <div class="flow-step-number">4</div>
       <h3 class="flow-step-title">Generate defensible documentation</h3>
       <p class="flow-step-text">Clear, structured reports ready for clinical and legal use.</p>
@@ -1484,6 +1508,25 @@
         }
         handleSmoothScroll(e, href);
       });
+    });
+
+    // Scroll-triggered fade-in animations using Intersection Observer
+    const fadeInObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          // Optionally unobserve after animation to improve performance
+          fadeInObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1, // Trigger when 10% of element is visible
+      rootMargin: '0px 0px -50px 0px' // Trigger slightly before element enters viewport
+    });
+
+    // Observe all fade-in elements
+    document.querySelectorAll('.fade-in-element').forEach(element => {
+      fadeInObserver.observe(element);
     });
   });
 
