@@ -3272,6 +3272,25 @@ def refund_policy():
     return render_template('refund_policy.html')
 
 
+# Short URL redirects for common paths
+@app.route('/terms')
+def terms_redirect():
+    """Redirect /terms to /terms-of-service"""
+    return redirect(url_for('terms_of_service'), code=301)
+
+
+@app.route('/privacy')
+def privacy_redirect():
+    """Redirect /privacy to /privacy-policy"""
+    return redirect(url_for('privacy_policy'), code=301)
+
+
+@app.route('/contact')
+def contact_redirect():
+    """Redirect /contact to homepage with contact info"""
+    return redirect(url_for('index'), code=302)
+
+
 @app.route('/accept-updated-tos')
 def accept_updated_tos():
     """

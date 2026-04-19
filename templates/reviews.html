@@ -298,6 +298,7 @@
 
 {% block content %}
 <div class="reviews-hero">
+    {% if total_reviews > 0 %}
     <h1>What Our Users Say</h1>
     <p>Real feedback from physiotherapists transforming their practice with PhysiologicPRISM</p>
 
@@ -312,9 +313,19 @@
         </div>
         <div class="rating-summary-text">Based on {{ total_reviews }} review{{ 's' if total_reviews != 1 else '' }}</div>
     </div>
+    {% else %}
+    <h1>Reviews & Testimonials</h1>
+    <p>We're currently in early access. User reviews will appear here as our community grows.</p>
+    <div class="rating-summary" style="background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255, 255, 255, 0.3);">
+        <div style="font-size: 48px; margin-bottom: 15px;">⭐</div>
+        <div style="font-size: 24px; font-weight: 600; margin-bottom: 10px;">Early Access Phase</div>
+        <div class="rating-summary-text" style="color: white; opacity: 0.9;">Reviews coming soon from our pilot program participants</div>
+    </div>
+    {% endif %}
 </div>
 
 <div class="reviews-container">
+    {% if total_reviews > 0 %}
     <!-- Statistics -->
     <div class="reviews-stats">
         <div class="stat-box">
@@ -333,6 +344,7 @@
             <div class="stat-label">Highly Satisfied</div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Reviews Grid -->
     {% if reviews %}
@@ -369,9 +381,13 @@
     </div>
     {% else %}
     <div class="empty-state">
-        <div class="empty-state-icon">⭐</div>
-        <h3>No Reviews Yet</h3>
-        <p>Be the first to share your experience with PhysiologicPRISM!</p>
+        <div class="empty-state-icon">🚀</div>
+        <h3>Building Our Community</h3>
+        <p>We're working with pilot program participants to gather feedback and refine the platform. Reviews from our early users will be shared here soon.</p>
+        <p style="margin-top: 20px; font-size: 16px; color: #667eea; font-weight: 600;">
+            Interested in being part of our pilot program?
+        </p>
+        <a href="{{ url_for('pilot_program') }}" style="display: inline-block; margin-top: 15px; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Learn More</a>
     </div>
     {% endif %}
 

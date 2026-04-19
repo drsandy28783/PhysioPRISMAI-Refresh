@@ -48,6 +48,12 @@
     padding: 0;
   }
 
+  /* Prevent layout duplication at wide viewports */
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   /* Homepage specific navbar */
   .homepage-navbar {
     background: #1a5f5a;
@@ -959,6 +965,75 @@
     }
   }
 
+  /* Extra wide viewport fix - ensure proper centering and prevent duplication */
+  @media (min-width: 1543px) {
+    /* Constrain all sections */
+    .section {
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Ensure grids don't exceed 4 columns */
+    .pillars-grid,
+    .flow-container,
+    .segments-grid,
+    .blog-grid,
+    .copyright-features-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Force 4-column max for flow container */
+    .flow-container {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* Force 3-column max for pillars */
+    .pillars-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Force 3-column max for blog grid */
+    .blog-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Constrain full-width sections */
+    .homepage-navbar,
+    .homepage-footer {
+      max-width: 100%;
+    }
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto 32px;
+    }
+
+    .hero-section,
+    .copyright-framework-section {
+      max-width: 100%;
+    }
+
+    .hero-content {
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Ensure no elements cause overflow */
+    * {
+      box-sizing: border-box;
+    }
+
+    /* Explicitly prevent any child from overflowing */
+    body > * {
+      max-width: 100vw;
+    }
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .hero-headline {
@@ -1382,22 +1457,33 @@
 
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
-  // Smooth scroll for anchor links
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      const href = this.getAttribute('href');
-      // Skip if href is just "#" (no target ID)
-      if (!href || href === '#') {
-        return;
-      }
+  // Smooth scroll for anchor links - ensure DOM is ready
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to handle smooth scrolling
+    function handleSmoothScroll(e, targetId) {
       e.preventDefault();
-      const target = document.querySelector(href);
+      const target = document.querySelector(targetId);
       if (target) {
-        target.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
+        // Add a small delay to ensure reliable scrolling
+        setTimeout(() => {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }, 10);
       }
+    }
+
+    // Attach listeners to all anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        // Skip if href is just "#" (no target ID)
+        if (!href || href === '#') {
+          return;
+        }
+        handleSmoothScroll(e, href);
+      });
     });
   });
 
