@@ -10261,6 +10261,10 @@ def blog_post(post_id):
 def blog_detail(slug):
     """Display individual blog post by slug"""
     try:
+        # 301 redirect for deleted stub article to complete guide
+        if slug == 'clinical-reasoning-framework':
+            return redirect(url_for('blog_detail', slug='clinical-reasoning-physiotherapy-complete-2026-guide'), code=301)
+
         # Query for post with matching slug
         posts = db.collection('blog_posts').where('slug', '==', slug).limit(1).stream()
         posts_list = list(posts)
@@ -10545,68 +10549,9 @@ def seed_blog_posts():
             return redirect(url_for('blog_admin'))
 
         # Define initial blog posts
+        # NOTE: The stub "Clinical Reasoning Framework" article was removed in 2026
+        # A 301 redirect is in place from the old slug to the complete guide
         blog_posts = [
-            {
-                'title': 'Clinical Reasoning Framework for Physiotherapists',
-                'slug': 'clinical-reasoning-framework',
-                'content': '''
-# Clinical Reasoning Framework for Physiotherapists
-
-Clinical reasoning is the foundation of effective physiotherapy practice. It's the cognitive process that enables physiotherapists to make sound clinical decisions based on patient assessment, evidence, and clinical experience.
-
-## What is Clinical Reasoning?
-
-Clinical reasoning in physiotherapy involves:
-- Gathering and analyzing patient data
-- Identifying patterns and relationships
-- Formulating hypotheses about the patient's condition
-- Making evidence-based treatment decisions
-- Evaluating outcomes and adjusting interventions
-
-## Key Components
-
-### 1. Subjective Assessment
-The subjective examination provides crucial insights into the patient's perspective, including their chief complaint, history, and functional limitations.
-
-### 2. Objective Assessment
-Physical examination findings, measurements, and functional tests provide objective data to support clinical hypotheses.
-
-### 3. Clinical Hypothesis Generation
-Based on subjective and objective findings, physiotherapists generate hypotheses about:
-- Pathophysiology
-- Contributing factors
-- Prognosis
-- Treatment approaches
-
-### 4. Treatment Planning
-Evidence-based interventions are selected based on:
-- Clinical reasoning
-- Patient preferences
-- Best available evidence
-- Clinical expertise
-
-## The PRISM Approach
-
-PhysiologicPRISM supports clinical reasoning through:
-- **Structured documentation** that guides systematic assessment
-- **AI-assisted suggestions** based on clinical patterns
-- **Evidence integration** linking assessment to treatment
-- **Outcome tracking** to evaluate clinical decisions
-
-## Conclusion
-
-Strong clinical reasoning skills develop over time through practice, reflection, and continuous learning. PhysiologicPRISM is designed to support this process by providing structure and evidence-based guidance.
-                ''',
-                'excerpt': 'Learn about the clinical reasoning process in physiotherapy and how structured documentation supports better clinical decision-making.',
-                'author': 'Dr Roopa Rao',
-                'tags': ['Clinical Reasoning', 'Evidence-Based Practice', 'Assessment'],
-                'status': 'published',
-                'meta_description': 'Clinical reasoning framework for physiotherapists - learn how to make better clinical decisions through structured assessment and evidence-based practice.',
-                'created_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string for JSON serialization
-                'updated_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string
-                'published_at': datetime.now(timezone.utc).isoformat(),  # Convert to ISO string
-                'views': 0
-            },
             {
                 'title': 'Comprehensive History Taking in Physiotherapy',
                 'slug': 'history-taking-physiotherapy',
