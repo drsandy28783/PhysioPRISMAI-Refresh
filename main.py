@@ -10263,7 +10263,7 @@ def blog_detail(slug):
     try:
         # 301 redirect for deleted stub article to complete guide
         if slug == 'clinical-reasoning-framework':
-            return redirect(url_for('blog_detail', slug='clinical-reasoning-physiotherapy-complete-2026-guide'), code=301)
+            return redirect(url_for('blog_detail', slug='clinical-reasoning-physiotherapy-complete-2025-guide'), code=301)
 
         # Query for post with matching slug
         posts = db.collection('blog_posts').where('slug', '==', slug).limit(1).stream()
