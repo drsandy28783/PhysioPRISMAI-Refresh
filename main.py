@@ -3291,6 +3291,30 @@ def contact_redirect():
     return redirect(url_for('index'), code=302)
 
 
+@app.route('/homepage')
+def homepage_redirect():
+    """Redirect /homepage to root URL (route was moved to /)"""
+    return redirect(url_for('index'), code=301)
+
+
+@app.route('/test-registration-email')
+def test_registration_email_redirect():
+    """Redirect removed test endpoint to homepage"""
+    return redirect(url_for('index'), code=301)
+
+
+@app.route('/terms_of_service')
+def terms_of_service_underscore_redirect():
+    """Redirect old underscore URL to hyphenated version"""
+    return redirect(url_for('terms_of_service'), code=301)
+
+
+@app.route('/privacy_policy')
+def privacy_policy_underscore_redirect():
+    """Redirect old underscore URL to hyphenated version"""
+    return redirect(url_for('privacy_policy'), code=301)
+
+
 @app.route('/accept-updated-tos')
 def accept_updated_tos():
     """
