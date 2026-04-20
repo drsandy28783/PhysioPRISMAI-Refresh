@@ -34,8 +34,8 @@
     <meta name="description" content="PhysiologicPRISM helps physiotherapists structure clinical reasoning, capture biopsychosocial factors, and generate defensible documentation — in every session.">
     <meta name="keywords" content="physiotherapy, practice management, clinical reasoning, patient management, AI-powered, healthcare">
 
-    <!-- Canonical URL -->
-    <link rel="canonical" href="{{ request.url.split('?')[0] }}">
+    <!-- Canonical URL (always non-www for SEO consistency) -->
+    <link rel="canonical" href="{{ request.url.split('?')[0].replace('://www.', '://') }}">
 
     <!-- Open Graph Meta Tags -->
     {% block og_tags %}
@@ -43,7 +43,7 @@
     <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Transform your physiotherapy practice with AI-powered clinical reasoning, automated documentation, and evidence-based treatment planning{% endblock %}">
     <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='icons/icon-512x512.png', _external=True) }}{% endblock %}">
-    <meta property="og:url" content="{{ request.url.split('?')[0] }}">
+    <meta property="og:url" content="{{ request.url.split('?')[0].replace('://www.', '://') }}">
     {% endblock %}
 
     <!-- Twitter Card Meta Tags -->

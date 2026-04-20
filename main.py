@@ -1338,6 +1338,19 @@ def enforce_https():
         url = request.url.replace('http://', 'https://', 1)
         return redirect(url, code=301)
 
+# ─── WWW TO NON-WWW REDIRECT ────────────────
+@app.before_request
+def redirect_www():
+    """Redirect www to non-www for canonical consistency"""
+    # Skip for local development
+    if request.host.startswith('localhost') or request.host.startswith('127.0.0.1'):
+        return None
+
+    # Redirect www to non-www (SEO canonical)
+    if request.host.startswith('www.'):
+        non_www_url = request.url.replace('://www.', '://', 1)
+        return redirect(non_www_url, code=301)
+
 # ─── SENTRY CONTEXT MIDDLEWARE ──────────────
 @app.before_request
 def set_sentry_context():
