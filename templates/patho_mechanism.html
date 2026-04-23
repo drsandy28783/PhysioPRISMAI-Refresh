@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
 {% block title %}Pathophysiological Mechanism – Physiologic PRISM{% endblock %}
 
 {% block head %}
@@ -9,6 +10,8 @@
 
 {% block content %}
 <div class="container">
+  {{ render_progress_bar(current_step=2, patient_id=patient_id) }}
+
   <h2>Pathophysiological Mechanism for {{ patient_id }}</h2>
   <form method="POST" action="{{ url_for('patho_mechanism', patient_id=patient_id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

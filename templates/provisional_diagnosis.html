@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
 {% block title %}Provisional Diagnosis – Physiologic PRISM{% endblock %}
 
 {% block content %}
 <div class="container">
+  {{ render_progress_bar(current_step=8, patient_id=patient_id) }}
+
   <h2>Provisional Diagnosis for {{ patient_id }}</h2>
   <form id="provisional-diagnosis-form" method="POST" action="{{ url_for('provisional_diagnosis', patient_id=patient_id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

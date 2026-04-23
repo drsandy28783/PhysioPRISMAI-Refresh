@@ -55,6 +55,7 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=6">
     <link rel="stylesheet" href="{{ url_for('static', filename='assessmentProgress.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='progressBar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='print.css') }}" media="print">
     <link rel="stylesheet" href="{{ url_for('static', filename='keyboardShortcuts.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='textExpansion.css') }}">
@@ -178,6 +179,9 @@
 
     <!-- Assessment Progress Tracker -->
     <script defer src="{{ url_for('static', filename='assessmentProgress.js') }}?v=4" nonce="{{ csp_nonce() }}"></script>
+
+    <!-- Progress Bar Component -->
+    <script defer src="{{ url_for('static', filename='progressBar.js') }}" nonce="{{ csp_nonce() }}"></script>
 
     <!-- Draft Auto-Save System -->
     <script defer src="{{ url_for('static', filename='draftAutoSave.js') }}?v=5" nonce="{{ csp_nonce() }}"></script>

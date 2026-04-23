@@ -5856,8 +5856,8 @@ def initial_plan(patient_id):
             entry[s] = request.form.get(s)
             entry[f"{s}_details"] = request.form.get(f"{s}_details", '')
         db.collection('initial_plan').add(entry)
-        # Redirect to chronic disease (NEW: patho moved earlier in workflow)
-        return redirect(url_for('chronic_disease', patient_id=patient_id))
+        # Redirect to merged Risk Factors & Clinical Flags screen
+        return redirect(url_for('risk_factors_clinical_flags', patient_id=patient_id))
 
     # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
     patho_data = {}
@@ -5941,6 +5941,50 @@ def clinical_flags(patient_id):
 
 
     return render_template('clinical_flags.html', patient_id=patient_id)
+
+
+@app.route('/risk_factors_clinical_flags/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def risk_factors_clinical_flags(patient_id):
+    """
+    Merged route combining Chronic Disease Factors and Clinical Flags.
+    Replaces the two-step flow with a single comprehensive screen.
+    """
+    # Fetch patient record for access control
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found."
+    patient = doc.to_dict()
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied."
+
+    if request.method == 'POST':
+        # Save Chronic Disease Factors
+        causes = request.form.getlist('maintenance_causes')
+        chronic_entry = {
+            'patient_id': patient_id,
+            'causes': causes,
+            'specific_factors': request.form.get('specific_factors', ''),
+            'timestamp': SERVER_TIMESTAMP
+        }
+        db.collection('chronic_diseases').add(chronic_entry)
+
+        # Save Clinical Flags
+        flags_entry = {
+            'patient_id': patient_id,
+            'red_flags':     request.form.get('red_flags', ''),
+            'orange_flags':  request.form.get('orange_flags', ''),
+            'yellow_flags':  request.form.get('yellow_flags', ''),
+            'black_flags':   request.form.get('black_flags', ''),
+            'blue_flags':    request.form.get('blue_flags', ''),
+            'timestamp':     SERVER_TIMESTAMP
+        }
+        db.collection('clinical_flags').add(flags_entry)
+
+        # Redirect to objective assessment
+        return redirect(url_for('objective_assessment', patient_id=patient_id))
+
+    return render_template('risk_factors_clinical_flags.html', patient_id=patient_id)
 
 
 @app.route('/objective_assessment/<path:patient_id>', methods=['GET','POST'])

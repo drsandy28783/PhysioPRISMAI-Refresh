@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
 {% block title %}Patient Perspectives – Physiologic PRISM{% endblock %}
 
 {% block content %}
 <div class="container">
+  {{ render_progress_bar(current_step=4, patient_id=patient_id) }}
+
   <h2>Patient Perspectives for {{ patient_id }}</h2>
   <form id="perspectives-form" method="POST" action="{{ url_for('perspectives', patient_id=patient_id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

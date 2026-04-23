@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
 {% block title %}Objective Assessment – Physiologic PRISM{% endblock %}
 
 {% block content %}
 <div class="container">
+  {{ render_progress_bar(current_step=7, patient_id=patient_id) }}
+
   <h2>Objective Assessment for {{ patient_id }}</h2>
 
   <form id="objective-assessment-form" method="POST"
@@ -38,7 +41,7 @@
         🩺 Generate Provisional Diagnosis
       </button>
       <button type="submit" class="button">Save &amp; Continue</button>
-      <a href="{{ url_for('clinical_flags', patient_id=patient_id) }}" class="button">&larr; Back to Clinical Flags</a>
+      <a href="{{ url_for('risk_factors_clinical_flags', patient_id=patient_id) }}" class="button">&larr; Back to Risk Factors & Flags</a>
     </div>
   </form>
 </div>

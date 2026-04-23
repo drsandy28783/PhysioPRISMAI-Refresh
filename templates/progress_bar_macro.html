@@ -1,0 +1,30 @@
+{#
+  Assessment Progress Bar Macro
+
+  Usage:
+  {% from 'progress_bar_macro.html' import render_progress_bar %}
+  {{ render_progress_bar(current_step=6, patient_id=patient_id) }}
+
+  Parameters:
+  - current_step: The current step number (1-10)
+  - patient_id: The patient ID for navigation
+  - steps: Optional custom steps array (defaults to 10-step assessment workflow)
+#}
+
+{% macro render_progress_bar(current_step, patient_id, steps=None) %}
+  {# Container for the progress bar - JavaScript will populate this #}
+  <div id="assessment-progress-bar"></div>
+
+  {# Configuration for the progress bar JavaScript #}
+  <script nonce="{{ csp_nonce() }}">
+    window.progressBarConfig = {
+      totalSteps: {{ steps|length if steps else 10 }},
+      currentStep: {{ current_step }},
+      completedSteps: {{ range(1, current_step)|list|tojson }},
+      patientId: '{{ patient_id }}',
+      {% if steps %}
+      steps: {{ steps|tojson }}
+      {% endif %}
+    };
+  </script>
+{% endmacro %}

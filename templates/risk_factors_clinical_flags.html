@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
+{% block title %}Risk Factors & Clinical Flags – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  .section-divider {
+    margin: 32px 0 24px 0;
+    padding-top: 24px;
+    border-top: 2px solid var(--border);
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 16px;
+  }
+  .field-block {
+    margin-top: 20px;
+    position: relative;
+    width: 100%;
+  }
+  .field-block label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .checkbox-group {
+    display: block;
+  }
+  .checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .control-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+  .control-group textarea {
+    width: 100% !important;
+  }
+  .input-field {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .ai-btn {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 8px;
+    flex-shrink: 0;
+    margin-top: 0.5rem;
+  }
+  .ai-popup {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 8px;
+    max-width: 280px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 100;
+  }
+  .ai-hint {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+  .assessment-button-container {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    {{ render_progress_bar(current_step=6, patient_id=patient_id) }}
+
+    <h2>Risk Factors & Clinical Flags for {{ patient_id }}</h2>
+
+    <form id="risk-factors-form" method="POST" action="{{ url_for('risk_factors_clinical_flags', patient_id=patient_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- SECTION 1: Chronic Disease Factors -->
+      <div class="section-title">1. Chronic Disease Maintenance Factors</div>
+
+      <div class="field-block">
+        <label>Cause for Maintenance of Symptoms:</label>
+        <div class="checkbox-group">
+          {% for opt in [
+            'Physical/Biomechanical Issues',
+            'Psychological Factors',
+            'Social or Environmental Conditions',
+            'Lifestyle / Behavioral',
+            'Work-related',
+            'Others'
+          ] %}
+            <label class="checkbox-inline">
+              <input type="checkbox" name="maintenance_causes" value="{{ opt }}"> {{ opt }}
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="field-block">
+        <label for="specific_factors">Specific Factors (Optional):</label>
+        <div class="control-group">
+          <textarea id="specific_factors" name="specific_factors" class="input-field" rows="3" placeholder="Describe contributing factors…" data-voice-enabled></textarea>
+          <button type="button" class="ai-btn" data-field="specific_factors" title="Ask AI for follow-up questions">🧠</button>
+        </div>
+        <div id="specific_factors_popup" class="ai-popup"></div>
+      </div>
+
+      <!-- SECTION 2: Clinical Flags -->
+      <div class="section-divider">
+        <div class="section-title">2. Clinical Flags Assessment</div>
+      </div>
+
+      {% set flags = [
+        ['red_flags',    'Red Flags',    'Any red-flag symptoms or history…'],
+        ['orange_flags', 'Orange Flags (Symptoms S/O Psychiatric Illness)', 'Any psychiatric symptoms or concerns…'],
+        ['yellow_flags', 'Yellow Flags (Psychosocial)', 'Any psychosocial risk factors…'],
+        ['black_flags',  'Black Flags (Systems/Environment)', 'Any workplace or system-level barriers…'],
+        ['blue_flags',   'Blue Flags (Work-Related)', 'Any work-related attitudes or demands…']
+      ] %}
+
+      {% for name, label, placeholder in flags %}
+        <div class="field-block" id="{{ name }}_block">
+          <label for="{{ name }}">{{ label }}</label>
+          <textarea id="{{ name }}" name="{{ name }}"
+                    class="input-field" rows="3"
+                    placeholder="{{ placeholder }}" data-voice-enabled>{{ request.form[name] or '' }}</textarea>
+          <div id="{{ name }}_hint" class="ai-hint"></div>
+        </div>
+      {% endfor %}
+
+      <div class="assessment-button-container">
+        <button type="submit" class="button">Save &amp; Continue</button>
+        <button type="button" id="gen_flags_suggestions" class="button" style="background:#17a2b8;">
+          🧠 AI Suggestions for All Flags
+        </button>
+        <a href="{{ url_for('initial_plan', patient_id=patient_id) }}" class="button">&larr; Back to Initial Plan</a>
+      </div>
+    </form>
+  </div>
+
+<script nonce="{{ csp_nonce() }}">
+  // Make patient_id available globally for AI suggestions
+  window.currentPatientId = '{{ patient_id }}';
+</script>
+{% endblock %}

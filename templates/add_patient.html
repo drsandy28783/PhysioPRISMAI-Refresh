@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
 
 {% block title %}Add Patient – Physiologic PRISM{% endblock %}
 
@@ -12,6 +13,8 @@
 
 {% block content %}
 <div class="container">
+    {{ render_progress_bar(current_step=1, patient_id='new') }}
+
     <h2>Add New Patient</h2>
     <form method="POST" id="add-patient-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

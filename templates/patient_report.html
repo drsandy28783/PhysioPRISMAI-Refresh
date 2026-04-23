@@ -581,10 +581,11 @@
   </div>
   {% endif %}
 
-  <!-- 5. Chronic Disease Factors -->
+  <!-- 5. Risk Factors & Clinical Flags - Chronic Disease Factors -->
   {% if chronic_diseases %}
   <div class="report-section">
-    <h2 class="section-header">5. Chronic Disease Maintenance Factors</h2>
+    <h2 class="section-header">5. Risk Factors & Clinical Flags</h2>
+    <h3 style="margin-top: 12px; color: var(--primary);">5.1 Chronic Disease Maintenance Factors</h3>
     <div class="section-content">
       {% if chronic_diseases.causes %}
       <div class="field-group">
@@ -604,10 +605,10 @@
   </div>
   {% endif %}
 
-  <!-- 6. Clinical Flags -->
+  <!-- 5.2 Clinical Flags -->
   {% if clinical_flags %}
-  <div class="report-section page-break">
-    <h2 class="section-header">6. Clinical Flags Assessment</h2>
+  <div class="report-section">
+    <h3 style="margin-top: 16px; color: var(--primary);">5.2 Clinical Flags Assessment</h3>
     <div class="section-content">
       <ul class="flag-list">
         {% if clinical_flags.red_flags %}
@@ -639,10 +640,10 @@
   </div>
   {% endif %}
 
-  <!-- 7. Objective Assessment -->
+  <!-- 6. Objective Assessment -->
   {% if objective %}
   <div class="report-section">
-    <h2 class="section-header">7. Objective Assessment</h2>
+    <h2 class="section-header">6. Objective Assessment</h2>
     <div class="section-content">
       <div class="field-group">
         <div class="field-label">Assessment Plan</div>
@@ -659,7 +660,7 @@
   <!-- 8. Provisional Diagnosis -->
   {% if diagnosis %}
   <div class="report-section">
-    <h2 class="section-header">8. Provisional Diagnosis</h2>
+    <h2 class="section-header">7. Provisional Diagnosis</h2>
     <div class="section-content">
       <div class="field-group">
         <div class="field-label">Likelihood / Diagnosis</div>
@@ -692,7 +693,7 @@
   <!-- 9. SMART Goals -->
   {% if goals %}
   <div class="report-section page-break">
-    <h2 class="section-header">9. SMART Goals</h2>
+    <h2 class="section-header">8. SMART Goals</h2>
     <div class="section-content">
       <div class="field-group">
         <div class="field-label">Patient's Goal</div>
@@ -730,7 +731,7 @@
   <!-- 10. Treatment Plan -->
   {% if treatment %}
   <div class="report-section">
-    <h2 class="section-header">10. Treatment Plan</h2>
+    <h2 class="section-header">9. Treatment Plan</h2>
     <div class="section-content">
       <div class="field-group">
         <div class="field-label">Treatment Approach</div>
@@ -991,7 +992,7 @@
   <!-- 12. Follow-up Sessions -->
   {% if follow_ups %}
   <div class="report-section page-break">
-    <h2 class="section-header">12. Follow-up Sessions ({{ follow_ups|length }})</h2>
+    <h2 class="section-header">10. Follow-up Sessions ({{ follow_ups|length }})</h2>
     <div class="section-content">
       {% for followup in follow_ups %}
       <div class="followup-card">
