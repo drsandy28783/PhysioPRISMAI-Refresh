@@ -204,8 +204,7 @@ def create_invoice(
         }
 
         # Store invoice in Cosmos DB
-        invoice_ref = db.collection('invoices').document()
-        invoice_ref.set(invoice_data)
+        _, invoice_ref = db.collection('invoices').add(invoice_data)
 
         # Add invoice_id to data
         invoice_data['invoice_id'] = invoice_ref.id

@@ -1555,8 +1555,7 @@ def submit_access_request():
             pilot_interest = request.form.get('pilot_interest') == 'yes'
 
         # Store in Cosmos DB
-        access_request_ref = db.collection('access_requests').document()
-        access_request_ref.set({
+        _, access_request_ref = db.collection('access_requests').add({
             'full_name': full_name,
             'email': email,
             'role': role,
@@ -5044,9 +5043,8 @@ def api_save_search():
             'created_at': datetime.now(timezone.utc).isoformat(),
         }
 
-        # Save to Firestore
-        doc_ref = db.collection('saved_searches').document()
-        doc_ref.set(search_data)
+        # Save to Cosmos DB
+        _, doc_ref = db.collection('saved_searches').add(search_data)
 
         logger.info(f"User {session.get('user_id')} saved search: {search_name}")
 
@@ -10866,8 +10864,7 @@ def submit_feedback():
         }
 
         # Save to database
-        feedback_ref = db.collection('feedback').document()
-        feedback_ref.set(feedback_data)
+        _, feedback_ref = db.collection('feedback').add(feedback_data)
 
         # Log action
         log_action(user_email, 'Submit Feedback', f"Submitted {result['category']} feedback: {result['title']}")
