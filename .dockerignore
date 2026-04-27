@@ -184,3 +184,6 @@ PRODUCTION_READINESS_PLAN.md
 GOOGLE_CLOUD_DEPLOYMENT.md
 AZURE_MIGRATION_SUMMARY.md
 DATA_EXPORT_IMPLEMENTATION.md
+
+# Internal Reference Documentation (local AI assistant reference - exclude from Docker)
+docs/PHYSIOLOGICPRISM_COMPLETE_REFERENCE.md

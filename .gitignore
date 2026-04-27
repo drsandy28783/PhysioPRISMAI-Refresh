@@ -69,6 +69,7 @@ nul
 
 # Claude Code
 .claude/
+.agents/
 
 # Maintenance & Diagnostic Scripts (may contain sensitive data)
 # Legacy Firestore scripts (removed - now using Cosmos DB)
@@ -196,3 +197,6 @@ docs/link_in_bio_strategy.md
 docs/short_form_video_scripts_per_screen.md
 docs/social_media_captions_and_hashtags.md
 docs/social_media_content_all_blogs.md
+
+# Internal Reference Documentation (local AI assistant reference - do not commit)
+docs/PHYSIOLOGICPRISM_COMPLETE_REFERENCE.md
