@@ -9480,8 +9480,9 @@ def api_get_subscription():
 
         user_id = session.get('user_id')
 
-        # Get subscription
-        subscription, usage = get_user_subscription(user_id)
+        # Get subscription and usage
+        subscription = get_user_subscription(user_id)
+        usage = get_usage_stats(user_id)
 
         if not subscription:
             return jsonify({'error': 'No subscription found'}), 404
@@ -10039,8 +10040,7 @@ def pricing():
         # Get current subscription if user is logged in
         current_subscription = None
         if session.get('user_id'):
-            subscription, _ = get_user_subscription(session['user_id'])
-            current_subscription = subscription
+            current_subscription = get_user_subscription(session['user_id'])
 
         return render_template('pricing.html',
                              current_subscription=current_subscription,
@@ -10060,7 +10060,7 @@ def scheduling_info():
         from subscription_manager import get_user_subscription
 
         # Get user subscription status
-        subscription, _ = get_user_subscription(session['user_id'])
+        subscription = get_user_subscription(session['user_id'])
 
         # Check if user has access
         has_access = False
