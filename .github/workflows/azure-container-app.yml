@@ -1,10 +1,12 @@
 name: Build and Deploy to Azure Container Apps
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  # Auto-deployment disabled - push to GitHub for backup only
+  # Uncomment the lines below to re-enable auto-deployment
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:  # Manual deployment via GitHub Actions tab
 
 env:
   AZURE_CONTAINER_REGISTRY: physiologicprismacr
