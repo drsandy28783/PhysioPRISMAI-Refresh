@@ -769,10 +769,10 @@ def get_subjective_field_prompt(
     """
 
     icf_names = {
-        'impairment_body_structure': 'Body Structures',
-        'impairment_body_function': 'Body Functions',
-        'activity_limitation_performance': 'Activity Performance',
-        'activity_limitation_capacity': 'Activity Capacity',
+        'body_structure': 'Body Structures',
+        'body_function': 'Body Functions',
+        'activity_performance': 'Activity Performance',
+        'activity_capacity': 'Activity Capacity',
         'contextual_environmental': 'Environmental Factors',
         'contextual_personal': 'Personal Factors'
     }
@@ -795,10 +795,10 @@ def get_subjective_field_prompt(
 
         # Map field to relevant ICF Core Set category
         field_to_icf_category = {
-            'impairment_body_structure': 'body_structures',
-            'impairment_body_function': 'body_functions',
-            'activity_limitation_performance': 'activities',
-            'activity_limitation_capacity': 'activities',
+            'body_structure': 'body_structures',
+            'body_function': 'body_functions',
+            'activity_performance': 'activities',
+            'activity_capacity': 'activities',
         }
 
         icf_category = field_to_icf_category.get(field)
@@ -811,7 +811,7 @@ def get_subjective_field_prompt(
 
     # Field-specific clinical reasoning templates - STRICT ICF BOUNDARIES
     field_specific_guidance = {
-        'impairment_body_structure': """
+        'body_structure': """
 For BODY STRUCTURES ONLY - You are assessing anatomical structures:
 INCLUDE ONLY:
 - Specific tissues (bones, joints, ligaments, tendons, muscles, nerves, bursa)
@@ -827,7 +827,7 @@ DO NOT INCLUDE (these belong in OTHER fields):
 
 Provide 2-3 questions about STRUCTURES ONLY and 2-3 clinical reasoning points about which anatomical tissues are involved.""",
 
-        'impairment_body_function': """
+        'body_function': """
 For BODY FUNCTIONS ONLY - You are assessing physiological functions:
 INCLUDE ONLY:
 - Pain behavior (constant/intermittent, sharp/ache, at rest/with movement)
@@ -843,38 +843,63 @@ DO NOT INCLUDE (these belong in OTHER fields):
 
 Provide 2-3 questions about FUNCTIONS ONLY and 2-3 clinical reasoning points about physiological impairments.""",
 
-        'activity_limitation_performance': """
-For ACTIVITY PERFORMANCE ONLY - You are assessing what they DO in real life:
+        'activity_performance': """
+For ACTIVITY PERFORMANCE ONLY - You are assessing what the patient ACTUALLY DOES in their DAILY LIFE:
+
+CRITICAL DISTINCTION: This is about REAL-WORLD BEHAVIOR, not potential ability.
+
 INCLUDE ONLY:
-- Real-world functional tasks (dressing, bathing, walking to car, cooking)
-- Actual performance in their environment (work duties, household chores)
-- Difficulty level and compensatory strategies used
-- What they actually do vs avoid
+- What they actually do day-to-day in their normal environment (home, work, community)
+- Typical functional activities they perform or avoid in routine life
+- How they perform household tasks, work duties, self-care in their usual settings
+- Real compensatory strategies they use in daily living
+- Activities they've stopped or modified due to their condition
+- Actual participation in social, leisure, and family activities
+
+EXAMPLES OF PERFORMANCE QUESTIONS:
+- "Describe what you actually do during a typical morning routine at home"
+- "What household chores can you currently do, and which ones have you stopped?"
+- "Tell me about your typical work day - what tasks do you perform and which do you struggle with?"
+- "What activities have you given up or reduced since this problem started?"
+- "How do you manage grocery shopping and meal preparation in real life?"
 
 DO NOT INCLUDE (these belong in OTHER fields):
-- Isolated joint movements (e.g., "How much can you flex your shoulder?" = Body Function)
+- Maximum ability in ideal conditions (e.g., "How far COULD you walk on a flat surface?" = Activity Capacity)
+- Isolated movements or functions (e.g., "Can you bend your knee 90 degrees?" = Body Function)
 - Anatomical questions (e.g., "Which muscle is weak?" = Body Structure)
-- Work/social roles (e.g., "Can you be a parent?" = Participation)
-- Capacity in ideal conditions (= Activity Capacity)
+- Hypothetical abilities (e.g., "If you had help, could you..." = Activity Capacity)
 
-Provide 2-3 questions about ACTUAL PERFORMANCE ONLY and 2-3 clinical reasoning points about real-world task limitations.""",
+Provide 2-3 questions focused on WHAT THEY ACTUALLY DO IN DAILY LIFE and 2-3 clinical reasoning points about real-world functional limitations in their natural environment.""",
 
-        'activity_limitation_capacity': """
-For ACTIVITY CAPACITY ONLY - You are assessing what they CAN do in ideal conditions:
+        'activity_capacity': """
+For ACTIVITY CAPACITY ONLY - You are assessing what the patient COULD POTENTIALLY DO in IDEAL, STANDARDIZED CONDITIONS:
+
+CRITICAL DISTINCTION: This is about MAXIMUM POTENTIAL ABILITY, not what they actually do.
+
 INCLUDE ONLY:
-- Maximum ACTIVITY-BASED ability in controlled/optimal settings (e.g., walking distance, stair climbing, lifting tasks)
-- Measurable activity thresholds without real-world barriers (distance, time, repetitions for functional tasks)
-- Best-case FUNCTIONAL performance in standardized clinical environment
-- Capacity vs performance gap for activities (NOT body functions)
+- Maximum functional ability in controlled clinical/ideal settings
+- Best-case performance without real-world barriers or distractions
+- Measurable activity thresholds in standardized conditions (distance, time, repetitions)
+- What they could achieve with optimal conditions and support
+- Highest level of activity-based functioning they can demonstrate
+- Performance potential in a structured, supportive environment
+
+EXAMPLES OF CAPACITY QUESTIONS:
+- "If we tested you on a flat, clear surface indoors, how far could you walk at your maximum?"
+- "In ideal conditions with good handrails, how many stairs could you climb?"
+- "What's the heaviest object you could lift in a controlled setting with proper technique?"
+- "If tested in the clinic on a firm surface, what's your best single-leg balance time?"
+- "In optimal conditions, what's the maximum time you could maintain an activity?"
 
 DO NOT INCLUDE (these belong in OTHER fields):
-- What they actually do at home (= Activity Performance)
-- Isolated body functions like joint ROM, muscle strength tests, or reflexes (= Body Function)
-- Work or social participation (= Participation)
+- What they actually do at home or work (e.g., "How do you manage at home?" = Activity Performance)
+- Isolated body functions (e.g., "What's your knee ROM?" or "How strong is your quadriceps?" = Body Function)
+- Real-world environmental challenges (e.g., "Can you climb stairs at work?" = Activity Performance)
+- Social or work participation (= Participation)
 
-Focus on ACTIVITIES the patient can perform at their maximum potential, not underlying body functions or structures.
+Focus on MAXIMUM FUNCTIONAL POTENTIAL in IDEAL CONDITIONS, not daily routines or underlying impairments.
 
-Provide 2-3 questions about ACTIVITY CAPACITY ONLY and 2-3 clinical reasoning points about maximum functional ability in ideal conditions.""",
+Provide 2-3 questions about HIGHEST ACHIEVABLE CAPACITY IN IDEAL CONDITIONS and 2-3 clinical reasoning points about their maximum functional potential when barriers are removed.""",
 
         'contextual_environmental': """
 For ENVIRONMENTAL FACTORS ONLY - You are assessing external world barriers/facilitators:
