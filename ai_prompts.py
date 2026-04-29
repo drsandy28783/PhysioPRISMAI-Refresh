@@ -7097,11 +7097,15 @@ def split_ai_response(full_text: str) -> Dict[str, Optional[str]]:
     # Split response if reasoning section found
     if split_index != -1:
         visible_text = full_text[:split_index].strip()
-        reasoning_text = full_text[split_index:].strip()
+
+        # Strip the marker label from reasoning_text
+        # Find the actual start of reasoning content (after the marker and any colons/whitespace)
+        reasoning_start = split_index + len(matched_marker)
+        reasoning_text = full_text[reasoning_start:].strip()
 
         return {
             "visible_text": visible_text,
-            "reasoning_text": reasoning_text
+            "reasoning_text": reasoning_text if reasoning_text else None
         }
     else:
         # No reasoning section found - return full text as visible

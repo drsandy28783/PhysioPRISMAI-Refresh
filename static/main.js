@@ -740,7 +740,7 @@ if (document.getElementById('perspectives-form')) {
         if (!summary || summary.trim() === '') {
           throw new Error('No summary generated. Please ensure assessment fields are filled in.');
         }
-        AIModal.showContent(summary);
+        AIModal.showContent(responseData);
       } catch (e) {
         console.error('[Initial Plan Summary] Error:', e);
         AIModal.showError(e.message);
@@ -980,8 +980,8 @@ if (document.getElementById('objective-assessment-form')) {
           }
         );
         const data = await res.json();
-        if (data.error) throw new Error(error);
-        AIModal.showContent({suggestion: suggestion.trim()});
+        if (data.error) throw new Error(data.error);
+        AIModal.showContent(data);
       } catch (err) {
         AIModal.showError(err.message);
         console.error(err);
@@ -1023,9 +1023,9 @@ if (document.getElementById('objective-assessment-form')) {
           })
         }
       );
-      const { diagnosis, error } = await res.json();
-      if (error) throw new Error(error);
-      AIModal.showContent({suggestion: diagnosis.trim()});
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      AIModal.showContent(data);
     } catch (err) {
       AIModal.showError(err.message);
       console.error(err);
@@ -1079,7 +1079,7 @@ document.addEventListener('DOMContentLoaded', () => {
           clearTimeout(timeoutId);
 
           const data = await res.json();
-          AIModal.showContent(suggestion || 'No suggestion available.');
+          AIModal.showContent(data.suggestion ? data : 'No suggestion available.');
         } catch (err) {
           console.error(err);
           if (err.name === 'AbortError') {
@@ -1231,7 +1231,7 @@ if (genBtn) {
         AIModal.showError('No summary generated. Please ensure all assessment sections are completed and saved.');
       } else {
         console.log('[Treatment Summary] Summary received, length:', data.summary.length);
-        AIModal.showContent(data.summary);
+        AIModal.showContent(data);
       }
     } catch (err) {
       console.error('[Treatment Summary] Exception caught:', err);
