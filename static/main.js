@@ -221,6 +221,15 @@ const AIModal = {
   },
 
   showContent(contentOrResponse) {
+    // DEBUG: Log full input to diagnose rendering issues
+    console.log("🔍 FULL AI MODAL INPUT:", contentOrResponse);
+    console.log("🔍 visible_text:", contentOrResponse?.visible_text);
+    console.log("🔍 reasoning_text:", contentOrResponse?.reasoning_text);
+    console.log("🔍 suggestion:", contentOrResponse?.suggestion);
+    console.log("🔍 reasoning:", contentOrResponse?.reasoning);
+    console.log("🔍 text:", contentOrResponse?.text);
+    console.log("🔍 typeof:", typeof contentOrResponse);
+
     // Support both old format (string) and new format (object with suggestion + reasoning)
     let visibleText, reasoningText;
 
@@ -229,13 +238,22 @@ const AIModal = {
       visibleText = contentOrResponse;
       reasoningText = null;
     } else if (contentOrResponse && typeof contentOrResponse === 'object') {
-      // New format: {suggestion: "...", reasoning: "..." or null}
-      visibleText = contentOrResponse.suggestion || contentOrResponse.visible_text || '';
-      reasoningText = contentOrResponse.reasoning || contentOrResponse.reasoning_text || null;
+      // PRIORITY ORDER: Check visible_text first, then suggestion, diagnosis, summary
+      // NEVER use .text if visible_text exists to prevent concatenation
+      visibleText = contentOrResponse.visible_text
+                 || contentOrResponse.suggestion
+                 || contentOrResponse.diagnosis
+                 || contentOrResponse.summary
+                 || contentOrResponse.text
+                 || '';
+      reasoningText = contentOrResponse.reasoning_text || contentOrResponse.reasoning || null;
     } else {
       visibleText = '';
       reasoningText = null;
     }
+
+    console.log("✅ FINAL visibleText:", visibleText);
+    console.log("✅ FINAL reasoningText:", reasoningText);
 
     // Store both for copy functionality
     this.currentSuggestion = visibleText;

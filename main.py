@@ -7284,7 +7284,18 @@ def ai_subjective_field(field):
 
        try:
            suggestion = get_ai_suggestion(prompt)
+
+           # DEBUG: Log AI response and split results
+           logger.info(f"🔍 [SUBJECTIVE AI RAW OUTPUT for {field}] Length: {len(suggestion)}")
+           logger.info(f"🔍 [SUBJECTIVE AI RAW] First 500 chars: {suggestion[:500]}")
+
            split_response = split_ai_response(suggestion)
+
+           logger.info(f"✅ [SUBJECTIVE SPLIT] visible_text length: {len(split_response['visible_text']) if split_response['visible_text'] else 0}")
+           logger.info(f"✅ [SUBJECTIVE SPLIT] visible_text: {split_response['visible_text'][:300] if split_response['visible_text'] else 'None'}")
+           logger.info(f"✅ [SUBJECTIVE SPLIT] reasoning_text length: {len(split_response['reasoning_text']) if split_response['reasoning_text'] else 0}")
+           logger.info(f"✅ [SUBJECTIVE SPLIT] reasoning_text: {split_response['reasoning_text'][:300] if split_response['reasoning_text'] else 'None'}")
+
            return jsonify({
                'suggestion': split_response['visible_text'],
                'reasoning': split_response['reasoning_text']
