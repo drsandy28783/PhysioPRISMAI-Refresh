@@ -37,7 +37,8 @@ from ai_prompts import (
     get_treatment_plan_summary_prompt,
     get_provisional_diagnosis_field_prompt,
     get_followup_prompt,
-    get_generic_field_prompt
+    get_generic_field_prompt,
+    split_ai_response  # NEW: Response splitting for clinical reasoning
 )
 
 logger = logging.getLogger("app.mobile_api_ai")
@@ -95,7 +96,6 @@ def normalize_patient_data(data):
 
     return normalized
 
-
 def sanitize_age_sex(age_sex_str):
     """Convert exact age to age range to protect PHI."""
     if not age_sex_str:
@@ -126,7 +126,6 @@ def sanitize_age_sex(age_sex_str):
         age_range = "70+"
 
     return f"{age_range} {sex}"
-
 
 def sanitize_clinical_text(text):
     """Remove PHI from clinical text while preserving clinical information."""
@@ -179,7 +178,6 @@ def sanitize_clinical_text(text):
 
     return sanitized
 
-
 def sanitize_subjective_data(inputs_dict):
     """Sanitize subjective examination data to remove PHI."""
     if not inputs_dict:
@@ -193,7 +191,6 @@ def sanitize_subjective_data(inputs_dict):
             sanitized[key] = value
 
     return sanitized
-
 
 def build_patient_context(raw: dict) -> dict:
     """
@@ -224,7 +221,6 @@ def build_patient_context(raw: dict) -> dict:
     }
 
     return ctx
-
 
 def fetch_patient_data_from_db(patient_id: str, user_id: str) -> dict:
     """
@@ -294,7 +290,6 @@ def fetch_patient_data_from_db(patient_id: str, user_id: str) -> dict:
         logger.error(f"Error fetching patient data from DB: {e}", exc_info=True)
         return {}
 
-
 def get_ai_suggestion_safe(prompt, metadata=None, patient_context="", user_id=None):
     """
     Safe wrapper for get_ai_suggestion that handles imports and errors.
@@ -359,7 +354,6 @@ def get_ai_suggestion_safe(prompt, metadata=None, patient_context="", user_id=No
         logger.error(f"AI suggestion error: {e}")
         return "Error generating suggestion. Please try again."
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # AI SUGGESTION ENDPOINTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -386,12 +380,20 @@ def api_ai_past_questions():
             'user_id': user_id
         }, patient_context=age_sex, user_id=user_id)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI past questions error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/provisional_diagnosis', methods=['POST'])
 @require_auth
@@ -427,12 +429,21 @@ def api_ai_provisional_diagnosis():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion, 'diagnosis': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'diagnosis': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI provisional diagnosis error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/subjective/<field>', methods=['POST'])
 @require_auth
@@ -467,12 +478,20 @@ def api_ai_subjective_field(field):
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI subjective field error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/subjective_diagnosis', methods=['POST'])
 @require_auth
@@ -501,12 +520,20 @@ def api_ai_subjective_diagnosis():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI subjective diagnosis error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/perspectives/<field>', methods=['POST'])
 @require_auth
@@ -562,12 +589,20 @@ def api_ai_perspectives_field(field):
             'patient_id': patient_id
         }, patient_context=age_sex, user_id=user_id)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI perspectives field error: {e}", exc_info=True)
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/patient_perspectives', methods=['POST'])
 @require_auth
@@ -599,12 +634,20 @@ def api_ai_patient_perspectives():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI patient perspectives error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/initial_plan/<field>', methods=['POST'])
 @require_auth
@@ -660,12 +703,20 @@ def api_ai_initial_plan_field(field):
             'patient_id': patient_id
         }, patient_context=age_sex, user_id=user_id)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI initial plan error: {e}", exc_info=True)
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/initial_plan_summary', methods=['POST'])
 @require_auth
@@ -716,12 +767,21 @@ def api_ai_initial_plan_summary():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'summary': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'summary': split_response['visible_text'],
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI initial plan summary error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/patho_possible_source', methods=['POST'])
 @require_auth
@@ -771,12 +831,20 @@ def api_ai_patho_source():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI patho source error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/chronic_factors_suggest', methods=['POST'])
 @require_auth
@@ -824,12 +892,20 @@ def api_ai_chronic_factors():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI chronic factors error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/clinical_flags_suggest', methods=['POST'])
 @require_auth
@@ -872,12 +948,20 @@ def api_ai_clinical_flags():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI clinical flags error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/objective_assessment', methods=['POST'])
 @require_auth
@@ -918,12 +1002,20 @@ def api_ai_objective_assessment():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI objective assessment error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/provisional_diagnosis/<field>', methods=['POST'])
 @require_auth
@@ -965,12 +1057,20 @@ def api_ai_provisional_diagnosis_field(field):
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI provisional diagnosis error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/smart_goals', methods=['POST'])
 @require_auth
@@ -1008,12 +1108,20 @@ def api_ai_smart_goals():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI SMART goals error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/smart_goals/<field>', methods=['POST'])
 @require_auth
@@ -1053,12 +1161,20 @@ def api_ai_smart_goals_field(field):
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI SMART goals field error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/treatment_plan/<field>', methods=['POST'])
 @require_auth
@@ -1101,12 +1217,20 @@ def api_ai_treatment_plan_field(field):
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI treatment plan error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/treatment_plan_summary/<patient_id>', methods=['GET'])
 @require_auth
@@ -1155,12 +1279,21 @@ def api_ai_treatment_plan_summary(patient_id):
             'user_id': user_email
         }, patient_context=age_sex)
 
-        return jsonify({'summary': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'summary': split_response['visible_text'],
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI treatment summary error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/followup', methods=['POST'])
 @require_auth
@@ -1221,12 +1354,20 @@ def api_ai_followup():
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI followup error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/followup/<field>', methods=['POST'])
 @require_auth
@@ -1314,12 +1455,20 @@ def api_ai_followup_field(field):
             'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI followup field error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 @mobile_api_ai.route('/field/<field>', methods=['POST'])
 @require_auth
@@ -1341,12 +1490,20 @@ def api_ai_generic_field(field):
             'user_id': g.user.get('email')
         })
 
-        return jsonify({'suggestion': suggestion}), 200
+        split_response = split_ai_response(suggestion)
+
+        return jsonify({
+
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        }), 200
 
     except Exception as e:
         logger.error(f"AI generic field error: {e}")
         return jsonify({'error': 'AI suggestion failed'}), 500
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # AUDIO TRANSCRIPTION (if using OpenAI Whisper)

@@ -6681,7 +6681,10 @@ def ai_past_questions():
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
 
     except OpenAIError:
@@ -6759,7 +6762,10 @@ def ai_provisional_diagnosis():
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
 
     except OpenAIError:
@@ -7297,9 +7303,12 @@ def ai_subjective_field(field):
            logger.info(f"✅ [SUBJECTIVE SPLIT] reasoning_text: {split_response['reasoning_text'][:300] if split_response['reasoning_text'] else 'None'}")
 
            return jsonify({
-               'suggestion': split_response['visible_text'],
-               'reasoning': split_response['reasoning_text']
-           })
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        })
        except OpenAIError:
            return jsonify({'error': 'AI service unavailable.'}), 503
        except Exception:
@@ -7348,9 +7357,12 @@ def ai_subjective_diagnosis():
            suggestion = get_ai_suggestion(prompt)
            split_response = split_ai_response(suggestion)
            return jsonify({
-               'suggestion': split_response['visible_text'],
-               'reasoning': split_response['reasoning_text']
-           })
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        })
        except OpenAIError:
            return jsonify({'error': 'AI service unavailable.'}), 503
        except Exception:
@@ -7409,9 +7421,12 @@ def ai_perspectives_field(field):
             suggestion = get_ai_suggestion(prompt)
             split_response = split_ai_response(suggestion)
             return jsonify({
-                'suggestion': split_response['visible_text'],
-                'reasoning': split_response['reasoning_text']
-            })
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        })
         except OpenAIError:
             return jsonify({'error': 'AI service unavailable.'}), 503
         except Exception:
@@ -7497,9 +7512,12 @@ def ai_perspectives_diagnosis():
             suggestion = get_ai_suggestion(prompt)
             split_response = split_ai_response(suggestion)
             return jsonify({
-                'suggestion': split_response['visible_text'],
-                'reasoning': split_response['reasoning_text']
-            })
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        })
         except OpenAIError:
             return jsonify({'error': 'AI service unavailable.'}), 503
         except Exception:
@@ -7563,7 +7581,10 @@ def ai_initial_plan_field(field):
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
@@ -7642,7 +7663,10 @@ def ai_initial_plan_summary():
         return jsonify({
             'summary': split_response['visible_text'],  # Keep 'summary' for backward compatibility
             'suggestion': split_response['visible_text'],  # Also provide 'suggestion' for consistency
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError as e:
         logger.error(f"[Initial Plan Summary] OpenAI error: {str(e)}")
@@ -7711,7 +7735,10 @@ def ai_patho_source():
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
@@ -7778,7 +7805,10 @@ def ai_chronic_factors():
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
@@ -7844,7 +7874,10 @@ def clinical_flags_suggest(patient_id):
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
@@ -7907,7 +7940,10 @@ def clinical_flags_all_suggest(patient_id):
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
@@ -7979,7 +8015,10 @@ def objective_assessment_field_suggest(field):
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError as e:
         logger.error(f"OpenAI API error in objective_assessment_field_suggest: {e}", exc_info=True)
@@ -8095,9 +8134,12 @@ def provisional_diagnosis_suggest(patient_id):
                     logger.info(f"✅ [Provisional Diagnosis] Successfully generated {len(suggestion)} chars: {suggestion[:100]}...")
                     split_response = split_ai_response(suggestion)
                     return jsonify({
-                        'suggestion': split_response['visible_text'],
-                        'reasoning': split_response['reasoning_text']
-                    })
+            'suggestion': split_response['visible_text'],
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
+        })
                 except OpenAIError as e:
                     logger.error(f"❌ [Provisional Diagnosis] OpenAI API error: {str(e)}", exc_info=True)
                     return jsonify({'suggestion': 'AI service unavailable. Please try again later.'}), 503
@@ -8175,7 +8217,10 @@ def ai_smart_goals(field):
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable'}), 503
@@ -8276,7 +8321,10 @@ def treatment_plan_suggest(field):
         return jsonify({
             'field': field,
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({ 'error': 'AI service unavailable. Please try again later.' }), 503
@@ -8422,7 +8470,10 @@ def treatment_plan_summary(patient_id):
         return jsonify({
             'summary': split_response['visible_text'],  # Keep 'summary' for backward compatibility
             'suggestion': split_response['visible_text'],  # Also provide 'suggestion' for consistency
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError as e:
         logger.error(f"❌ [Treatment Summary] OpenAI API error: {str(e)}", exc_info=True)
@@ -8501,7 +8552,10 @@ def ai_followup_suggestion(patient_id):
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable.'}), 503
@@ -8598,7 +8652,10 @@ def ai_followup_field(field):
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text']
+            'text': split_response['visible_text'],
+            'visible_text': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text'],
+            'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable'}), 503
