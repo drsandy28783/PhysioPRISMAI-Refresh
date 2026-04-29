@@ -313,50 +313,61 @@ CONCISE_AI_OUTPUT_RULE = """
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 OUTPUT STRUCTURE:
-Your response MUST be divided into TWO clearly separated sections:
+Your response MUST be divided into TWO sections using PLAIN TEXT markers (NO markdown headers):
 
-SECTION 1: CONCISE SUGGESTIONS (Default View - Always Visible)
+SECTION 1: CONCISE SUGGESTIONS (shown by default)
 - Actionable recommendations, questions, or suggestions
 - Brief, scannable, practical
 - No explanatory paragraphs or teaching content
-- Physiotherapist can read and use immediately
-- Format: Numbered lists, bullet points, or short structured statements
+- Format: Numbered lists or bullet points
 
-SECTION 2: CLINICAL REASONING (Hidden by Default - Toggle to View)
+SECTION 2: CLINICAL REASONING (hidden until user clicks toggle)
 - WHY these suggestions are appropriate for THIS case
 - Clinical reasoning specific to the patient presentation
 - Differential diagnosis considerations
 - Red flag screening reasoning
 - Evidence-based rationale
-- Safety considerations and contraindications
 
-FORMAT TEMPLATE:
-
-[CONCISE SUGGESTIONS - ALWAYS VISIBLE]
+OUTPUT FORMAT (EXACT):
 
 Questions:
 1. [Specific question]
 2. [Specific question]
-3. [Specific question]
+
+Watch for:
+- [Single key safety consideration]
 
 Clinical Reasoning:
 - [Brief reasoning point about why these questions matter for THIS case]
 - [Safety consideration or red flag screening rationale]
-- [Differential diagnosis reasoning specific to this presentation]
 
-RULES:
-1. Keep "Concise Suggestions" section SHORT (3-5 items maximum)
-2. Keep "Clinical Reasoning" section FOCUSED (2-4 brief points)
-3. Use consistent section headers ("Questions:", "Clinical Reasoning:", "Suggestions:", etc.)
-4. Clinical reasoning should EXPLAIN the suggestions, not repeat them
-5. Clinical reasoning should reference the SPECIFIC patient presentation (age, symptoms, context)
-6. Avoid generic teaching paragraphs - reasoning must be case-specific
+CRITICAL RULES:
+1. DO NOT include internal labels like [CONCISE SUGGESTIONS] or [CLINICAL REASONING] in output
+2. DO NOT use markdown headers (###, ####) in output
+3. Use ONLY plain text section labels: "Questions:", "Clinical Reasoning:", "Suggestions:", etc.
+4. For field-level suggestions: MAXIMUM 2 questions, MAXIMUM 1 "Watch for" bullet
+5. Keep clinical reasoning FOCUSED (2-3 brief points)
+6. Clinical reasoning should EXPLAIN the suggestions, not repeat them
+7. Clinical reasoning must reference SPECIFIC patient details (age, symptoms, context)
+8. Section separator is "Clinical Reasoning:" (case-insensitive)
+
+WHAT NOT TO OUTPUT:
+❌ [CONCISE SUGGESTIONS - ALWAYS VISIBLE]
+❌ [CLINICAL REASONING - HIDDEN BY DEFAULT]
+❌ ### Questions
+❌ #### Clinical Reasoning
+❌ Any internal formatting labels
+
+WHAT TO OUTPUT:
+✓ Questions:
+✓ Clinical Reasoning:
+✓ Suggestions:
+✓ Watch for:
 
 PURPOSE:
-- Physiotherapist can quickly scan suggestions without distraction
-- Clinical reasoning is available when deeper understanding is needed
-- Supports both fast clinical workflow AND learning/quality assurance
-- Aligns with evidence-based practice (recommendations + transparent reasoning)
+- Physiotherapist sees concise suggestions immediately
+- Clinical reasoning available via toggle button
+- Supports fast clinical workflow AND learning/quality assurance
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 

@@ -318,15 +318,21 @@ const AIModal = {
     // SECURITY: Escape HTML first to prevent XSS
     const escapedText = escapeHtml(text);
 
+    // Strip markdown headers and internal labels before formatting
+    let cleanedText = escapedText
+      .replace(/^#{1,4}\s+/gm, '')  // Remove ###, ####, etc. at start of lines
+      .replace(/\[CONCISE SUGGESTIONS[^\]]*\]/gi, '')  // Remove internal labels
+      .replace(/\[CLINICAL REASONING[^\]]*\]/gi, '');  // Remove internal labels
+
     // Convert plain text to HTML with preserved formatting
-    let htmlContent = escapedText
+    let htmlContent = cleanedText
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>');
 
     // If content has numbered lists (1. 2. 3.), convert to <ol>
-    if (/^\d+\.\s/.test(text)) {
-      const items = text.split(/\n(?=\d+\.\s)/)
-        .map(item => escapeHtml(item.replace(/^\d+\.\s/, '').trim()))
+    if (/^\d+\.\s/.test(cleanedText)) {
+      const items = cleanedText.split(/\n(?=\d+\.\s)/)
+        .map(item => item.replace(/^\d+\.\s/, '').trim())
         .filter(item => item.length > 0);
       htmlContent = '<ol>' + items.map(item => `<li>${item}</li>`).join('') + '</ol>';
     }
