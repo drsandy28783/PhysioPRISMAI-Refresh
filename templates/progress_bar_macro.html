@@ -9,9 +9,10 @@
   - current_step: The current step number (1-10)
   - patient_id: The patient ID for navigation
   - steps: Optional custom steps array (defaults to 10-step assessment workflow)
+  - quick_mode: Optional boolean indicating if quick mode is enabled
 #}
 
-{% macro render_progress_bar(current_step, patient_id, steps=None) %}
+{% macro render_progress_bar(current_step, patient_id, steps=None, quick_mode=False) %}
   {# Container for the progress bar - JavaScript will populate this #}
   <div id="assessment-progress-bar"></div>
 
@@ -22,6 +23,7 @@
       currentStep: {{ current_step }},
       completedSteps: {{ range(1, current_step)|list|tojson }},
       patientId: '{{ patient_id }}',
+      quickMode: {{ 'true' if quick_mode else 'false' }},
       {% if steps %}
       steps: {{ steps|tojson }}
       {% endif %}
