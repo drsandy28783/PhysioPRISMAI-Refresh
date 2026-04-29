@@ -5,7 +5,7 @@
 
 // Assessment workflow steps in order
 const ASSESSMENT_STEPS = [
-  { key: 'basicInfo', label: 'Basic Info', route: '/add_patient' },
+  { key: 'basicInfo', label: 'Basic Info', route: '/edit_patient' },  // Use edit_patient for existing patients
   { key: 'subjectiveExamination', label: 'Functioning Assessment', route: '/subjective' },
   { key: 'patientPerspectives', label: 'Patient Perspectives', route: '/perspectives' },
   { key: 'objectiveAssessment', label: 'Objective Assessment', route: '/objective_assessment' },

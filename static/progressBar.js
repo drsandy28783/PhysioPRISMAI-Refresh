@@ -112,10 +112,15 @@ class ProgressBar {
 
     completedSteps.forEach(stepElement => {
       stepElement.addEventListener('click', (e) => {
-        const route = stepElement.getAttribute('data-route');
+        let route = stepElement.getAttribute('data-route');
         const patientId = stepElement.getAttribute('data-patient-id');
 
         if (route && patientId) {
+          // Fix: 'add_patient' is for creating NEW patients, use 'edit_patient' for existing patients
+          if (route === 'add_patient') {
+            route = 'edit_patient';
+          }
+
           // Navigate to the selected step
           window.location.href = `/${route}/${patientId}`;
         }
