@@ -187,3 +187,6 @@ DATA_EXPORT_IMPLEMENTATION.md
 
 # Internal Reference Documentation (local AI assistant reference - exclude from Docker)
 docs/PHYSIOLOGICPRISM_COMPLETE_REFERENCE.md
+
+# Development Workflow Documentation (local reference only)
+.github/DEVELOPMENT_WORKFLOW.md

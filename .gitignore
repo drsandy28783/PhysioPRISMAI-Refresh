@@ -200,3 +200,6 @@ docs/social_media_content_all_blogs.md
 
 # Internal Reference Documentation (local AI assistant reference - do not commit)
 docs/PHYSIOLOGICPRISM_COMPLETE_REFERENCE.md
+
+# Development Workflow Documentation (local reference only)
+.github/DEVELOPMENT_WORKFLOW.md
