@@ -172,7 +172,8 @@ from ai_prompts import (
     get_treatment_plan_summary_prompt,
     get_provisional_diagnosis_field_prompt,
     get_followup_prompt,
-    get_generic_field_prompt
+    get_generic_field_prompt,
+    split_ai_response
 )
 from email_service import (
     send_registration_notification,
@@ -6677,7 +6678,11 @@ def ai_past_questions():
             'user_id': g.firebase_user.get('uid')
         }
         suggestion = get_ai_suggestion(prompt, metadata=metadata)
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
 
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
@@ -6751,7 +6756,11 @@ def ai_provisional_diagnosis():
 
     try:
         suggestion = get_ai_suggestion(prompt)
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
 
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
@@ -7275,7 +7284,11 @@ def ai_subjective_field(field):
 
        try:
            suggestion = get_ai_suggestion(prompt)
-           return jsonify({'suggestion': suggestion})
+           split_response = split_ai_response(suggestion)
+           return jsonify({
+               'suggestion': split_response['visible_text'],
+               'reasoning': split_response['reasoning_text']
+           })
        except OpenAIError:
            return jsonify({'error': 'AI service unavailable.'}), 503
        except Exception:
@@ -7322,7 +7335,11 @@ def ai_subjective_diagnosis():
 
        try:
            suggestion = get_ai_suggestion(prompt)
-           return jsonify({'suggestion': suggestion})
+           split_response = split_ai_response(suggestion)
+           return jsonify({
+               'suggestion': split_response['visible_text'],
+               'reasoning': split_response['reasoning_text']
+           })
        except OpenAIError:
            return jsonify({'error': 'AI service unavailable.'}), 503
        except Exception:
@@ -7379,7 +7396,11 @@ def ai_perspectives_field(field):
 
         try:
             suggestion = get_ai_suggestion(prompt)
-            return jsonify({'suggestion': suggestion})
+            split_response = split_ai_response(suggestion)
+            return jsonify({
+                'suggestion': split_response['visible_text'],
+                'reasoning': split_response['reasoning_text']
+            })
         except OpenAIError:
             return jsonify({'error': 'AI service unavailable.'}), 503
         except Exception:
@@ -7463,7 +7484,11 @@ def ai_perspectives_diagnosis():
 
         try:
             suggestion = get_ai_suggestion(prompt)
-            return jsonify({'suggestion': suggestion})
+            split_response = split_ai_response(suggestion)
+            return jsonify({
+                'suggestion': split_response['visible_text'],
+                'reasoning': split_response['reasoning_text']
+            })
         except OpenAIError:
             return jsonify({'error': 'AI service unavailable.'}), 503
         except Exception:
@@ -7524,7 +7549,11 @@ def ai_initial_plan_field(field):
 
     try:
         suggestion = get_ai_suggestion(prompt)
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
     except Exception:
@@ -7598,7 +7627,12 @@ def ai_initial_plan_summary():
             logger.warning(f"[Initial Plan Summary] AI returned empty summary for patient {data.get('patient_id', 'unknown')}")
             return jsonify({'error': 'AI returned an empty summary. Please ensure all assessment fields are properly filled.'}), 400
 
-        return jsonify({'summary': summary})
+        split_response = split_ai_response(summary)
+        return jsonify({
+            'summary': split_response['visible_text'],  # Keep 'summary' for backward compatibility
+            'suggestion': split_response['visible_text'],  # Also provide 'suggestion' for consistency
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError as e:
         logger.error(f"[Initial Plan Summary] OpenAI error: {str(e)}")
         return jsonify({'error':'AI service unavailable.'}), 503
@@ -7663,7 +7697,11 @@ def ai_patho_source():
 
     try:
         suggestion = get_ai_suggestion(prompt)
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
     except Exception:
@@ -7726,7 +7764,11 @@ def ai_chronic_factors():
 
     try:
         suggestion = get_ai_suggestion(prompt)
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
     except Exception:
@@ -7788,7 +7830,11 @@ def clinical_flags_suggest(patient_id):
 
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex)
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
     except Exception:
@@ -7847,7 +7893,11 @@ def clinical_flags_all_suggest(patient_id):
 
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex)
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
     except Exception:
@@ -7915,7 +7965,11 @@ def objective_assessment_field_suggest(field):
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex).strip()
         logger.info(f"🧠 [server] ObjectiveAssessment suggestion for '{field}': {suggestion}")
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError as e:
         logger.error(f"OpenAI API error in objective_assessment_field_suggest: {e}", exc_info=True)
         return jsonify({'error': 'AI service unavailable. Please try again later.'}), 503
@@ -8028,7 +8082,11 @@ def provisional_diagnosis_suggest(patient_id):
                 try:
                     suggestion = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
                     logger.info(f"✅ [Provisional Diagnosis] Successfully generated {len(suggestion)} chars: {suggestion[:100]}...")
-                    return jsonify({'suggestion': suggestion})
+                    split_response = split_ai_response(suggestion)
+                    return jsonify({
+                        'suggestion': split_response['visible_text'],
+                        'reasoning': split_response['reasoning_text']
+                    })
                 except OpenAIError as e:
                     logger.error(f"❌ [Provisional Diagnosis] OpenAI API error: {str(e)}", exc_info=True)
                     return jsonify({'suggestion': 'AI service unavailable. Please try again later.'}), 503
@@ -8103,7 +8161,11 @@ def ai_smart_goals(field):
 
     try:
         suggestion = get_ai_suggestion(base_prompt, patient_context=age_sex).strip()
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable'}), 503
     except Exception:
@@ -8199,7 +8261,12 @@ def treatment_plan_suggest(field):
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex).strip()
         logger.info(f"🧠 [server] TreatmentPlan suggestion for '{field}': {suggestion}")
-        return jsonify({ 'field': field, 'suggestion': suggestion })
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'field': field,
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({ 'error': 'AI service unavailable. Please try again later.' }), 503
     except Exception as e:
@@ -8340,7 +8407,12 @@ def treatment_plan_summary(patient_id):
             return jsonify({'error': 'AI returned an empty summary. Please ensure all assessment sections are completed and saved.'}), 400
 
         logger.info(f"✅ [Treatment Summary] Successfully generated {len(summary)} chars: {summary[:100]}...")
-        return jsonify({ 'summary': summary })
+        split_response = split_ai_response(summary)
+        return jsonify({
+            'summary': split_response['visible_text'],  # Keep 'summary' for backward compatibility
+            'suggestion': split_response['visible_text'],  # Also provide 'suggestion' for consistency
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError as e:
         logger.error(f"❌ [Treatment Summary] OpenAI API error: {str(e)}", exc_info=True)
         return jsonify({ 'error': 'AI service unavailable. Please try again later.' }), 503
@@ -8415,7 +8487,11 @@ def ai_followup_suggestion(patient_id):
     # 5. Call the AI
     try:
         suggestion = get_ai_suggestion(prompt).strip()
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable.'}), 503
     except Exception:
@@ -8508,7 +8584,11 @@ def ai_followup_field(field):
 
     try:
         suggestion = get_ai_suggestion(base_prompt).strip()
-        return jsonify({'suggestion': suggestion})
+        split_response = split_ai_response(suggestion)
+        return jsonify({
+            'suggestion': split_response['visible_text'],
+            'reasoning': split_response['reasoning_text']
+        })
     except OpenAIError:
         return jsonify({'error': 'AI service unavailable'}), 503
     except Exception:

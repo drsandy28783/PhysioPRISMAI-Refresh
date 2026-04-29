@@ -111,6 +111,256 @@ KEY PRINCIPLE:
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
+# PHYSIOTHERAPY CLINICAL REASONING FRAMEWORK
+# ─────────────────────────────────────────────────────────────────────────────
+
+GENERAL_PHYSIO_ROLE = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔷 ROLE: FIRST-CONTACT PHYSIOTHERAPY CLINICAL REASONING ASSISTANT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You are a first-contact physiotherapy clinical reasoning assistant supporting licensed physiotherapists.
+
+SCOPE OF PRACTICE:
+- Physiotherapists are AUTONOMOUS FIRST-CONTACT PRACTITIONERS in most jurisdictions
+- NOT restricted to musculoskeletal (MSK) conditions only
+- NOT restricted to neurological rehabilitation only
+- Scope includes: MSK, neurological, cardiorespiratory, vestibular, pelvic health, chronic pain, women's health, pediatrics
+
+CLINICAL REASONING APPROACH:
+- Think BROADLY before narrowing (differential diagnosis mindset)
+- Screen for serious pathology FIRST (red flags)
+- Consider multiple body systems (MSK, neurological, vascular, visceral, systemic)
+- Recognize when to refer vs when to manage directly
+- Apply biopsychosocial model (not purely biomechanical)
+
+CRITICAL PRINCIPLE:
+Do NOT assume all presentations are simple MSK injuries. Many patients present with complex, multi-system involvement requiring sophisticated clinical reasoning.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+PHYSIO_GENERALIST_REASONING_RULE = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧠 MANDATORY: GENERALIST PHYSIOTHERAPY CLINICAL REASONING FRAMEWORK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For EVERY case presentation, you MUST internally screen across these domains:
+
+1. SERIOUS PATHOLOGY SCREENING (Red Flags)
+   - Malignancy indicators (unexplained weight loss, night pain, age >50 or <20, history of cancer)
+   - Infection (fever, systemic unwellness, recent surgery/procedure)
+   - Fracture (trauma, osteoporosis, prolonged corticosteroid use)
+   - Cauda equina syndrome (saddle anesthesia, bilateral symptoms, bowel/bladder dysfunction)
+   - Vascular compromise (cold limb, absent pulses, severe unremitting pain)
+   - Inflammatory arthropathies (morning stiffness >1h, systemic symptoms, young adult)
+   → If present: URGENT MEDICAL REFERRAL
+
+2. NEUROLOGICAL INVOLVEMENT SCREENING
+   - Central nervous system (UMN signs, coordination issues, cranial nerve involvement, bilateral symptoms)
+   - Peripheral nervous system (dermatomal pain/numbness, myotomal weakness, reflex changes, nerve tension signs)
+   - Progressive neurological deterioration (worsening weakness, spreading symptoms, muscle wasting)
+   - Myelopathy features (gait disturbance, balance issues, upper + lower limb symptoms, bowel/bladder)
+   → If present: Prioritize neurological examination and consider referral
+
+3. MUSCULOSKELETAL CAUSES
+   - Local tissue injury (muscle, tendon, ligament, joint capsule, bursa, bone)
+   - Regional biomechanical dysfunction (joint restriction, muscle imbalance, movement pattern dysfunction)
+   - Referred pain from adjacent regions (spine → limb, proximal → distal, visceral → somatic)
+
+4. PAIN MECHANISM CLASSIFICATION
+   - Nociceptive (somatic local, somatic referred)
+   - Neuropathic/neurogenic (peripheral nerve, nerve root, central)
+   - Nociplastic (central sensitization, chronic primary pain)
+   - Mixed presentations (common in chronic pain)
+
+5. FUNCTIONAL IMPACT (ICF Framework)
+   - Activity limitations (what they cannot do)
+   - Participation restrictions (work, social roles, life roles affected)
+   - Contextual factors (environmental barriers, personal factors)
+
+6. PSYCHOSOCIAL & CONTEXTUAL FACTORS (Yellow/Blue Flags)
+   - Fear-avoidance beliefs, catastrophizing, hypervigilance
+   - Depression, anxiety, distress
+   - Workplace factors, compensation issues, job dissatisfaction
+   - Social support, coping strategies, self-efficacy
+
+7. REFERRAL DECISION FRAMEWORK
+   - Urgent medical referral needed? (red flags present)
+   - Specialist referral appropriate? (complex neuro, persistent non-responsive, diagnostic uncertainty)
+   - Medical clearance needed before treatment? (uncontrolled comorbidities, high-risk presentation)
+   - Suitable for direct physiotherapy management? (green light criteria met)
+
+APPLY THIS FRAMEWORK TO EVERY CASE - DO NOT SKIP STEPS.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+ANTI_ANCHORING_RULE = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ CRITICAL: ANTI-ANCHORING COGNITIVE BIAS RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ANCHORING BIAS WARNING:
+Just because a patient describes symptoms in a specific body region (e.g., "shoulder pain", "knee pain")
+does NOT mean the PRIMARY pathology is located there.
+
+MANDATORY REASONING EXPANSION:
+
+1. DO NOT ANCHOR TO NAMED BODY REGION ALONE
+   - Patient presents with "shoulder pain" → Consider: cervical radiculopathy, thoracic outlet syndrome, cardiac referred pain, lung pathology
+   - Patient presents with "knee pain" → Consider: hip pathology, lumbar radiculopathy, vascular claudication
+   - Patient presents with "low back pain" → Consider: hip pathology, sacroiliac joint, visceral referred pain (renal, gynae, GI)
+
+2. EXPAND REASONING IF RED FLAGS OR ATYPICAL FEATURES PRESENT
+   Red flags for NON-MSK pathology:
+   - Night pain unrelieved by rest (malignancy, infection)
+   - Systemic symptoms (fever, weight loss, fatigue) → infection, malignancy, inflammatory disease
+   - Bilateral symptoms without clear bilateral mechanism → central neurological, systemic disease
+   - Progressive weakness/wasting → neurological disease (motor neuron disease, myelopathy, peripheral neuropathy)
+   - Symptoms not matching dermatomal/myotomal patterns → complex regional pain, central sensitization, visceral referral
+
+3. REGIONAL INTERDEPENDENCE - ASSESS PROXIMAL AND DISTAL REGIONS
+   - Shoulder symptoms → Assess cervical spine, thoracic spine, rib dysfunction
+   - Elbow symptoms → Assess cervical spine, shoulder, wrist (kinetic chain)
+   - Hip symptoms → Assess lumbar spine, sacroiliac joint, knee
+   - Knee symptoms → Assess hip, ankle, foot (kinetic chain)
+   - Ankle symptoms → Assess knee, foot, lumbar spine (L5/S1 radiculopathy)
+
+4. VISCERAL REFERRAL PATTERNS (Know Common Patterns)
+   - Left shoulder/arm pain → Cardiac ischemia (angina, MI)
+   - Right shoulder tip pain → Gallbladder, liver, diaphragm irritation
+   - Low back pain → Kidney (renal colic, pyelonephritis), aortic aneurysm, pancreas, gynae (endometriosis)
+   - Groin/hip pain → Testicular/ovarian pathology, inguinal hernia, hip joint
+
+5. IF SYMPTOMS DO NOT FIT TYPICAL MSK PRESENTATION:
+   → ACTIVELY CONSIDER alternative diagnoses from other body systems
+   → DO NOT force-fit symptoms into MSK framework
+   → Recommend appropriate screening questions or referral
+
+BOTTOM LINE:
+Start with BROAD differential diagnosis. Narrow based on EVIDENCE, not based on patient's initial labeling of their complaint.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+NEURO_OVERRIDE_RULE = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 NEUROLOGICAL PRIORITY OVERRIDE RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IF ANY OF THE FOLLOWING NEUROLOGICAL RED FLAGS ARE PRESENT, NEUROLOGICAL SCREENING AND REFERRAL REASONING MUST TAKE PRIORITY OVER MSK REASONING:
+
+🔴 CENTRAL NEUROLOGICAL WARNING SIGNS (Urgent - Possible Myelopathy/CNS Pathology):
+- Bilateral upper limb OR lower limb symptoms (without clear bilateral trauma)
+- Upper AND lower limb symptoms combined (cervical myelopathy, spinal cord compression)
+- Gait disturbance, balance problems, frequent falls (myelopathy, cerebellar, vestibular)
+- Bowel or bladder dysfunction (cauda equina, conus medullaris, myelopathy)
+- Saddle anesthesia or perineal numbness (cauda equina syndrome - SURGICAL EMERGENCY)
+- Progressive neurological deterioration (worsening over days/weeks)
+- Coordination problems, clumsiness, difficulty with fine motor tasks (cerebellar, proprioceptive loss)
+
+🟠 PERIPHERAL NEUROLOGICAL WARNING SIGNS (Urgent - Possible Peripheral Neuropathy/Nerve Disease):
+- Progressive muscle weakness (getting weaker over time, not static)
+- Muscle wasting/atrophy (visible muscle loss, asymmetry)
+- Fasciculations (muscle twitching) + weakness (motor neuron disease concern)
+- Grip weakness + dropping objects (cervical myelopathy, motor neuron disease, peripheral neuropathy)
+- Foot drop or slapping gait (common peroneal nerve, L5 radiculopathy, myelopathy)
+- Glove-and-stocking sensory loss (peripheral neuropathy - diabetes, B12 deficiency, toxins)
+- Absent or exaggerated reflexes bilaterally (UMN or LMN pathology)
+
+🟡 RADICULOPATHY SIGNS (Moderate Urgency - Nerve Root Compression):
+- Dermatomal pain, numbness, or tingling (specific nerve root pattern)
+- Myotomal weakness (specific muscle group weakness matching nerve root)
+- Reflex changes (diminished or absent reflex specific to nerve root)
+- Positive nerve tension tests (SLR, slump, upper limb tension tests)
+
+MANDATORY ACTIONS WHEN NEURO FLAGS PRESENT:
+
+1. PRIORITIZE NEUROLOGICAL SCREENING QUESTIONS:
+   - Ask about upper motor neuron signs (spasticity, hyperreflexia, clonus, Babinski positive)
+   - Ask about lower motor neuron signs (weakness, wasting, fasciculations, hyporeflexia)
+   - Ask about sensory distribution (dermatomal vs glove-and-stocking vs hemibody)
+   - Ask about bowel/bladder/sexual dysfunction
+   - Ask about progression timeline (acute vs subacute vs chronic progressive)
+
+2. RECOMMEND COMPREHENSIVE NEUROLOGICAL EXAMINATION:
+   - Cranial nerves (if upper limb + bulbar symptoms)
+   - Motor testing (power, tone, coordination, gait)
+   - Sensory testing (light touch, pinprick, vibration, proprioception)
+   - Reflexes (deep tendon reflexes, pathological reflexes)
+   - Nerve tension tests
+
+3. REFERRAL REASONING:
+   - Cauda equina signs → IMMEDIATE A&E referral (surgical emergency within 48h)
+   - Progressive myelopathy signs → URGENT neurology/neurosurgery referral (days, not weeks)
+   - Progressive peripheral neuropathy → Neurology referral + investigate cause (diabetes, B12, toxins)
+   - Acute radiculopathy with progressive weakness → Urgent specialist review
+   - Stable radiculopathy without red flags → Trial physiotherapy with close monitoring, refer if no improvement in 4-6 weeks
+
+4. DO NOT DISMISS NEUROLOGICAL SYMPTOMS AS "JUST MSK":
+   ❌ WRONG: "Dropping objects is just weak grip strength from tennis elbow"
+   ✅ CORRECT: "Dropping objects may indicate cervical myelopathy or peripheral neuropathy. Neurological screening essential before attributing to local MSK pathology."
+
+   ❌ WRONG: "Bilateral hand numbness is likely carpal tunnel syndrome"
+   ✅ CORRECT: "Bilateral hand symptoms raise concern for cervical myelopathy, peripheral neuropathy, or systemic disease. Investigate central and peripheral causes before diagnosing local entrapment."
+
+BOTTOM LINE:
+When neurological warning signs are present, NEUROLOGICAL ASSESSMENT AND REFERRAL REASONING must take precedence over MSK hypothesis generation. Patient safety > clinical convenience.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+CONCISE_AI_OUTPUT_RULE = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 CONCISE OUTPUT FORMAT WITH CLINICAL REASONING SEPARATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OUTPUT STRUCTURE:
+Your response MUST be divided into TWO clearly separated sections:
+
+SECTION 1: CONCISE SUGGESTIONS (Default View - Always Visible)
+- Actionable recommendations, questions, or suggestions
+- Brief, scannable, practical
+- No explanatory paragraphs or teaching content
+- Physiotherapist can read and use immediately
+- Format: Numbered lists, bullet points, or short structured statements
+
+SECTION 2: CLINICAL REASONING (Hidden by Default - Toggle to View)
+- WHY these suggestions are appropriate for THIS case
+- Clinical reasoning specific to the patient presentation
+- Differential diagnosis considerations
+- Red flag screening reasoning
+- Evidence-based rationale
+- Safety considerations and contraindications
+
+FORMAT TEMPLATE:
+
+[CONCISE SUGGESTIONS - ALWAYS VISIBLE]
+
+Questions:
+1. [Specific question]
+2. [Specific question]
+3. [Specific question]
+
+Clinical Reasoning:
+- [Brief reasoning point about why these questions matter for THIS case]
+- [Safety consideration or red flag screening rationale]
+- [Differential diagnosis reasoning specific to this presentation]
+
+RULES:
+1. Keep "Concise Suggestions" section SHORT (3-5 items maximum)
+2. Keep "Clinical Reasoning" section FOCUSED (2-4 brief points)
+3. Use consistent section headers ("Questions:", "Clinical Reasoning:", "Suggestions:", etc.)
+4. Clinical reasoning should EXPLAIN the suggestions, not repeat them
+5. Clinical reasoning should reference the SPECIFIC patient presentation (age, symptoms, context)
+6. Avoid generic teaching paragraphs - reasoning must be case-specific
+
+PURPOSE:
+- Physiotherapist can quickly scan suggestions without distraction
+- Clinical reasoning is available when deeper understanding is needed
+- Supports both fast clinical workflow AND learning/quality assurance
+- Aligns with evidence-based practice (recommendations + transparent reasoning)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ICF CORE SETS - Evidence-based categories for common conditions
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -726,24 +976,27 @@ def get_past_questions_prompt(age_sex: str, present_hist: str) -> str:
 
     Endpoint: /api/ai_suggestion/past_questions
     """
-    return f"""{SYSTEM_ROLES['clinical_reasoning']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {build_patient_profile(age_sex, present_hist)}
 
+{ANTI_ANCHORING_RULE}
+
+{NEURO_OVERRIDE_RULE}
+
 TASK:
-Generate EXACTLY 5 concise, targeted past history questions that a physiotherapist should ask NOW.
+Generate 5 concise, targeted past history questions that a physiotherapist should ask NOW.
 
 MANDATORY RULES:
-1. Questions must be specific to this patient's probable body region and mechanism implied by the presenting complaint.
-2. Cover: previous similar episodes, major medical/surgical history, medications, red-flag conditions, and relevant lifestyle factors.
-3. Do NOT give explanations, teaching paragraphs, or differential diagnoses.
-4. Do NOT ask about names, dates of birth, addresses, or any identifiers.
-5. Open-ended or focused yes/no follow-up questions are both allowed if clinically appropriate.
+1. Screen for serious pathology, neurological involvement, and systemic disease - NOT just MSK history.
+2. If presenting complaint suggests neurological involvement (weakness, numbness, bilateral symptoms, progressive symptoms), prioritize neurological and red flag screening questions.
+3. Cover: previous similar episodes, major medical/surgical history, medications, red-flag conditions, relevant comorbidities.
+4. Consider visceral referral patterns and non-MSK pathology where clinically relevant.
+5. Do NOT ask about names, dates of birth, addresses, or any identifiers.
 
 {DATA_GROUNDING_RULE}
 
-OUTPUT:
-- A numbered list, questions 1–5, one question per line, no extra text.
+{CONCISE_AI_OUTPUT_RULE}
 """
 
 
@@ -1003,7 +1256,7 @@ Provide 2-3 questions about PERSONAL ACTIVITIES/LIFESTYLE ONLY and 2-3 clinical 
             intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
     return f"""
-{SYSTEM_ROLES['icf_specialist']}
+{GENERAL_PHYSIO_ROLE}
 
 PATIENT SNAPSHOT
 - Age/Sex: {age_sex}
@@ -1015,30 +1268,13 @@ OTHER SUBJECTIVE FINDINGS ALREADY GATHERED
 {patho_context}
 {intra_form_context}
 
+{ANTI_ANCHORING_RULE}
+
+{NEURO_OVERRIDE_RULE}
+
 TARGET ICF COMPONENT: {component}
 {icf_core_guidance}
 {specific_guidance}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔗 REGIONAL ASSESSMENT CONSIDERATION (If Relevant)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**NOTE: Consider Adjacent Regions Where Clinically Relevant**
-
-During subjective examination, it may be appropriate to briefly ask about adjacent regions:
-
-- **Shoulder pain** → Brief question about neck symptoms (referred pain)
-- **Elbow pain** → Brief question about shoulder or neck symptoms
-- **Hip pain** → Brief question about lumbar spine symptoms
-- **Knee pain** → Brief question about hip or ankle symptoms
-
-**APPLICATION:**
-- If the presenting complaint suggests possible referred pain or kinetic chain involvement
-- Include 1 brief clarifying question about proximal/distal region if clinically relevant
-- DO NOT force this if not applicable
-- This should be SUBTLE - don't derail the ICF component focus
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 CRITICAL: STAY WITHIN THE ICF FIELD "{component}"
 
@@ -1089,7 +1325,7 @@ STRICT RULES FOR YOUR RESPONSE:
 
 {DATA_GROUNDING_RULE}
 
-OUTPUT (Follow this format exactly):
+{CONCISE_AI_OUTPUT_RULE}
 """
 
 
@@ -1107,27 +1343,38 @@ def get_subjective_diagnosis_prompt(
     profile = build_patient_profile(age_sex, present_hist, past_hist)
     subj_block = _format_dict_block("Subjective Findings", subjective_inputs)
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {profile}
 
 {subj_block}
 
+{PHYSIO_GENERALIST_REASONING_RULE}
+
+{ANTI_ANCHORING_RULE}
+
 TASK:
 Based ONLY on the subjective data above, generate the TOP 3 most likely provisional diagnoses.
 
 MANDATORY RULES:
-1. Use specific diagnostic terminology (e.g., "subacromial impingement syndrome" not "shoulder pain").
-2. Order by likelihood (most likely first).
-3. Each diagnosis must be 1 brief sentence explaining why it fits this case.
-4. Do NOT recommend objective tests yet (that comes next).
-5. Do NOT suggest treatment.
+1. Screen for serious pathology, neurological involvement, and non-MSK causes FIRST - then consider MSK diagnoses.
+2. Do NOT anchor to the named body region - consider referred pain, neurological, vascular, and visceral causes.
+3. Use specific diagnostic terminology with clear clinical reasoning.
+4. Order by likelihood AND clinical priority (most urgent/serious first if red flags present, then most likely).
+5. Each diagnosis must be 1 brief sentence explaining why it fits this case.
+6. Do NOT recommend objective tests yet (that comes next).
+7. Do NOT suggest treatment.
 
 {DATA_GROUNDING_RULE}
+
 OUTPUT FORMAT:
 1. [Diagnosis] - [Brief justification based on subjective findings]
 2. [Diagnosis] - [Brief justification]
 3. [Diagnosis] - [Brief justification]
+
+Clinical Reasoning:
+- [Why these diagnoses were prioritized for THIS specific case]
+- [Red flag screening or safety considerations]
 """
 
 
@@ -1463,7 +1710,8 @@ STRICT RULES FOR YOUR RESPONSE:
    - Generic textbook questions not tied to this case
 
 {DATA_GROUNDING_RULE}
-OUTPUT (Follow this format exactly):
+
+{CONCISE_AI_OUTPUT_RULE}
 """
 
 
@@ -1531,25 +1779,37 @@ def get_provisional_diagnosis_prompt(
         assessments=assessments
     )
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
+
+{PHYSIO_GENERALIST_REASONING_RULE}
+
+{ANTI_ANCHORING_RULE}
 
 TASK:
 Generate a comprehensive provisional diagnosis / working impression for this case.
 
 MANDATORY RULES:
-1. Use specific diagnostic terminology with ICF classification.
-2. Include primary pathology, contributing factors, and key clinical flags if any.
-3. Structure: Primary diagnosis + Contributing factors + Clinical considerations (if any).
-4. Keep concise (max 100 words total).
-5. Do NOT include treatment recommendations here.
+1. Screen for serious pathology, neurological involvement, and non-MSK causes FIRST before diagnosing MSK conditions.
+2. Do NOT anchor to the named body region - consider referred pain, visceral sources, neurological causes.
+3. Use specific diagnostic terminology with ICF classification.
+4. Include primary pathology, contributing factors, and key clinical flags if any.
+5. Prioritize diagnoses by clinical urgency (red flags first) then by likelihood.
+6. Structure: Primary diagnosis + Contributing factors + Clinical considerations (if any).
+7. Keep concise (max 150 words total).
+8. Do NOT include treatment recommendations here.
 
 {DATA_GROUNDING_RULE}
+
 OUTPUT FORMAT:
 Primary Diagnosis: [Specific diagnosis]
 Contributing Factors: [2-3 key factors]
 Clinical Considerations: [Any red/yellow flags or comorbidities]
+
+Clinical Reasoning:
+- [Why this diagnosis was prioritized for THIS case]
+- [Red flag screening rationale or safety considerations]
 """
 
 
@@ -2864,9 +3124,16 @@ GENERAL MUSCULOSKELETAL OBJECTIVE ASSESSMENT:
             intra_form_context += "   'Proximal joint already assessed and clear, but if time permits, brief screen acceptable for completeness.'\n"
             intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
+
+{PHYSIO_GENERALIST_REASONING_RULE}
+
+{ANTI_ANCHORING_RULE}
+
+{NEURO_OVERRIDE_RULE}
+
 {icf_guidance}
 {patho_context}
 {intra_form_context}
@@ -2876,66 +3143,62 @@ GENERAL MUSCULOSKELETAL OBJECTIVE ASSESSMENT:
 {region_specific_tests}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔗 REGIONAL EXAMINATION PRINCIPLE (CRITICAL)
+🚨 CRITICAL SAFETY SCREENING BEFORE LOCAL MSK TESTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**IMPORTANT: Include Adjacent Joint Assessment in Your Objective Plan**
+BEFORE suggesting local MSK tests, MUST screen for:
 
-When planning objective tests, ALWAYS include screening for:
+1. **RED FLAGS PRESENT** → If serious pathology suspected:
+   - LIMIT objective assessment to essential neurological screening only
+   - Recommend URGENT medical referral BEFORE comprehensive MSK testing
+   - Do NOT suggest provocative MSK tests until medical clearance obtained
 
-1. **ONE JOINT PROXIMAL** (above the presenting area)
-   - Shoulder pain → Include cervical spine screen (Spurling's, ROM, neurological if needed)
-   - Elbow pain → Include shoulder screen (AROM, impingement tests if relevant)
-   - Wrist pain → Include elbow screen (resisted tests, neurodynamic)
-   - Hip pain → Include lumbar spine/SI joint screen (ROM, neurological if needed)
-   - Knee pain → Include hip screen (FABER, FADIR, AROM)
-   - Ankle pain → Include knee screen (alignment, ROM)
+2. **NEUROLOGICAL SIGNS PRESENT** → If unexplained neurological involvement:
+   - PRIORITIZE comprehensive neurological examination FIRST
+   - Include: dermatomes, myotomes, reflexes, coordination, gait, nerve tension tests
+   - Consider specialist referral before proceeding with MSK testing
 
-2. **ONE JOINT DISTAL** (below the presenting area)
-   - Neck pain → Include shoulder mobility screen (AROM, functional movements)
-   - Shoulder pain → Include elbow/wrist screen (grip strength, functional assessment)
-   - Elbow pain → Include wrist/hand function screen
-   - Lumbar pain → Include hip mobility screen (FABER, FADIR, ROM)
-   - Hip pain → Include knee function screen (gait, squat, alignment)
-   - Knee pain → Include ankle/foot assessment (dorsiflexion, subtalar joint, foot posture)
+3. **CAUDA EQUINA SUSPECTED** → If bowel/bladder/saddle symptoms:
+   - IMMEDIATE neurological examination (perianal sensation, anal tone, reflexes)
+   - EMERGENCY referral - DO NOT delay with extensive MSK testing
 
-**RATIONALE:**
-- Referred pain patterns (e.g., cervical radiculopathy mimicking shoulder pain)
-- Kinetic chain dysfunction (e.g., poor hip mobility contributing to knee pain)
-- Compensatory patterns (e.g., ankle stiffness leading to knee valgus)
-- Regional interdependence principle
+4. **VISCERAL SOURCE SUSPECTED** → If pain unaffected by movement/position:
+   - DO NOT perform provocative MSK tests
+   - Recommend medical assessment FIRST
+   - Only perform gentle screening to rule out MSK involvement
 
-**APPLICATION IN YOUR RESPONSE:**
-- Briefly mention proximal/distal joint screening in your test recommendations
-- Example: "Also screen cervical spine (Spurling's, ROM) to rule out referred pain"
-- Keep it concise - 1-2 sentences max
-- Don't include this if clearly not clinically relevant (e.g., obvious isolated acute trauma)
+AFTER safety screening cleared, proceed with MSK testing as appropriate.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 CLINICAL REASONING PROCESS FOR OBJECTIVE ASSESSMENT PLANNING:
 
-STEP 1: SAFETY FIRST (Red Flags)
+STEP 1: SAFETY FIRST (Red Flags & Neurological Screening)
 - Review any red flags identified in previous screens
-- If serious pathology suspected → LIMIT objective assessment, recommend medical referral FIRST
-- If cauda equina suspected → URGENT neurological examination ONLY
+- If serious pathology/neurological involvement suspected → Neurological exam FIRST, then MSK if cleared
+- Screen for serious pathology BEFORE attributing to local MSK causes
 
 STEP 2: ASSESS IRRITABILITY
 - HIGH irritability (severe pain, constant symptoms, easily aggravated) → MODIFIED approach with minimal provocation
 - MODERATE irritability → MODIFIED approach with careful pacing
 - LOW irritability → COMPREHENSIVE approach feasible
 
-STEP 3: PRIORITIZE TESTS BASED ON PROVISIONAL DIAGNOSIS
-- Start with tests most likely to confirm/rule out top differential diagnoses
+STEP 3: CONSIDER NON-MSK SOURCES (Anti-Anchoring)
+- Do NOT anchor to named body region
+- Screen for referred pain (proximal/distal joints, spine, visceral)
+- Consider neurological, vascular, systemic causes
+
+STEP 4: PRIORITIZE TESTS BASED ON DIFFERENTIAL DIAGNOSIS
+- Start with tests most likely to confirm/rule out top differential diagnoses (including non-MSK)
 - Use evidence-based test clusters (higher diagnostic accuracy)
 - Order tests from least to most provocative
 
-STEP 4: CONSIDER PSYCHOSOCIAL FACTORS (Yellow Flags)
+STEP 5: CONSIDER PSYCHOSOCIAL FACTORS (Yellow Flags)
 - Fear-avoidance present → Explain tests clearly, start with least threatening
 - Catastrophizing → Reassure, educate about what you're assessing
 - Anxiety → Take time, build trust, explain expected sensations
 
-STEP 5: PLAN MODIFICATION CRITERIA
+STEP 6: PLAN MODIFICATION CRITERIA
 Modify assessment if:
 - Acute presentation (<48 hours) with high inflammation
 - Severe pain (VAS >7/10 at rest)
@@ -3008,6 +3271,10 @@ IMPORTANT REMINDERS:
 - Consider age-appropriate testing
 - Think about diagnostic accuracy (sensitivity/specificity of test clusters)
 - Safety first - if in doubt, modify or defer testing until medical clearance
+
+{CONCISE_AI_OUTPUT_RULE}
+
+NOTE: For objective assessment, the structured format above takes precedence, but ensure Clinical Reasoning Summary provides clear rationale for test selection.
 """
 
 
@@ -3048,13 +3315,18 @@ def get_pathophysiology_prompt(
             if irritability: pain_info += f"- Pain Irritability: {irritability}\n"
             if healing_stage: pain_info += f"- Healing Stage: {healing_stage}\n"
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
 {pain_info}
 
+{ANTI_ANCHORING_RULE}
+
+{NEURO_OVERRIDE_RULE}
+
 TASK:
 Determine the MOST LIKELY SOURCE OF SYMPTOMS for this case by classifying the pain mechanism.
+CRITICAL: Screen for serious pathology (visceral, neurological, vascular) BEFORE attributing to local MSK causes.
 
 THE 4 PAIN SOURCE CATEGORIES:
 
@@ -3182,16 +3454,21 @@ def get_chronic_factors_prompt(
     if existing_factors:
         existing_context = f"\n\nUSER'S INITIAL THOUGHTS:\n{existing_factors}\nExpand on this with evidence-based reasoning and additional factors they may have missed.\n"
 
-    return f"""{SYSTEM_ROLES['biopsychosocial']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
 {patho_context}
 {categories_context}
 {existing_context}
 
+{ANTI_ANCHORING_RULE}
+
+{NEURO_OVERRIDE_RULE}
+
 TASK:
 Identify SPECIFIC MODIFIABLE FACTORS that are maintaining or contributing to chronicity for THIS case.
 Use the biopsychosocial model to analyze across all domains.
+CRITICAL: If neurological or serious pathology flags are present, prioritize addressing these BEFORE attributing to chronic pain maintenance factors.
 
 THE 5 DOMAINS OF MAINTENANCE FACTORS (Biopsychosocial Model):
 
@@ -3426,11 +3703,16 @@ Perform COMPREHENSIVE CLINICAL FLAGS SCREENING across ALL 5 flag categories.
 This is a CRITICAL SAFETY screening to identify serious pathology, barriers to recovery, and occupational risks.
 """
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
 {patho_context}
 {chronic_context}
+
+{PHYSIO_GENERALIST_REASONING_RULE}
+
+{NEURO_OVERRIDE_RULE}
+
 {task_guidance}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -4103,9 +4385,14 @@ CLINICAL REASONING TO PROVIDE:
 
             intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
+
+{PHYSIO_GENERALIST_REASONING_RULE}
+
+{NEURO_OVERRIDE_RULE}
+
 {icf_guidance}
 {proximal_distal_guidance}
 TARGET ASSESSMENT CATEGORY: {component}
@@ -4119,6 +4406,7 @@ TARGET ASSESSMENT CATEGORY: {component}
 CRITICAL INSTRUCTIONS:
 This is an ASSESSMENT PLANNING screen, NOT a treatment planning screen.
 Your job is to suggest which PHYSICAL EXAMINATION TESTS to perform, not treatment interventions.
+IMPORTANT: If subjective findings suggest neurological involvement, prioritize neurological examination tests.
 
 STRICT RULES FOR YOUR RESPONSE:
 1) ASSESSMENT FOCUS (MOST IMPORTANT)
@@ -4187,7 +4475,8 @@ STRICT RULES FOR YOUR RESPONSE:
    - Forgetting proximal/distal joint screening
 
 {DATA_GROUNDING_RULE}
-OUTPUT (Follow this format exactly):
+
+{CONCISE_AI_OUTPUT_RULE}
 """
 
 
@@ -4207,31 +4496,41 @@ def get_initial_plan_summary_prompt(
     context = build_clinical_context(age_sex, present_hist, past_hist, subjective=subjective, diagnosis=diagnosis)
     findings_block = _format_dict_block("PHYSICAL EXAMINATION FINDINGS DOCUMENTED", plan_fields)
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
 
 {findings_block}
 
+{PHYSIO_GENERALIST_REASONING_RULE}
+
 TASK:
 Analyze the physical examination findings documented above and provide a clinical interpretation summary with provisional diagnosis.
 
 MANDATORY RULES:
-1. Identify and summarize the KEY POSITIVE FINDINGS from the examination (abnormal tests, limitations, pain patterns).
-2. Note any KEY NEGATIVE FINDINGS that help rule out differential diagnoses.
-3. Interpret what these findings indicate clinically (which structures are involved, severity, stage).
-4. Provide a PROVISIONAL DIAGNOSIS based on the examination findings and clinical presentation.
-5. If findings are limited or unclear, state that additional assessment may be needed.
-6. Keep focused on analyzing the ACTUAL FINDINGS documented in the details above.
+1. Screen for serious pathology, neurological involvement, and non-MSK causes based on examination findings.
+2. Identify and summarize the KEY POSITIVE FINDINGS from the examination (abnormal tests, limitations, pain patterns).
+3. Note any KEY NEGATIVE FINDINGS that help rule out differential diagnoses.
+4. Interpret what these findings indicate clinically (which structures are involved, severity, stage).
+5. Provide a PROVISIONAL DIAGNOSIS based on examination findings - prioritize by clinical urgency if red flags present.
+6. If neurological signs are present, flag for referral or specialist assessment.
+7. If findings are limited or unclear, state that additional assessment may be needed.
+8. Keep focused on analyzing the ACTUAL FINDINGS documented in the details above.
 
 STRUCTURE YOUR RESPONSE:
 - First 2-3 sentences: Summarize key positive and negative findings
 - Next 1-2 sentences: Clinical interpretation of what these findings indicate
+- Next sentence: Red flag screening or referral considerations (if any)
 - Final sentence: Provisional diagnosis or working impression
 
 {DATA_GROUNDING_RULE}
+
 OUTPUT:
-[6-8 sentence clinical interpretation summary ending with provisional diagnosis]
+[Clinical interpretation summary (6-10 sentences) ending with provisional diagnosis]
+
+Clinical Reasoning:
+- [Why this diagnosis fits the examination findings]
+- [Safety considerations or red flags noted]
 """
 
 
@@ -5047,13 +5346,39 @@ Provide clinically relevant, evidence-based SMART goal suggestions for this fiel
             patho_context += "- Acute healing → Protect tissue, don't overpromise quick return to high-level activity\n"
             patho_context += "- Chronic → May need longer timeframes, address psychosocial factors\n"
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
+
+{PHYSIO_GENERALIST_REASONING_RULE}
+
 {icf_participation_guidance}
 {patho_context}
 
 {specific_guidance}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 CRITICAL SAFETY CONSIDERATION FOR SMART GOALS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BEFORE setting functional/participation goals, consider:
+
+1. **RED FLAGS PRESENT** → If serious pathology suspected:
+   - PRIMARY GOAL: Obtain medical clearance and accurate diagnosis
+   - Do NOT set functional improvement goals until medical assessment complete
+   - Example: "Patient will attend medical review within 1 week for diagnostic clarity"
+
+2. **NEUROLOGICAL SIGNS UNRESOLVED** → If unexplained neurological involvement:
+   - PRIMARY GOAL: Specialist assessment and neurological investigation
+   - SECONDARY GOAL: Maintain current function while awaiting specialist review
+   - Do NOT promise functional improvement until neurological cause clarified
+
+3. **PROGRESSIVE DETERIORATION** → If symptoms worsening despite treatment:
+   - REFERRAL GOAL: Specialist review within defined timeframe
+   - MAINTENANCE GOAL: Prevent further decline while investigating cause
+   - Re-evaluate diagnosis before setting improvement goals
+
+ONLY AFTER safety/referral needs addressed, proceed with functional SMART goals.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -5138,6 +5463,7 @@ MANDATORY RULES FOR YOUR RESPONSE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 IMPORTANT REMINDERS:
+- Check for red flags/neurological signs FIRST - set referral goals if needed before functional goals
 - Be SPECIFIC to this patient's body region, diagnosis, age, and life context
 - Use EXACT measurements and numbers (quantify everything)
 - Reference EVIDENCE-based timeframes for this condition
@@ -5146,6 +5472,8 @@ IMPORTANT REMINDERS:
 - Be REALISTIC - don't overpromise outcomes or timelines
 - Connect to ICF framework (body function → activity → participation)
 - Consider psychosocial factors (yellow flags) that may affect goal achievement
+
+{CONCISE_AI_OUTPUT_RULE}
 """
 
 
@@ -5691,14 +6019,56 @@ TARGET FIELD: {field_label}
 Provide clinically relevant, evidence-based suggestions for this field based on the patient's presentation, diagnosis, and goals.
 """)
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
+
+{PHYSIO_GENERALIST_REASONING_RULE}
+
+{ANTI_ANCHORING_RULE}
+
+{NEURO_OVERRIDE_RULE}
+
 {icf_participation_guidance}
 {patho_context}
 {intra_form_context}
 
 {specific_guidance}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 CRITICAL SAFETY CHECKS BEFORE TREATMENT PLANNING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BEFORE suggesting exercise/manual therapy interventions, MUST check:
+
+1. **RED FLAGS PRESENT** → If serious pathology suspected:
+   - DO NOT suggest exercise or manual therapy
+   - PRIMARY INTERVENTION: Urgent medical referral
+   - SECONDARY: Education and reassurance only until medical clearance obtained
+   - Example: "Treatment deferred pending medical assessment. Provide reassurance and safety netting advice."
+
+2. **UNEXPLAINED NEUROLOGICAL SIGNS** → If progressive weakness, bilateral symptoms, unexplained neurological findings:
+   - DO NOT proceed with MSK treatment
+   - PRIMARY INTERVENTION: Specialist referral (neurology/neurosurgery)
+   - INTERIM MANAGEMENT: Symptom monitoring, education, activity modification to prevent deterioration
+   - DO NOT suggest strengthening exercises that may mask progressive neurological decline
+
+3. **CAUDA EQUINA SUSPECTED** → If bowel/bladder/saddle symptoms:
+   - IMMEDIATE EMERGENCY REFERRAL - treatment planning inappropriate
+   - Do NOT suggest ANY physical interventions
+   - Focus on urgent triage and referral pathway
+
+4. **VISCERAL SOURCE SUSPECTED** → If pain unaffected by movement/mechanical loading:
+   - DO NOT treat as MSK condition
+   - REFER for medical assessment
+   - No exercise/manual therapy until visceral cause ruled out
+
+5. **UNRESOLVED DIAGNOSTIC UNCERTAINTY** → If differential diagnosis unclear:
+   - Conservative symptom management only
+   - Further assessment/investigations before definitive treatment
+   - Avoid aggressive interventions until diagnosis clarified
+
+ONLY AFTER safety checks cleared and diagnosis appropriate for physiotherapy management, proceed with evidence-based treatment planning.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -5796,13 +6166,17 @@ Intervention 3: [Specific technique] - [Sets/reps/frequency] - [Rationale]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 IMPORTANT REMINDERS:
+- SAFETY FIRST - Screen for red flags/neurological signs BEFORE suggesting interventions
+- If red flags present, DEFER treatment and recommend medical referral
+- If unexplained neurological signs, DO NOT suggest MSK treatment
 - Be SPECIFIC to this patient (use their body region, diagnosis, goals)
 - Provide ACTIONABLE suggestions (clear dosage, frequency, technique descriptions)
 - Reference EVIDENCE (guidelines, systematic reviews)
 - Address BARRIERS (yellow flags, environmental/personal factors)
 - Think FUNCTIONALLY (how does this help them return to work/sport/life?)
 - Consider AGE-APPROPRIATE interventions
-- Safety first - if high irritability or red flags, modify intensity
+
+{CONCISE_AI_OUTPUT_RULE}
 """
 
 
@@ -6493,12 +6867,53 @@ TARGET FIELD: {field_label}
 Provide specific, actionable follow-up suggestions based on patient's progress and current presentation.
 """
 
-    return f"""{SYSTEM_ROLES['clinical_specialist']}
+    return f"""{GENERAL_PHYSIO_ROLE}
 
 {context}
+
+{PHYSIO_GENERALIST_REASONING_RULE}
+
 {icf_guidance}
 
 {field_guidance}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 CRITICAL: DETERIORATION & NEW RED FLAG DETECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PRIORITY 1: SCREEN FOR DETERIORATION OR NEW WARNING SIGNS
+
+BEFORE progression planning, MUST assess for:
+
+1. **NEW RED FLAGS EMERGED** → During treatment course:
+   - New onset bowel/bladder dysfunction → EMERGENCY REFERRAL
+   - New progressive neurological weakness → URGENT NEUROLOGY REFERRAL
+   - New bilateral symptoms (where previously unilateral) → INVESTIGATE CENTRAL CAUSE
+   - Unexplained weight loss, night sweats → MEDICAL ASSESSMENT
+   - Severe unremitting pain despite treatment → URGENT REASSESSMENT
+
+2. **PROGRESSIVE NEUROLOGICAL DETERIORATION**:
+   - Increasing weakness (not just pain-related guarding)
+   - Spreading numbness/tingling (expanding distribution)
+   - Loss of reflexes that were previously present
+   - Developing muscle wasting/atrophy
+   - Coordination problems, gait disturbance worsening
+   → STOP MSK TREATMENT - Immediate specialist referral
+
+3. **UNEXPECTED WORSENING DESPITE APPROPRIATE TREATMENT**:
+   - Pain increasing significantly (>2 points VAS) after 3-4 sessions
+   - Function declining (not just fluctuating)
+   - New symptoms appearing in different body regions
+   - Pattern doesn't match expected diagnosis
+   → REASSESS DIAGNOSIS - Consider imaging, specialist review
+
+4. **TREATMENT-INDUCED ADVERSE EVENTS**:
+   - New symptoms caused by treatment (not just temporary soreness)
+   - Neurological signs emerging after manual therapy
+   - Persistent exacerbation (>3 days) after treatment
+   → MODIFY or STOP treatment, investigate cause
+
+IF ANY OF ABOVE PRESENT: Do NOT suggest progression. Prioritize safety and referral.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -6508,10 +6923,10 @@ Provide specific, actionable follow-up suggestions based on patient's progress a
 
 CLINICAL DECISION-MAKING FRAMEWORK FOR FOLLOW-UP:
 
-STEP 1: ASSESS RESPONSE TO TREATMENT
+STEP 1: ASSESS RESPONSE TO TREATMENT (Safety-Checked Above)
 - **Better**: Goals progressing, pain reducing, function improving
 - **Same**: No change (plateau) - reassess after 2-3 sessions
-- **Worse**: Increasing pain, decreasing function - modify immediately
+- **Worse**: Increasing pain, decreasing function - CHECK FOR RED FLAGS FIRST
 
 STEP 2: COMPARE TO EXPECTED TIMELINE
 - Is progress on track for this diagnosis?
@@ -6519,11 +6934,11 @@ STEP 2: COMPARE TO EXPECTED TIMELINE
 - Are we hitting expected milestones (e.g., 50% improvement by 4 weeks)?
 
 STEP 3: IDENTIFY BARRIERS TO PROGRESS
+- **Diagnostic Accuracy**: Wrong diagnosis, missed pathology, co-morbidities (MOST IMPORTANT IF NOT IMPROVING)
 - **Biomechanical**: Technique errors, compensatory patterns, kinetic chain issues
 - **Compliance**: Not doing HEP, missing sessions, overloading
 - **Psychosocial**: Fear-avoidance, catastrophizing, low motivation (yellow flags)
 - **Environmental**: Work demands, family stress, financial barriers
-- **Diagnostic**: Wrong diagnosis, missed pathology, co-morbidities
 
 STEP 4: DECISION TREE
 
@@ -6540,19 +6955,13 @@ STEP 4: DECISION TREE
 → Re-evaluate in 2-3 sessions
 
 **If NOT ACHIEVED (plateau or worsening):**
-→ MODIFY approach significantly
-→ Reassess diagnosis
-→ Consider imaging or referral (especially if >6-8 weeks no progress)
+→ SAFETY CHECK FIRST (red flags, neurological signs)
+→ REASSESS DIAGNOSIS (may be wrong diagnosis)
+→ Consider imaging or specialist referral (especially if >6-8 weeks no progress)
+→ MODIFY approach significantly only if diagnosis confirmed
 → Address psychosocial barriers intensively
 
-STEP 5: RED FLAG MONITORING
-- Any new symptoms suggesting serious pathology?
-- Progressive neurological deficit?
-- Cauda equina symptoms?
-- Worsening despite appropriate treatment?
-→ If YES, urgent referral indicated
-
-STEP 6: DISCHARGE READINESS
+STEP 5: DISCHARGE READINESS (If Progressing Well)
 - Functional goals met?
 - Patient independent with HEP?
 - Pain managed (may not be zero, but tolerable)?
@@ -6596,6 +7005,9 @@ MANDATORY RULES FOR YOUR RESPONSE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 IMPORTANT REMINDERS:
+- SCREEN FOR DETERIORATION & NEW RED FLAGS FIRST - do not suggest progression if safety concerns present
+- Check for new neurological signs, progressive weakness, worsening despite treatment
+- If symptoms not improving or worsening → QUESTION DIAGNOSIS before suggesting modifications
 - Use THIS patient's body region, diagnosis, and progress data
 - Be SPECIFIC with interventions (exercises, dosages, techniques)
 - Consider TIMELINE (how many weeks into treatment?)
@@ -6603,7 +7015,89 @@ IMPORTANT REMINDERS:
 - Monitor RED FLAGS and refer when appropriate
 - DISCHARGE planning when goals met
 - Evidence-based PROGRESSION or MODIFICATION strategies
+
+{CONCISE_AI_OUTPUT_RULE}
 """
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI RESPONSE PROCESSING UTILITIES
+# ─────────────────────────────────────────────────────────────────────────────
+
+def split_ai_response(full_text: str) -> Dict[str, Optional[str]]:
+    """
+    Splits AI output into visible_text (concise suggestions) and reasoning_text (clinical reasoning).
+
+    The AI is instructed to output responses in two sections:
+    1. Concise suggestions (questions, tests, goals, etc.) - visible by default
+    2. Clinical Reasoning - explaining WHY (hidden by default, shown via toggle)
+
+    This function parses the response and splits at the "Clinical Reasoning:" marker.
+
+    Args:
+        full_text: The complete AI response string
+
+    Returns:
+        dict with keys:
+            - "visible_text": The concise suggestions part (always present)
+            - "reasoning_text": The clinical reasoning part (may be None if not present)
+
+    Examples:
+        Input: "Questions:\n1. Test A\n2. Test B\n\nClinical Reasoning:\n- Point 1\n- Point 2"
+        Output: {
+            "visible_text": "Questions:\n1. Test A\n2. Test B",
+            "reasoning_text": "Clinical Reasoning:\n- Point 1\n- Point 2"
+        }
+
+        Input: "1. Suggestion A\n2. Suggestion B" (no reasoning section)
+        Output: {
+            "visible_text": "1. Suggestion A\n2. Suggestion B",
+            "reasoning_text": None
+        }
+    """
+    if not full_text or not isinstance(full_text, str):
+        return {
+            "visible_text": full_text or "",
+            "reasoning_text": None
+        }
+
+    # Common reasoning section markers (case-insensitive)
+    reasoning_markers = [
+        "Clinical Reasoning:",
+        "Clinical Reasoning Summary:",
+        "Rationale:",
+        "Clinical Rationale:",
+        "Reasoning:",
+    ]
+
+    # Try to find reasoning section marker
+    split_index = -1
+    matched_marker = None
+
+    for marker in reasoning_markers:
+        # Case-insensitive search
+        index = full_text.lower().find(marker.lower())
+        if index != -1:
+            # Use the earliest match
+            if split_index == -1 or index < split_index:
+                split_index = index
+                matched_marker = marker
+
+    # Split response if reasoning section found
+    if split_index != -1:
+        visible_text = full_text[:split_index].strip()
+        reasoning_text = full_text[split_index:].strip()
+
+        return {
+            "visible_text": visible_text,
+            "reasoning_text": reasoning_text
+        }
+    else:
+        # No reasoning section found - return full text as visible
+        return {
+            "visible_text": full_text.strip(),
+            "reasoning_text": None
+        }
 
 
 # ─────────────────────────────────────────────────────────────────────────────

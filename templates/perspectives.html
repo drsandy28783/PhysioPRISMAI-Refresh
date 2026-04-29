@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container">
-  {{ render_progress_bar(current_step=4, patient_id=patient_id) }}
+  {{ render_progress_bar(current_step=4, patient_id=patient_id, quick_mode=quick_mode) }}
 
   <h2>Patient Perspectives for {{ patient_id }}</h2>
   <form id="perspectives-form" method="POST" action="{{ url_for('perspectives', patient_id=patient_id) }}">
@@ -38,6 +38,7 @@
 
     <div class="assessment-button-container">
       <button type="submit" class="button">Save &amp; Continue</button>
+      <a href="{{ url_for('initial_plan', patient_id=patient_id) }}" class="button" style="background-color: #6c757d;">Skip for now &rarr;</a>
       <a href="{{ url_for('subjective', patient_id=patient_id) }}" class="button">&larr; Back to Subjective Examination</a>
     </div>
   </form>

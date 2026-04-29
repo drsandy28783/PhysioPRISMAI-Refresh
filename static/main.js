@@ -220,26 +220,118 @@ const AIModal = {
     `;
   },
 
-  showContent(content) {
-    this.currentSuggestion = content;
+  showContent(contentOrResponse) {
+    // Support both old format (string) and new format (object with suggestion + reasoning)
+    let visibleText, reasoningText;
 
-    // SECURITY: Escape HTML first to prevent XSS, then safely add formatting
-    const escapedContent = escapeHtml(content);
+    if (typeof contentOrResponse === 'string') {
+      // Old format: just a string (backward compatibility)
+      visibleText = contentOrResponse;
+      reasoningText = null;
+    } else if (contentOrResponse && typeof contentOrResponse === 'object') {
+      // New format: {suggestion: "...", reasoning: "..." or null}
+      visibleText = contentOrResponse.suggestion || contentOrResponse.visible_text || '';
+      reasoningText = contentOrResponse.reasoning || contentOrResponse.reasoning_text || null;
+    } else {
+      visibleText = '';
+      reasoningText = null;
+    }
+
+    // Store both for copy functionality
+    this.currentSuggestion = visibleText;
+    this.currentReasoning = reasoningText;
+
+    // Format the visible text
+    const formattedVisibleHtml = this._formatTextToHtml(visibleText);
+
+    // Build the content HTML
+    let contentHtml = `<div class="ai-suggestion-content">${formattedVisibleHtml}</div>`;
+
+    // Add toggle button and reasoning section if reasoning exists
+    if (reasoningText && reasoningText.trim()) {
+      const formattedReasoningHtml = this._formatTextToHtml(reasoningText);
+
+      contentHtml += `
+        <div class="ai-reasoning-toggle-container" style="margin-top: 20px;">
+          <button id="ai-reasoning-toggle-btn" class="ai-reasoning-toggle-btn" style="
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+          ">
+            <span class="toggle-icon">▶</span>
+            <span class="toggle-text">Show clinical reasoning</span>
+          </button>
+        </div>
+        <div id="ai-reasoning-content" class="ai-reasoning-content" style="
+          display: none;
+          margin-top: 16px;
+          padding: 16px;
+          background: #f9f9f9;
+          border-left: 4px solid #2196F3;
+          border-radius: 4px;
+          font-size: 14px;
+          line-height: 1.6;
+        ">
+          ${formattedReasoningHtml}
+        </div>
+      `;
+    }
+
+    this.bodyEl.innerHTML = contentHtml;
+
+    // Wire up toggle button if it exists
+    const toggleBtn = document.getElementById('ai-reasoning-toggle-btn');
+    const reasoningContent = document.getElementById('ai-reasoning-content');
+
+    if (toggleBtn && reasoningContent) {
+      toggleBtn.addEventListener('click', () => {
+        const isHidden = reasoningContent.style.display === 'none';
+
+        if (isHidden) {
+          // Show reasoning
+          reasoningContent.style.display = 'block';
+          toggleBtn.querySelector('.toggle-icon').textContent = '▼';
+          toggleBtn.querySelector('.toggle-text').textContent = 'Hide clinical reasoning';
+          toggleBtn.style.background = '#e3f2fd';
+        } else {
+          // Hide reasoning
+          reasoningContent.style.display = 'none';
+          toggleBtn.querySelector('.toggle-icon').textContent = '▶';
+          toggleBtn.querySelector('.toggle-text').textContent = 'Show clinical reasoning';
+          toggleBtn.style.background = '#f5f5f5';
+        }
+      });
+    }
+  },
+
+  _formatTextToHtml(text) {
+    if (!text) return '';
+
+    // SECURITY: Escape HTML first to prevent XSS
+    const escapedText = escapeHtml(text);
 
     // Convert plain text to HTML with preserved formatting
-    let htmlContent = escapedContent
+    let htmlContent = escapedText
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>');
 
     // If content has numbered lists (1. 2. 3.), convert to <ol>
-    if (/^\d+\.\s/.test(content)) {
-      const items = content.split(/\n(?=\d+\.\s)/)
+    if (/^\d+\.\s/.test(text)) {
+      const items = text.split(/\n(?=\d+\.\s)/)
         .map(item => escapeHtml(item.replace(/^\d+\.\s/, '').trim()))
         .filter(item => item.length > 0);
       htmlContent = '<ol>' + items.map(item => `<li>${item}</li>`).join('') + '</ol>';
     }
 
-    this.bodyEl.innerHTML = htmlContent.startsWith('<ol>') || htmlContent.startsWith('<p>')
+    return htmlContent.startsWith('<ol>') || htmlContent.startsWith('<p>')
       ? htmlContent
       : `<p>${htmlContent}</p>`;
   },
@@ -258,7 +350,19 @@ const AIModal = {
   copyToClipboard() {
     if (!this.currentSuggestion) return;
 
-    navigator.clipboard.writeText(this.currentSuggestion)
+    // Check if reasoning is currently visible
+    const reasoningContent = document.getElementById('ai-reasoning-content');
+    const isReasoningVisible = reasoningContent && reasoningContent.style.display !== 'none';
+
+    // Build the text to copy
+    let textToCopy = this.currentSuggestion;
+
+    // If reasoning is visible OR if we want to always include it when available, add it
+    if (this.currentReasoning && isReasoningVisible) {
+      textToCopy += '\n\n' + this.currentReasoning;
+    }
+
+    navigator.clipboard.writeText(textToCopy)
       .then(() => {
         const originalText = this.copyBtn.textContent;
         this.copyBtn.textContent = 'Copied!';
@@ -306,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      AIModal.showContent(data.suggestion);
+      AIModal.showContent(data);
     } catch (err) {
       AIModal.showError(err.message);
     }
@@ -343,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      AIModal.showContent(data.suggestion);
+      AIModal.showContent(data);
     } catch (err) {
       if (err.name === 'AbortError') {
         AIModal.showError('Request timed out. The AI is taking longer than expected. Please try again or simplify your request.');
@@ -415,11 +519,11 @@ document.addEventListener('DOMContentLoaded', () => {
           },
           body: JSON.stringify(payload)
         });
-        const { suggestion, error } = await res.json();
-        if (error) throw new Error(error);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
 
-        console.log(`[AI Response] Received response for field: ${field}`, suggestion?.substring(0, 100) + '...');
-        AIModal.showContent(suggestion);
+        console.log(`[AI Response] Received response for field: ${field}`, data.suggestion?.substring(0, 100) + '...');
+        AIModal.showContent(data);
       } catch (e) {
         console.error(`[AI Error] Error for field: ${field}`, e);
         AIModal.showError(e.message);
@@ -451,9 +555,9 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
-      const { suggestion, error } = await res.json();
-      if (error) throw new Error(error);
-      AIModal.showContent(suggestion);
+      const data = await res.json();
+      if (data.error) throw new Error(error);
+      AIModal.showContent(data);
     } catch (e) {
       AIModal.showError(e.message);
     }
@@ -511,9 +615,9 @@ if (document.getElementById('perspectives-form')) {
             inputs: currentInputs
           })
         });
-        const { suggestion, error } = await res.json();
-        if (error) throw new Error(error);
-        AIModal.showContent(suggestion);
+        const data = await res.json();
+        if (data.error) throw new Error(error);
+        AIModal.showContent(data);
       } catch (e) {
         AIModal.showError(e.message);
       } finally {
@@ -565,9 +669,9 @@ if (document.getElementById('perspectives-form')) {
               selection: selection
             })
           });
-          const { suggestion, error } = await res.json();
-          if (error) throw new Error(error);
-          AIModal.showContent(suggestion);
+          const data = await res.json();
+          if (data.error) throw new Error(error);
+          AIModal.showContent(data);
         } catch (err) {
           AIModal.showError(err.message);
         } finally {
@@ -685,9 +789,9 @@ if (document.querySelector('select#possible_source')) {
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ patient_id: currentPatientId, previous: allPrev, selection })
           });
-          const { suggestion, error } = await res.json();
-          if (error) throw new Error(error);
-          AIModal.showContent(suggestion);
+          const data = await res.json();
+          if (data.error) throw new Error(error);
+          AIModal.showContent(data);
         } catch (e) {
           AIModal.showError(e.message);
         } finally {
@@ -751,9 +855,9 @@ if (document.getElementById('specific_factors')) {
           causes
         })
       });
-      const { suggestion, error } = await res.json();
-      if (error) throw new Error(error);
-      AIModal.showContent(suggestion);
+      const data = await res.json();
+      if (data.error) throw new Error(error);
+      AIModal.showContent(data);
     } catch (err) {
       AIModal.showError(err.message);
     } finally {
@@ -818,9 +922,9 @@ if (document.getElementById('clinical-flags-form')) {
           body: JSON.stringify({ previous: allPrev, flags: flagsData })
         }
       );
-      const { suggestion, error } = await res.json();
-      if (error) throw new Error(error);
-      AIModal.showContent(suggestion);
+      const data = await res.json();
+      if (data.error) throw new Error(error);
+      AIModal.showContent(data);
     } catch (e) {
       AIModal.showError(e.message);
     }
@@ -869,9 +973,9 @@ if (document.getElementById('objective-assessment-form')) {
             })
           }
         );
-        const { suggestion, error } = await res.json();
-        if (error) throw new Error(error);
-        AIModal.showContent(suggestion.trim());
+        const data = await res.json();
+        if (data.error) throw new Error(error);
+        AIModal.showContent({suggestion: suggestion.trim()});
       } catch (err) {
         AIModal.showError(err.message);
         console.error(err);
@@ -915,7 +1019,7 @@ if (document.getElementById('objective-assessment-form')) {
       );
       const { diagnosis, error } = await res.json();
       if (error) throw new Error(error);
-      AIModal.showContent(diagnosis.trim());
+      AIModal.showContent({suggestion: diagnosis.trim()});
     } catch (err) {
       AIModal.showError(err.message);
       console.error(err);
@@ -968,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           clearTimeout(timeoutId);
 
-          const { suggestion } = await res.json();
+          const data = await res.json();
           AIModal.showContent(suggestion || 'No suggestion available.');
         } catch (err) {
           console.error(err);
@@ -1021,11 +1125,11 @@ document.querySelectorAll('.ai-btn[data-screen="smart_goals"]').forEach(btn => {
           input: input.value
         })
       });
-      const { suggestion, error } = await resp.json();
-      if (error) {
+      const data = await resp.json();
+      if (data.error) {
         AIModal.showError(error);
       } else {
-        AIModal.showContent(suggestion);
+        AIModal.showContent(data);
       }
     } catch (err) {
       console.error(err);
@@ -1085,7 +1189,7 @@ if (document.getElementById('treatment-plan-form') || document.querySelector('[n
         if (data.error) {
           AIModal.showError(data.error);
         } else {
-          AIModal.showContent(data.suggestion || 'No suggestion');
+          AIModal.showContent(data.suggestion ? data : 'No suggestion');
         }
       } catch (err) {
         AIModal.showError('Error fetching suggestion');
@@ -1158,7 +1262,7 @@ if (document.getElementById('followup-form')) {
         if (data.error) {
           AIModal.showError(data.error);
         } else {
-          AIModal.showContent(data.suggestion || 'No suggestion available');
+          AIModal.showContent(data.suggestion ? data : 'No suggestion available');
         }
       } catch(err) {
         console.error(err);

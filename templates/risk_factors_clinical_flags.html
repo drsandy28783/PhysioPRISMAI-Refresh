@@ -87,7 +87,7 @@
 
 {% block content %}
   <div class="container">
-    {{ render_progress_bar(current_step=6, patient_id=patient_id) }}
+    {{ render_progress_bar(current_step=6, patient_id=patient_id, quick_mode=quick_mode) }}
 
     <h2>Risk Factors & Clinical Flags for {{ patient_id }}</h2>
 
@@ -149,6 +149,7 @@
 
       <div class="assessment-button-container">
         <button type="submit" class="button">Save &amp; Continue</button>
+        <a href="{{ url_for('objective_assessment', patient_id=patient_id) }}" class="button" style="background-color: #6c757d;">Skip for now &rarr;</a>
         <button type="button" id="gen_flags_suggestions" class="button" style="background:#17a2b8;">
           🧠 AI Suggestions for All Flags
         </button>

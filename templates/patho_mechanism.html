@@ -10,7 +10,7 @@
 
 {% block content %}
 <div class="container">
-  {{ render_progress_bar(current_step=2, patient_id=patient_id) }}
+  {{ render_progress_bar(current_step=2, patient_id=patient_id, quick_mode=quick_mode) }}
 
   <h2>Pathophysiological Mechanism for {{ patient_id }}</h2>
   <form method="POST" action="{{ url_for('patho_mechanism', patient_id=patient_id) }}">

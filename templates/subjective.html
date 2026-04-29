@@ -4,7 +4,7 @@
 
 {% block content %}
   <div class="container">
-    {{ render_progress_bar(current_step=3, patient_id=patient_id) }}
+    {{ render_progress_bar(current_step=3, patient_id=patient_id, quick_mode=quick_mode) }}
 
     <h2>Patient Functioning Assessment for {{ patient_id }}</h2>
     <form method="POST" id="subjective-form" action="{{ url_for('subjective', patient_id=patient_id) }}">

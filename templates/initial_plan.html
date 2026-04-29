@@ -16,7 +16,7 @@
 
 {% block content %}
   <div class="container">
-    {{ render_progress_bar(current_step=5, patient_id=patient_id) }}
+    {{ render_progress_bar(current_step=5, patient_id=patient_id, quick_mode=quick_mode) }}
 
     <h2>Initial Plan of Assessment for {{ patient_id }}</h2>
     <form id="initial-plan-form" method="POST" action="{{ url_for('initial_plan', patient_id=patient_id) }}">
