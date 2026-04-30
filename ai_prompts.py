@@ -4131,7 +4131,15 @@ MANDATORY RULES:
 7. Connect flags to clinical findings and patient statements
 
 {DATA_GROUNDING_RULE}
-OUTPUT FORMAT (STRICT):
+
+⛔ FORMAT OVERRIDE — THIS SCREEN IS DIFFERENT FROM OTHER AI SCREENS:
+- DO NOT output a numbered summary list (1. 2. 3.)
+- DO NOT use "Questions:", "Watch for:", or "Suggestions:" headers
+- DO NOT use the two-section CONCISE/REASONING split format
+- Your response MUST start directly with "🔴 RED FLAGS (Serious Pathology):"
+- Output ALL 5 flag sections in full, in order, every time
+
+OUTPUT FORMAT (MANDATORY — follow exactly, start your response with this):
 
 🔴 RED FLAGS (Serious Pathology):
 [If ANY present → state each flag specifically and conclude with "→ URGENT MEDICAL REFERRAL REQUIRED"]
