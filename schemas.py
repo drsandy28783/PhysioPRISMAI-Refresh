@@ -554,7 +554,7 @@ class SMARTGoalsSchema(Schema):
         required=False,
         allow_none=True,
         validate=[
-            validate.Length(max=2000),
+            validate.Length(max=5000),
             validate_no_html
         ]
     )
@@ -563,7 +563,7 @@ class SMARTGoalsSchema(Schema):
         required=False,
         allow_none=True,
         validate=[
-            validate.Length(max=500),
+            validate.Length(max=3000),
             validate_no_html
         ]
     )
