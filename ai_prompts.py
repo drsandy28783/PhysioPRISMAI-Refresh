@@ -2379,224 +2379,71 @@ RULES:
         'structure_fault': f"""
 TARGET FIELD: POSSIBLE STRUCTURE AT FAULT
 
-PURPOSE:
-Identify the specific anatomical structure(s) most likely responsible for the patient's symptoms based on clinical reasoning and objective findings.
+OUTPUT FORMAT (concise — 3-5 lines max):
+State the primary structure in one line, tissue type in one line, then 2-3 bullet points of clinical evidence from THIS patient only.
 
-WHAT TO INCLUDE:
-1. **Primary Structure(s)**
-   - Be SPECIFIC (e.g., "supraspinatus tendon" not "rotator cuff")
-   - State exact anatomical location
-   - Consider depth (superficial vs deep structures)
-   - Specify side (left/right) if unilateral
+RULES:
+- Be anatomically specific (e.g., "supraspinatus tendon at MTJ" not "rotator cuff")
+- State tissue type: contractile / inert / neural
+- Reference only findings already documented for this patient
+- Do NOT produce sub-headings, numbered sections, or generic teaching content
 
-2. **Tissue Type Classification**
-   - Contractile tissue (muscle/tendon) → Painful with resisted tests
-   - Inert tissue (joint capsule, ligament, bursa) → Painful with passive tests
-   - Neural tissue → Positive neurodynamic tests, dermatomal/nerve territory distribution
-
-3. **Body Region Context: {body_region.upper() if body_region else 'GENERAL MSK'}**
-   - Reference the common structures listed above for this body region
-   - Consider age-related tissue changes (degeneration vs acute injury)
-   - Match structure to mechanism of injury
-
-4. **Clinical Evidence for Structure**
-   - Which objective tests specifically stress/load this structure?
-   - Is pain reproduced with palpation of this structure?
-   - Does ROM pattern fit this structure's involvement?
-   - Do resisted tests isolate this structure?
-
-5. **Differential Structural Considerations**
-   - Could multiple structures be involved (e.g., shoulder: supraspinatus + subacromial bursa)?
-   - Is there a primary structure with secondary compensatory issues?
-   - Rule out referred pain from other regions
-
-CRITICAL CONSIDERATIONS:
-- Use EXACT anatomical terminology (not vague like "soft tissue")
-- Match structure to pain location and pattern
-- Consider whether structure matches provocation tests
-- Contractile structures = painful resisted tests
-- Non-contractile structures = painful passive tests
-- Neural structures = neurodynamic tests + distribution
-
-✅ GOOD PATIENT-SPECIFIC EXAMPLE:
-"Primary structure at fault: Right supraspinatus tendon (musculotendinous junction).
-
-Evidence from THIS patient's exam:
-- Painful arc 70-110° abduction (classic subacromial impingement pattern)
-- Empty can test positive (pain and weakness with resisted abduction at 90° in scaption)
-- Tender on palpation 2cm inferior to acromion at supraspinatus insertion site
-- Pain reproduced with Neer's impingement test
-
-Tissue type: Contractile (tendon) - confirmed by positive resisted tests
-Secondary structure: Subacromial bursa (reactive bursitis from chronic impingement)
-Age consideration: 48-year-old - consistent with age-related tendon degeneration"
-
-❌ AVOID GENERIC RESPONSES LIKE:
-"Rotator cuff injury. Test shoulder movement and strength."
+EXAMPLE:
+"Primary structure: Right supraspinatus tendon (contractile — musculotendinous junction).
+- Painful arc 70-110° and positive empty can test confirm supraspinatus loading
+- Pain with resisted abduction but full passive ROM — contractile tissue pattern
+- Secondary: subacromial bursa (reactive bursitis from chronic impingement)"
 """,
         'symptom': f"""
 TARGET FIELD: SYMPTOM
 
-PURPOSE:
-Describe the PRIMARY symptom(s) driving the patient's clinical presentation using precise clinical terminology.
+OUTPUT FORMAT (concise — 2-3 lines max):
+One sentence naming the dominant symptom with quality, location, severity, and behaviour. Add one line on functional impact and one line on any neurological component if present.
 
-WHAT TO INCLUDE:
-1. **Primary Symptom Category**
-   - Pain (most common)
-   - Weakness
-   - Stiffness/restricted movement
-   - Instability/giving way
-   - Swelling
-   - Numbness/tingling (neurological)
-   - Loss of function
+RULES:
+- Use precise clinical language (e.g., "sharp anterior knee pain VAS 6/10" not "knee pain")
+- Reference only what the patient has actually reported
+- Do NOT produce sub-headings or multi-section lists
 
-2. **Pain Characterization (if pain is primary symptom):**
-   - **Quality**: Sharp, aching, burning, stabbing, throbbing
-   - **Location**: Specific anatomical location (e.g., "anterior knee pain" not "knee pain")
-   - **Pattern**: Constant vs intermittent, worse with specific movements
-   - **Intensity**: VAS score (0-10)
-   - **Timing**: Worse morning/evening, with activity/rest
-   - **Radiation**: Does it spread/refer elsewhere?
-
-3. **Neurological Symptoms (if present):**
-   - Numbness distribution (dermatomal pattern?)
-   - Tingling/pins & needles
-   - Weakness pattern (myotomal pattern?)
-   - Altered sensation
-
-4. **Functional Impact**
-   - How does this symptom limit activities?
-   - What can they NOT do because of this symptom?
-   - Is this symptom the primary barrier to participation?
-
-5. **Symptom Irritability**
-   - How easily is it provoked?
-   - How long to settle?
-   - Does it interfere with sleep?
-
-CRITICAL CONSIDERATIONS:
-- Use patient's OWN words where appropriate (quoted)
-- Be SPECIFIC to location (e.g., "lateral epicondyle pain" not "elbow pain")
-- Describe DOMINANT symptom if multiple present
-- Connect symptom to ICF body function impairment
-- Consider whether symptom matches proposed structure at fault
-
-EXAMPLE OUTPUT:
-"Primary symptom: Sharp, anterior knee pain (VAS 6/10) localized to inferior pole of patella. Pain is intermittent, provoked by jumping, landing, and stairs (especially descending). Patient describes 'stabbing sensation' with squat past 90°. Pain settles within 5-10 minutes of rest. No neurological symptoms. Functional impact: Unable to play basketball (main participation restriction)."
+EXAMPLE:
+"Primary symptom: Sharp bilateral shoulder pain (VAS 7/10) with progressive grip weakness and dropping objects over 1 month — rest pain present, no positional relief.
+Functional impact: Unable to carry objects or perform overhead tasks.
+Neurological: Progressive bilateral upper limb weakness raises concern beyond local MSK pathology."
 """,
         'findings_support': f"""
 TARGET FIELD: FINDINGS SUPPORTING THE DIAGNOSIS
 
-PURPOSE:
-List the POSITIVE clinical findings (from subjective AND objective examination) that SUPPORT and CONFIRM the provisional diagnosis.
+OUTPUT FORMAT (concise — 4-5 bullet points max):
+List only the strongest supporting findings from THIS patient's subjective and objective data. One finding per bullet, specific and quantified where possible.
 
-WHAT TO INCLUDE:
-1. **Subjective Findings That Support**
-   - History details that match this diagnosis
-   - Mechanism of injury consistent with diagnosis
-   - Symptom pattern typical for this condition
-   - Timeline/onset fits expected course
-   - Aggravating/easing factors match pathology
-   - Age-appropriate presentation
+RULES:
+- Reference actual test names and results, not generic possibilities
+- Strongest evidence first
+- Do NOT produce sub-headings, numbered sections, or general teaching text
+- If neurological or red flags are present, lead with those
 
-2. **Objective Findings That Support**
-   - Positive special tests (name specific tests with results)
-   - ROM patterns consistent with diagnosis
-   - Strength deficits matching expected pattern
-   - Palpation findings (tenderness, swelling, deformity)
-   - Gait/functional movement abnormalities
-   - Neurological findings (if relevant)
-
-3. **Clinical Flags That Support**
-   - Absence of red flags (confirms non-serious pathology)
-   - Yellow flags present (support biopsychosocial model)
-   - Pattern recognition from clinical experience
-
-4. **Evidence-Based Diagnostic Criteria**
-   - Does presentation meet established diagnostic criteria?
-   - Are pathognomonic signs present?
-   - Is there a cluster of positive tests (higher diagnostic accuracy)?
-
-5. **Body Region Context: {body_region.upper() if body_region else 'GENERAL MSK'}**
-   - Reference expected findings for common diagnoses in this region
-   - Match findings to typical presentation of suspected diagnosis
-
-CRITICAL CONSIDERATIONS:
-- Be SPECIFIC with test names and results (e.g., "Lachman test positive with soft end-feel")
-- Quantify where possible (ROM degrees, VAS scores, strength grades)
-- Connect subjective to objective (do they corroborate?)
-- Consider diagnostic accuracy of tests (sensitivity/specificity)
-- List findings in order of diagnostic weight (strongest evidence first)
-- Include both clinical exam AND patient-reported outcomes
-
-✅ GOOD PATIENT-SPECIFIC EXAMPLE:
-"Supporting findings for ACL tear in this 24-year-old male footballer:
-1. **History**: Non-contact pivot mechanism during match yesterday, immediate 'pop' sensation, knee giving way, large effusion within 2 hours (hemarthrosis - highly specific for ACL)
-2. **Positive tests**: Lachman test grade 3 positive (>10mm translation, soft/mushy end-feel), anterior drawer positive, pivot shift apprehension positive
-3. **Current ROM**: Full extension maintained, flexion limited to 110° due to joint effusion (swelling restricts motion)
-4. **Functional limitation**: Unable to perform single leg hop test, marked apprehension with cutting/pivoting movements
-5. **Test cluster**: Positive Lachman + pivot shift + mechanism = >95% diagnostic accuracy for ACL tear"
-
-❌ AVOID GENERIC RESPONSES LIKE:
-"Patient may have ligament tear. Consider special testing for knee instability."
+EXAMPLE:
+"- Bilateral symptoms + progressive weakness + dropping objects — pattern atypical for local MSK, supports neurological involvement
+- Muscle wasting around shoulder girdle — suggests chronic denervation or UMN pathology
+- Sharp pain at rest without mechanical pattern — inconsistent with local tendon/joint cause
+- Grip weakness bilateral — C8/T1 or corticospinal tract involvement"
 """,
         'findings_reject': f"""
 TARGET FIELD: FINDINGS REJECTING THE DIAGNOSIS
 
-PURPOSE:
-List the clinical findings (from subjective AND objective examination) that CONTRADICT or make the provisional diagnosis LESS LIKELY. This is critical for differential diagnosis and avoiding diagnostic error.
+OUTPUT FORMAT (concise — 3-4 bullet points max):
+List only the key findings that argue AGAINST the provisional diagnosis, or findings that better fit an alternative. One per bullet.
 
-WHAT TO INCLUDE:
-1. **Missing Expected Findings**
-   - Key clinical features that SHOULD be present but are NOT
-   - Negative special tests that would typically be positive
-   - Absence of pathognomonic signs
-   - ROM patterns that don't fit the diagnosis
-   - Timeline doesn't match expected course
+RULES:
+- Be direct — state what is absent that should be present, or what contradicts the diagnosis
+- Reference actual patient data, not generic possibilities
+- Do NOT produce sub-headings or numbered sections
 
-2. **Contradictory Objective Findings**
-   - Test results that point toward a different diagnosis
-   - Strength/ROM better than expected for this diagnosis
-   - Pain pattern inconsistent with proposed structure
-   - Palpation negative for expected tender points
-
-3. **Atypical Presentation Features**
-   - Age atypical for this diagnosis
-   - Mechanism doesn't fit expected pathology
-   - Symptom behavior unusual for this condition
-   - Response to treatment not as expected
-
-4. **Red Flags or Serious Pathology Indicators**
-   - Findings suggesting serious pathology instead
-   - Red flags that contradict mechanical diagnosis
-   - Systemic symptoms not explained by proposed diagnosis
-
-5. **Alternative Diagnoses More Likely**
-   - Findings that better fit a different diagnosis
-   - Differential diagnoses not yet ruled out
-   - Competing explanations for presentation
-
-6. **Body Region Context: {body_region.upper() if body_region else 'GENERAL MSK'}**
-   - Consider what findings would be expected for common diagnoses
-   - What's missing that should be there?
-
-CRITICAL CONSIDERATIONS:
-- This field is CRITICAL for avoiding diagnostic error
-- Be honest about contradictory evidence
-- Missing expected findings are as important as present findings
-- Consider alternative diagnoses explicitly
-- Highlight red flags that suggest serious pathology
-- Note if presentation is atypical for the proposed diagnosis
-- Use this to guide further assessment or referral
-
-EXAMPLE OUTPUT:
-"Findings rejecting rotator cuff tear diagnosis:
-1. **Negative tests**: Drop arm test negative, full strength with resisted external rotation (infraspinatus intact)
-2. **Full ROM**: Patient has full active shoulder abduction to 180° (unlikely with significant rotator cuff tear)
-3. **No weakness**: Manual muscle testing 5/5 for all rotator cuff muscles (not consistent with tear)
-4. **Atypical age**: 28-year-old without significant trauma (tears uncommon in this age group without major trauma)
-5. **Alternative diagnosis**: Findings more consistent with subacromial impingement without tear (positive Neer's/Hawkins, painful arc, but strength intact)
-6. **Imaging not indicated**: Ottawa shoulder rules negative for fracture, strength intact rules out complete tear"
+EXAMPLE:
+"- No sensory changes (numbness/tingling) documented — atypical for peripheral neuropathy
+- Pain with resisted abduction present — some local contractile involvement cannot be excluded
+- Unilateral onset initially — pure central myelopathy often bilateral from outset
+- No gait disturbance documented — would be expected with significant myelopathy"
 """
     }
 
