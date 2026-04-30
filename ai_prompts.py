@@ -5499,7 +5499,11 @@ IMPORTANT REMINDERS:
 - Connect to ICF framework (body function → activity → participation)
 - Consider psychosocial factors (yellow flags) that may affect goal achievement
 
-{CONCISE_AI_OUTPUT_RULE}
+⛔ OUTPUT FORMAT OVERRIDE:
+- DO NOT ask the patient any questions
+- DO NOT use "Questions:", "Watch for:", or any interview-style format
+- Use the structured SMART goals format defined above in full
+- The "Clinical Reasoning:" section at the end may be used for the expandable reasoning toggle
 """
 
 
