@@ -2851,6 +2851,9 @@ def get_objective_assessment_field_prompt(
         perspectives=perspectives
     )
 
+    # Detect clinical complexity to flag what the AI might otherwise miss
+    complexity_data = classify_case_complexity(present_hist)
+
     if provisional_diagnoses:
         context += f"\n\nProvisional Diagnoses from Subjective:\n{provisional_diagnoses}"
 
@@ -3314,7 +3317,7 @@ GENERAL MUSCULOSKELETAL OBJECTIVE ASSESSMENT:
             intra_form_context += "   'Proximal joint already assessed and clear, but if time permits, brief screen acceptable for completeness.'\n"
             intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    return f"""{GENERAL_PHYSIO_ROLE}
+    return f"""{complexity_data['alert_text']}{GENERAL_PHYSIO_ROLE}
 
 {context}
 
@@ -4249,6 +4252,9 @@ Distal Joint to Assess: {joint_info['distal']}
 Clinical Rationale: {joint_info['rationale']}
 
 MANDATORY: Include screening of proximal and distal joints in your test recommendations.
+SCOPE RESTRICTION: This is a {joint_info['affected']} case. Restrict all regional screening
+to ONLY the two joints listed above. Other kinetic chain examples mentioned in the rules
+(e.g., knee/hip/ankle chains) are general reference — do NOT apply them to this case.
 """
 
 def get_initial_plan_field_prompt(
@@ -4291,6 +4297,9 @@ def get_initial_plan_field_prompt(
     component = field_names.get(field, field.replace('_', ' ').title())
 
     context = build_clinical_context(age_sex, present_hist, past_hist, subjective=subjective, diagnosis=diagnosis, perspectives=perspectives)
+
+    # Detect clinical complexity to flag what the AI might otherwise miss
+    complexity_data = classify_case_complexity(present_hist)
 
     # Detect body region for specific test recommendations
     body_region = detect_body_region(present_hist)
@@ -4575,7 +4584,7 @@ CLINICAL REASONING TO PROVIDE:
 
             intra_form_context += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    return f"""{GENERAL_PHYSIO_ROLE}
+    return f"""{complexity_data['alert_text']}{GENERAL_PHYSIO_ROLE}
 
 {context}
 
