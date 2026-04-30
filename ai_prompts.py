@@ -2355,42 +2355,26 @@ GENERAL MUSCULOSKELETAL DIFFERENTIAL DIAGNOSES:
 TARGET FIELD: LIKELIHOOD OF DIAGNOSIS
 
 PURPOSE:
-Assess the probability that the current working hypothesis/provisional diagnosis is correct based on ALL available clinical data (subjective, perspectives, objective findings, clinical flags).
+State the probability of the working diagnosis in ONE concise line, then give 2-3 bullet points of supporting or refuting evidence specific to this patient.
 
-WHAT TO INCLUDE:
-1. **Probability Assessment**
-   - High likelihood (>70%): Strong clinical evidence supports this diagnosis
-   - Moderate likelihood (40-70%): Some evidence supports, but differentials remain
-   - Low likelihood (<40%): Limited evidence, differentials more likely
+OUTPUT FORMAT (strict — keep it short):
+[High / Moderate / Low] likelihood ([%]). [One sentence: why this diagnosis fits or doesn't fit this patient's presentation.]
+- [Key supporting finding #1]
+- [Key supporting finding #2]
+- [One finding that argues against, or a differential to consider]
 
-2. **Evidence Strength Analysis**
-   - How many key clinical features are present vs absent?
-   - Do objective findings confirm subjective presentation?
-   - Are there pathognomonic signs/tests specific to this diagnosis?
-   - Is the clinical presentation typical or atypical?
+RULES:
+- Maximum 4-5 lines total
+- Reference actual patient findings — do NOT be generic
+- If neurological or red flags are present, state the most urgent differential first
+- Do NOT produce multi-section analyses, recommendations lists, or sub-headings
+- Do NOT include "Evidence Strength Analysis", "Differential Diagnosis Strength", or "Recommendations" sections
 
-3. **Body Region Context: {body_region.upper() if body_region else 'GENERAL MSK'}**
-   - Consider age-appropriate common diagnoses for this region
-   - Reference prevalence data (e.g., rotator cuff tears increase with age)
-   - Consider mechanism of injury if traumatic
-
-4. **Differential Diagnosis Strength**
-   - Are there competing diagnoses that better explain the presentation?
-   - Have key differentials been ruled out with objective tests?
-   - Is this diagnosis of exclusion or confirmed by specific findings?
-
-CRITICAL CONSIDERATIONS:
-- HIGH likelihood requires multiple converging lines of evidence (history + exam + special tests)
-- MODERATE likelihood when 1-2 key features missing or differentials not fully excluded
-- LOW likelihood when presentation doesn't fit typical pattern or red flags suggest alternative
-- Consider sensitivity/specificity of positive tests
-- Age, mechanism, and timeline matter for probability
-
-✅ GOOD PATIENT-SPECIFIC EXAMPLE:
-"High likelihood (75%). This 52-year-old female presents with classic adhesive capsulitis pattern: global ROM restriction in capsular pattern (ER>ABD>IR), both active and passive loss, gradual onset over 3 months. Objective findings confirm: ER <30° (normal 90°), ABD <90° (normal 180°), IR <40° (normal 70°). No neurological signs. Age, sex, and progressive ROM loss typical for primary frozen shoulder."
-
-❌ AVOID GENERIC RESPONSES LIKE:
-"Patient may have frozen shoulder. Consider ROM testing and assess for capsular pattern."
+✅ EXAMPLE OUTPUT:
+"High likelihood (75%). Classic adhesive capsulitis pattern: global ROM loss in capsular pattern (ER>ABD>IR), gradual onset over 3 months, age/sex appropriate.
+- Active and passive ROM both restricted — confirms non-contractile involvement
+- No neurological signs — reduces likelihood of cervical referral
+- Bilateral symptoms absent — rules out systemic inflammatory cause"
 """,
         'structure_fault': f"""
 TARGET FIELD: POSSIBLE STRUCTURE AT FAULT
