@@ -24,9 +24,9 @@
       { key: 'd', name: 'Dashboard', action: () => navigate('/dashboard'), description: 'Go to dashboard' },
       { key: 'n', name: 'New Patient', action: () => navigate('/add_patient'), description: 'Add a new patient' },
       { key: 'p', name: 'View Patients', action: () => navigate('/view_patients'), description: 'View all patients' },
-      { key: 's', name: 'Subscription', action: () => navigate('/subscription_dashboard'), description: 'View subscription' },
-      { key: 'b', name: 'Blog', action: () => navigate('/blog_list'), description: 'View blog' },
-      { key: 'e', name: 'Export Data', action: () => navigate('/export_data'), description: 'Export your data' },
+      { key: 's', name: 'Subscription', action: () => navigate('/subscription-dashboard'), description: 'View subscription' },
+      { key: 'b', name: 'Blog', action: () => navigate('/blog'), description: 'View blog' },
+      { key: 'e', name: 'Export Data', action: () => navigate('/export-data'), description: 'Export your data' },
       { key: 'a', name: 'Audit Logs', action: () => navigate('/audit_logs'), description: 'View audit logs' },
     ],
 
@@ -71,15 +71,15 @@
     // Patient management
     { name: 'Add New Patient', icon: '➕', shortcut: 'N', action: () => navigate('/add_patient') },
     { name: 'View All Patients', icon: '👥', shortcut: 'P', action: () => navigate('/view_patients') },
-    { name: 'Export Patient Data', icon: '📥', shortcut: 'E', action: () => navigate('/export_data') },
+    { name: 'Export Patient Data', icon: '📥', shortcut: 'E', action: () => navigate('/export-data') },
 
     // Navigation
     { name: 'Go to Dashboard', icon: '🏠', shortcut: 'D', action: () => navigate('/dashboard') },
-    { name: 'View Subscription', icon: '💳', shortcut: 'S', action: () => navigate('/subscription_dashboard') },
-    { name: 'View Blog', icon: '📝', shortcut: 'B', action: () => navigate('/blog_list') },
+    { name: 'View Subscription', icon: '💳', shortcut: 'S', action: () => navigate('/subscription-dashboard') },
+    { name: 'View Blog', icon: '📝', shortcut: 'B', action: () => navigate('/blog') },
     { name: 'View Pricing', icon: '💰', action: () => navigate('/pricing') },
-    { name: 'View Profile', icon: '👤', action: () => navigate('/edit_profile') },
-    { name: 'View Invoices', icon: '🧾', action: () => navigate('/my_invoices') },
+    { name: 'View Profile', icon: '👤', action: () => navigate('/edit-profile') },
+    { name: 'View Invoices', icon: '🧾', action: () => navigate('/my-invoices') },
     { name: 'View Notifications', icon: '🔔', action: () => navigate('/notifications') },
 
     // Admin actions
@@ -467,7 +467,10 @@
     const isTyping = activeElement && (
       activeElement.tagName === 'INPUT' ||
       activeElement.tagName === 'TEXTAREA' ||
-      activeElement.contentEditable === 'true'
+      activeElement.tagName === 'SELECT' ||
+      activeElement.contentEditable === 'true' ||
+      activeElement.isContentEditable ||
+      activeElement.closest('form')  // Any element inside a form
     );
 
     // Check for Ctrl+K / Cmd+K (works even when typing)
@@ -484,7 +487,7 @@
       return;
     }
 
-    // If typing, only allow specific shortcuts
+    // If typing in form fields, only allow specific shortcuts
     if (isTyping) {
       // Allow Ctrl+S when typing (save form)
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -492,7 +495,7 @@
         saveForm();
         return;
       }
-      // Don't process other shortcuts when typing
+      // Block all other shortcuts when typing in form fields
       return;
     }
 
