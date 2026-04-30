@@ -954,6 +954,53 @@ if (document.getElementById('clinical-flags-form')) {
     }
   });
 }
+// ——— AI on Combined Risk Factors & Clinical Flags screen ———
+if (document.getElementById('risk-factors-form')) {
+  const currentPatientId = window.currentPatientId || '';
+
+  // Single AI button for all flags suggestions
+  document.getElementById('gen_flags_suggestions')?.addEventListener('click', async () => {
+    AIModal.show('AI Suggestions for Clinical Flags');
+
+    try {
+      // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+      const context = await getPatientContext(currentPatientId);
+
+      // Collect all flag field values
+      const flagFields = ['red_flags', 'orange_flags', 'yellow_flags', 'black_flags', 'blue_flags'];
+      const flagsData = {};
+      flagFields.forEach(field => {
+        const fieldEl = document.getElementById(field);
+        if (fieldEl) {
+          flagsData[field] = fieldEl.value.trim();
+        }
+      });
+
+      const allPrev = {
+        age_sex: context.age_sex || '',
+        present_history: context.present_history || '',
+        past_history: context.past_history || '',
+        subjective: context.subjective || {},
+        perspectives: context.perspectives || {},
+        assessments: context.assessments || {}
+      };
+
+      const res = await fetch(
+        `/api/ai_suggestion/clinical_flags_all/${getPatientId() || 'unknown'}`,
+        {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ previous: allPrev, flags: flagsData })
+        }
+      );
+      const data = await res.json();
+      if (data.error) throw new Error(error);
+      AIModal.showContent(data);
+    } catch (e) {
+      AIModal.showError(e.message);
+    }
+  });
+}
 // ——— AI on Objective Assessment screen ———
 if (document.getElementById('objective-assessment-form')) {
   const currentPatientId = window.currentPatientId || '';
