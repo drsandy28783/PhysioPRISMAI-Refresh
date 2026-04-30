@@ -7937,13 +7937,15 @@ def clinical_flags_all_suggest(patient_id):
 
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex)
-        split_response = split_ai_response(suggestion)
+        # Flags screen: return full text unsplit — the emoji flag sections (🔴🟠🟡⚫🔵)
+        # must all be visible at once. split_ai_response would hide the detailed
+        # breakdown after any "Clinical Reasoning:" marker the model spontaneously adds.
         return jsonify({
-            'suggestion': split_response['visible_text'],
-            'text': split_response['visible_text'],
-            'visible_text': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text'],
-            'reasoning_text': split_response['reasoning_text']
+            'suggestion': suggestion,
+            'text': suggestion,
+            'visible_text': suggestion,
+            'reasoning': None,
+            'reasoning_text': None
         })
     except OpenAIError:
         return jsonify({'error':'AI service unavailable.'}), 503
