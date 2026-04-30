@@ -3433,7 +3433,7 @@ OUTPUT FORMAT (Follow this exactly):
 **RECOMMENDED ASSESSMENT APPROACH:**
 [State clearly: "COMPREHENSIVE WITHOUT MODIFICATION" OR "COMPREHENSIVE WITH MODIFICATIONS" OR "MODIFIED/LIMITED - Medical clearance needed"]
 
-**RATIONALE:**
+**APPROACH BASIS:**
 [1-2 sentences explaining why this approach is appropriate based on irritability, red/yellow flags, and patient presentation]
 
 **PRIORITY OBJECTIVE TESTS (in order):**
@@ -3453,7 +3453,7 @@ OUTPUT FORMAT (Follow this exactly):
 **EXPECTED POSITIVE FINDINGS:**
 [Based on provisional diagnosis, list 2-3 tests most likely to be positive and why]
 
-**CLINICAL REASONING SUMMARY:**
+**ASSESSMENT SUMMARY:**
 [1-2 sentences tying the test selection to the provisional diagnosis and treatment planning goals]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
