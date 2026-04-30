@@ -4603,75 +4603,60 @@ TARGET ASSESSMENT CATEGORY: {component}
 {specific_guidance}
 
 CRITICAL INSTRUCTIONS:
-This is an ASSESSMENT PLANNING screen, NOT a treatment planning screen.
-Your job is to suggest which PHYSICAL EXAMINATION TESTS to perform, not treatment interventions.
-IMPORTANT: If subjective findings suggest neurological involvement, prioritize neurological examination tests.
+This is an ASSESSMENT PLANNING screen, NOT a treatment planning screen and NOT a patient interview screen.
+Your job is to tell the physiotherapist which PHYSICAL EXAMINATION TESTS to perform, classify them by safety, and give brief clinical rationale.
+
+ABSOLUTE PROHIBITIONS:
+- DO NOT ask the patient any questions whatsoever
+- DO NOT ask the clinician any questions
+- DO NOT use "Questions:", "Watch for:", or any question-based format
+- DO NOT suggest treatments, exercises, or management plans
+- DO NOT use generic placeholders — every test must be named and specific to THIS case
 
 STRICT RULES FOR YOUR RESPONSE:
-1) ASSESSMENT FOCUS (MOST IMPORTANT)
-   - Suggest specific TESTS/EXAMINATIONS to perform
-   - DO NOT suggest treatments, exercises, or interventions
-   - Focus on WHAT to test and WHAT to look for
+1) ASSESSMENT FOCUS
+   - Name specific TESTS/EXAMINATIONS for THIS body region
+   - Reference the subjective findings to explain WHY each test is chosen
+   - Consider age and irritability when classifying safety
 
-2) CASE-SPECIFIC RECOMMENDATIONS
-   - Tailor test suggestions to THIS patient's body region (e.g., "right shoulder", "lumbar spine")
-   - Reference the subjective findings to predict expected test results
-   - Consider age-appropriate testing
-   - NEVER use generic placeholders
+2) PROXIMAL & DISTAL JOINT SCREENING (MANDATORY)
+   - Always include 1-2 tests for the proximal joint (one above the affected region)
+   - Always include 1-2 tests for the distal joint (one below the affected region)
+   - State why each adjacent joint is relevant to this case
 
-3) PROXIMAL & DISTAL JOINT ASSESSMENT (MANDATORY)
-   - ALWAYS include screening tests for the proximal joint (one above)
-   - ALWAYS include screening tests for the distal joint (one below)
-   - Explain why these adjacent joints matter for this case
+3) THREE-PART CLASSIFICATION OUTPUT (mirrors the form's dropdown options):
 
-4) TEST MODIFICATIONS (IMPORTANT)
-   - If patient has high fear/anxiety: Suggest gentler progressions and clear communication
-   - If marked as "precaution": Specify exact modifications (e.g., "reduce ROM by 50%", "avoid end-range", "monitor pain levels")
-   - If irritability is high: Suggest limited repetitions, avoid provocative end-ranges
-   - If marked "contraindicated": Explain WHY and suggest ALTERNATIVE tests
+   MANDATORY TESTS — tests that must be performed for safe, complete diagnosis:
+   List 3-5 specific tests. For each: test name — what it assesses — expected finding for this case.
 
-5) FOUR-PART OUTPUT REQUIRED:
+   TESTS WITH PRECAUTION — tests that can be done but need modification:
+   List 2-3 tests. For each: test name — why precaution is needed — exact modification (e.g., "limit to pain-free range", "avoid end-range overpressure", "monitor for symptom reproduction beyond P1").
 
-   PART 1 - PRIMARY REGION TESTS (3-4 tests):
-   List exact tests for the affected region ({component})
+   ABSOLUTELY CONTRAINDICATED — tests to avoid for this patient:
+   List 1-2 tests (or state "None identified" if not applicable). For each: test name — reason contraindicated — safer alternative to use instead.
 
-   PART 2 - PROXIMAL JOINT SCREENING (1-2 tests):
-   Specific tests for the proximal joint
+4) FORMAT (STRICT — follow exactly):
 
-   PART 3 - DISTAL JOINT SCREENING (1-2 tests):
-   Specific tests for the distal joint
-
-   PART 4 - CLINICAL REASONING & MODIFICATIONS:
-   - Why these tests are priority for THIS case
-   - Expected positive findings based on subjective data
-   - Specific modifications based on patient perspectives (if applicable)
-   - Safety considerations or restrictions
-   - Alternative tests if contraindicated
-
-6) FORMAT (STRICT):
-   PRIMARY REGION TESTS:
-   1. [Specific test name] - [What it assesses]
-   2. [Specific test name] - [What it assesses]
-   3. [Specific test name] - [What it assesses]
+   MANDATORY TESTS:
+   1. [Test name] - [What it assesses] - [Expected finding for this case]
+   2. [Test name] - [What it assesses] - [Expected finding for this case]
+   3. [Test name] - [What it assesses] - [Expected finding for this case]
 
    PROXIMAL JOINT SCREENING:
-   1. [Joint name] - [Specific test] - [Why relevant]
+   1. [Joint] - [Test name] - [Why relevant to this case]
 
    DISTAL JOINT SCREENING:
-   1. [Joint name] - [Specific test] - [Why relevant]
+   1. [Joint] - [Test name] - [Why relevant to this case]
 
-   CLINICAL REASONING & MODIFICATIONS:
-   - [Why these tests matter for this case]
-   - [Expected findings based on subjective examination]
-   - [Specific modifications: "Start with...", "Avoid...", "Monitor for..."]
-   - [Safety considerations or alternative approaches]
+   TESTS WITH PRECAUTION:
+   1. [Test name] - [Reason for precaution] - [How to modify]
 
-7) WHAT TO AVOID:
-   - Treatment recommendations or exercises
-   - Generic test lists not tailored to this case
-   - Tests irrelevant to the body region
-   - Vague suggestions without specifics
-   - Forgetting proximal/distal joint screening
+   ABSOLUTELY CONTRAINDICATED:
+   1. [Test name] - [Reason] - [Alternative to use instead]
+
+5) CLINICAL REASONING (after the table above — 2-3 sentences only):
+   Explain why this cluster of tests is appropriate for THIS specific case based on the subjective findings.
+   Flag if neurological, vascular, or systemic signs suggest urgent screening should take priority.
 
 {DATA_GROUNDING_RULE}
 
