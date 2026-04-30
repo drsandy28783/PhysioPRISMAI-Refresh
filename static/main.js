@@ -342,6 +342,9 @@ const AIModal = {
       .replace(/\[CONCISE SUGGESTIONS[^\]]*\]/gi, '')  // Remove internal labels
       .replace(/\[CLINICAL REASONING[^\]]*\]/gi, '');  // Remove internal labels
 
+    // Convert markdown bold (**text**) to HTML <strong>
+    cleanedText = cleanedText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
     // Convert plain text to HTML with preserved formatting
     let htmlContent = cleanedText
       .replace(/\n\n/g, '</p><p>')
