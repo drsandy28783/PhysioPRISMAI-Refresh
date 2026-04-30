@@ -983,6 +983,8 @@ def api_ai_objective_assessment():
         perspectives = sanitize_subjective_data(previous.get('perspectives', {}))
         provisional_diagnoses = sanitize_clinical_text(previous.get('provisional_diagnosis', ''))
         clinical_flags = sanitize_subjective_data(previous.get('clinical_flags', {}))
+        patho_data = sanitize_subjective_data(previous.get('patho_data', {}))
+        existing_inputs = sanitize_subjective_data(data.get('inputs', {}))
 
         # Use IMPROVED centralized prompt with body region-specific guidance
         prompt = get_objective_assessment_field_prompt(
@@ -993,7 +995,9 @@ def api_ai_objective_assessment():
             subjective=subjective,
             perspectives=perspectives,
             provisional_diagnoses=provisional_diagnoses,
-            clinical_flags=clinical_flags
+            clinical_flags=clinical_flags,
+            patho_data=patho_data,
+            existing_inputs=existing_inputs
         )
 
         suggestion = get_ai_suggestion_safe(prompt, metadata={
