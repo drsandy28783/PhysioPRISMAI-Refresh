@@ -6212,7 +6212,14 @@ IMPORTANT REMINDERS:
 - Think FUNCTIONALLY (how does this help them return to work/sport/life?)
 - Consider AGE-APPROPRIATE interventions
 
-{CONCISE_AI_OUTPUT_RULE}
+⛔ OUTPUT FORMAT OVERRIDE — TREATMENT PLAN FIELDS:
+- NEVER write "Questions:", "Watch for:", or any patient-directed questions
+- NEVER ask the clinician for more information — work with what is provided
+- ALWAYS write in declarative, third-person clinical language ("Recommend...", "Prescribe...", "Apply...")
+- Provide DIRECT treatment content: interventions, dosage, rationale, references — no preamble
+- Use **bold headers** to separate sections (e.g., **Phase 1:**, **Home Exercise Program:**)
+- For 'reasoning' field: end with "Clinical Reasoning:" followed by your evidence-based justification
+- DO NOT pad the response with generic caveats or teaching paragraphs
 """
 
 
