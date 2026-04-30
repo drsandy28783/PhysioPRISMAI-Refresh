@@ -304,7 +304,8 @@ textarea:disabled {
 textarea.input-field {
   min-height: 100px;
   padding: 12px;
-  resize: vertical;
+  resize: none;        /* auto-grow JS handles expansion */
+  overflow-y: hidden;  /* prevents scrollbar flash during auto-grow */
   line-height: 1.5;
 }
 

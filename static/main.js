@@ -1331,3 +1331,18 @@ if (window.location.pathname === '/logout') {
     }
   })();
 }
+
+// ── Auto-grow textareas ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  function growTextarea(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+  document.querySelectorAll('textarea.input-field').forEach(function (ta) {
+    ta.addEventListener('input', function () { growTextarea(ta); });
+    ta.addEventListener('paste', function () {
+      setTimeout(function () { growTextarea(ta); }, 0);
+    });
+    if (ta.value) { growTextarea(ta); }
+  });
+});
