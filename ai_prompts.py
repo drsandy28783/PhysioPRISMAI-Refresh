@@ -6000,40 +6000,29 @@ CRITICAL CONSIDERATIONS:
         'reference': f"""
 TARGET FIELD: REFERENCE (Literature/Evidence)
 
-PURPOSE:
-Provide key evidence-based references supporting your treatment plan.
+⛔ CITATIONS ONLY — OUTPUT FORMAT OVERRIDE:
+- IGNORE all safety checks, intervention lists, and clinical reasoning instructions in this prompt
+- DO NOT ask questions. DO NOT write "Questions:", "Watch for:", or any patient-directed content
+- OUTPUT ONLY formatted literature citations — nothing else
+- Provide 4-8 high-quality references relevant to this patient's diagnosis and body region
+- Use real, verifiable references (guidelines, systematic reviews, RCTs)
 
-WHAT TO INCLUDE:
-1. **Clinical Practice Guidelines**
-   - Most recent guidelines for this condition
-   - Example: "NICE Guidelines for Low Back Pain (2020)"
-   - Example: "AAOS Clinical Practice Guideline on Rotator Cuff Problems (2019)"
+OUTPUT FORMAT (use exactly this structure):
 
-2. **Systematic Reviews/Meta-Analyses (Gold Standard)**
-   - Key systematic reviews supporting primary interventions
-   - Example: "Cochrane Review: Exercise therapy for chronic low back pain (2019)"
-   - Include effect sizes if available
+**Clinical Practice Guidelines:**
+1. [Organization, Year. Guideline title. Source/URL]
 
-3. **High-Quality RCTs (if specific intervention)**
-   - Landmark trials for condition-specific interventions
-   - Example: "Lewis et al. (2015) - Exercise for rotator cuff tendinopathy"
+**Systematic Reviews / Meta-Analyses:**
+1. [Author et al., Year. Title. Journal. Volume(Issue):Pages. DOI]
+2. [Author et al., Year. Title. Journal. Volume(Issue):Pages. DOI]
 
-4. **Theoretical Frameworks**
-   - ICF framework references
-   - Pain science references (Explain Pain, pain neurophysiology)
-   - Fear-Avoidance Model references (if yellow flags present)
+**Key RCTs:**
+1. [Author et al., Year. Title. Journal. Volume(Issue):Pages. DOI]
 
-{DATA_GROUNDING_RULE}
-FORMAT:
-- Author(s), Year, Title, Journal
-- OR: Organization, Year, Guideline Title
-- Prioritize most recent and high-quality evidence (last 5-10 years)
+**Pain Science / Psychosocial (if yellow flags present):**
+1. [Author et al., Year. Title. Journal. Volume(Issue):Pages. DOI]
 
-CRITICAL CONSIDERATIONS:
-- Focus on ACTIONABLE evidence (what works for THIS condition)
-- Include guidelines specific to body region: {icf_core_set['name'] if icf_core_set else 'general MSK'}
-- Reference both treatment efficacy AND prognostic factors
-- Include yellow flag management literature if psychosocial barriers present
+Prioritise: condition-specific for {icf_core_set['name'] if icf_core_set else 'general MSK'}, last 10 years, highest evidence level first.
 """
     }
 
