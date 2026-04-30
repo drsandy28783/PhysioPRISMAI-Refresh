@@ -7105,6 +7105,7 @@ def split_ai_response(full_text: str) -> Dict[str, Optional[str]]:
         }
 
     # Common reasoning section markers (case-insensitive)
+    # NOTE: only match at line-start to avoid splitting on "**Rationale:**" inside content
     reasoning_markers = [
         "Clinical Reasoning:",
         "Clinical Reasoning Summary:",
@@ -7113,15 +7114,19 @@ def split_ai_response(full_text: str) -> Dict[str, Optional[str]]:
         "Reasoning:",
     ]
 
-    # Try to find reasoning section marker
+    import re
+
+    # Try to find reasoning section marker - only at the START of a line
+    # (not embedded inside bold/list content like "- **Rationale:** ...")
     split_index = -1
     matched_marker = None
 
     for marker in reasoning_markers:
-        # Case-insensitive search
-        index = full_text.lower().find(marker.lower())
-        if index != -1:
-            # Use the earliest match
+        # Match marker only at line start, not inside **bold** text
+        pattern = r'(?:^|\n)(' + re.escape(marker) + r')'
+        match = re.search(pattern, full_text, re.IGNORECASE)
+        if match:
+            index = match.start(1)  # position of marker (after the \n)
             if split_index == -1 or index < split_index:
                 split_index = index
                 matched_marker = marker
