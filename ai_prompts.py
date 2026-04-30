@@ -3465,9 +3465,12 @@ IMPORTANT REMINDERS:
 - Think about diagnostic accuracy (sensitivity/specificity of test clusters)
 - Safety first - if in doubt, modify or defer testing until medical clearance
 
-{CONCISE_AI_OUTPUT_RULE}
-
-NOTE: For objective assessment, the structured format above takes precedence, but ensure Clinical Reasoning Summary provides clear rationale for test selection.
+⛔ OUTPUT FORMAT OVERRIDE:
+- DO NOT ask the patient any questions
+- DO NOT use "Questions:", "Watch for:", or any interview-style format
+- DO NOT use a plain numbered summary list as your main output
+- Use ONLY the structured format defined above (RECOMMENDED ASSESSMENT APPROACH → PRIORITY TESTS → PRECAUTIONS → EXPECTED FINDINGS → CLINICAL REASONING SUMMARY)
+- The "Clinical Reasoning Summary" at the end may be placed after a "Clinical Reasoning:" marker for the expandable reasoning toggle — keep it brief (2-3 sentences)
 """
 
 
