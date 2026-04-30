@@ -730,7 +730,7 @@ def get_ai_suggestion_with_cache(
                 "content": prompt
             }],
             temperature=0.2,  # Low temperature for consistent, deterministic clinical responses
-            max_tokens=2500  # Increased to 2500 to handle longer prompts with past history
+            max_tokens=3500  # Increased to 3500 to handle detailed treatment plan outputs
         )
 
         # Azure OpenAI client returns dict with 'text' field (not 'choices')
