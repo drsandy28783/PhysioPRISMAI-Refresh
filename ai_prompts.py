@@ -836,6 +836,185 @@ def analyze_treatment_plan_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
     return analysis
 
 
+def classify_case_complexity(
+    present_hist: str,
+    additional_texts: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Scan presenting complaint (and optionally other clinical text) for multi-system
+    warning flags. Returns a complexity level and a short alert string to inject
+    at the top of prompts.
+
+    Purpose: Nudge the AI toward clinically significant patterns that may be missed
+    when the named body region dominates reasoning (anchoring bias). The alert is
+    deliberately short — one targeted question or watch-for is all that is needed
+    to guide the physiotherapist toward what they might otherwise miss.
+
+    Returns:
+        dict with:
+            'complexity'     : 'SIMPLE' | 'MODERATE' | 'COMPLEX'
+            'detected_flags' : list of flag category names found
+            'flag_details'   : dict mapping category -> top matched keywords
+            'alert_text'     : short prompt injection string (empty string if SIMPLE)
+    """
+    if not present_hist:
+        return {
+            'complexity': 'SIMPLE',
+            'detected_flags': [],
+            'flag_details': {},
+            'alert_text': '',
+        }
+
+    # Build a single lowercase search string from all available text
+    all_text = present_hist.lower()
+    if additional_texts and isinstance(additional_texts, dict):
+        for v in additional_texts.values():
+            if isinstance(v, str):
+                all_text += ' ' + v.lower()
+
+    # ── Flag keyword categories ──────────────────────────────────────────────
+    # Multi-word phrases appear before single words so the dedup logic below
+    # can suppress redundant single-word matches already covered by a phrase.
+    FLAG_CATEGORIES: Dict[str, list] = {
+        'neurological': [
+            'grip weakness', 'weakness of grip', 'weak grip', 'hand weakness',
+            'finger weakness', 'dropping objects', 'drop things', 'dropping things',
+            'pins and needles', 'paraesthesia', 'paresthesia',
+            'bilateral upper', 'bilateral lower', 'both arms', 'both hands',
+            'both legs', 'both sides', 'bilateral symptoms',
+            'progressive weakness', 'muscle wasting', 'muscle atrophy',
+            'foot drop', 'foot-drop', 'gait disturbance', 'coordination',
+            'clumsy', 'clumsiness', 'shooting pain', 'electric shock',
+            'radiculopathy', 'myelopathy', 'dermatomal', 'myotomal',
+            'reflex change', 'upper limb weakness', 'lower limb weakness',
+            'numbness', 'numb', 'tingling', 'bilateral',
+            'weakness', 'weak',
+        ],
+        'vascular': [
+            'claudication', 'cold limb', 'cold hand', 'cold foot',
+            'colour change', 'color change', 'pallor', 'cyanosis',
+            'blue fingers', 'white fingers', 'pulsatile', 'rest pain',
+            'absent pulse', 'deep vein', 'thrombus', 'dvt', 'ischaemia',
+            'ischemia',
+        ],
+        'inflammatory_systemic': [
+            'morning stiffness', 'bilateral joint swelling', 'bilateral swelling',
+            'night sweats', 'unexplained weight loss', 'fever', 'malaise',
+            'rheumatoid', 'psoriatic', 'psoriasis', 'ankylosing',
+            'inflammatory arthritis', 'ibd', 'crohns', 'colitis',
+            'warm joint', 'red joint', 'multiple joints', 'systemic', 'unwell',
+        ],
+        'visceral': [
+            'saddle anaesthesia', 'saddle anesthesia', 'perineal numbness',
+            'bowel dysfunction', 'bladder dysfunction', 'urinary incontinence',
+            'bowel', 'bladder', 'urinary', 'abdominal pain', 'pelvic pain',
+            'kidney', 'renal', 'cardiac', 'chest pain', 'angina',
+            'nocturnal pain', 'pain at rest unrelated to movement',
+            'constant unremitting', 'not affected by position',
+        ],
+        'psychosocial': [
+            'fear avoidance', 'kinesiophobia', 'fear of movement',
+            'catastroph', 'not coping', 'hopeless', 'distress',
+            'scared to move', 'afraid to move',
+            'compensation claim', 'legal', 'litigation',
+            'years of pain', 'failed treatment', 'nothing works', 'no improvement',
+            'depression', 'anxiety',
+        ],
+    }
+
+    detected_flags: Dict[str, list] = {}
+
+    for category, keywords in FLAG_CATEGORIES.items():
+        matched: list = []
+        for kw in keywords:
+            if kw in all_text:
+                # Avoid double-counting: skip broad single-word if a more specific
+                # phrase already captured the same signal
+                # e.g. skip 'weakness' if 'grip weakness' already matched
+                already_covered = any(
+                    kw in existing_kw or existing_kw in kw
+                    for existing_kw in matched
+                )
+                if not already_covered:
+                    matched.append(kw)
+            if len(matched) >= 3:
+                break
+        if matched:
+            detected_flags[category] = matched
+
+    # ── Complexity level ─────────────────────────────────────────────────────
+    n_flags = len(detected_flags)
+    has_serious = 'vascular' in detected_flags or 'visceral' in detected_flags
+
+    if n_flags == 0:
+        complexity = 'SIMPLE'
+    elif n_flags == 1 and not has_serious:
+        complexity = 'MODERATE'
+    else:
+        complexity = 'COMPLEX'
+
+    # ── Build alert text ─────────────────────────────────────────────────────
+    # Deliberately short: one targeted line per flag category.
+    # The intent is a nudge, not a lecture.
+    alert_text = ''
+    if complexity != 'SIMPLE':
+        flag_lines = []
+
+        if 'neurological' in detected_flags:
+            kws = ', '.join(detected_flags['neurological'][:2])
+            flag_lines.append(
+                f"Neurological sign(s) in complaint ({kws}) — consider cervical, "
+                f"peripheral nerve, or systemic cause alongside local pathology. "
+                f"Include at least one neurological screening question or test."
+            )
+        if 'vascular' in detected_flags:
+            kws = ', '.join(detected_flags['vascular'][:2])
+            flag_lines.append(
+                f"Vascular indicator(s) ({kws}) — screen for vascular compromise "
+                f"before MSK testing. Medical referral may be needed."
+            )
+        if 'inflammatory_systemic' in detected_flags:
+            kws = ', '.join(detected_flags['inflammatory_systemic'][:2])
+            flag_lines.append(
+                f"Inflammatory/systemic marker(s) ({kws}) — consider systemic cause; "
+                f"screen for inflammatory arthropathy or occult systemic disease."
+            )
+        if 'visceral' in detected_flags:
+            kws = ', '.join(detected_flags['visceral'][:2])
+            flag_lines.append(
+                f"Possible visceral involvement ({kws}) — do not attribute to MSK "
+                f"without ruling out visceral/organ source. Medical clearance first."
+            )
+        if 'psychosocial' in detected_flags:
+            kws = ', '.join(detected_flags['psychosocial'][:2])
+            flag_lines.append(
+                f"Psychosocial complexity ({kws}) — yellow/blue flag screening is "
+                f"essential; adapt assessment approach accordingly."
+            )
+
+        if flag_lines:
+            sep = "━" * 71
+            lines_formatted = "\n".join(f"  ⚡ {line}" for line in flag_lines)
+            alert_text = (
+                f"{sep}\n"
+                f"🔍 CLINICAL COMPLEXITY — REVIEW BEFORE GENERATING SUGGESTIONS\n"
+                f"{sep}\n"
+                f"{lines_formatted}\n\n"
+                f"ACTION REQUIRED: Your suggestions MUST address the flag(s) above —\n"
+                f"even briefly. Lead with the flag-driven question or watch-for FIRST.\n"
+                f"One targeted nudge toward what might be missed is the goal.\n"
+                f"{sep}\n"
+            )
+
+    return {
+        'complexity': complexity,
+        'detected_flags': list(detected_flags.keys()),
+        'flag_details': detected_flags,
+        'alert_text': alert_text,
+    }
+
+
+
 def detect_body_region(presenting_complaint: str) -> Optional[str]:
     """
     Detect the primary body region from the presenting complaint.
