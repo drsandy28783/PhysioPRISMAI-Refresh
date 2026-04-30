@@ -255,8 +255,8 @@ const AIModal = {
     console.log("✅ FINAL visibleText:", visibleText);
     console.log("✅ FINAL reasoningText:", reasoningText);
 
-    // Store both for copy functionality
-    this.currentSuggestion = visibleText;
+    // Store both for copy functionality — strip markdown headers so paste into textarea is clean
+    this.currentSuggestion = visibleText.replace(/^#{1,3}\s*/gm, '').trim();
     this.currentReasoning = reasoningText;
 
     // Format the visible text
@@ -1328,71 +1328,4 @@ if (document.getElementById('followup-form')) {
             session_number: document.querySelector('input[name="session_number"]')?.value || '',
             session_date:   document.querySelector('input[name="session_date"]')?.value || '',
             grade:          document.querySelector('select[name="grade"]')?.value || '',
-            perception:     document.querySelector('select[name="belief_treatment"]')?.value || '',
-            feedback:       document.querySelector('textarea[name="belief_feedback"]')?.value || ''
-          })
-        });
-        const data = await resp.json();
-        if (data.error) {
-          AIModal.showError(data.error);
-        } else {
-          AIModal.showContent(data.suggestion ? data : 'No suggestion available');
-        }
-      } catch(err) {
-        console.error(err);
-        AIModal.showError('Error fetching suggestion');
-      }
-    });
-  });
-}
-
-
-// -------------------------------------------------------------
-// Logout redirect handler (CSP-safe, externalized)
-// -------------------------------------------------------------
-if (window.location.pathname === '/logout') {
-  (async function() {
-    try {
-      // Step 1: Sign out from Firebase Auth FIRST (important for persistence)
-      console.log('[Logout] Signing out from Firebase Auth...');
-      try {
-        const { signOut } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
-        const auth = getAuth();
-        await signOut(auth);
-        console.log('[Logout] Firebase Auth sign out successful.');
-      } catch (firebaseError) {
-        console.warn('[Logout] Firebase sign out failed (non-critical):', firebaseError);
-      }
-
-      // Step 2: Clear all client-side storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      console.log('[Logout] Cleared local and session storage.');
-
-      // Step 3: Redirect to login after short delay
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 1000);
-    } catch (err) {
-      console.error('[Logout] Error during logout cleanup:', err);
-      // fallback redirect immediately
-      window.location.href = '/login';
-    }
-  })();
-}
-
-// ── Auto-grow textareas ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function () {
-  function growTextarea(el) {
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-  }
-  document.querySelectorAll('textarea.input-field').forEach(function (ta) {
-    ta.addEventListener('input', function () { growTextarea(ta); });
-    ta.addEventListener('paste', function () {
-      setTimeout(function () { growTextarea(ta); }, 0);
-    });
-    if (ta.value) { growTextarea(ta); }
-  });
-});
+            

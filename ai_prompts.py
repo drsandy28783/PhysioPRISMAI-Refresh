@@ -5944,29 +5944,17 @@ CRITICAL CONSIDERATIONS:
         'goal_targeted': f"""
 TARGET FIELD: GOAL TARGETED
 
-PURPOSE:
-Specify which SMART goal(s) this intervention is targeting and explain the connection.
+⛔ OUTPUT FORMAT OVERRIDE — GOAL TARGETED:
+- NEVER ask questions or request more information
+- Keep the entire response to 4-5 lines maximum
+- Refer directly to the SMART goal(s) documented in the goals section
+- State the ICF domain and one-sentence intervention link — nothing more
+- DO NOT write a Rationale paragraph or extended explanation
 
-WHAT TO INCLUDE:
-1. **Specific Goal Reference**
-   - State the exact SMART goal from the goals section
-   - Reference measurable outcome (ROM, strength, functional task)
-
-2. **ICF Component Being Addressed**
-   - Body function (pain, ROM, strength)
-   - Activity (walking, reaching, lifting)
-   - Participation (return to work, sport, self-care)
-
-3. **Rationale for Goal Selection**
-   - Why this goal is priority for the patient
-   - Connection to patient's values and perspectives
-   - Impact on quality of life and participation
-
-CRITICAL CONSIDERATIONS:
-- Be specific (e.g., "Goal 1: Return to overhead reaching without pain")
-- Connect to patient perspectives (what matters to THEM)
-- Prioritize based on patient's functional needs
-- Address participation restrictions ({icf_core_set['name'] if icf_core_set else 'general participation'})
+OUTPUT FORMAT:
+**Goal:** [Exact SMART goal from goals section — copy it directly]
+**ICF Domain:** [Body function / Activity / Participation — pick the primary one]
+**How treatment addresses it:** [1 sentence connecting the planned intervention to this goal]
 """,
         'reasoning': f"""
 TARGET FIELD: CLINICAL REASONING
@@ -6158,10 +6146,10 @@ Intervention 3: [Specific technique] - [Sets/reps/frequency] - [Rationale]
 **Frequency:** 2x/week clinic + daily HEP for 4-6 weeks
 ''' if field == 'treatment_plan' else ''}
 
-{f'''For 'goal_targeted' field:
-**Primary Goal:** [Exact SMART goal from goals section]
-**ICF Component:** [Body function / Activity / Participation]
-**Rationale:** [2-3 sentences explaining why this goal is priority and how treatment addresses it]
+{f'''For 'goal_targeted' field (MAX 4 lines — be concise):
+**Goal:** [Copy exact SMART goal text]
+**ICF Domain:** [Body function / Activity / Participation]
+**How treatment addresses it:** [1 sentence only]
 ''' if field == 'goal_targeted' else ''}
 
 {f'''For 'reasoning' field:
