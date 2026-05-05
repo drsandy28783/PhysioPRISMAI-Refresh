@@ -276,8 +276,9 @@ def generate_initial_plan_prefills(
 def _validate_initial_plan_prefills(raw: Dict[str, Any]) -> Dict[str, Any]:
     """
     Validate AI categories against the 3 allowed values.
-    Invalid category → blank string so physio must choose manually.
-    Reasoning strings are passed through after stripping.
+    Invalid category -> blank string so physio must choose manually.
+    Reasoning strings passed through after stripping.
+    _tests arrays validated as lists of non-empty strings (max 8 items).
     """
     result = {}
     for test in INITIAL_PLAN_TESTS:
@@ -290,12 +291,16 @@ def _validate_initial_plan_prefills(raw: Dict[str, Any]) -> Dict[str, Any]:
             category = ""
         result[test] = category
         result[f"{test}_reasoning"] = str(raw.get(f"{test}_reasoning", "")).strip()
+        raw_tests = raw.get(f"{test}_tests", [])
+        if isinstance(raw_tests, list):
+            clean_tests = [str(t).strip() for t in raw_tests if str(t).strip()][:8]
+        else:
+            clean_tests = []
+        if category == "Absolutely Contraindicated":
+            clean_tests = []
+        result[f"{test}_tests"] = clean_tests
     return result
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# RISK FACTORS & CLINICAL FLAGS — STAGE 1 PRE-FILLS
-# ─────────────────────────────────────────────────────────────────────────────
 
 def generate_risk_flags_prefills(
     patient: Dict[str, Any],
@@ -628,19 +633,4 @@ def generate_treatment_plan_prefills(
 
     except Exception as e:
         logger.error(f"Quick Mode Treatment Plan prefill failed: {e}", exc_info=True)
-        return {}
-
-
-def _validate_treatment_plan_prefills(raw: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Sanitise Treatment Plan AI output.
-    - treatment_plan, goal_targeted, reasoning: free-text bullet strings.
-    - reference: always returned as "" regardless of what AI produces.
-    """
-    result = {}
-    for field in TREATMENT_PLAN_FIELDS:
-        if field == "reference":
-            result[field] = ""  # never pre-fill — no fabricated citations
-        else:
-            result[field] = str(raw.get(field, "") or "").strip()
-    return result
+       

@@ -211,19 +211,22 @@ INITIAL_PLAN_SYSTEM = """You are a physiotherapy clinical reasoning assistant he
 physiotherapist plan their initial objective assessment for a specific patient.
 
 You will be given patient history and pathophysiological mechanism findings.
-Your job is to recommend an assessment category for each of 7 examination types, \
-based on the patient's condition, stage of healing, and any clinical precautions.
+Your job is to:
+  1. Recommend an assessment category for each of 7 examination types.
+  2. List the specific test names the physio should perform within each category.
 
 STRICT RULES:
-1. Base recommendations ONLY on the information provided — do not assume findings not stated.
+1. Base recommendations ONLY on the information provided.
 2. Stage of healing strongly influences precautions:
-   - Acute (0-72h): protect healing tissue — most tests should be "Assessment with precaution" or contraindicated.
-   - Subacute (4-21 days): progressive loading is appropriate — most tests "Mandatory assessment".
+   - Acute (0-72h): protect healing tissue.
+   - Subacute (4-21 days): progressive loading appropriate.
    - Chronic (>3 weeks): comprehensive assessment generally appropriate.
-3. Neurogenic or visceral source of symptoms warrants neurodynamic testing.
-4. "Absolutely Contraindicated" should be used only when there is a genuine clinical reason.
-5. Reasoning must be ONE concise sentence — clinical and direct, no waffle.
-6. Return ONLY valid JSON. No markdown, no prose outside the JSON object.
+3. Neurogenic or visceral source warrants neurodynamic testing.
+4. "Absolutely Contraindicated" only for genuine clinical reason; set its _tests to [].
+5. Reasoning must be ONE concise sentence.
+6. _tests: list 2-5 specific named physiotherapy tests for the area and symptom.
+   Use standard names (e.g. "Hawkins-Kennedy Test", "Lumbar Flexion ROM", "Slump Test").
+7. Return ONLY valid JSON. No markdown, no prose outside the JSON object.
 """
 
 INITIAL_PLAN_USER_TEMPLATE = """Patient details:
@@ -241,7 +244,7 @@ Pathophysiological Mechanism findings:
 - Possible Source: {possible_source}
 - Stage of Healing: {stage_healing}
 
-For each assessment type below, recommend a category and give a 1-sentence clinical reason.
+For each assessment type, recommend a category, give a 1-sentence clinical reason, and list the specific tests.
 
 Valid categories (use EXACTLY as written):
 - Mandatory assessment
@@ -253,20 +256,28 @@ Return this exact JSON structure:
 {{
   "active_movements": "<category>",
   "active_movements_reasoning": "<1 sentence>",
+  "active_movements_tests": ["<test name>", "<test name>"],
   "passive_movements": "<category>",
   "passive_movements_reasoning": "<1 sentence>",
+  "passive_movements_tests": ["<test name>", "<test name>"],
   "passive_over_pressure": "<category>",
   "passive_over_pressure_reasoning": "<1 sentence>",
+  "passive_over_pressure_tests": ["<test name>", "<test name>"],
   "resisted_movements": "<category>",
   "resisted_movements_reasoning": "<1 sentence>",
+  "resisted_movements_tests": ["<test name>", "<test name>"],
   "combined_movements": "<category>",
   "combined_movements_reasoning": "<1 sentence>",
+  "combined_movements_tests": ["<test name>", "<test name>"],
   "special_tests": "<category>",
   "special_tests_reasoning": "<1 sentence>",
+  "special_tests_tests": ["<test name>", "<test name>"],
   "neurodynamic": "<category>",
-  "neurodynamic_reasoning": "<1 sentence>"
+  "neurodynamic_reasoning": "<1 sentence>",
+  "neurodynamic_tests": ["<test name>", "<test name>"]
 }}
 """
+
 
 
 def build_initial_plan_user_prompt(patient: dict, patho_data: dict) -> str:

@@ -151,6 +151,7 @@
     {% macro test_card(field, label) %}
       {% set category = prefills.get(field, '') %}
       {% set reasoning = prefills.get(field ~ '_reasoning', '') %}
+      {% set tests = prefills.get(field ~ '_tests', []) %}
 
       {# Badge CSS class based on category #}
       {% if category == 'Mandatory assessment' %}
@@ -171,17 +172,14 @@
         <div class="test-card-header">
           <span class="test-card-title">{{ label }}</span>
           <div style="display:flex; align-items:center; gap:8px;">
-            {# Category shown as badge if AI provided one, else fallback dropdown #}
             {% if category %}
               <span class="cat-badge {{ badge_class }}">{{ badge_icon }} {{ category }}</span>
-              {# Hidden select carries the value for form submission #}
               <select name="{{ field }}" class="category-select" required>
                 {% for opt in ['Mandatory assessment', 'Assessment with precaution', 'Absolutely Contraindicated'] %}
                   <option value="{{ opt }}" {% if category == opt %}selected{% endif %}>{{ opt }}</option>
                 {% endfor %}
               </select>
             {% else %}
-              {# No AI suggestion — show normal dropdown #}
               <select name="{{ field }}" class="input-field" required
                       style="width:auto; font-size:0.85em;">
                 <option value="" disabled selected>Select category</option>
@@ -204,20 +202,63 @@
             </div>
           {% endif %}
 
-          <label class="findings-label" for="{{ field }}_details">
-            🔬 Examination findings:
-          </label>
-          <textarea
-            id="{{ field }}_details"
-            name="{{ field }}_details"
-            class="findings-textarea"
-            rows="3"
-            placeholder="Enter findings from your examination… leave blank if test not performed"
-            data-voice-enabled
-          >{{ request.form.get(field ~ '_details', '') }}</textarea>
-          <p class="findings-hint">
-            Leave blank if this test was not performed — it will be excluded from the report.
-          </p>
+          {% if category == 'Absolutely Contraindicated' %}
+            {# No tests — just a note #}
+            <p style="color:#991b1b; font-size:0.88em; margin:4px 0 0 0;">
+              🚫 This test is contraindicated for this patient — no findings required.
+            </p>
+            <input type="hidden" name="{{ field }}_details"
+                   value="Absolutely Contraindicated — not performed">
+
+          {% elif tests %}
+            {# AI suggested specific test names — one row per test #}
+            <div style="font-size:0.82em; font-weight:600; color:#0d9488; margin-bottom:10px;">
+              🤖 AI-suggested tests — record findings below (leave blank if not performed):
+            </div>
+            {# Pipe-separated test names for POST handler to reconstruct _details #}
+            <input type="hidden" name="{{ field }}_test_names"
+                   value="{{ tests | join('|') }}">
+            <table style="width:100%; border-collapse:collapse;">
+              {% for test_name in tests %}
+              <tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:8px 10px 8px 0; width:36%; font-size:0.88em;
+                           font-weight:600; color:#1e293b; vertical-align:middle;">
+                  {{ loop.index }}. {{ test_name }}
+                </td>
+                <td style="padding:6px 0;">
+                  <textarea
+                    name="{{ field }}_detail"
+                    class="findings-textarea"
+                    rows="2"
+                    placeholder="Findings… leave blank if not performed"
+                    data-voice-enabled
+                    style="margin:0;"
+                  ></textarea>
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+            <p class="findings-hint" style="margin-top:6px;">
+              Leave blank if a test was not performed — it will be excluded from the report.
+            </p>
+
+          {% else %}
+            {# Fallback — no AI test names, single textarea #}
+            <label class="findings-label" for="{{ field }}_details">
+              🔬 Examination findings:
+            </label>
+            <textarea
+              id="{{ field }}_details"
+              name="{{ field }}_details"
+              class="findings-textarea"
+              rows="3"
+              placeholder="Enter findings from your examination… leave blank if test not performed"
+              data-voice-enabled
+            ></textarea>
+            <p class="findings-hint">
+              Leave blank if this test was not performed — it will be excluded from the report.
+            </p>
+          {% endif %}
         </div>
       </div>
     {% endmacro %}

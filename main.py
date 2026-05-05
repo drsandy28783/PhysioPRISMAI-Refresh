@@ -6032,7 +6032,19 @@ def qm_initial_plan(patient_id):
         entry = {'patient_id': patient_id, 'timestamp': SERVER_TIMESTAMP}
         for t in tests:
             entry[t] = request.form.get(t, '')
-            entry[f"{t}_details"] = request.form.get(f"{t}_details", '')
+            # Reconstruct _details from per-test rows (AI suggested tests)
+            # or fall back to single textarea / contraindicated hidden field.
+            test_names_raw = request.form.get(f"{t}_test_names", "")
+            if test_names_raw:
+                test_names = [n.strip() for n in test_names_raw.split('|') if n.strip()]
+                findings   = request.form.getlist(f"{t}_detail")
+                entry[f"{t}_details"] = '\n'.join(
+                    f"{name}: {finding.strip()}"
+                    for name, finding in zip(test_names, findings)
+                    if finding.strip()
+                )
+            else:
+                entry[f"{t}_details"] = request.form.get(f"{t}_details", '')
         db.collection('initial_plan').add(entry)
         log_action(session.get('user_id'), 'Quick Mode Initial Plan Saved',
                    f"QM initial plan saved for {patient_id}")
