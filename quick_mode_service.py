@@ -333,12 +333,15 @@ def generate_risk_flags_prefills(
             user_prompt=user_prompt,
         )
 
+        logger.info(f"Quick Mode risk flags: raw AI keys = {list(raw.keys()) if raw else 'None'}")
+        logger.info(f"Quick Mode risk flags: maintenance_causes (raw) = {raw.get('maintenance_causes') if raw else 'N/A'}")
+
         if not raw or "error" in raw:
             logger.error(f"Quick Mode risk flags prefill: AI returned error — {raw}")
             return {}
 
         prefills = _validate_risk_flags_prefills(raw)
-        logger.info("Quick Mode risk flags prefills generated successfully")
+        logger.info(f"Quick Mode risk flags: final causes = {prefills.get('maintenance_causes')}")
         return prefills
 
     except Exception as e:
@@ -351,17 +354,32 @@ def _validate_risk_flags_prefills(raw: Dict[str, Any]) -> Dict[str, Any]:
     Sanitise and validate the raw AI JSON for the risk flags screen.
 
     - maintenance_causes: each item validated against MAINTENANCE_CAUSE_OPTIONS;
-      invalid items are silently dropped (physio can re-check manually).
+      uses case-insensitive matching so minor AI casing variations still resolve.
+      Items with no match even case-insensitively are silently dropped.
     - specific_factors and each flag field: stripped strings, never None.
     """
-    # Validate maintenance causes
+    # Build lowercase → canonical map for fuzzy matching
+    options_lower = {o.lower(): o for o in MAINTENANCE_CAUSE_OPTIONS}
+
     raw_causes = raw.get("maintenance_causes", [])
     if not isinstance(raw_causes, list):
         raw_causes = []
-    valid_causes = [c for c in raw_causes if c in MAINTENANCE_CAUSE_OPTIONS]
-    invalid = [c for c in raw_causes if c not in MAINTENANCE_CAUSE_OPTIONS]
+
+    valid_causes = []
+    invalid = []
+    for c in raw_causes:
+        if not isinstance(c, str):
+            continue
+        canonical = options_lower.get(c.strip().lower())
+        if canonical:
+            if canonical not in valid_causes:   # deduplicate
+                valid_causes.append(canonical)
+        else:
+            invalid.append(c)
+
     if invalid:
-        logger.warning(f"Quick Mode risk flags: dropped invalid causes — {invalid}")
+        logger.warning(f"Quick Mode risk flags: dropped unrecognised causes — {invalid}")
+    logger.info(f"Quick Mode risk flags: validated causes = {valid_causes}")
 
     result = {"maintenance_causes": valid_causes}
 

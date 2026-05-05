@@ -6128,10 +6128,15 @@ def qm_risk_factors_clinical_flags(patient_id):
         )
         if patho_docs:
             patho_data = patho_docs[0].to_dict()
+            logger.info(f"QM risk flags: patho_data keys = {list(patho_data.keys())}")
+        else:
+            logger.warning(f"QM risk flags: no patho_mechanism doc found for {patient_id}")
     except Exception as e:
         logger.warning(f"QM risk flags: could not fetch patho_data for {patient_id}: {e}")
 
+    logger.info(f"QM risk flags: present_history present = {bool(patient.get('present_history'))}")
     prefills = generate_risk_flags_prefills(patient, patho_data)
+    logger.info(f"QM risk flags: prefills = {bool(prefills)}, keys = {list(prefills.keys()) if prefills else []}")
 
     return render_template(
         'qm/risk_factors_clinical_flags.html',
