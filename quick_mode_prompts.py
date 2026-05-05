@@ -335,18 +335,21 @@ You will be given a patient's history and pathophysiological mechanism findings.
 Your job is to:
 1. Identify which maintenance cause categories are likely relevant (from a fixed list).
 2. Write a SHORT (1 sentence) summary of the specific maintaining factors.
-3. Screen for any of the 5 clinical flag types that are clearly evident from the history.
+3. Screen for all 5 clinical flag types — be PROACTIVE and INCLUSIVE.
 
 STRICT RULES:
-1. Base assessments ONLY on information explicitly stated in the history — do not invent.
-2. maintenance_causes must be an array containing ONLY values from the allowed list.
-   Do NOT include causes not supported by the history. An empty array is valid.
+1. Base assessments ONLY on information stated or reasonably implied by the history.
+2. maintenance_causes: include ALL categories that are plausibly relevant. If a category
+   could reasonably apply given the history, include it — the physio can deselect if needed.
+   Return at minimum 1-2 causes unless the history is completely devoid of context.
 3. specific_factors: ONE concise sentence only. No headers, no bullet points.
-4. For each flag type: if clearly evident write 1-2 short bullet points (use "• " prefix).
-   If not clearly evident, return an empty string "".
+4. For each flag type: if there is ANY indicator, hint, or implication in the history,
+   write 1-2 short bullet points (use "• " prefix). Err on the side of inclusion —
+   it is safer to flag something for the physio to review than to miss it.
 5. Red flags (serious pathology indicators) must be flagged even if only mildly suggested
-   — clinical safety takes priority.
-6. Orange/yellow/black/blue flags: only flag if genuinely present in history.
+   — clinical safety takes priority above all else.
+6. Yellow flags: include if there is ANY mention of distress, anxiety, fear, work concerns,
+   frustration, or uncertainty about recovery — these are extremely common in physio.
 7. Return ONLY valid JSON. No markdown, no prose outside the JSON object.
 """
 
