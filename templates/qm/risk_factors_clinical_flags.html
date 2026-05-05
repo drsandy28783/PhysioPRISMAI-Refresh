@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
+{% block title %}Risk Factors & Clinical Flags – Quick Mode – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Quick Mode banner ───────────────────────────────────── */
+  .qm-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .qm-banner-icon { font-size: 1.4em; flex-shrink: 0; }
+  .qm-banner-text { font-size: 0.92em; line-height: 1.5; }
+
+  /* ── Section headers ─────────────────────────────────────── */
+  .section-divider {
+    margin: 32px 0 20px 0;
+    padding-top: 24px;
+    border-top: 2px solid var(--border);
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 14px;
+  }
+
+  /* ── Checkbox group ──────────────────────────────────────── */
+  .checkbox-group { display: block; }
+  .checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.95em;
+  }
+  .checkbox-inline input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .ai-check-badge {
+    display: inline-block;
+    font-size: 0.72em;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    border-radius: 10px;
+    padding: 1px 7px;
+    margin-left: 4px;
+    font-weight: 600;
+  }
+
+  /* ── TYPE B pre-filled textarea (teal border) ────────────── */
+  .prefilled-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #5eead4;
+    border-left: 4px solid #14b8a6;
+    border-radius: 4px;
+    background: #f0fdfa;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+    color: #134e4a;
+  }
+  .prefilled-textarea:focus {
+    outline: none;
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 2px rgba(20,184,166,0.15);
+  }
+  .ai-prefill-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78em;
+    color: #0d9488;
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+
+  /* ── Empty flag textarea ─────────────────────────────────── */
+  .blank-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+  }
+  .blank-textarea:focus {
+    outline: none;
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 2px rgba(148,163,184,0.15);
+  }
+
+  /* ── Flag blocks ─────────────────────────────────────────── */
+  .flag-block {
+    margin-top: 18px;
+  }
+  .flag-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 0.95em;
+  }
+
+  /* ── Red flag permanent alert ────────────────────────────── */
+  .red-flag-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-left: 4px solid #dc2626;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    font-size: 0.88em;
+    color: #7f1d1d;
+    line-height: 1.5;
+  }
+  .red-flag-alert-icon { font-size: 1.2em; flex-shrink: 0; }
+
+  /* ── Specific factors field ──────────────────────────────── */
+  .field-block { margin-top: 18px; }
+  .field-block label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .assessment-button-container {
+    margin-top: 28px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {{ render_progress_bar(current_step=6, patient_id=patient_id, quick_mode=True) }}
+
+  <div class="qm-banner">
+    <div class="qm-banner-icon">⚡</div>
+    <div class="qm-banner-text">
+      <strong>Quick Mode — Risk Factors &amp; Clinical Flags</strong><br>
+      AI has pre-filled this screen based on the patient's history. Review each section,
+      adjust where needed, and save. <strong>Pre-checked items and highlighted fields are
+      AI-suggested — always apply your clinical judgement.</strong>
+    </div>
+  </div>
+
+  <h2>Risk Factors &amp; Clinical Flags — {{ patient_id }}</h2>
+
+  <form id="risk-factors-form" method="POST"
+        action="{{ url_for('qm_risk_factors_clinical_flags', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# ── SECTION 1: Chronic Disease Maintenance Factors ── #}
+    <div class="section-title">1. Chronic Disease Maintenance Factors</div>
+
+    <div class="field-block">
+      <label>Cause for Maintenance of Symptoms:</label>
+      <div class="checkbox-group">
+        {% set ai_causes = prefills.get('maintenance_causes', []) %}
+        {% for opt in [
+          'Physical/Biomechanical Issues',
+          'Psychological Factors',
+          'Social or Environmental Conditions',
+          'Lifestyle / Behavioral',
+          'Work-related',
+          'Others'
+        ] %}
+          {% set is_checked = opt in ai_causes %}
+          <label class="checkbox-inline">
+            <input type="checkbox" name="maintenance_causes" value="{{ opt }}"
+                   {% if is_checked %}checked{% endif %}>
+            {{ opt }}
+            {% if is_checked %}
+              <span class="ai-check-badge">🤖 AI</span>
+            {% endif %}
+          </label>
+        {% endfor %}
+      </div>
+      {% if not ai_causes and prefills %}
+        <p style="font-size:0.82em; color:#64748b; margin-top:6px;">
+          AI found no strongly supported maintenance categories from the history — select manually if applicable.
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="field-block">
+      <label for="specific_factors">Specific Factors:</label>
+      {% set sf = prefills.get('specific_factors', '') %}
+      {% if sf %}
+        <div class="ai-prefill-label">🤖 AI suggested — edit as needed</div>
+        <textarea id="specific_factors" name="specific_factors"
+                  class="prefilled-textarea" rows="3"
+                  data-voice-enabled>{{ sf }}</textarea>
+      {% else %}
+        <textarea id="specific_factors" name="specific_factors"
+                  class="blank-textarea" rows="3"
+                  placeholder="Describe contributing factors…"
+                  data-voice-enabled></textarea>
+      {% endif %}
+    </div>
+
+    {# ── SECTION 2: Clinical Flags ── #}
+    <div class="section-divider">
+      <div class="section-title">2. Clinical Flags Assessment</div>
+    </div>
+
+    {% set flag_defs = [
+      ('red_flags',    '🚨 Red Flags',                                          'Any red-flag symptoms or history…'),
+      ('orange_flags', '🟠 Orange Flags (Symptoms S/O Psychiatric Illness)',    'Any psychiatric symptoms or concerns…'),
+      ('yellow_flags', '🟡 Yellow Flags (Psychosocial)',                        'Any psychosocial risk factors…'),
+      ('black_flags',  '⬛ Black Flags (Systems / Environment)',                'Any workplace or system-level barriers…'),
+      ('blue_flags',   '🔵 Blue Flags (Work-Related)',                          'Any work-related attitudes or demands…')
+    ] %}
+
+    {% for name, label, placeholder in flag_defs %}
+      {% set flag_content = prefills.get(name, '') %}
+      <div class="flag-block" id="{{ name }}_block">
+        <label class="flag-label" for="{{ name }}">{{ label }}</label>
+
+        {# Permanent red-flag alert — only if AI identified red flag content #}
+        {% if name == 'red_flags' and flag_content %}
+          <div class="red-flag-alert">
+            <div class="red-flag-alert-icon">⚠️</div>
+            <div>
+              <strong>Red Flags detected from history.</strong>
+              Review the pre-filled content below carefully. If confirmed,
+              consider urgent referral or medical clearance before proceeding
+              with physiotherapy intervention.
+            </div>
+          </div>
+        {% endif %}
+
+        {% if flag_content %}
+          <div class="ai-prefill-label">🤖 AI suggested — edit or clear as needed</div>
+          <textarea id="{{ name }}" name="{{ name }}"
+                    class="prefilled-textarea" rows="3"
+                    data-voice-enabled>{{ flag_content }}</textarea>
+        {% else %}
+          <textarea id="{{ name }}" name="{{ name }}"
+                    class="blank-textarea" rows="3"
+                    placeholder="{{ placeholder }}"
+                    data-voice-enabled></textarea>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    {% if not prefills %}
+      <div style="margin-top:16px; padding:12px 16px; background:#fef3c7;
+                  border:1px solid #fcd34d; border-radius:6px;
+                  font-size:0.9em; color:#92400e;">
+        ⚠️ AI recommendations could not be generated — please complete this screen manually.
+      </div>
+    {% endif %}
+
+    <div class="assessment-button-container">
+      <button type="submit" class="button">Save &amp; Continue</button>
+      <a href="{{ url_for('qm_objective_assessment', patient_id=patient_id) }}"
+         class="button" style="background-color: #6c757d;">Skip for now &rarr;</a>
+      <a href="{{ url_for('qm_initial_plan', patient_id=patient_id) }}"
+         class="button">&larr; Back to Initial Plan</a>
+    </div>
+  </form>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  window.currentPatientId = '{{ patient_id }}';
+</script>
+{% endblock %}

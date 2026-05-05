@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
+{% block title %}Patient Functioning Assessment – Quick Mode – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Quick Mode banner (shared style) ───────────────────── */
+  .qm-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .qm-banner-icon { font-size: 1.4em; flex-shrink: 0; }
+  .qm-banner-text { font-size: 0.92em; line-height: 1.5; }
+  .qm-banner-text strong { font-size: 1em; }
+
+  /* ── ICF field block ─────────────────────────────────────── */
+  .icf-block {
+    margin-top: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .icf-block-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #334155;
+  }
+  .icf-block-body { padding: 12px 16px 16px; }
+
+  /* ── AI question card ────────────────────────────────────── */
+  .qm-question-card {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+  .qm-question-card-title {
+    font-size: 0.78em;
+    font-weight: 700;
+    color: #0ea5e9;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  .qm-question-card ol {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .qm-question-card ol li {
+    font-size: 0.92em;
+    color: #1e40af;
+    line-height: 1.6;
+    margin-bottom: 3px;
+  }
+
+  /* ── Answer textarea ─────────────────────────────────────── */
+  .qm-answer-label {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 5px;
+    display: block;
+  }
+  .input-field {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.95em;
+    resize: vertical;
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 2px rgba(14,165,233,0.15);
+  }
+
+  /* ── No questions fallback ───────────────────────────────── */
+  .qm-no-questions {
+    font-size: 0.85em;
+    color: #94a3b8;
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {{ render_progress_bar(current_step=3, patient_id=patient_id, quick_mode=True) }}
+
+  {# ── Quick Mode banner ── #}
+  <div class="qm-banner">
+    <div class="qm-banner-icon">⚡</div>
+    <div class="qm-banner-text">
+      <strong>Quick Mode — Patient Interview</strong><br>
+      AI has generated targeted questions for each domain based on the patient's history.
+      Ask the patient each question and record their answers in the boxes below.
+    </div>
+  </div>
+
+  <h2>Patient Functioning Assessment — {{ patient_id }}</h2>
+
+  <form method="POST" id="subjective-form"
+        action="{{ url_for('qm_subjective', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="age_sex"         value="{{ patient.age_sex }}">
+    <input type="hidden" name="present_history"  value="{{ patient.present_history }}">
+    <input type="hidden" name="past_history"     value="{{ patient.past_history }}">
+
+    {# ── Macro: render one ICF block ── #}
+    {% macro icf_block(field_name, label, q_key) %}
+    <div class="icf-block">
+      <div class="icf-block-header">{{ label }}</div>
+      <div class="icf-block-body">
+
+        {# AI question card — shown only if questions were generated #}
+        {% set qs = questions.get(q_key, []) %}
+        {% if qs %}
+          <div class="qm-question-card">
+            <div class="qm-question-card-title">💬 Ask the patient</div>
+            <ol>
+              {% for q in qs %}
+                <li>{{ q }}</li>
+              {% endfor %}
+            </ol>
+          </div>
+        {% else %}
+          <p class="qm-no-questions">No AI questions generated for this domain — ask as appropriate.</p>
+        {% endif %}
+
+        {# Answer text area — always blank, physio fills from patient responses #}
+        <label class="qm-answer-label" for="{{ field_name }}">Patient's response / findings:</label>
+        <textarea
+          id="{{ field_name }}"
+          name="{{ field_name }}"
+          class="input-field"
+          rows="4"
+          placeholder="Type the patient's answers here…"
+          data-voice-enabled
+          required
+        >{{ request.form[field_name] if request.form[field_name] else '' }}</textarea>
+
+      </div>
+    </div>
+    {% endmacro %}
+
+    {{ icf_block(
+        'body_structure',
+        'Impairment of Body Structure',
+        'body_structure_questions'
+    ) }}
+
+    {{ icf_block(
+        'body_function',
+        'Impairment of Body Function',
+        'body_function_questions'
+    ) }}
+
+    {{ icf_block(
+        'activity_performance',
+        'Activity Limitation / Participation — Performance',
+        'activity_performance_questions'
+    ) }}
+
+    {{ icf_block(
+        'activity_capacity',
+        'Activity Limitation / Participation — Capacity',
+        'activity_capacity_questions'
+    ) }}
+
+    {{ icf_block(
+        'contextual_environmental',
+        'Contextual Factors — Environmental',
+        'contextual_environmental_questions'
+    ) }}
+
+    {{ icf_block(
+        'contextual_personal',
+        'Contextual Factors — Personal',
+        'contextual_personal_questions'
+    ) }}
+
+    {# ── No questions at all fallback ── #}
+    {% if not questions %}
+    <div style="margin-top:16px; padding:12px 16px; background:#fef3c7;
+                border:1px solid #fcd34d; border-radius:6px;
+                font-size:0.9em; color:#92400e;">
+      ⚠️ AI questions could not be generated — please conduct the interview as usual.
+    </div>
+    {% endif %}
+
+    <div class="assessment-button-container" style="margin-top:28px;">
+      <button type="submit" class="button">Save &amp; Continue</button>
+      <button type="button" id="gen_subjective_dx" class="button"
+              title="Generate subjective diagnosis">🩺 Generate Diagnosis</button>
+      <a href="{{ url_for('qm_patho_mechanism', patient_id=patient_id) }}"
+         class="button">&larr; Back to Patho Mechanism</a>
+    </div>
+  </form>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  window.currentPatientId = '{{ patient_id }}';
+</script>
+{% endblock %}

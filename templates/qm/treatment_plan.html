@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
+{% block title %}Treatment Plan – Quick Mode – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  .qm-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .qm-banner-icon { font-size: 1.4em; flex-shrink: 0; }
+  .qm-banner-text { font-size: 0.92em; line-height: 1.5; }
+  .stage2-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 700;
+    padding: 2px 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .field-block { position: relative; margin-top: 20px; width: 100%; }
+  .field-block label { display: block; margin-bottom: 6px; font-weight: 500; }
+
+  /* TYPE B pre-filled textarea */
+  .prefilled-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #5eead4;
+    border-left: 4px solid #14b8a6;
+    border-radius: 4px;
+    background: #f0fdfa;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+    color: #134e4a;
+    line-height: 1.7;
+  }
+  .prefilled-textarea:focus {
+    outline: none;
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 2px rgba(20,184,166,0.15);
+  }
+
+  /* Blank fallback textarea */
+  .blank-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+  }
+  .blank-textarea:focus { outline: none; border-color: #94a3b8; }
+
+  .ai-prefill-label {
+    font-size: 0.75em;
+    color: #0d9488;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .ai-btn {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    margin-top: 0.5rem;
+  }
+  .ai-popup {
+    position: absolute;
+    top: 2.5rem;
+    right: 0;
+    max-width: 300px;
+    background: #fff;
+    padding: 0.75rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 100;
+  }
+  .control-group { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
+  .control-group textarea { width: 100% !important; }
+
+  @media print {
+    button { display: none !important; }
+    nav.navbar { display: none !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {{ render_progress_bar(current_step=10, patient_id=patient_id, quick_mode=True) }}
+
+  <div class="qm-banner">
+    <div class="qm-banner-icon">⚡</div>
+    <div class="qm-banner-text">
+      <strong>Quick Mode — Treatment Plan</strong>
+      <span class="stage2-badge">Stage 2 AI</span><br>
+      Each field is pre-filled with a concise treatment summary based on diagnosis and SMART goals.
+      Edit freely — these are starting points, not final prescriptions.
+    </div>
+  </div>
+
+  <h2>Treatment Plan for {{ patient_id }}</h2>
+
+  <form method="POST" action="{{ url_for('qm_treatment_plan', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% set field_defs = [
+      ['treatment_plan', 'Treatment Plan',                        'Enter treatment plan…'],
+      ['goal_targeted',  'Goal Targeted',                         'Enter the goal you\'re targeting…'],
+      ['reasoning',      'Reasoning',                             'Enter your clinical reasoning…'],
+      ['reference',      'Reference (Article/Book/Literature)',   'Enter references…']
+    ] %}
+
+    {% for name, label, placeholder in field_defs %}
+      {% set val = prefills.get(name, '') %}
+      <div class="field-block">
+        <label for="{{ name }}">{{ label }}:</label>
+        {% if val %}
+          <div class="ai-prefill-label">🤖 AI suggested — edit as needed</div>
+          <textarea id="{{ name }}" name="{{ name }}"
+                    class="prefilled-textarea" rows="4"
+                    data-voice-enabled>{{ val }}</textarea>
+        {% else %}
+          <div class="control-group">
+            <textarea id="{{ name }}" name="{{ name }}"
+                      class="blank-textarea" rows="4"
+                      placeholder="{{ placeholder }}"
+                      data-voice-enabled></textarea>
+            <button type="button" class="ai-btn"
+                    data-screen="treatment_plan" data-field="{{ name }}"
+                    title="Ask AI for suggestions">🧠</button>
+          </div>
+          <div id="{{ name }}_popup" class="ai-popup"></div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    {% if not prefills %}
+      <div style="margin-top:16px; padding:12px 16px; background:#fef3c7;
+                  border:1px solid #fcd34d; border-radius:6px;
+                  font-size:0.9em; color:#92400e;">
+        ⚠️ AI recommendations could not be generated — complete this screen manually.
+      </div>
+    {% endif %}
+
+    <div style="margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
+      <button type="submit" class="button">Save &amp; Complete Assessment</button>
+      <button type="button" class="button" id="gen_summary">⚡ Generate Summary</button>
+      <a href="{{ url_for('qm_smart_goals', patient_id=patient_id) }}"
+         class="button">&larr; Back to SMART Goals</a>
+    </div>
+  </form>
+
+  <!-- Schedule First Follow-up Section -->
+  <div style="margin-top: 40px; padding: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <span style="font-size: 2.5em;">📅</span>
+      <div>
+        <h3 style="margin: 0; color: white; font-size: 1.4em;">Schedule First Follow-up</h3>
+        <p style="margin: 4px 0 0 0; color: rgba(255,255,255,0.9); font-size: 0.95em;">Complete the treatment plan by booking the patient's first follow-up appointment</p>
+      </div>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 16px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">📆 Follow-up Date</label>
+          <input type="date" id="first_followup_date" class="input-field" required style="font-size: 1em; width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">🕐 Time</label>
+          <input type="time" id="first_followup_time" class="input-field" value="10:00" required style="font-size: 1em; width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">⏱️ Duration</label>
+          <select id="first_followup_duration" class="input-field" required style="font-size: 1em; width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+            <option value="30">30 minutes</option>
+            <option value="45" selected>45 minutes</option>
+            <option value="60">60 minutes</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button type="button" id="schedule-followup-btn" class="button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; padding: 12px 24px; font-size: 1em; border: none; display: flex; align-items: center; gap: 8px;">
+          <span>📅</span>
+          <span>Schedule Follow-up Appointment</span>
+        </button>
+      </div>
+
+      <div id="schedule-success-message" style="display: none; margin-top: 16px; padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; color: #155724;">
+        <strong>✅ Success!</strong> Follow-up appointment has been scheduled and added to your PhysioSchedule calendar.
+      </div>
+
+      <div id="schedule-error-message" style="display: none; margin-top: 16px; padding: 12px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; color: #721c24;">
+        <strong>⚠️ Error:</strong> <span id="error-text"></span>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.15); border-radius: 6px; border-left: 4px solid rgba(255,255,255,0.5);">
+      <p style="margin: 0; color: white; font-size: 0.9em;">
+        <strong>💡 Tip:</strong> After scheduling, the appointment will automatically appear in your PhysioSchedule app calendar. You'll receive reminders as the date approaches.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  window.currentPatientId = '{{ patient_id }}';
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('schedule-followup-btn').addEventListener('click', scheduleFirstFollowup);
+  });
+
+  async function scheduleFirstFollowup() {
+    const dateInput     = document.getElementById('first_followup_date');
+    const timeInput     = document.getElementById('first_followup_time');
+    const durationInput = document.getElementById('first_followup_duration');
+    const successMsg    = document.getElementById('schedule-success-message');
+    const errorMsg      = document.getElementById('schedule-error-message');
+    const errorText     = document.getElementById('error-text');
+    const btn           = document.getElementById('schedule-followup-btn');
+
+    if (!dateInput.value) {
+      errorText.textContent = 'Please select a follow-up date';
+      errorMsg.style.display = 'block';
+      successMsg.style.display = 'none';
+      dateInput.focus();
+      return;
+    }
+    if (!timeInput.value) {
+      errorText.textContent = 'Please select a time';
+      errorMsg.style.display = 'block';
+      successMsg.style.display = 'none';
+      timeInput.focus();
+      return;
+    }
+
+    const selectedDate = new Date(dateInput.value + 'T' + timeInput.value);
+    if (selectedDate < new Date()) {
+      errorText.textContent = 'Follow-up date must be in the future';
+      errorMsg.style.display = 'block';
+      successMsg.style.display = 'none';
+      dateInput.focus();
+      return;
+    }
+
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span><span>Scheduling...</span>';
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
+
+    try {
+      const response = await fetch('/api/patient/{{ patient_id }}/set_next_followup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          next_followup_date: dateInput.value,
+          followup_time: timeInput.value,
+          duration: parseInt(durationInput.value)
+        })
+      });
+      const data = await response.json();
+
+      if (data.ok) {
+        successMsg.style.display = 'block';
+        errorMsg.style.display = 'none';
+        btn.innerHTML = '<span>✅</span><span>Appointment Scheduled!</span>';
+        btn.style.background = '#28a745';
+        successMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+          btn.disabled = false;
+          dateInput.value = '';
+          timeInput.value = '10:00';
+          durationInput.value = '45';
+          setTimeout(() => { successMsg.style.display = 'none'; }, 2000);
+        }, 3000);
+      } else {
+        throw new Error(data.error || 'Failed to schedule appointment');
+      }
+    } catch (error) {
+      errorText.textContent = error.message || 'Failed to schedule appointment. Please try again.';
+      errorMsg.style.display = 'block';
+      successMsg.style.display = 'none';
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+      errorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
+{% block title %}Initial Plan of Assessment – Quick Mode – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Quick Mode banner ───────────────────────────────────── */
+  .qm-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .qm-banner-icon { font-size: 1.4em; flex-shrink: 0; }
+  .qm-banner-text { font-size: 0.92em; line-height: 1.5; }
+
+  /* ── Test cards ──────────────────────────────────────────── */
+  .test-card {
+    margin-top: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .test-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .test-card-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #1e293b;
+  }
+  .test-card-body {
+    padding: 14px 16px;
+  }
+
+  /* ── Category badge ──────────────────────────────────────── */
+  .cat-badge {
+    display: inline-block;
+    font-size: 0.78em;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+  .cat-mandatory    { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .cat-precaution   { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+  .cat-contraindicated { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .cat-unknown      { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+
+  /* ── Why? reasoning ─────────────────────────────────────── */
+  .qm-why-btn {
+    background: none;
+    border: 1px solid #94a3b8;
+    color: #64748b;
+    border-radius: 4px;
+    font-size: 0.78em;
+    padding: 2px 9px;
+    cursor: pointer;
+  }
+  .qm-why-btn:hover { background: #f1f5f9; }
+  .qm-reasoning {
+    display: none;
+    margin-bottom: 12px;
+    padding: 9px 13px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 6px;
+    font-size: 0.87em;
+    color: #0369a1;
+    line-height: 1.5;
+  }
+
+  /* ── Hidden select carries form value ────────────────────── */
+  .category-select { display: none; }
+
+  /* ── Findings textarea (always blank) ────────────────────── */
+  .findings-label {
+    display: block;
+    font-size: 0.82em;
+    font-weight: 600;
+    color: #78350f;
+    margin-bottom: 5px;
+  }
+  .findings-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #fcd34d;
+    border-left: 3px solid #f59e0b;
+    border-radius: 4px;
+    background: #fffbeb;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+  }
+  .findings-textarea:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245,158,11,0.15);
+  }
+  .findings-hint {
+    font-size: 0.78em;
+    color: #a16207;
+    margin-top: 4px;
+  }
+
+  /* ── No prefills fallback ────────────────────────────────── */
+  .input-field {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {{ render_progress_bar(current_step=5, patient_id=patient_id, quick_mode=True) }}
+
+  <div class="qm-banner">
+    <div class="qm-banner-icon">⚡</div>
+    <div class="qm-banner-text">
+      <strong>Quick Mode — Initial Plan of Assessment</strong><br>
+      AI has recommended an assessment category for each test based on the patient's
+      condition and stage of healing. Perform the applicable tests and record your findings
+      in the boxes below. <strong>Leave a findings box blank if you did not perform that test
+      — it will be excluded from the report and AI analysis.</strong>
+    </div>
+  </div>
+
+  <h2>Initial Plan of Assessment — {{ patient_id }}</h2>
+
+  <form id="initial-plan-form" method="POST"
+        action="{{ url_for('qm_initial_plan', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# ── Macro: one test card ── #}
+    {% macro test_card(field, label) %}
+      {% set category = prefills.get(field, '') %}
+      {% set reasoning = prefills.get(field ~ '_reasoning', '') %}
+
+      {# Badge CSS class based on category #}
+      {% if category == 'Mandatory assessment' %}
+        {% set badge_class = 'cat-mandatory' %}
+        {% set badge_icon = '✅' %}
+      {% elif category == 'Assessment with precaution' %}
+        {% set badge_class = 'cat-precaution' %}
+        {% set badge_icon = '⚠️' %}
+      {% elif category == 'Absolutely Contraindicated' %}
+        {% set badge_class = 'cat-contraindicated' %}
+        {% set badge_icon = '🚫' %}
+      {% else %}
+        {% set badge_class = 'cat-unknown' %}
+        {% set badge_icon = '❓' %}
+      {% endif %}
+
+      <div class="test-card">
+        <div class="test-card-header">
+          <span class="test-card-title">{{ label }}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            {# Category shown as badge if AI provided one, else fallback dropdown #}
+            {% if category %}
+              <span class="cat-badge {{ badge_class }}">{{ badge_icon }} {{ category }}</span>
+              {# Hidden select carries the value for form submission #}
+              <select name="{{ field }}" class="category-select" required>
+                {% for opt in ['Mandatory assessment', 'Assessment with precaution', 'Absolutely Contraindicated'] %}
+                  <option value="{{ opt }}" {% if category == opt %}selected{% endif %}>{{ opt }}</option>
+                {% endfor %}
+              </select>
+            {% else %}
+              {# No AI suggestion — show normal dropdown #}
+              <select name="{{ field }}" class="input-field" required
+                      style="width:auto; font-size:0.85em;">
+                <option value="" disabled selected>Select category</option>
+                {% for opt in ['Mandatory assessment', 'Assessment with precaution', 'Absolutely Contraindicated'] %}
+                  <option value="{{ opt }}">{{ opt }}</option>
+                {% endfor %}
+              </select>
+            {% endif %}
+            {% if reasoning %}
+              <button type="button" class="qm-why-btn"
+                      onclick="toggleReasoning('{{ field }}_reasoning')">Why?</button>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="test-card-body">
+          {% if reasoning %}
+            <div id="{{ field }}_reasoning" class="qm-reasoning">
+              💡 {{ reasoning }}
+            </div>
+          {% endif %}
+
+          <label class="findings-label" for="{{ field }}_details">
+            🔬 Examination findings:
+          </label>
+          <textarea
+            id="{{ field }}_details"
+            name="{{ field }}_details"
+            class="findings-textarea"
+            rows="3"
+            placeholder="Enter findings from your examination… leave blank if test not performed"
+            data-voice-enabled
+          >{{ request.form.get(field ~ '_details', '') }}</textarea>
+          <p class="findings-hint">
+            Leave blank if this test was not performed — it will be excluded from the report.
+          </p>
+        </div>
+      </div>
+    {% endmacro %}
+
+    {{ test_card('active_movements',      'Active Movements') }}
+    {{ test_card('passive_movements',     'Passive Movements') }}
+    {{ test_card('passive_over_pressure', 'Passive Over Pressure') }}
+    {{ test_card('resisted_movements',    'Resisted Movements') }}
+    {{ test_card('combined_movements',    'Combined Movements') }}
+    {{ test_card('special_tests',         'Special Tests') }}
+    {{ test_card('neurodynamic',          'Neurodynamic Examination') }}
+
+    {% if not prefills %}
+    <div style="margin-top:16px; padding:12px 16px; background:#fef3c7;
+                border:1px solid #fcd34d; border-radius:6px;
+                font-size:0.9em; color:#92400e;">
+      ⚠️ AI recommendations could not be generated — please select categories manually.
+    </div>
+    {% endif %}
+
+    <div style="margin-top:28px; display:flex; gap:12px; flex-wrap:wrap;">
+      <button type="submit" class="button">Save &amp; Continue</button>
+      <a href="{{ url_for('perspectives', patient_id=patient_id) }}"
+         class="button">&larr; Back to Patient Perspectives</a>
+    </div>
+  </form>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  window.currentPatientId = '{{ patient_id }}';
+
+  function toggleReasoning(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+  }
+</script>
+{% endblock %}

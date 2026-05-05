@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
+{% block title %}Pathophysiological Mechanism – Quick Mode – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Quick Mode field styles ─────────────────────────────── */
+  .qm-ai-field {
+    border-left: 3px solid #0ea5e9;
+    background: #f0f9ff;
+    border-radius: 0 4px 4px 0;
+    padding-left: 10px;
+  }
+  .qm-ai-field textarea,
+  .qm-ai-field select {
+    background: #f0f9ff;
+  }
+  .qm-ai-badge {
+    display: inline-block;
+    font-size: 0.72em;
+    font-weight: 600;
+    color: #0ea5e9;
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .qm-manual-field {
+    border-left: 3px solid #f59e0b;
+    background: #fffbeb;
+    border-radius: 0 4px 4px 0;
+    padding-left: 10px;
+  }
+
+  /* ── Quick Mode banner ───────────────────────────────────── */
+  .qm-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .qm-banner-icon { font-size: 1.4em; flex-shrink: 0; }
+  .qm-banner-text { font-size: 0.92em; line-height: 1.5; }
+  .qm-banner-text strong { font-size: 1em; }
+
+  /* ── Why? reasoning panel ────────────────────────────────── */
+  .qm-reasoning {
+    display: none;
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    border-radius: 6px;
+    font-size: 0.88em;
+    color: #0369a1;
+    line-height: 1.5;
+  }
+  .qm-why-btn {
+    background: none;
+    border: 1px solid #0ea5e9;
+    color: #0ea5e9;
+    border-radius: 4px;
+    font-size: 0.8em;
+    padding: 2px 10px;
+    cursor: pointer;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .qm-why-btn:hover { background: #e0f2fe; }
+
+  /* ── Slider ──────────────────────────────────────────────── */
+  .slider-container { display: flex; align-items: center; gap: 12px; }
+
+  /* ── General ─────────────────────────────────────────────── */
+  .field-block { margin-top: 20px; position: relative; width: 100%; }
+  .field-block label { display: block; margin-bottom: 4px; font-weight: 500; }
+  .input-field {
+    width: 100%; padding: 0.5rem;
+    border: 1px solid #ccc; border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .qm-ai-field .input-field { border-color: #7dd3fc; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {{ render_progress_bar(current_step=2, patient_id=patient_id, quick_mode=True) }}
+
+  {# ── Quick Mode banner ── #}
+  <div class="qm-banner">
+    <div class="qm-banner-icon">⚡</div>
+    <div class="qm-banner-text">
+      <strong>Quick Mode Active</strong><br>
+      Fields highlighted in blue have been pre-filled by AI from the patient's history.
+      Review each one, adjust if needed, fill the remaining fields, then save.
+    </div>
+  </div>
+
+  <h2>Pathophysiological Mechanism — {{ patient_id }}</h2>
+
+  <form method="POST" action="{{ url_for('qm_patho_mechanism', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# ── 1. Area Involved — AI pre-filled ── #}
+    <div class="field-block qm-ai-field">
+      <label for="area_involved">
+        Area Involved
+        <span class="qm-ai-badge">🤖 AI</span>
+      </label>
+      <textarea
+        id="area_involved"
+        name="area_involved"
+        class="input-field"
+        rows="2"
+        data-voice-enabled
+      >{{ prefills.area_involved if prefills.area_involved else request.form.area_involved or '' }}</textarea>
+    </div>
+
+    {# ── 2. Presenting Symptom — AI pre-filled ── #}
+    <div class="field-block qm-ai-field">
+      <label for="presenting_symptom">
+        Presenting Symptom
+        <span class="qm-ai-badge">🤖 AI</span>
+      </label>
+      <textarea
+        id="presenting_symptom"
+        name="presenting_symptom"
+        class="input-field"
+        rows="2"
+        data-voice-enabled
+      >{{ prefills.presenting_symptom if prefills.presenting_symptom else request.form.presenting_symptom or '' }}</textarea>
+    </div>
+
+    {# ── 3. Pain Type — physio fills (standard dropdown) ── #}
+    <div class="field-block">
+      <label for="pain_type">Pain Type</label>
+      <select id="pain_type" name="pain_type" class="input-field" required>
+        <option value="" disabled {% if not request.form.pain_type %}selected{% endif %}>Select</option>
+        {% for opt in ['Pulling','Sharp','Dull','Stabbing','Radiating'] %}
+          <option value="{{ opt }}" {% if request.form.pain_type == opt %}selected{% endif %}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {# ── 4. Pain Nature — physio fills (standard dropdown) ── #}
+    <div class="field-block">
+      <label for="pain_nature">Pain Nature</label>
+      <select id="pain_nature" name="pain_nature" class="input-field" required>
+        <option value="" disabled {% if not request.form.pain_nature %}selected{% endif %}>Select</option>
+        {% for opt in ['Constant/Continuous','Intermittent','Activity dependent'] %}
+          <option value="{{ opt }}" {% if request.form.pain_nature == opt %}selected{% endif %}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {# ── 5. Pain Severity / VAS — physio fills (slider) ── #}
+    <div class="field-block">
+      <label for="pain_severity">Pain Severity / VAS</label>
+      <div class="slider-container">
+        <input
+          type="range"
+          id="pain_severity"
+          name="pain_severity"
+          min="0" max="10" step="1"
+          value="{{ request.form.pain_severity or 5 }}"
+        />
+        <span id="pain_severity_val">{{ request.form.pain_severity or 5 }}</span>/10
+      </div>
+    </div>
+
+    {# ── 6. Pain Irritability — physio fills (standard dropdown) ── #}
+    <div class="field-block">
+      <label for="pain_irritability">Pain Irritability</label>
+      <select id="pain_irritability" name="pain_irritability" class="input-field" required>
+        <option value="" disabled {% if not request.form.pain_irritability %}selected{% endif %}>Select</option>
+        {% for opt in ['Present','Absent'] %}
+          <option value="{{ opt }}" {% if request.form.pain_irritability == opt %}selected{% endif %}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {# ── 7. Possible Source — AI pre-selected + Why? button ── #}
+    <div class="field-block qm-ai-field">
+      <label for="possible_source">
+        Possible Source of Symptoms
+        <span class="qm-ai-badge">🤖 AI</span>
+        {% if prefills.possible_source_reasoning %}
+          <button
+            type="button"
+            class="qm-why-btn"
+            onclick="toggleReasoning('possible_source_reasoning')"
+          >Why?</button>
+        {% endif %}
+      </label>
+
+      <select id="possible_source" name="possible_source" class="input-field" required>
+        <option value="" disabled {% if not (prefills.possible_source or request.form.possible_source) %}selected{% endif %}>Select</option>
+        {% for opt in ['Somatic Local','Somatic Referred','Neurogenic','Visceral'] %}
+          <option value="{{ opt }}"
+            {% if (request.form.possible_source and request.form.possible_source == opt)
+               or (not request.form.possible_source and prefills.possible_source == opt) %}
+              selected
+            {% endif %}
+          >{{ opt }}</option>
+        {% endfor %}
+      </select>
+
+      {% if prefills.possible_source_reasoning %}
+        <div id="possible_source_reasoning" class="qm-reasoning">
+          💡 {{ prefills.possible_source_reasoning }}
+        </div>
+      {% endif %}
+    </div>
+
+    {# ── 8. Stage of Healing — AI pre-selected + Why? note ── #}
+    <div class="field-block qm-ai-field">
+      <label for="stage_healing">
+        Stage of Tissue Healing
+        <span class="qm-ai-badge">🤖 AI</span>
+        {% if prefills.stage_healing_reasoning %}
+          <button
+            type="button"
+            class="qm-why-btn"
+            onclick="toggleReasoning('stage_healing_reasoning')"
+          >Why?</button>
+        {% endif %}
+      </label>
+
+      <select id="stage_healing" name="stage_healing" class="input-field" required>
+        <option value="" disabled {% if not (prefills.stage_healing or request.form.stage_healing) %}selected{% endif %}>Select</option>
+        {% for opt in ['Acute Inflammatory (0-72h)','Subacute (4-21 days)','Chronic (>3 weeks)'] %}
+          <option value="{{ opt }}"
+            {% if (request.form.stage_healing and request.form.stage_healing == opt)
+               or (not request.form.stage_healing and prefills.stage_healing == opt) %}
+              selected
+            {% endif %}
+          >{{ opt }}</option>
+        {% endfor %}
+      </select>
+
+      {% if prefills.stage_healing_reasoning %}
+        <div id="stage_healing_reasoning" class="qm-reasoning">
+          💡 {{ prefills.stage_healing_reasoning }}
+        </div>
+      {% endif %}
+    </div>
+
+    {# ── No AI available notice (if prefills empty) ── #}
+    {% if not prefills %}
+    <div style="margin-top:16px; padding:12px 16px; background:#fef3c7; border:1px solid #fcd34d; border-radius:6px; font-size:0.9em; color:#92400e;">
+      ⚠️ AI pre-fills could not be generated — please fill all fields manually. The rest of your workflow is unaffected.
+    </div>
+    {% endif %}
+
+    <div class="assessment-button-container" style="margin-top:28px;">
+      <button type="submit" class="button">Save &amp; Continue</button>
+      <a href="{{ url_for('add_patient') }}" class="button">&larr; Back to Add Patient</a>
+    </div>
+  </form>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  window.currentPatientId = '{{ patient_id }}';
+
+  // VAS slider live update
+  const slider = document.getElementById('pain_severity');
+  const display = document.getElementById('pain_severity_val');
+  if (slider && display) {
+    slider.addEventListener('input', function () {
+      display.textContent = this.value;
+    });
+  }
+
+  // Toggle Why? reasoning panels
+  function toggleReasoning(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+  }
+</script>
+{% endblock %}

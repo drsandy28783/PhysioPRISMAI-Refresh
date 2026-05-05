@@ -5566,20 +5566,24 @@ def add_patient():
         patient_id = f"{clean_prefix}-{patient_count:03d}"
 
         # Collect form values using validated data
+        # Check if Quick Mode was requested (checkbox in add_patient form)
+        quick_mode_enabled = request.form.get('quick_mode') == 'true'
+
         data = {
-            'physio_id':       physio_id,
-            'name':            validated['name'],
-            'age_sex':         validated['age_sex'],
-            'contact':         validated['contact'],
-            'present_history': validated['chief_complaint'],  # Map back to present_history for DB
-            'past_history':    validated.get('medical_history', ''),
-            'email':           validated.get('email'),
-            'address':         validated.get('address'),
-            'institute':       session.get('institute'),
-            'created_at':      SERVER_TIMESTAMP,
-            'patient_id':      patient_id,
-            'status':          'active',  # Treatment status: active, completed, archived
-            'tags':            request.form.getlist('tags') if request.form.getlist('tags') else []  # Patient tags
+            'physio_id':            physio_id,
+            'name':                 validated['name'],
+            'age_sex':              validated['age_sex'],
+            'contact':              validated['contact'],
+            'present_history':      validated['chief_complaint'],  # Map back to present_history for DB
+            'past_history':         validated.get('medical_history', ''),
+            'email':                validated.get('email'),
+            'address':              validated.get('address'),
+            'institute':            session.get('institute'),
+            'created_at':           SERVER_TIMESTAMP,
+            'patient_id':           patient_id,
+            'status':               'active',  # Treatment status: active, completed, archived
+            'tags':                 request.form.getlist('tags') if request.form.getlist('tags') else [],  # Patient tags
+            'quick_mode_enabled':   quick_mode_enabled,  # Quick Mode flag
         }
 
         # Write the patient document
@@ -5591,7 +5595,9 @@ def add_patient():
             f"Added patient {patient_id}"
         )
 
-        # Redirect to pathophysiological mechanism (NEW: moved to position 2)
+        # Quick Mode: send to QM patho screen; otherwise normal flow
+        if quick_mode_enabled:
+            return redirect(url_for('qm_patho_mechanism', patient_id=patient_id))
         return redirect(url_for('patho_mechanism', patient_id=patient_id))
 
     # GET → render the blank form
@@ -5822,7 +5828,9 @@ def perspectives(patient_id):
         # save to your collection
         db.collection('patient_perspectives').add(entry)
 
-        # redirect to the next screen
+        # Quick Mode patients continue to the QM initial plan screen
+        if patient.get('quick_mode_enabled'):
+            return redirect(url_for('qm_initial_plan', patient_id=patient_id))
         return redirect(url_for('initial_plan', patient_id=patient_id))
 
     # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
@@ -5835,7 +5843,8 @@ def perspectives(patient_id):
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
     # GET: render the form
-    return render_template('perspectives.html', patient_id=patient_id, patho_data=patho_data)
+    quick_mode = patient.get('quick_mode_enabled', False)
+    return render_template('perspectives.html', patient_id=patient_id, patho_data=patho_data, quick_mode=quick_mode)
 
 
 @app.route('/initial_plan/<path:patient_id>', methods=['GET','POST'])
@@ -5895,6 +5904,464 @@ def patho_mechanism(patient_id):
         # Redirect to subjective examination (NEW: patho moved to position 2)
         return redirect(url_for('subjective', patient_id=patient_id))
     return render_template('patho_mechanism.html', patient_id=patient_id)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUICK MODE — PATHO MECHANISM
+# Separate path; existing /patho_mechanism route is untouched.
+# ─────────────────────────────────────────────────────────────────────────────
+@app.route('/qm/patho_mechanism/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def qm_patho_mechanism(patient_id):
+    from quick_mode_service import generate_patho_prefills
+
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found.", 404
+    patient = doc.to_dict()
+
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied.", 403
+
+    if request.method == 'POST':
+        # Save to the same collection as the normal route — rest of app unaffected
+        keys = [
+            'area_involved', 'presenting_symptom', 'pain_type', 'pain_nature',
+            'pain_severity', 'pain_irritability', 'possible_source', 'stage_healing'
+        ]
+        entry = {k: request.form.get(k, '') for k in keys}
+        entry['patient_id'] = patient_id
+        entry['timestamp']  = SERVER_TIMESTAMP
+        db.collection('patho_mechanism').add(entry)
+        log_action(session.get('user_id'), 'Quick Mode Patho Mechanism Saved',
+                   f"QM patho saved for {patient_id}")
+        return redirect(url_for('qm_subjective', patient_id=patient_id))
+
+    # GET — generate AI pre-fills (graceful fallback: empty dict on failure)
+    prefills = generate_patho_prefills(patient)
+
+    return render_template(
+        'qm/patho_mechanism.html',
+        patient_id=patient_id,
+        prefills=prefills,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUICK MODE — SUBJECTIVE / PATIENT FUNCTIONING ASSESSMENT
+# ─────────────────────────────────────────────────────────────────────────────
+@app.route('/qm/subjective/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def qm_subjective(patient_id):
+    from quick_mode_service import generate_subjective_questions
+
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found.", 404
+    patient = doc.to_dict()
+
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied.", 403
+
+    if request.method == 'POST':
+        # Save to the same collection as the normal subjective route
+        fields = [
+            'body_structure', 'body_function', 'activity_performance',
+            'activity_capacity', 'contextual_environmental', 'contextual_personal'
+        ]
+        entry = {f: request.form.get(f, '') for f in fields}
+        entry['patient_id'] = patient_id
+        entry['timestamp']  = SERVER_TIMESTAMP
+        db.collection('subjective_examination').add(entry)
+        log_action(session.get('user_id'), 'Quick Mode Subjective Saved',
+                   f"QM subjective saved for {patient_id}")
+        # Continue to normal perspectives screen (not yet QM)
+        return redirect(url_for('perspectives', patient_id=patient_id))
+
+    # GET — fetch patho data for richer question generation, then call AI
+    patho_data = {}
+    try:
+        patho_docs = (
+            db.collection('patho_mechanism')
+            .where('patient_id', '==', patient_id)
+            .order_by('timestamp', direction='DESCENDING')
+            .limit(1)
+            .get()
+        )
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"QM subjective: could not fetch patho_data for {patient_id}: {e}")
+
+    questions = generate_subjective_questions(patient, patho_data)
+
+    return render_template(
+        'qm/subjective.html',
+        patient_id=patient_id,
+        patient=patient,
+        questions=questions,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUICK MODE — INITIAL PLAN OF ASSESSMENT
+# ─────────────────────────────────────────────────────────────────────────────
+@app.route('/qm/initial_plan/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def qm_initial_plan(patient_id):
+    from quick_mode_service import generate_initial_plan_prefills
+
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found.", 404
+    patient = doc.to_dict()
+
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied.", 403
+
+    if request.method == 'POST':
+        tests = [
+            'active_movements', 'passive_movements', 'passive_over_pressure',
+            'resisted_movements', 'combined_movements', 'special_tests', 'neurodynamic'
+        ]
+        entry = {'patient_id': patient_id, 'timestamp': SERVER_TIMESTAMP}
+        for t in tests:
+            entry[t] = request.form.get(t, '')
+            entry[f"{t}_details"] = request.form.get(f"{t}_details", '')
+        db.collection('initial_plan').add(entry)
+        log_action(session.get('user_id'), 'Quick Mode Initial Plan Saved',
+                   f"QM initial plan saved for {patient_id}")
+        return redirect(url_for('qm_risk_factors_clinical_flags', patient_id=patient_id))
+
+    # GET — fetch patho data then generate AI category recommendations
+    patho_data = {}
+    try:
+        patho_docs = (
+            db.collection('patho_mechanism')
+            .where('patient_id', '==', patient_id)
+            .order_by('timestamp', direction='DESCENDING')
+            .limit(1)
+            .get()
+        )
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"QM initial plan: could not fetch patho_data for {patient_id}: {e}")
+
+    prefills = generate_initial_plan_prefills(patient, patho_data)
+
+    return render_template(
+        'qm/initial_plan.html',
+        patient_id=patient_id,
+        prefills=prefills,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUICK MODE — RISK FACTORS & CLINICAL FLAGS
+# ─────────────────────────────────────────────────────────────────────────────
+@app.route('/qm/risk_factors/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def qm_risk_factors_clinical_flags(patient_id):
+    from quick_mode_service import generate_risk_flags_prefills
+
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found.", 404
+    patient = doc.to_dict()
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied.", 403
+
+    if request.method == 'POST':
+        # Save Chronic Disease Factors (same collection as normal route)
+        causes = request.form.getlist('maintenance_causes')
+        chronic_entry = {
+            'patient_id': patient_id,
+            'causes': causes,
+            'specific_factors': request.form.get('specific_factors', ''),
+            'timestamp': SERVER_TIMESTAMP,
+        }
+        db.collection('chronic_diseases').add(chronic_entry)
+
+        # Save Clinical Flags (same collection as normal route)
+        flags_entry = {
+            'patient_id': patient_id,
+            'red_flags':    request.form.get('red_flags', ''),
+            'orange_flags': request.form.get('orange_flags', ''),
+            'yellow_flags': request.form.get('yellow_flags', ''),
+            'black_flags':  request.form.get('black_flags', ''),
+            'blue_flags':   request.form.get('blue_flags', ''),
+            'timestamp': SERVER_TIMESTAMP,
+        }
+        db.collection('clinical_flags').add(flags_entry)
+
+        log_action(session.get('user_id'), 'Quick Mode Risk Flags Saved',
+                   f"QM risk factors & flags saved for {patient_id}")
+        return redirect(url_for('qm_objective_assessment', patient_id=patient_id))
+
+    # GET — fetch patho data then generate AI prefills
+    patho_data = {}
+    try:
+        patho_docs = (
+            db.collection('patho_mechanism')
+            .where('patient_id', '==', patient_id)
+            .order_by('timestamp', direction='DESCENDING')
+            .limit(1)
+            .get()
+        )
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"QM risk flags: could not fetch patho_data for {patient_id}: {e}")
+
+    prefills = generate_risk_flags_prefills(patient, patho_data)
+
+    return render_template(
+        'qm/risk_factors_clinical_flags.html',
+        patient_id=patient_id,
+        prefills=prefills,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUICK MODE — OBJECTIVE ASSESSMENT  (Stage 2 AI)
+# ─────────────────────────────────────────────────────────────────────────────
+@app.route('/qm/objective_assessment/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def qm_objective_assessment(patient_id):
+    from quick_mode_service import generate_obj_assessment_prefills
+
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found.", 404
+    patient = doc.to_dict()
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied.", 403
+
+    if request.method == 'POST':
+        # Map the form's dropdown values back to the stored values expected by the rest of the app
+        plan_raw = request.form.get('plan', '')
+        # The QM template uses the full label values directly in <option value>
+        # but we also handle 'no_mod'/'mod' for robustness
+        if plan_raw in ('no_mod', 'Comprehensive without modification'):
+            plan_stored = 'no_mod'
+        elif plan_raw in ('mod', 'Comprehensive with modifications'):
+            plan_stored = 'mod'
+        else:
+            plan_stored = plan_raw
+
+        entry = {
+            'patient_id': patient_id,
+            'plan': plan_stored,
+            'plan_details': request.form.get('plan_details', ''),
+            'timestamp': SERVER_TIMESTAMP,
+        }
+        db.collection('objective_assessments').add(entry)
+        log_action(session.get('user_id'), 'Quick Mode Objective Assessment Saved',
+                   f"QM objective assessment saved for {patient_id}")
+        return redirect(url_for('qm_provisional_diagnosis', patient_id=patient_id))
+
+    # GET — fetch patho data + most recent initial plan data for Stage 2
+    patho_data = {}
+    try:
+        patho_docs = (
+            db.collection('patho_mechanism')
+            .where('patient_id', '==', patient_id)
+            .order_by('timestamp', direction='DESCENDING')
+            .limit(1)
+            .get()
+        )
+        if patho_docs:
+            patho_data = patho_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"QM obj assessment: could not fetch patho_data for {patient_id}: {e}")
+
+    initial_plan_data = {}
+    try:
+        ip_docs = (
+            db.collection('initial_plan')
+            .where('patient_id', '==', patient_id)
+            .order_by('timestamp', direction='DESCENDING')
+            .limit(1)
+            .get()
+        )
+        if ip_docs:
+            initial_plan_data = ip_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"QM obj assessment: could not fetch initial_plan for {patient_id}: {e}")
+
+    prefills = generate_obj_assessment_prefills(patient, patho_data, initial_plan_data)
+
+    return render_template(
+        'qm/objective_assessment.html',
+        patient_id=patient_id,
+        prefills=prefills,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUICK MODE — PROVISIONAL DIAGNOSIS  (Stage 2 AI)
+# ─────────────────────────────────────────────────────────────────────────────
+@app.route('/qm/provisional_diagnosis/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def qm_provisional_diagnosis(patient_id):
+    from quick_mode_service import generate_prov_diag_prefills
+
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found.", 404
+    patient = doc.to_dict()
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied.", 403
+
+    if request.method == 'POST':
+        form_data = {
+            'patient_id': patient_id,
+            'likelihood':           request.form.get('likelihood', ''),
+            'structure_fault':      request.form.get('structure_fault', ''),
+            'symptom':              request.form.get('symptom', ''),
+            'findings_support':     request.form.get('findings_support', ''),
+            'findings_reject':      request.form.get('findings_reject', ''),
+            'hypothesis_supported': request.form.get('hypothesis_supported', ''),
+            'timestamp': SERVER_TIMESTAMP,
+        }
+        db.collection('provisional_diagnosis').add(form_data)
+        log_action(session.get('user_id'), 'Quick Mode Provisional Diagnosis Saved',
+                   f"QM provisional diagnosis saved for {patient_id}")
+        return redirect(url_for('qm_smart_goals', patient_id=patient_id))
+
+    # GET — fetch all Stage 2 context
+    def _fetch_latest(collection):
+        try:
+            docs = (db.collection(collection)
+                    .where('patient_id', '==', patient_id)
+                    .order_by('timestamp', direction='DESCENDING')
+                    .limit(1).get())
+            return docs[0].to_dict() if docs else {}
+        except Exception as e:
+            logger.warning(f"QM prov diag: could not fetch {collection} for {patient_id}: {e}")
+            return {}
+
+    patho_data       = _fetch_latest('patho_mechanism')
+    initial_plan_data = _fetch_latest('initial_plan')
+    obj_data         = _fetch_latest('objective_assessments')
+
+    prefills = generate_prov_diag_prefills(patient, patho_data, initial_plan_data, obj_data)
+
+    return render_template(
+        'qm/provisional_diagnosis.html',
+        patient_id=patient_id,
+        prefills=prefills,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUICK MODE — SMART GOALS  (Stage 2 AI)
+# ─────────────────────────────────────────────────────────────────────────────
+@app.route('/qm/smart_goals/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def qm_smart_goals(patient_id):
+    from quick_mode_service import generate_smart_goals_prefills
+
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found.", 404
+    patient = doc.to_dict()
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied.", 403
+
+    if request.method == 'POST':
+        form_data = {
+            'patient_id':         patient_id,
+            'patient_goal':       request.form.get('patient_goal', ''),
+            'baseline_status':    request.form.get('baseline_status', ''),
+            'measurable_outcome': request.form.get('measurable_outcome', ''),
+            'time_duration':      request.form.get('time_duration', ''),
+            'timestamp': SERVER_TIMESTAMP,
+        }
+        db.collection('smart_goals').add(form_data)
+        log_action(session.get('user_id'), 'Quick Mode SMART Goals Saved',
+                   f"QM SMART goals saved for {patient_id}")
+        return redirect(url_for('qm_treatment_plan', patient_id=patient_id))
+
+    # GET — fetch Stage 2 context
+    def _fetch_latest(collection):
+        try:
+            docs = (db.collection(collection)
+                    .where('patient_id', '==', patient_id)
+                    .order_by('timestamp', direction='DESCENDING')
+                    .limit(1).get())
+            return docs[0].to_dict() if docs else {}
+        except Exception as e:
+            logger.warning(f"QM smart goals: could not fetch {collection} for {patient_id}: {e}")
+            return {}
+
+    patho_data        = _fetch_latest('patho_mechanism')
+    prov_diag_data    = _fetch_latest('provisional_diagnosis')
+    perspectives_data = _fetch_latest('patient_perspectives')
+
+    prefills = generate_smart_goals_prefills(patient, patho_data, prov_diag_data, perspectives_data)
+
+    return render_template(
+        'qm/smart_goals.html',
+        patient_id=patient_id,
+        prefills=prefills,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+@app.route('/qm/treatment_plan/<path:patient_id>', methods=['GET', 'POST'])
+@login_required()
+def qm_treatment_plan(patient_id):
+    from quick_mode_service import generate_treatment_plan_prefills
+
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found.", 404
+    patient = doc.to_dict()
+    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        return "Access denied.", 403
+
+    if request.method == 'POST':
+        form_data = {
+            'patient_id':    patient_id,
+            'treatment_plan': request.form.get('treatment_plan', ''),
+            'goal_targeted':  request.form.get('goal_targeted', ''),
+            'reasoning':      request.form.get('reasoning', ''),
+            'reference':      request.form.get('reference', ''),
+            'timestamp': SERVER_TIMESTAMP,
+        }
+        db.collection('treatment_plan').add(form_data)
+        log_action(session.get('user_id'), 'Quick Mode Treatment Plan Saved',
+                   f"QM treatment plan saved for {patient_id}")
+        return redirect(url_for('dashboard'))
+
+    # GET — fetch Stage 2 context
+    def _fetch_latest(collection):
+        try:
+            docs = (db.collection(collection)
+                    .where('patient_id', '==', patient_id)
+                    .order_by('timestamp', direction='DESCENDING')
+                    .limit(1).get())
+            return docs[0].to_dict() if docs else {}
+        except Exception as e:
+            logger.warning(f"QM treatment plan: could not fetch {collection} for {patient_id}: {e}")
+            return {}
+
+    patho_data        = _fetch_latest('patho_mechanism')
+    prov_diag_data    = _fetch_latest('provisional_diagnosis')
+    smart_goals_data  = _fetch_latest('smart_goals')
+    obj_data          = _fetch_latest('objective_assessments')
+
+    prefills = generate_treatment_plan_prefills(
+        patient, patho_data, prov_diag_data, smart_goals_data, obj_data
+    )
+
+    return render_template(
+        'qm/treatment_plan.html',
+        patient_id=patient_id,
+        prefills=prefills,
+    )
 
 
 @app.route('/chronic_disease/<path:patient_id>', methods=['GET','POST'])

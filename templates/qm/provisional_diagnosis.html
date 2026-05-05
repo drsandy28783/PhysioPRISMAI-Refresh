@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
+{% block title %}Provisional Diagnosis – Quick Mode – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Quick Mode banner ───────────────────────────────────── */
+  .qm-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .qm-banner-icon { font-size: 1.4em; flex-shrink: 0; }
+  .qm-banner-text { font-size: 0.92em; line-height: 1.5; }
+  .stage2-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 700;
+    padding: 2px 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* ── Field blocks ────────────────────────────────────────── */
+  .field-block {
+    margin-top: 20px;
+    position: relative;
+    width: 100%;
+  }
+  .field-block > label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  /* ── TYPE B pre-filled textarea ──────────────────────────── */
+  .prefilled-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #5eead4;
+    border-left: 4px solid #14b8a6;
+    border-radius: 4px;
+    background: #f0fdfa;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+    color: #134e4a;
+    line-height: 1.6;
+  }
+  .prefilled-textarea:focus {
+    outline: none;
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 2px rgba(20,184,166,0.15);
+  }
+
+  /* ── Blank textarea (fallback) ───────────────────────────── */
+  .blank-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+  }
+  .blank-textarea:focus {
+    outline: none;
+    border-color: #94a3b8;
+  }
+
+  /* ── Header row: label + reasoning button ────────────────── */
+  .field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .field-header label {
+    font-weight: 500;
+    margin: 0;
+  }
+  .reasoning-btn {
+    background: none;
+    border: 1px solid #94a3b8;
+    color: #64748b;
+    border-radius: 4px;
+    font-size: 0.78em;
+    padding: 3px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .reasoning-btn:hover { background: #f1f5f9; }
+
+  /* ── Clinical reasoning reveal box ──────────────────────── */
+  .reasoning-box {
+    display: none;
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 6px;
+    font-size: 0.87em;
+    color: #0369a1;
+    line-height: 1.6;
+  }
+
+  /* ── AI prefill label ────────────────────────────────────── */
+  .ai-prefill-label {
+    font-size: 0.75em;
+    color: #0d9488;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  /* ── Hypothesis dropdown ─────────────────────────────────── */
+  .input-field {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .prefilled-select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #5eead4;
+    border-left: 4px solid #14b8a6;
+    border-radius: 4px;
+    background: #f0fdfa;
+    box-sizing: border-box;
+    color: #134e4a;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .assessment-button-container {
+    margin-top: 28px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {{ render_progress_bar(current_step=8, patient_id=patient_id, quick_mode=True) }}
+
+  <div class="qm-banner">
+    <div class="qm-banner-icon">⚡</div>
+    <div class="qm-banner-text">
+      <strong>Quick Mode — Provisional Diagnosis</strong>
+      <span class="stage2-badge">Stage 2 AI</span><br>
+      AI has generated a concise provisional diagnosis from all available clinical data.
+      Each field is pre-filled — review and edit as needed.
+      Click <strong>📋 Clinical Reasoning</strong> on any field to see the detailed justification.
+    </div>
+  </div>
+
+  <h2>Provisional Diagnosis for {{ patient_id }}</h2>
+
+  <form id="provisional-diagnosis-form" method="POST"
+        action="{{ url_for('qm_provisional_diagnosis', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# ── Macro: one field with optional reasoning toggle ── #}
+    {% macro diag_field(name, label, placeholder) %}
+      {% set val = prefills.get(name, '') %}
+      {% set reasoning = prefills.get(name ~ '_reasoning', '') %}
+      <div class="field-block">
+        <div class="field-header">
+          <label for="{{ name }}">{{ label }}:</label>
+          {% if reasoning %}
+            <button type="button" class="reasoning-btn"
+                    onclick="toggleReasoning('{{ name }}_reasoning_box')">
+              📋 Clinical Reasoning
+            </button>
+          {% endif %}
+        </div>
+        {% if reasoning %}
+          <div id="{{ name }}_reasoning_box" class="reasoning-box">
+            💡 {{ reasoning }}
+          </div>
+        {% endif %}
+        {% if val %}
+          <div class="ai-prefill-label">🤖 AI suggested — edit as needed</div>
+          <textarea id="{{ name }}" name="{{ name }}"
+                    class="prefilled-textarea" rows="3"
+                    data-voice-enabled>{{ val }}</textarea>
+        {% else %}
+          <textarea id="{{ name }}" name="{{ name }}"
+                    class="blank-textarea" rows="3"
+                    placeholder="{{ placeholder }}"
+                    data-voice-enabled></textarea>
+        {% endif %}
+      </div>
+    {% endmacro %}
+
+    {{ diag_field('likelihood',       'Likelihood of Diagnosis',           'Enter likelihood here…') }}
+    {{ diag_field('structure_fault',  'Possible Structure at Fault',       'Enter structure here…') }}
+    {{ diag_field('symptom',          'Symptom',                           'Enter symptom here…') }}
+    {{ diag_field('findings_support', 'Findings Supporting the Diagnosis', 'Enter supporting findings…') }}
+    {{ diag_field('findings_reject',  'Findings Rejecting the Diagnosis',  'Enter rejecting findings…') }}
+
+    {# ── Hypothesis Supported dropdown ── #}
+    <div class="field-block" style="margin-top: 24px;">
+      <label for="hypothesis_supported">Hypothesis Supported?</label>
+      {% set hyp = prefills.get('hypothesis_supported', '') %}
+      {% if hyp %}
+        <select id="hypothesis_supported" name="hypothesis_supported"
+                class="prefilled-select">
+          <option value="Yes" {% if hyp == 'Yes' %}selected{% endif %}>Yes</option>
+          <option value="No"  {% if hyp == 'No'  %}selected{% endif %}>No</option>
+        </select>
+        <div class="ai-prefill-label" style="margin-top:4px;">🤖 AI suggested</div>
+      {% else %}
+        <select id="hypothesis_supported" name="hypothesis_supported"
+                class="input-field">
+          <option value="" disabled selected>Select</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      {% endif %}
+    </div>
+
+    {% if not prefills %}
+      <div style="margin-top:16px; padding:12px 16px; background:#fef3c7;
+                  border:1px solid #fcd34d; border-radius:6px;
+                  font-size:0.9em; color:#92400e;">
+        ⚠️ AI recommendations could not be generated — complete this screen manually.
+      </div>
+    {% endif %}
+
+    <div class="assessment-button-container">
+      <button type="submit" class="button">Save &amp; Continue</button>
+      <a href="{{ url_for('qm_objective_assessment', patient_id=patient_id) }}"
+         class="button">&larr; Back to Objective Assessment</a>
+    </div>
+  </form>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  window.currentPatientId = '{{ patient_id }}';
+
+  function toggleReasoning(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% from 'progress_bar_macro.html' import render_progress_bar %}
+{% block title %}Objective Assessment – Quick Mode – Physiologic PRISM{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Quick Mode banner ───────────────────────────────────── */
+  .qm-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .qm-banner-icon { font-size: 1.4em; flex-shrink: 0; }
+  .qm-banner-text { font-size: 0.92em; line-height: 1.5; }
+
+  /* ── Stage 2 badge on banner ─────────────────────────────── */
+  .stage2-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 700;
+    padding: 2px 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Field blocks ────────────────────────────────────────── */
+  .field-block {
+    margin-top: 20px;
+    position: relative;
+    width: 100%;
+  }
+  .field-block label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  /* ── Plan dropdown (pre-selected) ────────────────────────── */
+  .plan-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .input-field {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .prefilled-select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #5eead4;
+    border-left: 4px solid #14b8a6;
+    border-radius: 4px;
+    background: #f0fdfa;
+    box-sizing: border-box;
+    color: #134e4a;
+    font-size: 0.95em;
+  }
+  .ai-select-badge {
+    font-size: 0.78em;
+    color: #0d9488;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── TYPE B pre-filled textarea ──────────────────────────── */
+  .prefilled-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #5eead4;
+    border-left: 4px solid #14b8a6;
+    border-radius: 4px;
+    background: #f0fdfa;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+    color: #134e4a;
+    line-height: 1.6;
+  }
+  .prefilled-textarea:focus {
+    outline: none;
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 2px rgba(20,184,166,0.15);
+  }
+  .ai-prefill-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78em;
+    color: #0d9488;
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+
+  /* ── Blank textarea (fallback) ───────────────────────────── */
+  .blank-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    box-sizing: border-box;
+    font-size: 0.93em;
+    resize: vertical;
+  }
+
+  /* ── AI brain button ─────────────────────────────────────── */
+  .ai-btn {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    margin-top: 0.4rem;
+  }
+  .ai-popup {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 8px;
+    max-width: 280px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 100;
+  }
+  .control-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+  .control-group textarea { width: 100% !important; }
+
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .assessment-button-container {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  {{ render_progress_bar(current_step=7, patient_id=patient_id, quick_mode=True) }}
+
+  <div class="qm-banner">
+    <div class="qm-banner-icon">⚡</div>
+    <div class="qm-banner-text">
+      <strong>Quick Mode — Objective Assessment</strong>
+      <span class="stage2-badge">Stage 2 AI</span><br>
+      AI has used your Initial Plan examination findings to generate a targeted assessment
+      plan below. Review, perform the examination, then update the notes with your actual
+      findings before saving.
+    </div>
+  </div>
+
+  <h2>Objective Assessment for {{ patient_id }}</h2>
+
+  <form id="objective-assessment-form" method="POST"
+        action="{{ url_for('qm_objective_assessment', patient_id=patient_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {# ── Plan dropdown ── #}
+    <div class="field-block">
+      <label for="plan">Plan:</label>
+      {% set ai_plan = prefills.get('plan', '') %}
+      {% if ai_plan %}
+        <div class="plan-select-wrapper">
+          <select id="plan" name="plan" class="prefilled-select" required>
+            <option value="">-- Select --</option>
+            <option value="no_mod"
+              {% if ai_plan == 'Comprehensive without modification' %}selected{% endif %}>
+              Comprehensive without modification
+            </option>
+            <option value="mod"
+              {% if ai_plan == 'Comprehensive with modifications' %}selected{% endif %}>
+              Comprehensive with modifications
+            </option>
+          </select>
+          <span class="ai-select-badge">🤖 AI</span>
+        </div>
+      {% else %}
+        <div class="control-group">
+          <select id="plan" name="plan" class="input-field" required>
+            <option value="">-- Select --</option>
+            <option value="no_mod">Comprehensive without modification</option>
+            <option value="mod">Comprehensive with modifications</option>
+          </select>
+          <button type="button" class="ai-btn" data-field="plan"
+                  title="Ask AI which plan to use">🧠</button>
+        </div>
+        <div id="plan_popup" class="ai-popup"></div>
+      {% endif %}
+    </div>
+
+    {# ── Assessment Notes / Modifications ── #}
+    <div class="field-block">
+      <label for="plan_details">Assessment Notes / Modifications:</label>
+      {% set ai_details = prefills.get('plan_details', '') %}
+      {% if ai_details %}
+        <div class="ai-prefill-label">
+          🤖 AI generated assessment plan — perform examination, then update with your findings
+        </div>
+        <div class="control-group">
+          <textarea id="plan_details" name="plan_details"
+                    class="prefilled-textarea" rows="10"
+                    data-voice-enabled>{{ ai_details }}</textarea>
+        </div>
+      {% else %}
+        <div class="control-group">
+          <textarea id="plan_details" name="plan_details"
+                    class="blank-textarea" rows="10"
+                    placeholder="Enter observations or modifications…"
+                    data-voice-enabled></textarea>
+          <button type="button" class="ai-btn" data-field="plan_details"
+                  title="Ask AI for assessment guidance">🧠</button>
+        </div>
+        <div id="plan_details_popup" class="ai-popup"></div>
+      {% endif %}
+    </div>
+
+    {% if not prefills %}
+      <div style="margin-top:16px; padding:12px 16px; background:#fef3c7;
+                  border:1px solid #fcd34d; border-radius:6px;
+                  font-size:0.9em; color:#92400e;">
+        ⚠️ Stage 2 AI recommendations could not be generated — complete this screen manually.
+      </div>
+    {% endif %}
+
+    <div class="assessment-button-container">
+      <button type="button" id="gen_provisional_dx" class="button">
+        🩺 Generate Provisional Diagnosis
+      </button>
+      <button type="submit" class="button">Save &amp; Continue</button>
+      <a href="{{ url_for('qm_provisional_diagnosis', patient_id=patient_id) }}"
+         class="button" style="background-color: #6c757d;">Skip for now &rarr;</a>
+      <a href="{{ url_for('qm_risk_factors_clinical_flags', patient_id=patient_id) }}"
+         class="button">&larr; Back to Risk Factors &amp; Flags</a>
+    </div>
+  </form>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+  window.currentPatientId = '{{ patient_id }}';
+</script>
+{% endblock %}
