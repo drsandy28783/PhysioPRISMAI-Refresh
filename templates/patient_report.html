@@ -700,16 +700,8 @@
         <div class="field-value">{{ goals.patient_goal or 'Not documented' }}</div>
       </div>
       <div class="field-group">
-        <div class="field-label">Baseline Status</div>
-        <div class="field-value">{{ goals.baseline_status or 'Not documented' }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Measurable Outcome</div>
-        <div class="field-value">{{ goals.measurable_outcome or 'Not documented' }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Time Duration / Timeframe</div>
-        <div class="field-value">{{ goals.time_duration or 'Not documented' }}</div>
+        <div class="field-label">Outcomes & Timeframe</div>
+        <div class="field-value">{{ goals.outcome_timeframe or 'Not documented' }}</div>
       </div>
 
       {% if ai_smart_goals_summary %}

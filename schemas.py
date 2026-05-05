@@ -550,16 +550,7 @@ class SMARTGoalsSchema(Schema):
         ]
     )
 
-    measurable_outcome = fields.Str(
-        required=False,
-        allow_none=True,
-        validate=[
-            validate.Length(max=5000),
-            validate_no_html
-        ]
-    )
-
-    time_duration = fields.Str(
+    outcome_timeframe = fields.Str(
         required=False,
         allow_none=True,
         validate=[

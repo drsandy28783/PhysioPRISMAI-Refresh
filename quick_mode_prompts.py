@@ -681,12 +681,9 @@ If you write more than 3 bullets for any field, your response is incorrect.
 SMART Goals principles to apply:
 - patient_goal: what the PATIENT wants to achieve — use the patient's perspective and any \
   illness beliefs or expectations from perspectives data. Focus on function, not anatomy.
-- baseline_status: current functional status in measurable terms — what the patient CANNOT \
-  do right now, with reference to the diagnosis and severity.
-- measurable_outcome: specific, measurable targets with numbers or observable milestones, \
-  linked to the diagnosis. Include short-term and medium-term where space allows.
-- time_duration: realistic timeframes based on stage of healing and diagnosis — \
-  short-term (weeks) and long-term (weeks to months).
+- outcome_timeframe: combine the measurable outcome AND the expected timeframe in each bullet — \
+  e.g. "• Achieve 150° shoulder flexion within 6 weeks". 2–3 bullets max, each stating \
+  what the patient will achieve and by when, based on diagnosis and tissue healing stage.
 
 Return ONLY valid JSON. No markdown, no prose outside the JSON object.
 """
@@ -718,9 +715,7 @@ Return this exact JSON structure:
 
 {{
   "patient_goal": "• <goal 1>\\n• <goal 2>\\n• <goal 3 if needed>",
-  "baseline_status": "• <current status 1>\\n• <current status 2>\\n• <current status 3 if needed>",
-  "measurable_outcome": "• <outcome 1 with measure>\\n• <outcome 2 with measure>\\n• <outcome 3 if needed>",
-  "time_duration": "• <timeframe 1>\\n• <timeframe 2>\\n• <timeframe 3 if needed>"
+  "outcome_timeframe": "• <outcome + timeframe 1>\\n• <outcome + timeframe 2>\\n• <outcome + timeframe 3 if needed>"
 }}
 """
 
@@ -749,7 +744,7 @@ def build_smart_goals_user_prompt(
     )
 
 
-SMART_GOALS_FIELDS = ["patient_goal", "baseline_status", "measurable_outcome", "time_duration"]
+SMART_GOALS_FIELDS = ["patient_goal", "outcome_timeframe"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -786,9 +781,7 @@ Provisional Diagnosis:
 
 SMART Goals:
 - Patient Goal: {patient_goal}
-- Baseline Status: {baseline_status}
-- Measurable Outcome: {measurable_outcome}
-- Time Duration: {time_duration}
+- Outcomes & Timeframe: {outcome_timeframe}
 
 Objective Assessment Notes: {obj_assessment_notes}
 
@@ -825,9 +818,7 @@ def build_treatment_plan_user_prompt(
         structure_fault=prov_diag_data.get("structure_fault") or "Not recorded",
         hypothesis_supported=prov_diag_data.get("hypothesis_supported") or "Not recorded",
         patient_goal=smart_goals_data.get("patient_goal") or "Not recorded",
-        baseline_status=smart_goals_data.get("baseline_status") or "Not recorded",
-        measurable_outcome=smart_goals_data.get("measurable_outcome") or "Not recorded",
-        time_duration=smart_goals_data.get("time_duration") or "Not recorded",
+        outcome_timeframe=smart_goals_data.get("outcome_timeframe") or "Not recorded",
         obj_assessment_notes=obj_assessment_data.get("plan_details") or obj_assessment_data.get("assessment_notes") or "Not recorded",
     )
 

@@ -6294,11 +6294,9 @@ def qm_smart_goals(patient_id):
 
     if request.method == 'POST':
         form_data = {
-            'patient_id':         patient_id,
-            'patient_goal':       request.form.get('patient_goal', ''),
-            'baseline_status':    request.form.get('baseline_status', ''),
-            'measurable_outcome': request.form.get('measurable_outcome', ''),
-            'time_duration':      request.form.get('time_duration', ''),
+            'patient_id':        patient_id,
+            'patient_goal':      request.form.get('patient_goal', ''),
+            'outcome_timeframe': request.form.get('outcome_timeframe', ''),
             'timestamp': SERVER_TIMESTAMP,
         }
         db.collection('smart_goals').add(form_data)
@@ -6579,9 +6577,7 @@ def smart_goals(patient_id):
         form_data = {
             'patient_id': patient_id,
             'patient_goal': request.form.get('patient_goal', ''),
-            'baseline_status': request.form.get('baseline_status', ''),
-            'measurable_outcome': request.form.get('measurable_outcome', ''),
-            'time_duration': request.form.get('time_duration', '')
+            'outcome_timeframe': request.form.get('outcome_timeframe', '')
         }
 
         is_valid, result = validate_data(SMARTGoalsSchema, form_data)
@@ -6594,8 +6590,7 @@ def smart_goals(patient_id):
             return redirect(f'/smart_goals/{patient_id}')
 
         keys = [
-            'patient_goal', 'baseline_status', 'measurable_outcome',
-            'time_duration'
+            'patient_goal', 'outcome_timeframe'
         ]
         entry = {k: result.get(k, request.form[k]) for k in keys}
         entry['patient_id'] = patient_id
@@ -12551,8 +12546,7 @@ def api_autocomplete_suggestions():
 
             # SMART Goals
             'patient_goal': ['patient_goal'],
-            'baseline_status': ['baseline_status'],
-            'measurable_outcome': ['measurable_outcome'],
+            'outcome_timeframe': ['outcome_timeframe'],
 
             # Follow-ups
             'belief_feedback': ['belief_feedback'],

@@ -5058,297 +5058,57 @@ EXAMPLE OUTPUTS by body region:
 **Cervical Example:**
 "Patient wants to work at computer for 6+ hours without debilitating headaches forcing them to leave work early. Additionally, wants to drive safely (check blind spots) and read books without neck pain limiting these activities."
 """,
-        'baseline_status': f"""
-TARGET FIELD: BASELINE STATUS
+        'outcome_timeframe': f"""
+TARGET FIELD: OUTCOMES & TIMEFRAME
 
 PURPOSE:
-Document the CURRENT state of the patient's function, pain, and activity level to establish a MEASURABLE starting point. This enables you to track progress objectively.
+Produce 2–3 combined bullet points where EACH bullet states a specific, measurable outcome AND the realistic timeframe for achieving it in a single statement. This gives the clinician and patient a clear picture of what to expect and when.
 
-WHAT TO INCLUDE:
+FORMAT RULES (follow strictly):
+- Each bullet must follow this pattern: outcome (what) + timeframe (when) in one sentence
+- Use "• " prefix for every bullet
+- 2–3 bullets maximum — no more
+- Use NUMBERS: degrees, kg, reps, minutes, VAS scores, outcome measure scores
+- Timeframes must be realistic and evidence-based (not vague like "in a few weeks")
+- Do NOT write separate outcome and timeframe sections — they must be combined per bullet
+- Do NOT use headers, sub-bullets, or paragraphs
 
-1. **Current Pain Level**
-   - VAS/NPRS score at rest and with activity
-   - Pain pattern (constant, intermittent, activity-related)
-   - Pain location and radiation
-   - Night pain presence/absence
-   - Example: "Current pain: 6/10 at rest, 8/10 with overhead reaching, constant ache with sharp catches"
+WHAT EACH BULLET SHOULD COVER:
+- Bullet 1: Key functional/impairment outcome + short-to-medium timeframe (weeks)
+- Bullet 2: Activity/participation-level outcome + medium-to-long timeframe (weeks/months)
+- Bullet 3 (if needed): Return to sport/work or outcome measure score + overall timeframe
 
-2. **Current ROM/Strength (Quantified)**
-   - Specific measurements from objective assessment
-   - Compare to normal values and/or uninvolved side
-   - Example: "Shoulder flexion 90° (limited by pain), normal 180°"
-   - Example: "Quadriceps strength 3/5, cannot perform single leg squat"
-
-3. **Current Functional Limitations (Quantified)**
-   - What CAN'T they do now? (or how limited is it?)
-   - Quantify with time, distance, weight, frequency
-   - Example: "Can only sit 15 minutes before needing to stand (work requires 2-hour meetings)"
-   - Example: "Walking limited to 500m before calf pain forces rest"
-
-4. **Current Activity/Participation Level**
-   - Work status (off work, modified duties, full duties with difficulty)
-   - Sports/recreation (unable, modified, reduced frequency)
-   - Self-care independence (needs assistance yes/no, which tasks)
-   - Social participation (avoids activities due to pain/limitation)
-
-5. **Outcome Measure Scores (if available)**
-   - NDI, ODI, QuickDASH, KOOS, HOOS, FAAM scores
-   - Example: "Oswestry Disability Index: 62% (severe disability)"
-
-6. **Body Region Context: {body_region.upper() if body_region else 'GENERAL MSK'}**
-   - Use region-specific measures from the list above
-   - Quantify using appropriate functional tests
+BODY REGION CONTEXT: {body_region.upper() if body_region else 'GENERAL MSK'}
+- Use region-specific ROM targets, validated outcome measures, and functional thresholds
+- Reference evidence-based healing times: acute muscle strain 4–6 wks, tendinopathy 12–16 wks, post-surgical 12–24 wks, chronic pain 3–6 months
 
 CRITICAL CONSIDERATIONS:
-- Be SPECIFIC and QUANTIFIABLE (not vague like "limited ROM")
-- Use NUMBERS wherever possible (degrees, cm, kg, minutes, meters, VAS scores)
-- Document what they CAN'T do or how limited current function is
-- This creates the "before" picture for measuring progress
-- Should correlate with objective assessment findings
+- Realistic based on diagnosis and tissue healing stage — do NOT overpromise
+- Align with what the patient actually wants to achieve (patient goals)
+- Use MCID values for outcome measure targets where known
+- Distinguish functional thresholds from "normal" values
 
 EXAMPLE OUTPUTS by body region:
 
-**Shoulder Example:**
-"Baseline: Shoulder flexion 85° active (limited by pain 7/10), ER 20° (normal 90°). Cannot reach overhead cupboards, unable to wash hair without pain. QuickDASH score 68/100 (severe disability). Currently on modified work duties (no overhead work), unable to play tennis (recreational 2x/week pre-injury). Night pain waking 3-4x/night."
+**Shoulder (Rotator Cuff Tendinopathy):**
+"• Achieve 150° shoulder flexion and pain ≤2/10 NPRS with overhead reaching within 6 weeks
+• Return to full work duties and resume tennis 2x/week by week 8
+• QuickDASH score reduced to ≤20/100 (from current ~68) by end of 8-week treatment course"
 
-**Lumbar Example:**
-"Baseline: Sitting tolerance 15 minutes before pain increases from 4/10 to 8/10 NPRS. SLR limited to 30° with leg pain (suggests nerve root tension). Cannot lift >5kg without fear of pain flare-up. ODI score 64% (severe disability). Currently off work (desk job requires 6+ hours sitting). Walking limited to 200m before leg symptoms force rest."
+**Lumbar (Chronic LBP with Radiculopathy):**
+"• Sitting tolerance improved to 60 minutes and pain reduced to ≤3/10 NPRS by week 8
+• Return to full-time desk work (8 hrs/day) and lift 15 kg safely by week 12
+• ODI score reduced from 64% to ≤30% within 12-week treatment programme"
 
-**Knee Example:**
-"Baseline: Anterior knee pain 5/10 with stairs, 8/10 with jumping. Knee flexion 105° (limited by pain and swelling). Cannot descend stairs step-over-step (uses step-to pattern). Single leg squat shows marked valgus collapse. Not currently playing soccer (competitive level pre-injury 6 weeks ago). KOOS score 45/100."
+**Knee (Post-ACL Reconstruction):**
+"• Full knee ROM (0–125°) and independent gait without crutches achieved within 6 weeks of surgery
+• Single leg hop distance ≥90% of uninvolved side and return to team training (non-contact) by 6 months
+• Full return to competitive soccer with functional test clearance (hop tests ≥90%, strength ≥90%) by 9 months"
 
-**Cervical Example:**
-"Baseline: Neck pain 6/10, headache 7/10 (3-4x/week, limits work). Cervical rotation 50° bilaterally (limited compared to normal 80-90°, insufficient for safe driving blind spot checks). Cannot work at computer >2 hours without severe headache forcing break. NDI score 46% (moderate-severe disability). Currently working part-time hours due to symptoms."
-""",
-        'measurable_outcome': f"""
-TARGET FIELD: MEASURABLE OUTCOMES EXPECTED
-
-PURPOSE:
-Define the SPECIFIC, QUANTIFIABLE outcomes that indicate goal achievement. These are the objective markers of success that both patient and physio can track.
-
-WHAT TO INCLUDE:
-
-1. **Impairment-Level Measures (Body Structure/Function)**
-   - ROM targets (specific degrees)
-   - Strength targets (MMT grade, % of uninvolved, kg lifted)
-   - Pain reduction targets (VAS/NPRS score)
-   - Swelling reduction
-   - Example: "Achieve 160° shoulder flexion (current 85°, normal 180°)"
-
-2. **Activity-Level Measures**
-   - Functional task performance
-   - Timed tests (6-minute walk, timed up-and-go)
-   - Distance (walking, running)
-   - Load capacity (weight lifted)
-   - Repetitions (heel raises, sit-to-stands)
-   - Example: "Perform 25 single leg heel raises on affected side"
-
-3. **Participation-Level Measures**
-   - Return to work (full duties, hours)
-   - Sports participation (frequency, intensity, duration)
-   - Social activities resumed
-   - Self-care independence
-   - Example: "Return to work full-time (8 hours/day, 5 days/week) without restrictions"
-
-4. **Outcome Measure Scores**
-   - Target scores on validated outcome measures
-   - MCID (Minimal Clinically Important Difference) values
-   - Example: "Reduce ODI from 64% to ≤30% (MCID = 10-point reduction)"
-
-5. **Body Region Context: {body_region.upper() if body_region else 'GENERAL MSK'}**
-   - Use region-specific measures from the evidence-based list above
-   - Reference functional minimums (e.g., 10° ankle DF for normal gait)
-   - Consider normal values vs functional thresholds
-
-6. **Progression/Stages (if long-term goals)**
-   - Short-term milestone (2-4 weeks)
-   - Medium-term milestone (6-8 weeks)
-   - Long-term target (12+ weeks)
-
-CRITICAL CONSIDERATIONS:
-- Must be OBJECTIVELY MEASURABLE (can you test/observe it?)
-- Use NUMBERS (degrees, reps, kg, minutes, meters, scores)
-- Realistic based on diagnosis and timeframe
-- Should align with patient goals
-- Reference MCID values for outcome measures where known
-- Distinguish between "normal" and "functional" (don't always need normal ROM to achieve function)
-
-EXAMPLE OUTPUTS by body region:
-
-**Shoulder Example:**
-"Measurable outcomes expected:
-1. **ROM**: Achieve 150° shoulder flexion, 80° external rotation (sufficient for overhead reaching and hair washing)
-2. **Pain**: Reduce pain to ≤2/10 NPRS during functional activities (dressing, reaching, sleeping)
-3. **Strength**: 4/5 strength on MMT for all rotator cuff muscles
-4. **Functional**: Complete QuickDASH score ≤20/100 (mild-minimal disability, MCID 10 points)
-5. **Participation**: Return to full work duties without restrictions, resume tennis 2x/week"
-
-**Lumbar Example:**
-"Measurable outcomes expected:
-1. **Pain**: Reduce pain to ≤3/10 NPRS during sitting and daily activities
-2. **Functional sitting**: Achieve 60-minute sitting tolerance (sufficient for meetings)
-3. **Lifting**: Demonstrate ability to lift 15kg from floor using proper mechanics without pain exacerbation
-4. **Walking**: Walk 2km continuously without leg symptoms
-5. **ODI score**: Reduce from 64% to ≤30% (moderate to mild disability, exceeds MCID)
-6. **Work**: Return to full-time desk work (8 hours/day)"
-
-**Knee Example:**
-"Measurable outcomes expected:
-1. **ROM**: Achieve full knee extension (0°) and ≥125° flexion (normal function)
-2. **Pain**: Reduce anterior knee pain to ≤2/10 with stairs and sports activities
-3. **Strength**: Single leg squat with neutral knee alignment (no valgus collapse)
-4. **Functional**: Single hop distance ≥90% of uninvolved limb
-5. **Participation**: Return to competitive soccer (training 3x/week, match play)
-6. **KOOS score**: Increase from 45 to ≥75 (MCID 8-10 points)"
-
-**Cervical Example:**
-"Measurable outcomes expected:
-1. **ROM**: Achieve 75° cervical rotation bilaterally (sufficient for safe driving)
-2. **Pain/Headache**: Reduce neck pain to ≤2/10, headache frequency to <1x/week
-3. **Work tolerance**: Achieve 6+ hours computer work without significant symptoms
-4. **NDI score**: Reduce from 46% to ≤20% (moderate to mild disability, exceeds MCID 7.5 points)
-5. **Participation**: Return to full-time work hours (40 hours/week)"
-""",
-        'time_duration': f"""
-TARGET FIELD: TIME DURATION
-
-⛔ FORMAT RULES (follow strictly):
-- DO NOT start your response with ### or #### headers
-- DO NOT use "Rationale:", "Clinical Reasoning:", or "Reasoning:" as section labels — use "Evidence basis:" instead
-- Start directly with "**Overall timeframe**:" on the first line
-- Do NOT put the main content inside a Clinical Reasoning section
-
-PURPOSE:
-Specify the realistic TIMEFRAME for achieving each goal based on tissue healing, diagnosis, evidence, and patient factors. The timeline creates urgency and accountability.
-
-WHAT TO INCLUDE:
-
-1. **Overall Treatment Duration**
-   - Total expected time from baseline to goal achievement
-   - Example: "6 weeks total treatment duration"
-
-2. **Staged Timeframes (for long-term goals)**
-   - Short-term goals (2-4 weeks): Early improvements, pain reduction
-   - Medium-term goals (6-8 weeks): Function restoration, strength building
-   - Long-term goals (12+ weeks): Return to sport, full participation
-   - Example: "Short-term (4 weeks), Medium-term (8 weeks), Long-term (12 weeks)"
-
-3. **Body Region & Diagnosis-Specific Timeframes**
-   - Use evidence-based timeframes from the list above for each condition
-   - Consider tissue healing times
-   - Account for severity and chronicity
-
-4. **Frequency of Intervention**
-   - Clinic visits per week (e.g., "2x/week for 4 weeks, then 1x/week for 4 weeks")
-   - Home exercise program frequency (e.g., "Daily HEP")
-   - Total number of sessions (e.g., "12 sessions over 8 weeks")
-
-5. **Milestone Checkpoints**
-   - When to reassess progress (e.g., "Reassess at 4 weeks")
-   - Decision points for progression or modification
-   - Example: "If not achieving 50% improvement by 4 weeks, consider imaging/referral"
-
-6. **Factors Affecting Timeframe**
-   - Acute vs chronic presentation
-   - Patient compliance expected
-   - Severity of condition
-   - Presence of yellow flags (may slow progress)
-   - Age-related healing (slower in older adults)
-   - Work demands (earlier RTS pressure)
-
-CRITICAL CONSIDERATIONS:
-- Must be REALISTIC based on diagnosis (not overly optimistic)
-- Reference evidence-based timeframes for specific conditions
-- Account for tissue healing biology (e.g., tendon healing 12+ weeks)
-- Consider patient factors (age, comorbidities, compliance)
-- Staged goals for long timeframes (>12 weeks)
-- Build in reassessment checkpoints
-- State intervention frequency clearly
-- Don't promise unrealistic short timeframes to please patient
-
-EVIDENCE-BASED TIMEFRAME GUIDANCE:
-
-**Tissue Healing Times:**
-- Acute muscle strain: 4-6 weeks
-- Ligament sprain (grade I-II): 4-6 weeks
-- Ligament sprain (grade III): 8-12 weeks
-- Tendinopathy: 12-16 weeks minimum
-- Bone healing: 6-8 weeks
-- Surgical repair: 12+ weeks depending on procedure
-
-**Condition-Specific (see body region-specific lists above):**
-- Acute mechanical pain: 2-4 weeks
-- Subacute presentations: 6-12 weeks
-- Chronic pain: 3-6 months
-- Post-surgical: 12-24 weeks
-
-EXAMPLE OUTPUTS by body region:
-
-**Shoulder Example (Rotator Cuff Tendinopathy):**
-"Time duration:
-**Overall timeframe**: 8 weeks total treatment (evidence-based for rotator cuff rehab)
-
-**Staged goals:**
-- **Short-term (4 weeks)**: Reduce pain to ≤4/10 at rest, improve ROM to 120° flexion (functional reaching), strengthen rotator cuff to 3+/5 strength. Intervention: 2x/week clinic + daily HEP.
-
-- **Medium-term (8 weeks)**: Achieve full or near-full painless ROM (150-160° flexion), 4/5 strength all RC muscles, return to light work duties. Intervention: 1x/week clinic + daily HEP.
-
-**Total sessions**: Approximately 12 sessions over 8 weeks.
-
-**Reassessment checkpoint**: Week 4 - expect 50% improvement in pain and ROM. If not improving, consider imaging to rule out tear.
-
-**Evidence basis**: Rotator cuff tendinopathy typically requires 8-12 weeks for functional recovery. 8 weeks is realistic for return to work; full return to overhead sports may require 12 weeks."
-
-**Lumbar Example (Chronic LBP with Radiculopathy):**
-"Time duration:
-**Overall timeframe**: 12 weeks total treatment (evidence-based for subacute radiculopathy)
-
-**Staged goals:**
-- **Short-term (4 weeks)**: Centralization of leg pain, reduce pain to ≤5/10, improve sitting to 30 minutes, begin core stabilization. Intervention: 2x/week clinic + daily HEP focused on directional preference.
-
-- **Medium-term (8 weeks)**: Achieve 60-minute sitting tolerance, lift 10kg safely, reduce ODI to <40%, negative SLR. Intervention: 1x/week clinic + daily strengthening HEP.
-
-- **Long-term (12 weeks)**: Return to full work duties, ODI ≤30%, walk 2km without leg symptoms. Intervention: Discharge to independent HEP with 1-month follow-up.
-
-**Total sessions**: Approximately 16 sessions over 12 weeks.
-
-**Reassessment checkpoint**: Week 4 - expect centralization and 30% pain reduction. If peripheralizing or no improvement, consider MRI/specialist referral.
-
-**Evidence basis**: Radiculopathy can take 8-12 weeks to resolve. Chronic LBP requires addressing psychosocial factors which takes time. 12 weeks allows for comprehensive biopsychosocial approach."
-
-**Knee Example (ACL Reconstruction - Post-Surgical):**
-"Time duration:
-**Overall timeframe**: 9 months for full return to competitive sport (evidence-based post-ACL reconstruction)
-
-**Staged goals:**
-- **Phase 1 (0-6 weeks)**: Achieve full extension, 110° flexion, independent gait without crutches, quad activation. Intervention: 2x/week clinic + daily HEP.
-
-- **Phase 2 (6-12 weeks)**: Achieve full ROM, 4/5 quad strength, single leg balance >30 seconds, begin jogging. Intervention: 2x/week clinic + daily HEP.
-
-- **Phase 3 (12-24 weeks)**: Progressive running, agility drills, plyometrics, strength ≥80% uninvolved side. Intervention: 1-2x/week clinic + gym program.
-
-- **Phase 4 (24-36 weeks)**: Sport-specific training, return to team training (non-contact). Intervention: 1x/week clinic.
-
-- **Return to Sport (9 months)**: Full clearance if passing functional tests (hop tests ≥90%, strength ≥90%, psychological readiness). Intervention: Maintenance HEP, monitor.
-
-**Total sessions**: Approximately 60+ sessions over 9 months.
-
-**Evidence basis**: ACL reconstruction requires minimum 9 months return to sport per current evidence (reduces re-injury risk). Earlier return increases risk of graft failure and re-injury."
-
-**Cervical Example (Mechanical Neck Pain):**
-"Time duration:
-**Overall timeframe**: 6 weeks total treatment (evidence-based for mechanical neck pain)
-
-**Staged goals:**
-- **Short-term (3 weeks)**: Reduce pain/headache to ≤4/10, improve rotation to 65°, improve sitting tolerance to 3 hours. Intervention: 2x/week clinic (manual therapy + exercise) + daily HEP.
-
-- **Medium-term (6 weeks)**: Achieve 75° rotation (driving safe), reduce NDI to ≤25%, work full-time without headache limitation. Intervention: 1x/week clinic + daily HEP.
-
-**Total sessions**: Approximately 9 sessions over 6 weeks.
-
-**Reassessment checkpoint**: Week 3 - expect 40-50% improvement. If headaches not improving, consider imaging to rule out upper cervical pathology.
-
-**Evidence basis**: Mechanical neck pain typically resolves within 6-8 weeks with appropriate intervention. Persistent headaches beyond 6 weeks warrant further investigation."
+**Cervical (Mechanical Neck Pain):**
+"• Cervical rotation improved to 75° and headache frequency reduced to <1x/week within 4 weeks
+• Full-time computer work (6+ hrs/day) without headache by week 6
+• NDI score reduced from 46% to ≤20% within 6-week treatment course"
 """
     }
 
@@ -7296,7 +7056,7 @@ PROMPT_CATALOG = {
         "endpoint": "/api/ai_suggestion/smart_goals/<field>",
         "description": "FIELD-SPECIFIC SMART goals with body region-specific ICF participation guidance",
         "version": "2025-01-improved",
-        "changelog": "Now provides body region-specific participation restrictions, measurement criteria, evidence-based timeframes, and detailed field-specific guidance for patient_goal, baseline_status, measurable_outcome, and time_duration"
+        "changelog": "Now provides body region-specific participation restrictions, measurement criteria, evidence-based timeframes, and detailed field-specific guidance for patient_goal and outcome_timeframe (combined outcomes + timeframe)"
     },
     "treatment_plan_field": {
         "function": get_treatment_plan_field_prompt,
