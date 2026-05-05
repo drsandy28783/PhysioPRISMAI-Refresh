@@ -2,9 +2,38 @@
 {% from 'progress_bar_macro.html' import render_progress_bar %}
 {% block title %}Patient Perspectives – Physiologic PRISM{% endblock %}
 
+{% block head %}
+<style>
+  .qm-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0ea5e9;
+    color: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .qm-banner-icon { font-size: 1.4em; flex-shrink: 0; }
+  .qm-banner-text { font-size: 0.92em; line-height: 1.5; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
   {{ render_progress_bar(current_step=4, patient_id=patient_id, quick_mode=quick_mode) }}
+
+  {% if quick_mode %}
+  <div class="qm-banner">
+    <div class="qm-banner-icon">⚡</div>
+    <div class="qm-banner-text">
+      <strong>Quick Mode — Patient Perspectives</strong><br>
+      Fill in the patient's illness beliefs and expectations. This screen feeds directly
+      into AI-generated SMART Goals later. Use "Skip for now" to continue to the
+      Initial Plan — you can return and fill this in before SMART Goals.
+    </div>
+  </div>
+  {% endif %}
 
   <h2>Patient Perspectives for {{ patient_id }}</h2>
   <form id="perspectives-form" method="POST" action="{{ url_for('perspectives', patient_id=patient_id) }}">
@@ -36,9 +65,20 @@
     </div>
     {% endfor %}
 
+    <div style="margin-top: 24px; padding: 14px 16px; background: #fffbeb;
+                border: 1px solid #fcd34d; border-left: 4px solid #f59e0b;
+                border-radius: 6px; font-size: 0.9em; color: #78350f; line-height: 1.6;">
+      <strong>⚠️ Skipping this screen?</strong><br>
+      Patient Perspectives data is used when generating SMART Goals later.
+      If you skip now, AI-generated SMART Goals may be less personalised as they
+      won't reflect the patient's illness beliefs, expectations, or emotional state.
+      You can always return and fill this in before that step.
+    </div>
+
     <div class="assessment-button-container">
       <button type="submit" class="button">Save &amp; Continue</button>
-      <a href="{{ url_for('initial_plan', patient_id=patient_id) }}" class="button" style="background-color: #6c757d;">Skip for now &rarr;</a>
+      <a href="{{ url_for('qm_initial_plan' if quick_mode else 'initial_plan', patient_id=patient_id) }}"
+         class="button" style="background-color: #6c757d;">Skip for now &rarr;</a>
       <a href="{{ url_for('subjective', patient_id=patient_id) }}" class="button">&larr; Back to Subjective Examination</a>
     </div>
   </form>

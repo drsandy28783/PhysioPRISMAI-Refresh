@@ -5843,7 +5843,9 @@ def perspectives(patient_id):
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
     # GET: render the form
-    quick_mode = patient.get('quick_mode_enabled', False)
+    # Use patient doc flag OR session fallback (covers patients created before
+    # quick_mode_enabled field was added to the schema).
+    quick_mode = patient.get('quick_mode_enabled', False) or (session.get('qm_active_patient') == patient_id)
     return render_template('perspectives.html', patient_id=patient_id, patho_data=patho_data, quick_mode=quick_mode)
 
 
@@ -5975,7 +5977,10 @@ def qm_subjective(patient_id):
         db.collection('subjective_examination').add(entry)
         log_action(session.get('user_id'), 'Quick Mode Subjective Saved',
                    f"QM subjective saved for {patient_id}")
-        # Continue to normal perspectives screen (not yet QM)
+        # Mark this patient as QM-active in session so perspectives.html
+        # can show the QM banner and route the Skip button correctly
+        # even if the patient doc predates the quick_mode_enabled field.
+        session['qm_active_patient'] = patient_id
         return redirect(url_for('perspectives', patient_id=patient_id))
 
     # GET — fetch patho data for richer question generation, then call AI
