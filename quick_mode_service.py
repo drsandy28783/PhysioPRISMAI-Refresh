@@ -607,6 +607,22 @@ def _validate_smart_goals_prefills(raw: Dict[str, Any]) -> Dict[str, Any]:
 # TREATMENT PLAN — STAGE 2 PRE-FILLS
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _validate_treatment_plan_prefills(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Sanitise the raw AI JSON for the Treatment Plan screen.
+
+    - treatment_plan, goal_targeted, reasoning: stripped strings (bullet points from AI).
+    - reference: always forced to "" — AI must never fabricate citations.
+    """
+    result = {}
+    for field in TREATMENT_PLAN_FIELDS:
+        if field == "reference":
+            result[field] = ""          # always blank — no fabricated citations
+        else:
+            result[field] = str(raw.get(field, "") or "").strip()
+    return result
+
+
 def generate_treatment_plan_prefills(
     patient: Dict[str, Any],
     patho_data: Dict[str, Any],
@@ -651,4 +667,4 @@ def generate_treatment_plan_prefills(
 
     except Exception as e:
         logger.error(f"Quick Mode Treatment Plan prefill failed: {e}", exc_info=True)
-       
+        return {}
