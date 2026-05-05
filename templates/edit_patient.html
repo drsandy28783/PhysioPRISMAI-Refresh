@@ -38,10 +38,45 @@
     </form>
 
     <!-- Continue Assessment Workflow -->
-    <div style="margin-top: 40px; padding: 24px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
-      <h3 style="margin-top: 0; color: #007bff;">📋 Continue Assessment Workflow</h3>
+    {% set is_qm = patient.get('quick_mode_enabled', False) %}
+    <div style="margin-top: 40px; padding: 24px; background: #f8f9fa; border-radius: 8px;
+                border-left: 4px solid {% if is_qm %}#0ea5e9{% else %}#007bff{% endif %};">
+      <h3 style="margin-top: 0; color: {% if is_qm %}#0ea5e9{% else %}#007bff{% endif %};">
+        {% if is_qm %}⚡ Continue Quick Mode Workflow{% else %}📋 Continue Assessment Workflow{% endif %}
+      </h3>
       <p style="color: #666; margin-bottom: 20px;">Continue patient assessment from where you left off</p>
 
+      {% if is_qm %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+        <a href="{{ url_for('qm_patho_mechanism', patient_id=patient['patient_id']) }}" class="button" style="background: #0ea5e9;">
+          ⚡ Patho Mechanism (QM)
+        </a>
+        <a href="{{ url_for('qm_subjective', patient_id=patient['patient_id']) }}" class="button" style="background: #0ea5e9;">
+          ⚡ Subjective Exam (QM)
+        </a>
+        <a href="{{ url_for('perspectives', patient_id=patient['patient_id']) }}" class="button" style="background: #17a2b8;">
+          💭 Patient Perspectives
+        </a>
+        <a href="{{ url_for('qm_initial_plan', patient_id=patient['patient_id']) }}" class="button" style="background: #0ea5e9;">
+          ⚡ Initial Plan (QM)
+        </a>
+        <a href="{{ url_for('qm_risk_factors_clinical_flags', patient_id=patient['patient_id']) }}" class="button" style="background: #0ea5e9;">
+          ⚡ Risk Factors (QM)
+        </a>
+        <a href="{{ url_for('qm_objective_assessment', patient_id=patient['patient_id']) }}" class="button" style="background: #0ea5e9;">
+          ⚡ Objective Assessment (QM)
+        </a>
+        <a href="{{ url_for('qm_provisional_diagnosis', patient_id=patient['patient_id']) }}" class="button" style="background: #0ea5e9;">
+          ⚡ Provisional Diagnosis (QM)
+        </a>
+        <a href="{{ url_for('qm_smart_goals', patient_id=patient['patient_id']) }}" class="button" style="background: #0ea5e9;">
+          ⚡ SMART Goals (QM)
+        </a>
+        <a href="{{ url_for('qm_treatment_plan', patient_id=patient['patient_id']) }}" class="button" style="background: #0ea5e9;">
+          ⚡ Treatment Plan (QM)
+        </a>
+      </div>
+      {% else %}
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
         <a href="{{ url_for('subjective', patient_id=patient['patient_id']) }}" class="button" style="background: #28a745;">
           📝 Functioning Assessment
@@ -65,6 +100,7 @@
           💊 Treatment Plan
         </a>
       </div>
+      {% endif %}
     </div>
   </div>
 {% endblock %}
