@@ -134,6 +134,8 @@ class AzureSpeechClient:
             import tempfile
 
             # Determine file extension from content type
+            # Strip codec suffix (e.g. 'audio/webm;codecs=opus' -> 'audio/webm')
+            base_content_type = content_type.split(';')[0].strip().lower()
             ext_map = {
                 'audio/wav': '.wav',
                 'audio/webm': '.webm',
@@ -144,7 +146,8 @@ class AzureSpeechClient:
                 'audio/mp4': '.m4a',
                 'audio/x-m4a': '.m4a'
             }
-            ext = ext_map.get(content_type, '.wav')
+            # Default to .webm (browsers always send webm/ogg, never raw wav)
+            ext = ext_map.get(base_content_type, '.webm')
 
             # Create temp file for input
             with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
@@ -152,16 +155,31 @@ class AzureSpeechClient:
                 temp_input_path = temp_file.name
 
             # Convert to WAV if not already WAV format
-            if content_type != 'audio/wav':
+            if base_content_type != 'audio/wav':
                 temp_wav_path = self._convert_to_wav(temp_input_path)
                 # Clean up original file
                 try:
                     os.remove(temp_input_path)
-                except:
+                except Exception:
                     pass
                 temp_path = temp_wav_path
             else:
                 temp_path = temp_input_path
+
+            # Guard against empty conversion output
+            wav_size = os.path.getsize(temp_path)
+            import logging
+            logging.getLogger(__name__).info(
+                f"Audio file ready for transcription: {temp_path} ({wav_size} bytes), "
+                f"original content_type={content_type}"
+            )
+            if wav_size < 1000:
+                return {
+                    'success': False,
+                    'text': '',
+                    'error': f'Audio conversion produced an empty or near-empty file ({wav_size} bytes). '
+                             f'Check that ffmpeg is installed on the server.'
+                }
 
             # Transcribe from temp file
             result = self.transcribe_from_file(temp_path)
@@ -214,8 +232,12 @@ class AzureSpeechClient:
 
             return output_path
 
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            # ffmpeg not available, try pydub
+        except (subprocess.CalledProcessError, FileNotFoundError) as ffmpeg_err:
+            # ffmpeg not available or failed, try pydub
+            import logging
+            logging.getLogger(__name__).warning(
+                f"ffmpeg conversion failed ({ffmpeg_err}), trying pydub"
+            )
             try:
                 from pydub import AudioSegment
 
@@ -232,10 +254,17 @@ class AzureSpeechClient:
 
                 return output_path
 
-            except ImportError:
-                # Neither ffmpeg nor pydub available
-                # Return original path and hope Azure can handle it
-                os.remove(output_path)
+            except Exception as pydub_err:
+                # Neither ffmpeg nor pydub could handle it
+                import logging
+                logging.getLogger(__name__).error(
+                    f"pydub conversion also failed ({pydub_err}); "
+                    f"passing original file to Azure (may not work)"
+                )
+                try:
+                    os.remove(output_path)
+                except Exception:
+                    pass
                 return input_path
 
 
