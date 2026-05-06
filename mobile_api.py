@@ -1354,6 +1354,127 @@ def api_create_patient():
         return jsonify({'error': 'Failed to create patient'}), 500
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# QUICK MODE — AI PRE-FILL ENDPOINT
+# ─────────────────────────────────────────────────────────────────────────────
+
+@mobile_api.route('/qm/prefill', methods=['POST'])
+@require_auth
+def api_qm_prefill():
+    """
+    Generate Quick Mode AI pre-fills for a given assessment step.
+
+    Request body:
+    {
+        "step": "patho_mechanism" | "subjective" | "initial_plan" | "risk_flags"
+               | "objective" | "provisional_diagnosis" | "smart_goals" | "treatment_plan",
+        "patient_id": "<patient_id>"
+    }
+
+    Returns:
+    {
+        "prefills": { ... step-specific fields ... }
+    }
+
+    On any AI error the prefills dict will be {} — mobile falls back to a blank form.
+    """
+    try:
+        from quick_mode_service import (
+            generate_patho_prefills,
+            generate_subjective_questions,
+            generate_initial_plan_prefills,
+            generate_risk_flags_prefills,
+            generate_obj_assessment_prefills,
+            generate_prov_diag_prefills,
+            generate_smart_goals_prefills,
+            generate_treatment_plan_prefills,
+        )
+
+        body = request.get_json() or {}
+        step = body.get('step', '')
+        patient_id = body.get('patient_id', '')
+
+        if not step or not patient_id:
+            return jsonify({'error': 'step and patient_id are required'}), 400
+
+        # Fetch patient document
+        patient_doc = get_patient_safe(patient_id)
+        if not patient_doc.exists:
+            return jsonify({'error': 'Patient not found'}), 404
+
+        patient_data = patient_doc.to_dict()
+        user_email = g.user.get('email')
+        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # Helper: read assessment data from separate collection with patient-doc fallback
+        def fetch_assessment(collection_name, mobile_key):
+            docs = db.collection(collection_name).where('patient_id', '==', patient_id).limit(1).get()
+            if docs:
+                return list(docs)[0].to_dict()
+            return patient_data.get(mobile_key) or {}
+
+        # Generate prefills for the requested step
+        if step == 'patho_mechanism':
+            prefills = generate_patho_prefills(patient_data)
+
+        elif step == 'subjective':
+            patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
+            prefills = generate_subjective_questions(patient_data, patho_data)
+
+        elif step == 'initial_plan':
+            patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
+            prefills = generate_initial_plan_prefills(patient_data, patho_data)
+
+        elif step == 'risk_flags':
+            patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
+            prefills = generate_risk_flags_prefills(patient_data, patho_data)
+
+        elif step == 'objective':
+            patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
+            initial_plan_data = fetch_assessment('initial_plan', 'initialPlan')
+            prefills = generate_obj_assessment_prefills(patient_data, patho_data, initial_plan_data)
+
+        elif step == 'provisional_diagnosis':
+            patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
+            initial_plan_data = fetch_assessment('initial_plan', 'initialPlan')
+            obj_data = fetch_assessment('objective_assessments', 'objectiveAssessment')
+            prefills = generate_prov_diag_prefills(patient_data, patho_data, initial_plan_data, obj_data)
+
+        elif step == 'smart_goals':
+            patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
+            prov_diag_data = fetch_assessment('provisional_diagnosis', 'provisionalDiagnosis')
+            perspectives_data = fetch_assessment('patient_perspectives', 'patientPerspectives')
+            # Translate mobile perspective field names to web field names for the AI prompt
+            if perspectives_data:
+                perspectives_data = {
+                    'knowledge': perspectives_data.get('knowledge') or perspectives_data.get('knowledgeOfIllness', ''),
+                    'expectation': perspectives_data.get('expectation') or perspectives_data.get('expectationAboutIllness', ''),
+                    'locus_of_control': perspectives_data.get('locus_of_control') or perspectives_data.get('locusOfControl', ''),
+                    'affective_aspect': perspectives_data.get('affective_aspect') or perspectives_data.get('affectiveAspect', ''),
+                }
+            prefills = generate_smart_goals_prefills(patient_data, patho_data, prov_diag_data, perspectives_data)
+
+        elif step == 'treatment_plan':
+            patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
+            prov_diag_data = fetch_assessment('provisional_diagnosis', 'provisionalDiagnosis')
+            smart_goals_data = fetch_assessment('smart_goals', 'smartGoals')
+            obj_assessment_data = fetch_assessment('objective_assessments', 'objectiveAssessment')
+            prefills = generate_treatment_plan_prefills(
+                patient_data, patho_data, prov_diag_data, smart_goals_data, obj_assessment_data
+            )
+
+        else:
+            return jsonify({'error': f'Unknown step: {step}'}), 400
+
+        log_audit('qm_prefill', {'patient_id': patient_id, 'step': step})
+        return jsonify({'prefills': prefills}), 200
+
+    except Exception as e:
+        logger.error(f"Quick Mode prefill error (step={body.get('step')}): {e}", exc_info=True)
+        return jsonify({'prefills': {}}), 200  # Return empty prefills gracefully — never crash
+
+
 @mobile_api.route('/patients/<patient_id>', methods=['PATCH'])
 @require_auth
 def api_update_patient(patient_id):
