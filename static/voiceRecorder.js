@@ -183,6 +183,18 @@ class VoiceRecorder {
         type: this.getSupportedMimeType()
       });
 
+      // DEBUG: log blob info so we can see if audio was actually captured
+      console.log('[VoiceRecorder] Audio blob:', {
+        size: audioBlob.size,
+        type: audioBlob.type,
+        chunks: this.audioChunks.length,
+        chunkSizes: this.audioChunks.map(c => c.size)
+      });
+
+      if (audioBlob.size < 1000) {
+        throw new Error(`Audio blob is too small (${audioBlob.size} bytes) — microphone may not be capturing audio`);
+      }
+
       // Show processing status
       this.statusIndicator.textContent = 'Transcribing...';
 
@@ -197,6 +209,8 @@ class VoiceRecorder {
       });
 
       const result = await response.json();
+      // DEBUG: log full server response
+      console.log('[VoiceRecorder] Server response:', result);
 
       if (result.success) {
         // Insert transcribed text into textarea

@@ -12433,8 +12433,19 @@ def api_transcribe_audio():
             audio_blob = audio_file.read()
             content_type = audio_file.content_type or 'audio/wav'
 
+            # DEBUG: log what arrived at the server
+            logger.info(f"[TRANSCRIBE DEBUG] Received audio: size={len(audio_blob)} bytes, "
+                        f"content_type={content_type}, filename={audio_file.filename}")
+
             # Transcribe
             result = speech_client.transcribe_from_blob(audio_blob, content_type)
+
+            # DEBUG: include diagnostic info in response
+            result['_debug'] = {
+                'received_bytes': len(audio_blob),
+                'content_type': content_type,
+                'azure_result': result.get('error', 'none')
+            }
 
         elif request.is_json:
             # Handle JSON with base64 audio
