@@ -798,50 +798,71 @@ def api_list_my_patients():
 
             patients.append(patient_data)
 
-        # Enrich patient data with assessment completion status for progress tracking
+        # Enrich patient data with assessment completion status for progress tracking.
+        # Each check queries the separate Firestore collection (web app storage path)
+        # AND falls back to reading the nested field on the patient document itself
+        # (mobile app storage path), so progress is correct for both web and mobile patients.
         for patient in patients:
             patient_id = patient.get('patient_id')
             if patient_id:
-                # Check if subjective examination exists
+                # Subjective examination
                 subj_docs = db.collection('subjective_examination') \
                     .where('patient_id', '==', patient_id).limit(1).get()
-                if subj_docs:
+                if subj_docs or patient.get('subjectiveExamination'):
                     patient['subjectiveExamination'] = True
 
-                # Check if patient perspectives exists
+                # Patient perspectives
                 persp_docs = db.collection('subjective_perspectives') \
                     .where('patient_id', '==', patient_id).limit(1).get()
-                if persp_docs:
+                if persp_docs or patient.get('patientPerspectives'):
                     patient['patientPerspectives'] = True
 
-                # Check if objective assessment exists
+                # Pathophysiological mechanism
+                patho_docs = db.collection('patho_mechanism') \
+                    .where('patient_id', '==', patient_id).limit(1).get()
+                if patho_docs or patient.get('pathoMechanism'):
+                    patient['pathoMechanism'] = True
+
+                # Chronic disease factors
+                chronic_docs = db.collection('chronic_diseases') \
+                    .where('patient_id', '==', patient_id).limit(1).get()
+                if chronic_docs or patient.get('chronicDiseaseFactors'):
+                    patient['chronicDiseases'] = True
+
+                # Clinical flags
+                flags_docs = db.collection('clinical_flags') \
+                    .where('patient_id', '==', patient_id).limit(1).get()
+                if flags_docs or patient.get('clinicalFlags'):
+                    patient['clinicalFlags'] = True
+
+                # Objective assessment
                 obj_docs = db.collection('objective_assessment') \
                     .where('patient_id', '==', patient_id).limit(1).get()
-                if obj_docs:
+                if obj_docs or patient.get('objectiveAssessment'):
                     patient['objectiveAssessment'] = True
 
-                # Check if provisional diagnosis exists
+                # Provisional diagnosis
                 diag_docs = db.collection('provisional_diagnosis') \
                     .where('patient_id', '==', patient_id).limit(1).get()
-                if diag_docs:
+                if diag_docs or patient.get('provisionalDiagnosis'):
                     patient['provisionalDiagnosis'] = True
 
-                # Check if initial plan exists
+                # Initial plan
                 plan_docs = db.collection('initial_assessment') \
                     .where('patient_id', '==', patient_id).limit(1).get()
-                if plan_docs:
+                if plan_docs or patient.get('initialPlan'):
                     patient['initialPlan'] = True
 
-                # Check if SMART goals exists
+                # SMART goals
                 goals_docs = db.collection('smart_goals') \
                     .where('patient_id', '==', patient_id).limit(1).get()
-                if goals_docs:
+                if goals_docs or patient.get('smartGoals'):
                     patient['smartGoals'] = True
 
-                # Check if treatment plan exists
+                # Treatment plan
                 treatment_docs = db.collection('treatment_plans') \
                     .where('patient_id', '==', patient_id).limit(1).get()
-                if treatment_docs:
+                if treatment_docs or patient.get('treatmentPlan'):
                     patient['treatmentPlan'] = True
 
         # Store original count
@@ -1081,6 +1102,62 @@ def api_get_patient(patient_id):
         return jsonify({'error': 'Failed to fetch patient'}), 500
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Field-name translation map: mobile camelCase → web snake_case
+# Used when falling back to the patient document for mobile-created patients.
+# Each key is the camelCase top-level field name on the patient document;
+# each value is a dict mapping mobile inner field names to their web equivalents.
+# ─────────────────────────────────────────────────────────────────────────────
+_MOBILE_FIELD_MAP = {
+    'patientPerspectives': {
+        'knowledgeOfIllness':        'knowledge',
+        'illnessAttribution':        'attribution',
+        'expectationAboutIllness':   'expectation',
+        'awarenessOfConsequences':   'consequences_awareness',
+        'locusOfControl':            'locus_of_control',
+        'affectiveAspect':           'affective_aspect',
+    },
+    'provisionalDiagnosis': {
+        'likelihoodOfDiagnosis':         'likelihood',
+        'possibleStructureAtFault':      'structure_fault',
+        'findingsSupportingDiagnosis':   'findings_support',
+        'findingsRejectingDiagnosis':    'findings_reject',
+        'hypothesisSupported':           'hypothesis_supported',
+        # 'symptom' is identical in both — no mapping needed
+    },
+    'initialPlan': {
+        'activeMovements':        'active_movements',
+        'passiveMovements':       'passive_movements',
+        'passiveOverPressure':    'passive_over_pressure',
+        'resistedMovements':      'resisted_movements',
+        'combinedMovements':      'combined_movements',
+        'specialTests':           'special_tests',
+        'neurodynamicExamination':'neurodynamic',
+    },
+    'pathoMechanism': {
+        'areaInvolved':             'area_involved',
+        'presentingSymptom':        'presenting_symptom',
+        'painType':                 'pain_type',
+        'painNature':               'pain_nature',
+        'painSeverity':             'pain_severity',
+        'painIrritability':         'pain_irritability',
+        'possibleSourceOfSymptoms': 'possible_source',
+        'stageOfTissueHealing':     'stage_healing',
+    },
+    'clinicalFlags': {
+        'redFlag':    'red_flags',
+        'orangeFlag': 'orange_flags',
+        'yellowFlag': 'yellow_flags',
+        'blackFlag':  'black_flags',
+        'blueFlag':   'blue_flags',
+    },
+    'objectiveAssessment': {
+        'assessmentNotes': 'plan_details',
+        # 'plan' is present in both — no mapping needed
+    },
+}
+
+
 @mobile_api.route('/patients/<patient_id>/comprehensive-report', methods=['GET'])
 @require_auth
 def api_get_patient_comprehensive_report(patient_id):
@@ -1126,8 +1203,11 @@ def api_get_patient_comprehensive_report(patient_id):
         therapist_doc = db.collection('users').document(patient_data.get('physio_id', '')).get()
         therapist_data = therapist_doc.to_dict() if therapist_doc.exists else {}
 
-        # 3. Fetch all assessment sections
-        def fetch_one(collection_name):
+        # 3. Fetch all assessment sections.
+        # fetch_one checks the separate Firestore collection first (web app storage path).
+        # If empty, it falls back to the nested field on the patient document itself
+        # (mobile app storage path), so the report is populated for both web and mobile patients.
+        def fetch_one(collection_name, mobile_key=None):
             docs = db.collection(collection_name).where('patient_id', '==', patient_id).limit(1).get()
             if docs:
                 data = list(docs)[0].to_dict()
@@ -1136,6 +1216,22 @@ def api_get_patient_comprehensive_report(patient_id):
                     if hasattr(value, 'isoformat'):
                         data[key] = value.isoformat()
                 return data
+            # Fallback: read from the patient document (mobile storage path).
+            # Translate camelCase mobile field names to snake_case web field names
+            # so the comprehensive report displays correctly for mobile-created patients.
+            if mobile_key and patient_data.get(mobile_key):
+                mobile_data = patient_data[mobile_key]
+                if isinstance(mobile_data, dict):
+                    field_map = _MOBILE_FIELD_MAP.get(mobile_key, {})
+                    if field_map:
+                        translated = {}
+                        for k, v in mobile_data.items():
+                            # Use the web field name if a mapping exists; keep original otherwise
+                            translated[field_map.get(k, k)] = v
+                        return translated
+                    return mobile_data
+                # Scalar value — wrap it so callers always get a dict
+                return {mobile_key: mobile_data}
             return {}
 
         def fetch_all(collection_name):
@@ -1152,16 +1248,16 @@ def api_get_patient_comprehensive_report(patient_id):
             return result
 
         assessments = {
-            'subjective': fetch_one('subjective_examination'),
-            'perspectives': fetch_one('patient_perspectives'),
-            'initial_plan': fetch_one('initial_plan'),
-            'patho_mechanism': fetch_one('patho_mechanism'),
-            'chronic_diseases': fetch_one('chronic_diseases'),
-            'clinical_flags': fetch_one('clinical_flags'),
-            'objective': fetch_one('objective_assessments'),
-            'diagnosis': fetch_one('provisional_diagnosis'),
-            'goals': fetch_one('smart_goals'),
-            'treatment': fetch_one('treatment_plan')
+            'subjective': fetch_one('subjective_examination', 'subjectiveExamination'),
+            'perspectives': fetch_one('patient_perspectives', 'patientPerspectives'),
+            'initial_plan': fetch_one('initial_plan', 'initialPlan'),
+            'patho_mechanism': fetch_one('patho_mechanism', 'pathoMechanism'),
+            'chronic_diseases': fetch_one('chronic_diseases', 'chronicDiseaseFactors'),
+            'clinical_flags': fetch_one('clinical_flags', 'clinicalFlags'),
+            'objective': fetch_one('objective_assessments', 'objectiveAssessment'),
+            'diagnosis': fetch_one('provisional_diagnosis', 'provisionalDiagnosis'),
+            'goals': fetch_one('smart_goals', 'smartGoals'),
+            'treatment': fetch_one('treatment_plan', 'treatmentPlan')
         }
 
         follow_ups = fetch_all('follow_ups')
@@ -1336,16 +1432,19 @@ def api_delete_patient(patient_id):
 @require_auth
 def api_create_follow_up(patient_id):
     """
-    Create a follow-up for a patient
+    Create a follow-up for a patient.
 
-    Request body:
-    {
-        "date": "2025-01-20",
-        "notes": "Patient progress...",
-        "objective_findings": "...",
-        "treatment_given": "...",
-        "next_plan": "..."
-    }
+    Accepts mobile field names (camelCase) and maps them to the web storage
+    format (snake_case) so that data is consistent across mobile and web.
+
+    Mobile sends           → Stored as (web format)
+    ─────────────────────────────────────────────
+    followUpDate           → session_date
+    sessionNumber          → session_number
+    gradeOfAchievement     → grade
+    perceptionOfTreatment  → perception
+    feedback               → feedback
+    planForNextTreatment   → treatment_plan
     """
     try:
         # Verify patient exists and user has access
@@ -1360,20 +1459,21 @@ def api_create_follow_up(patient_id):
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
             return jsonify({'error': 'Unauthorized'}), 403
 
-        # Get follow-up data
+        # Get follow-up data — map mobile camelCase fields to web snake_case storage format
         data = request.get_json()
         follow_up_id = str(uuid.uuid4())
+
+        session_date = data.get('followUpDate', data.get('session_date', ''))
 
         follow_up_data = {
             'patient_id': patient_id,
             'physio_id': user_email,
-            'date': data.get('date', ''),
-            'notes': data.get('notes', ''),
-            'subjective': data.get('subjective', ''),
-            'objective_findings': data.get('objective_findings', ''),
-            'assessment': data.get('assessment', ''),
-            'treatment_given': data.get('treatment_given', ''),
-            'next_plan': data.get('next_plan', ''),
+            'session_date': session_date,
+            'session_number': data.get('sessionNumber', data.get('session_number', '')),
+            'grade': data.get('gradeOfAchievement', data.get('grade', '')),
+            'perception': data.get('perceptionOfTreatment', data.get('perception', '')),
+            'feedback': data.get('feedback', ''),
+            'treatment_plan': data.get('planForNextTreatment', data.get('treatment_plan', '')),
             'created_at': SERVER_TIMESTAMP,
             'updated_at': SERVER_TIMESTAMP
         }
@@ -1383,7 +1483,7 @@ def api_create_follow_up(patient_id):
 
         # Update patient's last_follow_up
         db.collection('patients').document(patient_id).update({
-            'last_follow_up': follow_up_data['date'],
+            'last_follow_up': session_date,
             'updated_at': SERVER_TIMESTAMP
         })
 
@@ -1435,8 +1535,8 @@ def api_list_follow_ups(patient_id):
 
             follow_ups.append(follow_up_data)
 
-        # Sort by date descending
-        follow_ups.sort(key=lambda x: x.get('date', ''), reverse=True)
+        # Sort by session_date descending (fall back to legacy 'date' field for older records)
+        follow_ups.sort(key=lambda x: x.get('session_date', x.get('date', '')), reverse=True)
 
         return jsonify({'follow_ups': follow_ups}), 200
 
