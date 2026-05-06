@@ -115,15 +115,20 @@ class VoiceRecorder {
       this.audioChunks = [];
 
       this.mediaRecorder.addEventListener('dataavailable', (event) => {
-        this.audioChunks.push(event.data);
+        if (event.data && event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
       });
 
       this.mediaRecorder.addEventListener('stop', () => {
         this.processRecording();
       });
 
-      this.mediaRecorder.start();
+      // Collect chunks every 250ms so we can detect if mic is actually capturing
+      this.mediaRecorder.start(250);
       this.isRecording = true;
+      this._recordingStartTime = Date.now();
+      this._minRecordingMs = 1500; // require at least 1.5 seconds of audio
 
       // Update UI
       this.micButton.innerHTML = '⏹️';
@@ -131,9 +136,17 @@ class VoiceRecorder {
       this.micButton.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
       this.micButton.style.animation = 'pulse 1.5s infinite';
 
-      this.statusIndicator.textContent = 'Recording...';
+      this.statusIndicator.textContent = 'Recording... 0s';
       this.statusIndicator.style.display = 'inline';
       this.statusIndicator.style.color = '#ef4444';
+
+      // Live recording timer — also warns if mic seems silent
+      this._recordingTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - this._recordingStartTime) / 1000);
+        const totalBytes = this.audioChunks.reduce((sum, c) => sum + c.size, 0);
+        const silentWarning = elapsed >= 2 && totalBytes < elapsed * 400;
+        this.statusIndicator.textContent = `Recording... ${elapsed}s${silentWarning ? ' ⚠️ check mic' : ''}`;
+      }, 500);
 
       // Add pulse animation
       if (!document.getElementById('voice-recorder-pulse-animation')) {
@@ -156,6 +169,22 @@ class VoiceRecorder {
 
   stopRecording() {
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      // Clear live timer
+      if (this._recordingTimer) {
+        clearInterval(this._recordingTimer);
+        this._recordingTimer = null;
+      }
+
+      const elapsed = Date.now() - (this._recordingStartTime || Date.now());
+      const remaining = this._minRecordingMs - elapsed;
+
+      if (remaining > 0) {
+        // Too short — wait for minimum duration before stopping
+        this.statusIndicator.textContent = `Keep speaking... (${Math.ceil(remaining / 1000)}s more)`;
+        setTimeout(() => this.stopRecording(), remaining);
+        return;
+      }
+
       this.mediaRecorder.stop();
       this.isRecording = false;
 
@@ -191,8 +220,8 @@ class VoiceRecorder {
         chunkSizes: this.audioChunks.map(c => c.size)
       });
 
-      if (audioBlob.size < 1000) {
-        throw new Error(`Audio blob is too small (${audioBlob.size} bytes) — microphone may not be capturing audio`);
+      if (audioBlob.size < 4000) {
+        throw new Error(`Audio blob is too small (${audioBlob.size} bytes) — recording too short or microphone not capturing audio. Please speak for at least 1-2 seconds.`);
       }
 
       // Show processing status
