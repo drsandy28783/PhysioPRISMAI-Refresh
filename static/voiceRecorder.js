@@ -128,7 +128,7 @@ class VoiceRecorder {
       this.mediaRecorder.start(250);
       this.isRecording = true;
       this._recordingStartTime = Date.now();
-      this._minRecordingMs = 1500; // require at least 1.5 seconds of audio
+      this._minRecordingMs = 500; // prevent accidental tap-and-release; short phrases (e.g. "ankle sprain") are fine
 
       // Update UI
       this.micButton.innerHTML = '⏹️';
@@ -179,8 +179,8 @@ class VoiceRecorder {
       const remaining = this._minRecordingMs - elapsed;
 
       if (remaining > 0) {
-        // Too short — wait for minimum duration before stopping
-        this.statusIndicator.textContent = `Keep speaking... (${Math.ceil(remaining / 1000)}s more)`;
+        // Stopped too fast (accidental tap) — wait out the minimum then stop automatically
+        this.statusIndicator.textContent = `Finishing...`;
         setTimeout(() => this.stopRecording(), remaining);
         return;
       }
@@ -220,8 +220,8 @@ class VoiceRecorder {
         chunkSizes: this.audioChunks.map(c => c.size)
       });
 
-      if (audioBlob.size < 4000) {
-        throw new Error(`Audio blob is too small (${audioBlob.size} bytes) — recording too short or microphone not capturing audio. Please speak for at least 1-2 seconds.`);
+      if (audioBlob.size < 1500) {
+        throw new Error(`Recording too short or microphone not capturing audio (${audioBlob.size} bytes). Tap the mic, speak, then tap again to stop.`);
       }
 
       // Show processing status
