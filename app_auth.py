@@ -147,6 +147,73 @@ def require_firebase_auth(f):
                 # Add any other claims you need
             }
 
+            # ─────────────────────────────────────────────────────────────
+            # Also populate g.user with a Firestore-resolved profile.
+            #
+            # mobile_api.py routes (76+ call sites) read g.user.get('email'),
+            # g.user.get('role'), g.user.get('is_admin'), g.user.get(
+            # 'is_super_admin'), and g.user.get('institute'). Those fields
+            # don't all exist on the Firebase token claims, so we look them
+            # up in Cosmos DB here. Without this, every mobile_api endpoint
+            # decorated with @require_firebase_auth crashes with
+            # "AttributeError: user" the moment it touches g.user.
+            #
+            # If the Firestore lookup fails for any reason, we fall back to
+            # a minimal g.user populated from the token alone. That keeps
+            # endpoints that only need .get('email') working, even when
+            # Cosmos is unhealthy.
+            # ─────────────────────────────────────────────────────────────
+            firebase_email = decoded_token.get('email')
+            firebase_uid = decoded_token.get('uid')
+            try:
+                db = get_cosmos_db()
+                user_data = None
+
+                # Prefer lookup by firebase_uid field
+                users_with_uid = db.collection('users').where(
+                    'firebase_uid', '==', firebase_uid
+                ).limit(1).stream()
+                for doc in users_with_uid:
+                    user_data = doc.to_dict()
+                    break
+
+                # Fall back to email-keyed document
+                if not user_data and firebase_email:
+                    user_doc = db.collection('users').document(firebase_email).get()
+                    if user_doc.exists:
+                        user_data = user_doc.to_dict()
+
+                if user_data is None:
+                    user_data = {}
+
+                g.user = {
+                    'uid': firebase_uid,
+                    'email': user_data.get('email') or firebase_email,
+                    'name': user_data.get('name') or decoded_token.get('name', ''),
+                    'role': user_data.get('role', 'individual'),
+                    'institute': user_data.get('institute', ''),
+                    'institute_id': user_data.get('institute_id', ''),
+                    'is_admin': user_data.get('is_admin', 0),
+                    'is_super_admin': user_data.get('is_super_admin', 0),
+                    'approved': user_data.get('approved', 0),
+                    'active': user_data.get('active', 1),
+                    'auth_method': 'bearer',
+                }
+            except Exception as profile_err:
+                # Don't fail the request if Cosmos lookup hiccups — fall back
+                # to token-only data so endpoints that just need email keep
+                # working.
+                logger.warning(
+                    f"require_firebase_auth: Cosmos lookup failed, using "
+                    f"token-only g.user: {type(profile_err).__name__}"
+                )
+                g.user = {
+                    'uid': firebase_uid,
+                    'email': firebase_email,
+                    'name': decoded_token.get('name', ''),
+                    'auth_method': 'bearer',
+                }
+
             # Log successful authentication (without token details)
             logger.info(f"Authenticated user: {g.firebase_user['uid']}")
 
