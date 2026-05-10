@@ -33,7 +33,11 @@
     <meta name="keywords" content="physiotherapy, practice management, clinical reasoning, patient management, AI-powered, healthcare">
 
     <!-- Canonical URL (always non-www for SEO consistency) -->
-    <link rel="canonical" href="{{ request.url.split('?')[0].replace('://www.', '://') }}">
+    {% if request.endpoint %}
+    <link rel="canonical" href="{{ url_for(request.endpoint, _external=True, _scheme='https', **request.view_args)|replace('://www.', '://') }}">
+    {% else %}
+    <link rel="canonical" href="https://physiologicprism.com{{ request.path }}">
+    {% endif %}
 
     <!-- Open Graph Meta Tags -->
     {% block og_tags %}
@@ -41,7 +45,11 @@
     <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Transform your physiotherapy practice with AI-powered clinical reasoning, automated documentation, and evidence-based treatment planning{% endblock %}">
     <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='icons/icon-512x512.png', _external=True) }}{% endblock %}">
-    <meta property="og:url" content="{{ request.url.split('?')[0].replace('://www.', '://') }}">
+    {% if request.endpoint %}
+    <meta property="og:url" content="{{ url_for(request.endpoint, _external=True, _scheme='https', **request.view_args)|replace('://www.', '://') }}">
+    {% else %}
+    <meta property="og:url" content="https://physiologicprism.com{{ request.path }}">
+    {% endif %}
     {% endblock %}
 
     <!-- Twitter Card Meta Tags -->
