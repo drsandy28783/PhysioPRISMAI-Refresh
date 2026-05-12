@@ -71,6 +71,26 @@
     <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='icons/icon-512x512.png', _external=True) }}{% endblock %}">
     {% endblock %}
 
+    <!-- Organization Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "PhysiologicPRISM",
+      "url": "https://physiologicprism.com",
+      "logo": "{{ url_for('static', filename='logo.png', _external=True) }}",
+      "description": "AI-powered clinical reasoning software for physiotherapists using the proprietary PRISM Framework",
+      "sameAs": [
+        "https://www.linkedin.com/company/physiologicprism"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "Customer Support",
+        "email": "support@physiologicprism.com"
+      }
+    }
+    </script>
+
     <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
 
