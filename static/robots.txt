@@ -93,6 +93,7 @@ Disallow: /service-worker.js
 # Allow public pages (explicit for clarity)
 Allow: /
 Allow: /pricing
+Allow: /faq
 Allow: /blog
 Allow: /privacy-policy
 Allow: /terms-of-service

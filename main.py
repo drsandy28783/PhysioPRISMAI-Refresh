@@ -1505,6 +1505,11 @@ def framework_page():
     """Display PRISM framework and intellectual property information"""
     return render_template('framework.html')
 
+@app.route('/faq')
+def faq():
+    """FAQ page with structured data"""
+    return render_template('faq.html')
+
 @app.route('/submit-access-request', methods=['POST'])
 @app.route('/api/submit-access-request', methods=['POST'])
 def submit_access_request():
@@ -10572,6 +10577,7 @@ def sitemap():
             {'url': '/security', 'priority': '0.7', 'changefreq': 'monthly'},
             {'url': '/framework', 'priority': '0.8', 'changefreq': 'monthly'},
             {'url': '/pricing', 'priority': '0.9', 'changefreq': 'weekly'},
+            {'url': '/faq', 'priority': '0.9', 'changefreq': 'monthly'},
             {'url': '/blog', 'priority': '0.8', 'changefreq': 'daily'},
             {'url': '/privacy-policy', 'priority': '0.5', 'changefreq': 'yearly'},
             {'url': '/terms-of-service', 'priority': '0.5', 'changefreq': 'yearly'},

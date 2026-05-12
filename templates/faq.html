@@ -1,0 +1,310 @@
+{% extends "base_public.html" %}
+{% block title %}FAQ - Frequently Asked Questions | PhysiologicPRISM{% endblock %}
+
+{% block og_description %}Common questions about PhysiologicPRISM's AI-powered clinical reasoning platform, PRISM Framework, pricing, AI token usage, and how it differs from other physiotherapy documentation tools{% endblock %}
+
+{% block head %}
+<!-- FAQPage Structured Data (JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the PRISM Framework for physiotherapy?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "PRISM is a 10-step structured clinical reasoning framework. It guides physiotherapists from patient presentation through pathophysiological mechanism analysis, ICF-based functioning assessment, differential diagnosis, SMART goal setting, and evidence-based treatment planning — with AI-generated suggestions at each step."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is PhysiologicPRISM different from AI SOAP note tools?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most AI physio tools transcribe or auto-fill SOAP notes. PhysiologicPRISM actively guides clinical reasoning — suggesting differential diagnoses, screening clinical flags, generating ICF-based functioning assessments, and producing evidence-referenced treatment plans. It's a clinical reasoning assistant, not just a documentation tool."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I try PhysiologicPRISM for free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. A 14-day full-access free trial is available with no credit card required. You can complete real patient assessments and export patient reports during the trial period."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is PhysiologicPRISM suitable for new graduates and experienced physiotherapists?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, both. For new graduates, PRISM provides structured clinical reasoning guidance to build confidence and ensure comprehensive assessments. For experienced clinicians, it reduces cognitive load, speeds up documentation, and ensures nothing is missed in complex cases."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is my patient data secure and compliant with privacy regulations?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Absolutely. PhysiologicPRISM is built with HIPAA-ready architecture and GDPR-aligned data workflows. All patient data is encrypted in transit and at rest, stored securely in Microsoft Azure, and you maintain full control over your data with export and deletion options."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens after my 14-day free trial ends?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "At the end of your trial, you can choose to subscribe to continue using PhysiologicPRISM. If you don't subscribe, your account remains accessible in read-only mode so you can export your data. We never delete your patient assessments without your explicit permission."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use PhysiologicPRISM on my mobile device?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. PhysiologicPRISM is a web-based application that works on any device with a browser — desktop, laptop, tablet, or smartphone. It's optimized for mobile use with responsive design and touch-friendly interfaces."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does PhysiologicPRISM replace my clinical judgment?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. PhysiologicPRISM is a clinical reasoning assistant, not a replacement for your expertise. The AI provides suggestions and structured frameworks to support your decision-making, but you always maintain full professional responsibility and final clinical judgment."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What are the pricing plans for PhysiologicPRISM?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "All plans start with a 14-day free trial (no credit card required) that includes 25 AI calls and 15 patient assessments. After the trial, pricing is $50 per user per month with 250 AI calls included per user. Team plans are available for 5, 10, 15, and 20+ users with volume discounts. Additional AI call packages can be purchased if needed."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How are AI tokens used in Normal Mode vs Quick Mode?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Normal Mode: AI suggestions are generated on-demand for individual fields when you click the Suggest button. Each field suggestion uses one AI call (typically 15-25 calls for a complete assessment). Quick Mode: Uses exactly 8 AI calls per complete assessment — one comprehensive AI call per screen. All fields are pre-filled at once, making it 2-3x more AI-efficient than Normal Mode."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+    .faq-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .faq-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .faq-header h1 {
+        font-size: 2.5em;
+        color: #1e3a8a;
+        margin-bottom: 16px;
+    }
+
+    .faq-header p {
+        font-size: 1.1em;
+        color: #64748b;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .faq-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: box-shadow 0.2s;
+    }
+
+    .faq-item:hover {
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .faq-question {
+        font-size: 1.25em;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 12px;
+        line-height: 1.4;
+    }
+
+    .faq-answer {
+        font-size: 1em;
+        color: #475569;
+        line-height: 1.7;
+    }
+
+    .faq-cta {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        text-align: center;
+        padding: 40px 20px;
+        border-radius: 12px;
+        margin-top: 50px;
+    }
+
+    .faq-cta h2 {
+        font-size: 1.8em;
+        margin-bottom: 16px;
+    }
+
+    .faq-cta p {
+        font-size: 1.1em;
+        margin-bottom: 24px;
+        opacity: 0.95;
+    }
+
+    .faq-cta .btn {
+        display: inline-block;
+        background: white;
+        color: #2563eb;
+        padding: 14px 32px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.1em;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .faq-cta .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .faq-container {
+            padding: 16px;
+            margin: 20px auto;
+        }
+
+        .faq-header h1 {
+            font-size: 1.8em;
+        }
+
+        .faq-header p {
+            font-size: 1em;
+        }
+
+        .faq-question {
+            font-size: 1.1em;
+        }
+
+        .faq-answer {
+            font-size: 0.95em;
+        }
+
+        .faq-item {
+            padding: 18px;
+        }
+
+        .faq-cta h2 {
+            font-size: 1.5em;
+        }
+
+        .faq-cta p {
+            font-size: 1em;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="faq-container">
+    <div class="faq-header">
+        <h1>Frequently Asked Questions</h1>
+        <p>Everything you need to know about PhysiologicPRISM, the PRISM Framework, pricing, AI token usage, and how AI-powered clinical reasoning can transform your physiotherapy practice.</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">What is the PRISM Framework for physiotherapy?</div>
+        <div class="faq-answer">
+            PRISM is a <strong>10-step structured clinical reasoning framework</strong>. It guides physiotherapists from patient presentation through pathophysiological mechanism analysis, ICF-based functioning assessment, differential diagnosis, SMART goal setting, and evidence-based treatment planning — with AI-generated suggestions at each step.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">How is PhysiologicPRISM different from AI SOAP note tools?</div>
+        <div class="faq-answer">
+            Most AI physio tools transcribe or auto-fill SOAP notes. <strong>PhysiologicPRISM actively guides clinical reasoning</strong> — suggesting differential diagnoses, screening clinical flags, generating ICF-based functioning assessments, and producing evidence-referenced treatment plans. It's a clinical reasoning assistant, not just a documentation tool.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Can I try PhysiologicPRISM for free?</div>
+        <div class="faq-answer">
+            Yes. A <strong>14-day full-access free trial</strong> is available with no credit card required. You can complete real patient assessments and export patient reports during the trial period.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Is PhysiologicPRISM suitable for new graduates and experienced physiotherapists?</div>
+        <div class="faq-answer">
+            Yes, both. For new graduates, PRISM provides structured clinical reasoning guidance to build confidence and ensure comprehensive assessments. For experienced clinicians, it reduces cognitive load, speeds up documentation, and ensures nothing is missed in complex cases.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Is my patient data secure and compliant with privacy regulations?</div>
+        <div class="faq-answer">
+            Absolutely. PhysiologicPRISM is built with <strong>HIPAA-ready architecture and GDPR-aligned data workflows</strong>. All patient data is encrypted in transit and at rest, stored securely in Microsoft Azure, and you maintain full control over your data with export and deletion options.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">What happens after my 14-day free trial ends?</div>
+        <div class="faq-answer">
+            At the end of your trial, you can choose to subscribe to continue using PhysiologicPRISM. If you don't subscribe, your account remains accessible in read-only mode so you can export your data. We never delete your patient assessments without your explicit permission.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Can I use PhysiologicPRISM on my mobile device?</div>
+        <div class="faq-answer">
+            Yes. PhysiologicPRISM is a <strong>web-based application</strong> that works on any device with a browser — desktop, laptop, tablet, or smartphone. It's optimized for mobile use with responsive design and touch-friendly interfaces.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Does PhysiologicPRISM replace my clinical judgment?</div>
+        <div class="faq-answer">
+            No. PhysiologicPRISM is a <strong>clinical reasoning assistant</strong>, not a replacement for your expertise. The AI provides suggestions and structured frameworks to support your decision-making, but you always maintain full professional responsibility and final clinical judgment.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">What are the pricing plans for PhysiologicPRISM?</div>
+        <div class="faq-answer">
+            All plans start with a <strong>14-day free trial</strong> (no credit card required) that includes 25 AI calls and 15 patient assessments. After the trial, pricing is <strong>$50 per user per month</strong> with 250 AI calls included per user. Team plans are available for 5, 10, 15, and 20+ users with volume discounts. Additional AI call packages can be purchased if needed.
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">How are AI tokens used in Normal Mode vs. Quick Mode?</div>
+        <div class="faq-answer">
+            <strong>Normal Mode:</strong> AI suggestions are generated on-demand for individual fields when you click the "🧠 Suggest" button. Each field suggestion uses one AI call. This gives you maximum control but uses more AI calls per assessment (typically 15-25 calls for a complete assessment).
+            <br><br>
+            <strong>Quick Mode:</strong> Uses exactly <strong>8 AI calls per complete assessment</strong> — one comprehensive AI call per screen (Patho Mechanism, Subjective, Initial Plan, Risk Flags, Objective Assessment, Provisional Diagnosis, SMART Goals, and Treatment Plan). All fields are pre-filled at once, making it 2-3x more AI-efficient than Normal Mode. Perfect for busy clinics or when you're running low on AI calls.
+        </div>
+    </div>
+
+    <div class="faq-cta">
+        <h2>Ready to try PhysiologicPRISM?</h2>
+        <p>Start your 14-day free trial today. No credit card required.</p>
+        <a href="{{ url_for('register_firebase') }}" class="btn">Start Free Trial</a>
+    </div>
+</div>
+{% endblock %}
