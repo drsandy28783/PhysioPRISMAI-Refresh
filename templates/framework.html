@@ -320,6 +320,78 @@
             }
         }
     </style>
+
+    <!-- HowTo Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to complete a PRISM assessment in PhysiologicPRISM",
+      "description": "Step-by-step guide to completing a comprehensive physiotherapy assessment using the 10-step PRISM Framework with AI-assisted clinical reasoning",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Add Patient",
+          "text": "Enter patient name, age, contact, present history and past history. Enable Quick Mode to skip optional screens for urgent sessions."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Pathophysiological Mechanism",
+          "text": "Select pain type, nature, VAS severity, irritability, source, and tissue healing stage. AI suggests likely mechanism based on patient history."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Subjective Examination",
+          "text": "AI generates ICF-structured interview questions covering body structure, body function, activity limitation, participation restriction, and contextual factors (environmental and personal)."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Patient Perspectives",
+          "text": "Document patient goals, expectations, beliefs, and psychosocial factors that influence recovery. Optional in Quick Mode for faster documentation."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 5,
+          "name": "Initial Plan of Assessment",
+          "text": "Plan and document objective examination tests: observation, palpation, active movements, passive movements, resisted tests, neurological tests, and special tests. AI recommends which tests are essential, useful, or contraindicated."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 6,
+          "name": "Risk Factors and Clinical Flags",
+          "text": "Screen for red flags (serious pathology), orange flags (psychiatric), yellow flags (psychosocial), black flags (work-related), and blue flags (workplace factors). AI suggests risk factors based on patient presentation."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 7,
+          "name": "Objective Assessment",
+          "text": "Document examination findings, perform clinical tests, and record objective measurements. AI synthesizes findings to support diagnosis."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 8,
+          "name": "Provisional Diagnosis",
+          "text": "Enter findings and AI generates a ranked differential diagnosis list with supporting and rejecting evidence for each hypothesis. Document most likely diagnosis, structure at fault, and clinical reasoning."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 9,
+          "name": "SMART Goals",
+          "text": "AI generates patient-centric SMART goals with baseline status, measurable outcomes, and time duration. Goals are specific, measurable, achievable, relevant, and time-bound."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 10,
+          "name": "Treatment Plan",
+          "text": "AI suggests evidence-based interventions with goal targeting and clinical reasoning. Export a structured PDF patient report with complete assessment and treatment plan."
+        }
+      ]
+    }
+    </script>
 </head>
 <body>
     <!-- Marketing Navbar -->
