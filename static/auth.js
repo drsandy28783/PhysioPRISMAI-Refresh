@@ -10,7 +10,9 @@ import {
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
-  updateProfile
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 
 // ─── AUTHENTICATION STATE ───────────────────────────────────────
@@ -91,6 +93,58 @@ export async function signIn(email, password) {
         break;
       case 'auth/too-many-requests':
         errorMessage = 'Too many failed attempts. Please try again later';
+        break;
+      default:
+        errorMessage = error.message;
+    }
+
+    return {
+      success: false,
+      error: errorMessage
+    };
+  }
+}
+
+// ─── GOOGLE SIGN IN ─────────────────────────────────────────────
+/**
+ * Sign in with Google popup
+ * @returns {Promise<{success: boolean, user?: User, error?: string}>}
+ */
+export async function signInWithGoogle() {
+  try {
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+
+    // Optional: Request additional scopes
+    // provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+    // provider.addScope('https://www.googleapis.com/auth/userinfo.email');
+
+    const result = await signInWithPopup(auth, provider);
+
+    console.log('✅ Google sign-in successful:', result.user.email);
+
+    return {
+      success: true,
+      user: result.user,
+      isNewUser: result._tokenResponse?.isNewUser || false
+    };
+  } catch (error) {
+    console.error('❌ Google sign-in failed:', error.code, error.message);
+
+    // User-friendly error messages
+    let errorMessage = 'Google sign-in failed';
+    switch (error.code) {
+      case 'auth/popup-closed-by-user':
+        errorMessage = 'Sign-in cancelled';
+        break;
+      case 'auth/popup-blocked':
+        errorMessage = 'Popup blocked by browser. Please allow popups for this site';
+        break;
+      case 'auth/account-exists-with-different-credential':
+        errorMessage = 'An account already exists with this email using a different sign-in method';
+        break;
+      case 'auth/cancelled-popup-request':
+        errorMessage = 'Sign-in cancelled';
         break;
       default:
         errorMessage = error.message;
