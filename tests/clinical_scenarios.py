@@ -149,9 +149,7 @@ SCENARIO_SHOULDER_ACUTE = ClinicalScenario(
 
     treatment_plan_data={
         "treatment_plan": "Progressive rotator cuff strengthening, manual therapy, education on tendon loading principles",
-        "goal_targeted": "Pain reduction, restore full ROM, return to overhead work",
         "reasoning": "Evidence supports progressive tendon loading for tendinopathy. Manual therapy for glenohumeral mobilisation. Education to address yellow flags.",
-        "reference": "Littlewood et al. (2015) progressive loading for rotator cuff tendinopathy; Lewis (2016) rotator cuff tendinopathy management",
     },
 
     expected_keywords={
@@ -268,9 +266,7 @@ SCENARIO_LBP_CHRONIC = ClinicalScenario(
 
     treatment_plan_data={
         "treatment_plan": "Graded exposure therapy, pain education (pain neuroscience), graded activity program, sleep hygiene, co-management with psychologist",
-        "goal_targeted": "Reduce fear avoidance, improve function, self-management skills",
         "reasoning": "Evidence strongly supports pain neuroscience education + graded activity for chronic LBP with central sensitization. Psychological co-management for anxiety and catastrophising.",
-        "reference": "Moseley & Butler (2015) Explain Pain; Leeuw et al. (2007) Graded Exposure; NICE LBP Guidelines 2016",
     },
 
     expected_keywords={
@@ -387,9 +383,7 @@ SCENARIO_KNEE_OA = ClinicalScenario(
 
     treatment_plan_data={
         "treatment_plan": "Therapeutic exercise (quad strengthening, aerobic), aquatic therapy, weight management advice, orthoses consideration, education on OA self-management",
-        "goal_targeted": "Improve quad strength, reduce pain, improve walking tolerance",
         "reasoning": "Strong evidence for exercise therapy in OA (NICE, OARSI guidelines). Aquatic for high BMI/pain. Weight management reduces joint loading. Knee OA responds better to strengthening than manual therapy alone.",
-        "reference": "NICE Osteoarthritis Guidelines 2022; OARSI Exercise Recommendations; Fransen et al. (2015) Cochrane Review exercise for knee OA",
     },
 
     expected_keywords={
@@ -506,9 +500,7 @@ SCENARIO_CERVICAL_RADICULOPATHY = ClinicalScenario(
 
     treatment_plan_data={
         "treatment_plan": "Neural mobilisation (gentle slider technique), cervical traction, ergonomic modification, postural correction, pain education, progressive return to work",
-        "goal_targeted": "Reduce neural tension, restore arm function, prevent recurrence",
         "reasoning": "Neural mobilisation appropriate for radiculopathy (Nee et al. 2012). Cervical traction reduces discogenic compression. Ergonomic modification removes causative factor.",
-        "reference": "Nee et al. (2012) neural mobilisation for cervical radiculopathy; APTA Clinical Practice Guideline 2017",
     },
 
     expected_keywords={
@@ -625,9 +617,7 @@ SCENARIO_RED_FLAG_CAUDA_EQUINA = ClinicalScenario(
 
     treatment_plan_data={
         "treatment_plan": "IMMEDIATE EMERGENCY REFERRAL - Do not treat with physiotherapy. Call emergency services / refer to neurosurgery immediately.",
-        "goal_targeted": "Emergency neurosurgical decompression",
         "reasoning": "Cauda equina syndrome is a medical emergency. Delay beyond 24-48 hours results in permanent neurological deficit. Physiotherapy is contraindicated.",
-        "reference": "NICE Red Flags for Cauda Equina Syndrome; RCGP Red Flag Guidelines",
     },
 
     expected_keywords={
@@ -744,9 +734,7 @@ SCENARIO_POST_TKR = ClinicalScenario(
 
     treatment_plan_data={
         "treatment_plan": "Progressive ROM exercises (targeting 120° flexion), quadriceps strengthening (NSS, VMO activation, STS progression), balance and proprioception, gait retraining, progressive functional tasks",
-        "goal_targeted": "Restore knee ROM, quadriceps strength, functional independence",
         "reasoning": "Post-TKR rehabilitation is evidence-based - early motion prevents fibrosis, quadriceps strengthening essential for stair climbing and functional independence.",
-        "reference": "APTA TKR CPG 2020; Minns Lowe et al. Cochrane Review 2007; Bade et al. (2014) post-TKR exercise",
     },
 
     expected_keywords={
@@ -863,9 +851,7 @@ SCENARIO_ACL_TEAR = ClinicalScenario(
 
     treatment_plan_data={
         "treatment_plan": "Progressive neuromuscular training, plyometrics, sport-specific conditioning, strength programme, psychological readiness strategies, staged return to sport protocol",
-        "goal_targeted": "Meet return to sport criteria: LSI >90%, strength symmetry, psychological readiness",
         "reasoning": "Evidence strongly supports objective criteria-based return to sport decisions (not time-only). LSI <90% significantly increases re-rupture risk. Psychological readiness independently predicts re-rupture.",
-        "reference": "van Yperen et al. (2018) ACL return to sport guidelines; Webster & Feller (2019) psychological readiness; ACL consensus statement 2023",
     },
 
     expected_keywords={

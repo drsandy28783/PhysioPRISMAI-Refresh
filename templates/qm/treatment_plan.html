@@ -121,8 +121,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     {% set field_defs = [
-      ['treatment_plan', 'Treatment Plan',                        'Enter treatment plan…'],
-      ['reasoning',      'Reasoning',                             'Enter your clinical reasoning…']
+      ['treatment_plan', 'Treatment Plan',                        'Enter treatment plan…']
     ] %}
 
     {% for name, label, placeholder in field_defs %}

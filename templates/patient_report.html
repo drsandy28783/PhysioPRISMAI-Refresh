@@ -729,10 +729,6 @@
         <div class="field-label">Treatment Approach</div>
         <div class="field-value">{{ treatment.treatment_plan or 'Not documented' }}</div>
       </div>
-      <div class="field-group">
-        <div class="field-label">Clinical Reasoning / Rationale</div>
-        <div class="field-value">{{ treatment.reasoning or 'Not documented' }}</div>
-      </div>
 
       {% if ai_treatment_plan_summary %}
       <div class="ai-generated-content" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ff9800;">
