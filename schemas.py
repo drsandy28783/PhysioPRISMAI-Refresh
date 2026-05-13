@@ -329,29 +329,11 @@ class TreatmentPlanSchema(Schema):
         ]
     )
 
-    goal_targeted = fields.Str(
-        required=False,
-        allow_none=True,
-        validate=[
-            validate.Length(max=5000),
-            validate_no_html
-        ]
-    )
-
     reasoning = fields.Str(
         required=False,
         allow_none=True,
         validate=[
             validate.Length(max=10000),  # Increased to accommodate detailed AI-generated reasoning
-            validate_no_html
-        ]
-    )
-
-    reference = fields.Str(
-        required=False,
-        allow_none=True,
-        validate=[
-            validate.Length(max=10000),  # Increased to accommodate AI-generated references
             validate_no_html
         ]
     )

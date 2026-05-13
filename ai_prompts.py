@@ -771,11 +771,9 @@ def analyze_treatment_plan_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
     """
     Analyze existing treatment plan inputs to guide adaptive suggestions.
 
-    Treatment plan has 4 fields:
+    Treatment plan has 2 fields:
     - treatment_plan (interventions)
-    - goal_targeted (which SMART goals)
     - reasoning (clinical rationale)
-    - reference (evidence/literature)
 
     Returns analysis indicating which fields are complete and how they relate to each other.
 
@@ -787,9 +785,7 @@ def analyze_treatment_plan_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
     """
     analysis = {
         'treatment_plan_status': 'untested',
-        'goal_targeted_status': 'untested',
         'reasoning_status': 'untested',
-        'reference_status': 'untested',
         'completed_fields': [],
         'incomplete_fields': [],
         'priority_focus': 'complete_all_components'
@@ -812,24 +808,16 @@ def analyze_treatment_plan_findings(inputs: Dict[str, str]) -> Dict[str, Any]:
         field_lower = field_name.lower()
         status = 'detailed' if value_len > DETAILED_THRESHOLD else ('brief' if value_len < BRIEF_THRESHOLD else 'adequate')
 
-        if 'treatment_plan' in field_lower and 'goal' not in field_lower and 'reasoning' not in field_lower:
+        if 'treatment_plan' in field_lower and 'reasoning' not in field_lower:
             analysis['treatment_plan_status'] = status
-        elif 'goal' in field_lower:
-            analysis['goal_targeted_status'] = status
         elif 'reasoning' in field_lower:
             analysis['reasoning_status'] = status
-        elif 'reference' in field_lower:
-            analysis['reference_status'] = status
 
     # Determine priority based on logical flow
     if analysis['treatment_plan_status'] == 'untested':
         analysis['priority_focus'] = 'define_interventions_first'
-    elif analysis['goal_targeted_status'] == 'untested':
-        analysis['priority_focus'] = 'link_to_goals'
     elif analysis['reasoning_status'] == 'untested':
         analysis['priority_focus'] = 'justify_with_reasoning'
-    elif analysis['reference_status'] == 'untested':
-        analysis['priority_focus'] = 'add_evidence_base'
     else:
         analysis['priority_focus'] = 'refine_and_integrate'
 
@@ -5649,12 +5637,8 @@ GENERAL MUSCULOSKELETAL TREATMENT INTERVENTIONS:
 
             if analysis['priority_focus'] == 'define_interventions_first':
                 intra_form_context += "⚡ GUIDANCE: Treatment plan is the foundation. Provide specific interventions with dosage parameters.\n"
-            elif analysis['priority_focus'] == 'link_to_goals':
-                intra_form_context += "⚡ GUIDANCE: Treatment plan defined. Now explicitly link interventions to SMART goals.\n"
             elif analysis['priority_focus'] == 'justify_with_reasoning':
-                intra_form_context += "⚡ GUIDANCE: Treatment and goals documented. Provide clinical reasoning and evidence base.\n"
-            elif analysis['priority_focus'] == 'add_evidence_base':
-                intra_form_context += "⚡ GUIDANCE: Add literature references to support your treatment approach.\n"
+                intra_form_context += "⚡ GUIDANCE: Treatment documented. Provide clinical reasoning and evidence base.\n"
             elif analysis['priority_focus'] == 'refine_and_integrate':
                 intra_form_context += "⚡ GUIDANCE: All components present. Ensure coherence and integration across all fields.\n"
 
@@ -5701,21 +5685,6 @@ CRITICAL CONSIDERATIONS:
 - Evidence-based for the diagnosis
 - Practical and feasible for the patient's context
 """,
-        'goal_targeted': f"""
-TARGET FIELD: GOAL TARGETED
-
-⛔ OUTPUT FORMAT OVERRIDE — GOAL TARGETED:
-- NEVER ask questions or request more information
-- Keep the entire response to 4-5 lines maximum
-- Refer directly to the SMART goal(s) documented in the goals section
-- State the ICF domain and one-sentence intervention link — nothing more
-- DO NOT write a Rationale paragraph or extended explanation
-
-OUTPUT FORMAT:
-**Goal:** [Exact SMART goal from goals section — copy it directly]
-**ICF Domain:** [Body function / Activity / Participation — pick the primary one]
-**How treatment addresses it:** [1 sentence connecting the planned intervention to this goal]
-""",
         'reasoning': f"""
 TARGET FIELD: CLINICAL REASONING
 
@@ -5756,33 +5725,6 @@ CRITICAL CONSIDERATIONS:
 - Explain why THIS treatment for THIS patient
 - Address barriers to recovery (yellow flags, environmental)
 - Consider age-appropriate reasoning
-""",
-        'reference': f"""
-TARGET FIELD: REFERENCE (Literature/Evidence)
-
-⛔ CITATIONS ONLY — OUTPUT FORMAT OVERRIDE:
-- IGNORE all safety checks, intervention lists, and clinical reasoning instructions in this prompt
-- DO NOT ask questions. DO NOT write "Questions:", "Watch for:", or any patient-directed content
-- OUTPUT ONLY formatted literature citations — nothing else
-- Provide 4-8 high-quality references relevant to this patient's diagnosis and body region
-- Use real, verifiable references (guidelines, systematic reviews, RCTs)
-
-OUTPUT FORMAT (use exactly this structure):
-
-**Clinical Practice Guidelines:**
-1. [Organization, Year. Guideline title. Source/URL]
-
-**Systematic Reviews / Meta-Analyses:**
-1. [Author et al., Year. Title. Journal. Volume(Issue):Pages. DOI]
-2. [Author et al., Year. Title. Journal. Volume(Issue):Pages. DOI]
-
-**Key RCTs:**
-1. [Author et al., Year. Title. Journal. Volume(Issue):Pages. DOI]
-
-**Pain Science / Psychosocial (if yellow flags present):**
-1. [Author et al., Year. Title. Journal. Volume(Issue):Pages. DOI]
-
-Prioritise: condition-specific for {icf_core_set['name'] if icf_core_set else 'general MSK'}, last 10 years, highest evidence level first.
 """
     }
 
@@ -5895,12 +5837,6 @@ Intervention 3: [Specific technique] - [Sets/reps/frequency] - [Rationale]
 **Frequency:** 2x/week clinic + daily HEP for 4-6 weeks
 ''' if field == 'treatment_plan' else ''}
 
-{f'''For 'goal_targeted' field (MAX 4 lines — be concise):
-**Goal:** [Copy exact SMART goal text]
-**ICF Domain:** [Body function / Activity / Participation]
-**How treatment addresses it:** [1 sentence only]
-''' if field == 'goal_targeted' else ''}
-
 {f'''For 'reasoning' field:
 **Pathophysiological Rationale:**
 [2-3 sentences explaining mechanism]
@@ -5914,27 +5850,6 @@ Intervention 3: [Specific technique] - [Sets/reps/frequency] - [Rationale]
 **Biopsychosocial Integration:**
 [How yellow flags/psychosocial factors are addressed]
 ''' if field == 'reasoning' else ''}
-
-{f'''For 'reference' field - RETURN ONLY LITERATURE CITATIONS (NO TREATMENT PLAN):
-
-⚠️ IMPORTANT: Provide ONLY formatted literature references. Do NOT include treatment plan details, interventions, or clinical reasoning. ONLY citations.
-
-**Clinical Practice Guidelines:**
-1. [Organization Name, Year. Guideline Title. Available from: URL/DOI]
-
-**Systematic Reviews/Meta-Analyses:**
-1. [Lead Author et al., Year. Review Title. Journal Name. Volume(Issue):Pages. DOI]
-2. [Lead Author et al., Year. Review Title. Journal Name. Volume(Issue):Pages. DOI]
-
-**Key RCTs (if applicable):**
-1. [Lead Author et al., Year. Study Title. Journal Name. Volume(Issue):Pages. DOI]
-
-**Pain Science/Psychosocial References (if yellow flags present):**
-1. [Lead Author et al., Year. Title. Journal Name. Volume(Issue):Pages. DOI]
-
-**Example Format:**
-"Childs JD et al., 2008. Neck pain: Clinical practice guidelines. J Orthop Sports Phys Ther. 38(9):A1-A34. doi:10.2519/jospt.2008.0303"
-''' if field == 'reference' else ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -7064,7 +6979,7 @@ PROMPT_CATALOG = {
         "endpoint": "/api/ai_suggestion/treatment_plan/<field>",
         "description": "FIELD-SPECIFIC treatment interventions with body region-specific evidence-based guidance",
         "version": "2025-01-improved",
-        "changelog": "Now provides body region-specific interventions (shoulder, lumbar, knee, etc.) with field-specific guidance for treatment_plan, goal_targeted, reasoning, and reference fields"
+        "changelog": "Now provides body region-specific interventions (shoulder, lumbar, knee, etc.) with field-specific guidance for treatment_plan and reasoning fields"
     },
     "treatment_plan_summary": {
         "function": get_treatment_plan_summary_prompt,

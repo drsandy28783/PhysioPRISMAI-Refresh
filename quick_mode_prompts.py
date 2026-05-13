@@ -755,12 +755,10 @@ TREATMENT_PLAN_SYSTEM = """You are a physiotherapy clinical documentation assist
 Your job is to generate a concise Treatment Plan based on diagnosis and assessment findings.
 
 CRITICAL OUTPUT RULE — STRICTLY ENFORCED:
-Each field (treatment_plan, goal_targeted, reasoning) must contain ONLY 2-3 bullet points
+Each field (treatment_plan, reasoning) must contain ONLY 2-3 bullet points
 using "• " as the prefix. Separate bullets with a newline character.
 NO paragraphs. NO headers. NO sub-bullets. NO lengthy explanations.
 If you write more than 3 bullets for any field, your response is incorrect.
-
-The "reference" field must ALWAYS be an empty string "". Do NOT fabricate citations.
 
 Return ONLY a valid JSON object — no markdown, no commentary, no extra keys."""
 
@@ -786,15 +784,12 @@ SMART Goals:
 Objective Assessment Notes: {obj_assessment_notes}
 
 Generate a Treatment Plan. STRICT LIMIT: 2-3 bullet points per field, "• " prefix, NO paragraphs.
-Leave "reference" as an empty string — do not invent citations.
 
 Return this exact JSON structure:
 
 {{
   "treatment_plan": "• <intervention 1>\\n• <intervention 2>\\n• <intervention 3 if needed>",
-  "goal_targeted": "• <goal 1>\\n• <goal 2>\\n• <goal 3 if needed>",
-  "reasoning": "• <rationale 1>\\n• <rationale 2>\\n• <rationale 3 if needed>",
-  "reference": ""
+  "reasoning": "• <rationale 1>\\n• <rationale 2>\\n• <rationale 3 if needed>"
 }}
 """
 
@@ -823,4 +818,4 @@ def build_treatment_plan_user_prompt(
     )
 
 
-TREATMENT_PLAN_FIELDS = ["treatment_plan", "goal_targeted", "reasoning", "reference"]
+TREATMENT_PLAN_FIELDS = ["treatment_plan", "reasoning"]

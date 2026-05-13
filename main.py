@@ -6351,9 +6351,7 @@ def qm_treatment_plan(patient_id):
         form_data = {
             'patient_id':    patient_id,
             'treatment_plan': request.form.get('treatment_plan', ''),
-            'goal_targeted':  request.form.get('goal_targeted', ''),
             'reasoning':      request.form.get('reasoning', ''),
-            'reference':      request.form.get('reference', ''),
             'timestamp': SERVER_TIMESTAMP,
         }
         db.collection('treatment_plan').add(form_data)
@@ -6631,9 +6629,7 @@ def treatment_plan(patient_id):
         form_data = {
             'patient_id': patient_id,
             'treatment_plan': request.form.get('treatment_plan', ''),
-            'goal_targeted': request.form.get('goal_targeted', ''),
-            'reasoning': request.form.get('reasoning', ''),
-            'reference': request.form.get('reference', '')
+            'reasoning': request.form.get('reasoning', '')
         }
 
         is_valid, result = validate_data(TreatmentPlanSchema, form_data)
@@ -6645,7 +6641,7 @@ def treatment_plan(patient_id):
                     flash(f'{field.replace("_", " ").title()}: {error}', 'error')
             return redirect(f'/treatment_plan/{patient_id}')
 
-        keys = ['treatment_plan', 'goal_targeted', 'reasoning', 'reference']
+        keys = ['treatment_plan', 'reasoning']
         entry = {k: result.get(k, request.form[k]) for k in keys}
         entry['patient_id'] = patient_id
         entry['timestamp'] = SERVER_TIMESTAMP
@@ -12557,9 +12553,7 @@ def api_autocomplete_suggestions():
 
             # Treatment plan
             'treatment_plan': ['treatment_plan'],
-            'goal_targeted': ['goal_targeted'],
             'reasoning': ['reasoning'],
-            'reference': ['reference'],
 
             # SMART Goals
             'patient_goal': ['patient_goal'],

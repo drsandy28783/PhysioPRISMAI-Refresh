@@ -611,15 +611,11 @@ def _validate_treatment_plan_prefills(raw: Dict[str, Any]) -> Dict[str, Any]:
     """
     Sanitise the raw AI JSON for the Treatment Plan screen.
 
-    - treatment_plan, goal_targeted, reasoning: stripped strings (bullet points from AI).
-    - reference: always forced to "" — AI must never fabricate citations.
+    - treatment_plan, reasoning: stripped strings (bullet points from AI).
     """
     result = {}
     for field in TREATMENT_PLAN_FIELDS:
-        if field == "reference":
-            result[field] = ""          # always blank — no fabricated citations
-        else:
-            result[field] = str(raw.get(field, "") or "").strip()
+        result[field] = str(raw.get(field, "") or "").strip()
     return result
 
 
@@ -633,8 +629,7 @@ def generate_treatment_plan_prefills(
     """
     Generate Stage 2 AI pre-fills for the Treatment Plan screen.
 
-    Fills: treatment_plan, goal_targeted, reasoning — all 2-3 bullet points.
-    Leaves 'reference' blank (AI must not fabricate citations).
+    Fills: treatment_plan, reasoning — all 2-3 bullet points.
 
     Returns {} on any error so the template falls back to a blank form.
     """

@@ -730,16 +730,8 @@
         <div class="field-value">{{ treatment.treatment_plan or 'Not documented' }}</div>
       </div>
       <div class="field-group">
-        <div class="field-label">Goal Targeted</div>
-        <div class="field-value">{{ treatment.goal_targeted or 'Not documented' }}</div>
-      </div>
-      <div class="field-group">
         <div class="field-label">Clinical Reasoning / Rationale</div>
         <div class="field-value">{{ treatment.reasoning or 'Not documented' }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Evidence / References</div>
-        <div class="field-value">{{ treatment.reference or 'Not documented' }}</div>
       </div>
 
       {% if ai_treatment_plan_summary %}
