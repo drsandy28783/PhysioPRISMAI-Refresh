@@ -300,9 +300,9 @@
     <div id="message-container"></div>
 
     <div class="feedback-tabs">
-        <button class="feedback-tab active" onclick="switchTab('submit')">Submit Feedback</button>
-        <button class="feedback-tab" onclick="switchTab('history')">My Feedback History</button>
-        <button class="feedback-tab" onclick="switchTab('google-form')">Google Form</button>
+        <button class="feedback-tab active" data-tab="submit">Submit Feedback</button>
+        <button class="feedback-tab" data-tab="history">My Feedback History</button>
+        <button class="feedback-tab" data-tab="google-form">Google Form</button>
     </div>
 
     <!-- Submit Feedback Tab -->
@@ -419,7 +419,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
     let selectedRating = 0;
 
     // Star rating functionality
@@ -488,15 +488,23 @@
         // Show selected tab
         if (tabName === 'submit') {
             document.getElementById('submit-tab').classList.add('active');
-            document.querySelector('[onclick="switchTab(\'submit\')"]').classList.add('active');
+            document.querySelector('[data-tab="submit"]').classList.add('active');
         } else if (tabName === 'history') {
             document.getElementById('history-tab').classList.add('active');
-            document.querySelector('[onclick="switchTab(\'history\')"]').classList.add('active');
+            document.querySelector('[data-tab="history"]').classList.add('active');
         } else if (tabName === 'google-form') {
             document.getElementById('google-form-tab').classList.add('active');
-            document.querySelector('[onclick="switchTab(\'google-form\')"]').classList.add('active');
+            document.querySelector('[data-tab="google-form"]').classList.add('active');
         }
     }
+
+    // Attach event listeners to tab buttons
+    document.querySelectorAll('.feedback-tab[data-tab]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchTab(tabName);
+        });
+    });
 
     // Form submission
     document.getElementById('feedback-form').addEventListener('submit', async function(e) {

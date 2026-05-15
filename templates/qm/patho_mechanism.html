@@ -195,7 +195,7 @@
           <button
             type="button"
             class="qm-why-btn"
-            onclick="toggleReasoning('possible_source_reasoning')"
+            data-toggle-reasoning="possible_source_reasoning"
           >Why?</button>
         {% endif %}
       </label>
@@ -228,7 +228,7 @@
           <button
             type="button"
             class="qm-why-btn"
-            onclick="toggleReasoning('stage_healing_reasoning')"
+            data-toggle-reasoning="stage_healing_reasoning"
           >Why?</button>
         {% endif %}
       </label>
@@ -284,5 +284,13 @@
     if (!el) return;
     el.style.display = el.style.display === 'block' ? 'none' : 'block';
   }
+
+  // Attach event listeners to Why? buttons
+  document.querySelectorAll('.qm-why-btn[data-toggle-reasoning]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = this.getAttribute('data-toggle-reasoning');
+      toggleReasoning(targetId);
+    });
+  });
 </script>
 {% endblock %}

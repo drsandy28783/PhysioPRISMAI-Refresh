@@ -219,7 +219,7 @@
     </div>
 
     {% if has_access %}
-    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button" onclick="return confirmScheduleAccess();">
+    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button schedule-link">
       Open Scheduling App (BETA) →
     </a>
     {% elif is_trial_expired %}
@@ -390,7 +390,7 @@
 
   <div style="text-align: center; margin: 40px 0;">
     {% if has_access %}
-    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button" style="font-size: 20px; padding: 20px 50px;" onclick="return confirmScheduleAccess();">
+    <a href="https://schedule.physiologicprism.com" target="_blank" class="cta-button schedule-link" style="font-size: 20px; padding: 20px 50px;">
       Launch Scheduling App (BETA) →
     </a>
     {% elif is_trial_expired %}
@@ -497,5 +497,15 @@
       'Do you want to continue?'
     );
   }
+
+  // Attach event listeners to schedule links
+  document.querySelectorAll('.schedule-link').forEach(link => {
+    link.addEventListener('click', function(event) {
+      if (!confirmScheduleAccess()) {
+        event.preventDefault();
+        return false;
+      }
+    });
+  });
 </script>
 {% endblock %}

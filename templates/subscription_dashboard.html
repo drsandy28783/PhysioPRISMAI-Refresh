@@ -517,7 +517,7 @@
     <div class="modal-dialog">
         <div class="modal-header">
             <h5 class="modal-title">Cancel Subscription</h5>
-            <button class="modal-close" onclick="closeCancelModal()">&times;</button>
+            <button class="modal-close" id="modalCloseBtn">&times;</button>
         </div>
         <div class="modal-body">
             <!-- Step 1: Reason Survey -->
@@ -600,12 +600,12 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button class="action-btn btn-secondary" id="cancelModalBackBtn" onclick="cancelStepBack()">Go Back</button>
-            <button class="action-btn btn-primary" id="cancelModalContinueBtn" onclick="cancelStepContinue()">Continue</button>
-            <button class="action-btn btn-danger" id="cancelModalConfirmBtn" onclick="confirmCancellation()" style="display: none;">
+            <button class="action-btn btn-secondary" id="cancelModalBackBtn">Go Back</button>
+            <button class="action-btn btn-primary" id="cancelModalContinueBtn">Continue</button>
+            <button class="action-btn btn-danger" id="cancelModalConfirmBtn" style="display: none;">
                 Confirm Cancellation
             </button>
-            <button class="action-btn btn-primary" id="cancelModalCloseBtn" onclick="closeCancelModalAndReload()" style="display: none;">
+            <button class="action-btn btn-primary" id="cancelModalCloseBtn" style="display: none;">
                 Close
             </button>
         </div>
@@ -872,6 +872,13 @@ function showError(message) {
     errorDiv.style.display = 'block';
     setTimeout(() => errorDiv.style.display = 'none', 5000);
 }
+
+// Attach event listeners to modal buttons
+document.getElementById('modalCloseBtn').addEventListener('click', closeCancelModal);
+document.getElementById('cancelModalBackBtn').addEventListener('click', cancelStepBack);
+document.getElementById('cancelModalContinueBtn').addEventListener('click', cancelStepContinue);
+document.getElementById('cancelModalConfirmBtn').addEventListener('click', confirmCancellation);
+document.getElementById('cancelModalCloseBtn').addEventListener('click', closeCancelModalAndReload);
 
 // Load dashboard on page load
 loadDashboard();

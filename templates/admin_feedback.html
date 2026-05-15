@@ -377,7 +377,8 @@
                 <div class="feedback-meta" style="margin-top: 10px;">
                     <strong>Public Display:</strong>
                     <button class="toggle-public-btn {% if item.is_public %}public-active{% endif %}"
-                            onclick="togglePublic('{{ item.id }}')"
+                            data-feedback-id="{{ item.id }}"
+                            data-action="toggle-public"
                             id="public-btn-{{ item.id }}"
                             style="margin-left: 10px;">
                         {% if item.is_public %}
@@ -403,10 +404,10 @@
                 </div>
                 {% else %}
                 <div class="response-section">
-                    <button class="toggle-response-btn" onclick="toggleResponseForm('{{ item.id }}')">
+                    <button class="toggle-response-btn" data-feedback-id="{{ item.id }}" data-action="toggle-response">
                         Respond to Feedback
                     </button>
-                    <form class="response-form" id="response-form-{{ item.id }}" style="display: none;" onsubmit="submitResponse(event, '{{ item.id }}')">
+                    <form class="response-form" id="response-form-{{ item.id }}" style="display: none;" data-feedback-id="{{ item.id }}">
                         <textarea placeholder="Type your response here..." required minlength="10" maxlength="2000"></textarea>
                         <button type="submit" class="response-btn">Submit Response</button>
                     </form>
@@ -424,7 +425,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
     function filterFeedback() {
         const categoryFilter = document.getElementById('category-filter').value;
         const ratingFilter = document.getElementById('rating-filter').value;
@@ -529,5 +530,27 @@
             btn.disabled = false;
         }
     }
+
+    // Attach event listeners to buttons
+    document.querySelectorAll('.toggle-public-btn[data-action="toggle-public"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const feedbackId = this.getAttribute('data-feedback-id');
+            togglePublic(feedbackId);
+        });
+    });
+
+    document.querySelectorAll('.toggle-response-btn[data-action="toggle-response"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const feedbackId = this.getAttribute('data-feedback-id');
+            toggleResponseForm(feedbackId);
+        });
+    });
+
+    document.querySelectorAll('.response-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            const feedbackId = this.getAttribute('data-feedback-id');
+            submitResponse(event, feedbackId);
+        });
+    });
 </script>
 {% endblock %}
