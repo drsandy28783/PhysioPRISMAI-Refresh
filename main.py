@@ -1500,6 +1500,21 @@ def security_page():
     """Display security and compliance page"""
     return render_template('security.html')
 
+@app.route('/for-clinics')
+def for_clinics():
+    """Landing page for clinics and private practices"""
+    return render_template('landing_clinics.html')
+
+@app.route('/for-universities')
+def for_universities():
+    """Landing page for universities and educational institutions"""
+    return render_template('landing_universities.html')
+
+@app.route('/for-researchers')
+def for_researchers():
+    """Landing page for researchers and academic investigators"""
+    return render_template('landing_researchers.html')
+
 @app.route('/framework')
 def framework_page():
     """Display PRISM framework and intellectual property information"""

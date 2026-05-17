@@ -83,12 +83,14 @@
     align-items: center;
   }
 
-  .homepage-navbar .nav-links a {
+  .homepage-navbar .nav-links a,
+  .homepage-navbar .nav-links .dropdown {
     color: white;
     text-decoration: none;
     font-size: 16px;
     font-weight: 500;
     transition: opacity 0.2s;
+    position: relative;
   }
 
   .homepage-navbar .nav-links a:hover {
@@ -101,6 +103,67 @@
     padding: 10px 20px;
     border-radius: 8px;
     font-weight: 600;
+  }
+
+  /* Dropdown menu styles */
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .dropdown-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: white;
+  }
+
+  .dropdown-toggle::after {
+    content: '▼';
+    font-size: 10px;
+  }
+
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 220px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 4px;
+    z-index: 1000;
+  }
+
+  /* Add invisible bridge to prevent hover gap */
+  .dropdown::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 16px;
+    background: transparent;
+  }
+
+  .dropdown-menu a {
+    display: block;
+    padding: 12px 20px;
+    color: #1a5f5a;
+    text-decoration: none;
+    font-size: 15px;
+    transition: background 0.2s;
+  }
+
+  .dropdown-menu a:hover {
+    background: #f8fffe;
+  }
+
+  .dropdown:hover .dropdown-menu {
+    display: block;
   }
 
   /* Hero Section */
@@ -236,7 +299,7 @@
     font-size: 14px;
     color: #666;
     font-style: italic;
-    margin-top: 24px;
+    margin-top: 16px;
   }
 
   @media (max-width: 768px) {
@@ -246,6 +309,95 @@
       margin-left: auto;
       margin-right: auto;
       line-height: 1.6;
+    }
+  }
+
+  /* Who Is This For Section */
+  .who-for-section {
+    background: white;
+    padding: 48px 24px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .who-for-content {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .who-for-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a5f5a;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .who-for-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  .who-for-card {
+    background: linear-gradient(135deg, #f8fffe 0%, #e6f7f5 100%);
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+  }
+
+  .who-for-card:hover {
+    transform: translateY(-4px);
+    border-color: #1a5f5a;
+    box-shadow: 0 8px 20px rgba(26, 95, 90, 0.15);
+  }
+
+  .who-for-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .who-for-card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 12px;
+  }
+
+  .who-for-card-text {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .who-for-link {
+    font-size: 14px;
+    color: #1a5f5a;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .who-for-section {
+      padding: 40px 20px;
+    }
+
+    .who-for-title {
+      font-size: 20px;
+      margin-bottom: 24px;
+    }
+
+    .who-for-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .who-for-card {
+      padding: 24px 20px;
     }
   }
 
@@ -1047,6 +1199,10 @@
   }
 
   /* Stagger animation delays for sequential elements */
+  .who-for-card:nth-child(1) { transition-delay: 0s; }
+  .who-for-card:nth-child(2) { transition-delay: 0.1s; }
+  .who-for-card:nth-child(3) { transition-delay: 0.2s; }
+
   .pillar-card:nth-child(1) { transition-delay: 0s; }
   .pillar-card:nth-child(2) { transition-delay: 0.1s; }
   .pillar-card:nth-child(3) { transition-delay: 0.2s; }
@@ -1095,6 +1251,20 @@
       gap: 12px;
       width: 100%;
       text-align: center;
+    }
+
+    .dropdown-menu {
+      position: static;
+      box-shadow: none;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .dropdown-menu a {
+      color: white;
+    }
+
+    .dropdown-menu a:hover {
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .pillars-grid {
@@ -1219,6 +1389,14 @@
   </a>
   <div class="nav-links">
     <a href="{{ url_for('index') }}">Home</a>
+    <div class="dropdown">
+      <span class="dropdown-toggle">Solutions</span>
+      <div class="dropdown-menu">
+        <a href="{{ url_for('for_clinics') }}">For Clinics</a>
+        <a href="{{ url_for('for_universities') }}">For Universities</a>
+        <a href="{{ url_for('for_researchers') }}">For Researchers</a>
+      </div>
+    </div>
     <a href="#how-it-works">How it works</a>
     <a href="{{ url_for('pilot_program') }}">Pilot Program</a>
     <a href="{{ url_for('security_page') }}">Security</a>
@@ -1231,19 +1409,41 @@
 <!-- 1. Hero Section -->
 <section class="hero-section">
   <div class="hero-content">
-    <h1 class="hero-headline">Never miss a clinical insight again.</h1>
-    <p class="hero-keywords">Structured clinical reasoning and documentation for physiotherapists</p>
+    <h1 class="hero-headline">Clinical reasoning, structured from start to finish.</h1>
     <p class="hero-subheadline">
-      Structure your clinical reasoning, reduce cognitive load, and generate defensible documentation — all in one system.
+      A 15-module AI-guided workflow that helps physiotherapists document consistently, think clearly, and build defensible assessments — every time.
     </p>
     <div class="hero-cta-group">
-      <a href="{{ url_for('request_access') }}" class="btn-primary">Request early access</a>
-      <button id="watchVideoBtn" class="btn-secondary" style="border: 2px solid #1a5f5a;">Watch how it works</button>
+      <a href="{{ url_for('request_access') }}" class="btn-primary">Start free 14-day trial</a>
     </div>
-    <div class="workflow-link">
-      <a href="{{ url_for('static', filename='prism-workflow-demo.pdf') }}" target="_blank">Want to see the full clinical reasoning framework? View detailed workflow →</a>
+    <p class="credibility-text">Built by a practicing physiotherapist • Trusted by clinics, universities & research teams</p>
+  </div>
+</section>
+
+<!-- Who Is This For Section -->
+<section class="who-for-section">
+  <div class="who-for-content">
+    <h2 class="who-for-title">Who is PhysiologicPRISM for?</h2>
+    <div class="who-for-grid">
+      <a href="{{ url_for('for_clinics') }}" class="who-for-card fade-in-element">
+        <div class="who-for-icon">🏥</div>
+        <h3 class="who-for-card-title">Clinics & Practices</h3>
+        <p class="who-for-card-text">Standardize assessments across your team and create more defensible documentation</p>
+        <span class="who-for-link">Learn more →</span>
+      </a>
+      <a href="{{ url_for('for_universities') }}" class="who-for-card fade-in-element">
+        <div class="who-for-icon">🎓</div>
+        <h3 class="who-for-card-title">Universities & Educators</h3>
+        <p class="who-for-card-text">Teach students structured clinical reasoning they can apply in real practice</p>
+        <span class="who-for-link">Learn more →</span>
+      </a>
+      <a href="{{ url_for('for_researchers') }}" class="who-for-card fade-in-element">
+        <div class="who-for-icon">🔬</div>
+        <h3 class="who-for-card-title">Researchers & Academics</h3>
+        <p class="who-for-card-text">Capture structured physiotherapy data for more consistent research workflows</p>
+        <span class="who-for-link">Learn more →</span>
+      </a>
     </div>
-    <p class="credibility-text">Built by a practicing physiotherapist for real-world clinical practice.</p>
   </div>
 </section>
 
@@ -1335,19 +1535,11 @@
     All in minutes — without adding extra work.
   </p>
   <div class="center-cta">
-    <button id="watchVideoBtn2" class="btn-secondary" style="border: 2px solid #1a5f5a;">See full workflow →</button>
+    <button id="watchVideoBtn" class="btn-secondary" style="border: 2px solid #1a5f5a;">Watch demo video</button>
   </div>
   <div class="workflow-link">
-    <a href="{{ url_for('static', filename='prism-workflow-demo.pdf') }}" target="_blank">Want to see the full clinical reasoning framework? View detailed workflow →</a>
+    <a href="{{ url_for('static', filename='prism-workflow-demo.pdf') }}" target="_blank">View detailed PDF workflow →</a>
   </div>
-</section>
-
-<!-- 5. Who It's For -->
-<section class="section section-alt">
-  <h2 class="section-title">Built for physiotherapists in clinical practice</h2>
-  <p class="section-subtitle" style="max-width: 700px; margin: 0 auto;">
-    Whether you're early in your career or managing a busy clinic, PRISM helps you think clearly, assess completely, and document confidently.
-  </p>
 </section>
 
 <!-- 6. Security & Compliance -->
@@ -1430,6 +1622,14 @@
       <p style="opacity: 0.8; line-height: 1.6;">
         Structured clinical documentation for physiotherapists. Complete, compliant, and defensible assessments through evidence-based workflows.
       </p>
+    </div>
+    <div class="footer-section">
+      <h3>Solutions</h3>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('for_clinics') }}">For Clinics</a></li>
+        <li><a href="{{ url_for('for_universities') }}">For Universities</a></li>
+        <li><a href="{{ url_for('for_researchers') }}">For Researchers</a></li>
+      </ul>
     </div>
     <div class="footer-section">
       <h3>Product</h3>
@@ -1535,21 +1735,12 @@
   // Video modal functionality
   const videoModal = document.getElementById('videoModal');
   const watchVideoBtn = document.getElementById('watchVideoBtn');
-  const watchVideoBtn2 = document.getElementById('watchVideoBtn2');
   const closeVideoModal = document.getElementById('closeVideoModal');
   const demoVideo = document.getElementById('demoVideo');
 
-  // Open modal when first button is clicked
+  // Open modal when button is clicked
   if (watchVideoBtn) {
     watchVideoBtn.addEventListener('click', function() {
-      videoModal.classList.add('active');
-      demoVideo.play();
-    });
-  }
-
-  // Open modal when second button is clicked
-  if (watchVideoBtn2) {
-    watchVideoBtn2.addEventListener('click', function() {
       videoModal.classList.add('active');
       demoVideo.play();
     });
@@ -1581,5 +1772,20 @@
       demoVideo.currentTime = 0;
     }
   });
+
+  // Mobile dropdown toggle
+  const dropdown = document.querySelector('.dropdown');
+  const dropdownToggle = document.querySelector('.dropdown-toggle');
+
+  if (window.innerWidth <= 768 && dropdownToggle) {
+    dropdownToggle.addEventListener('click', function() {
+      const menu = document.querySelector('.dropdown-menu');
+      if (menu.style.display === 'block') {
+        menu.style.display = 'none';
+      } else {
+        menu.style.display = 'block';
+      }
+    });
+  }
 </script>
 {% endblock %}

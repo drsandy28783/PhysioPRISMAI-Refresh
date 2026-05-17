@@ -1,0 +1,878 @@
+{% extends "base_public.html" %}
+{% block title %}For Universities | PhysiologicPRISM – Teach Clinical Reasoning Step by Step{% endblock %}
+
+{% block og_description %}PhysiologicPRISM helps physiotherapy programs teach assessment, reasoning, goal setting, and treatment planning through a structured 15-module workflow aligned to real clinical thinking.{% endblock %}
+
+{% block head %}
+<style>
+  /* Hide the navbar on the landing pages */
+  body > .navbar { display: none !important; }
+
+  /* Reset container */
+  .container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Prevent layout duplication at wide viewports */
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Marketing navbar with Solutions dropdown */
+  .homepage-navbar {
+    background: #1a5f5a;
+    padding: 16px 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+  }
+
+  .homepage-navbar .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .homepage-navbar .logo img {
+    height: 40px;
+  }
+
+  .homepage-navbar .nav-links {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .homepage-navbar .nav-links a,
+  .homepage-navbar .nav-links .dropdown {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    position: relative;
+  }
+
+  .homepage-navbar .nav-links a:hover {
+    opacity: 0.8;
+  }
+
+  .homepage-navbar .cta-btn {
+    background: white;
+    color: #1a5f5a;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  /* Dropdown menu styles */
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .dropdown-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .dropdown-toggle::after {
+    content: '▼';
+    font-size: 10px;
+  }
+
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 220px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 4px;
+    z-index: 1000;
+  }
+
+  /* Add invisible bridge to prevent hover gap */
+  .dropdown::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 16px;
+    background: transparent;
+  }
+
+  .dropdown-menu a {
+    display: block;
+    padding: 12px 20px;
+    color: #1a5f5a;
+    text-decoration: none;
+    font-size: 15px;
+    transition: background 0.2s;
+  }
+
+  .dropdown-menu a:hover {
+    background: #f8fffe;
+  }
+
+  .dropdown-menu a.active {
+    background: #e6f7f5;
+    font-weight: 600;
+  }
+
+  .dropdown:hover .dropdown-menu {
+    display: block;
+  }
+
+  /* Hero Section */
+  .hero-section {
+    background: linear-gradient(180deg, #f8fffe 0%, #e6f7f5 50%, #F8F9FA 100%);
+    padding: 80px 24px 60px;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      padding: 60px 20px 48px;
+    }
+  }
+
+  .hero-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero-headline {
+    font-size: 48px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 20px;
+    line-height: 1.2;
+  }
+
+  .hero-subheadline {
+    font-size: 20px;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 32px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 32px auto;
+    max-width: 700px;
+    text-align: left;
+  }
+
+  .hero-bullets li {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 12px;
+    padding-left: 32px;
+    position: relative;
+  }
+
+  .hero-bullets li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #27ae60;
+    font-weight: bold;
+    font-size: 20px;
+  }
+
+  .hero-cta-group {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .btn-primary {
+    background: #1a5f5a;
+    color: white;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(26, 95, 90, 0.2);
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-primary:hover {
+    background: #005f56;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(26, 95, 90, 0.3);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #1a5f5a;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    border: 2px solid #1a5f5a;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-secondary:hover {
+    background: #f8fffe;
+    transform: translateY(-2px);
+  }
+
+  .form-microcopy {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+    margin-top: 16px;
+  }
+
+  /* Section Container */
+  .section {
+    padding: 60px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-alt {
+    background: white;
+  }
+
+  /* Section Titles */
+  .section-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1a5f5a;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .section-body {
+    font-size: 18px;
+    color: #555;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 1.6;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Problem Section */
+  .problem-section {
+    background: #fff3cd;
+    border-left: 4px solid #f39c12;
+    padding: 32px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+  }
+
+  .problem-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  /* Feature Blocks Grid */
+  .feature-blocks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+
+  .feature-block {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s;
+  }
+
+  .feature-block:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .feature-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 12px;
+  }
+
+  .feature-text {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  /* Benefit Cards Grid */
+  .benefit-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .benefit-card {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s;
+  }
+
+  .benefit-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .benefit-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 12px;
+  }
+
+  .benefit-text {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  /* Use Cases Section */
+  .use-cases {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 24px;
+    text-align: center;
+  }
+
+  .use-cases .section-title {
+    color: white;
+  }
+
+  .use-case-bullets {
+    list-style: none;
+    padding: 0;
+    max-width: 800px;
+    margin: 32px auto;
+    text-align: left;
+  }
+
+  .use-case-bullets li {
+    font-size: 18px;
+    margin-bottom: 16px;
+    padding-left: 40px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .use-case-bullets li:before {
+    content: "📚";
+    position: absolute;
+    left: 0;
+    font-size: 20px;
+  }
+
+  /* Pilot Section */
+  .pilot-section {
+    background: #e8f5e9;
+    padding: 60px 24px;
+    text-align: center;
+  }
+
+  .pilot-section .section-title {
+    color: #1b5e20;
+  }
+
+  .pilot-section .section-body {
+    color: #2e7d32;
+  }
+
+  /* FAQ Section */
+  .faq-section {
+    background: white;
+    padding: 60px 24px;
+  }
+
+  .faq-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .faq-item {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .faq-item:last-child {
+    border-bottom: none;
+  }
+
+  .faq-question {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a5f5a;
+    margin-bottom: 12px;
+  }
+
+  .faq-answer {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  /* Final CTA Section */
+  .final-cta {
+    background: linear-gradient(135deg, #1a5f5a 0%, #2d8b7f 100%);
+    color: white;
+    padding: 80px 24px;
+    text-align: center;
+  }
+
+  .final-cta .section-title {
+    color: white;
+    font-size: 40px;
+  }
+
+  .final-cta .section-body {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 20px;
+  }
+
+  .btn-white {
+    background: white;
+    color: #1a5f5a;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.3);
+  }
+
+  /* Footer */
+  .homepage-footer {
+    background: #1a5f5a;
+    color: white;
+    padding: 48px 24px 24px;
+  }
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+
+  .footer-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .footer-links {
+    list-style: none;
+    padding: 0;
+  }
+
+  .footer-links li {
+    margin-bottom: 12px;
+  }
+
+  .footer-links a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover {
+    color: white;
+  }
+
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* Scroll-triggered fade-in animations */
+  .fade-in-element {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .fade-in-element.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Stagger animation delays for sequential elements */
+  .feature-block:nth-child(1) { transition-delay: 0s; }
+  .feature-block:nth-child(2) { transition-delay: 0.1s; }
+  .feature-block:nth-child(3) { transition-delay: 0.2s; }
+
+  .benefit-card:nth-child(1) { transition-delay: 0s; }
+  .benefit-card:nth-child(2) { transition-delay: 0.1s; }
+  .benefit-card:nth-child(3) { transition-delay: 0.2s; }
+  .benefit-card:nth-child(4) { transition-delay: 0.3s; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero-headline {
+      font-size: 32px;
+    }
+
+    .section-title {
+      font-size: 28px;
+    }
+
+    .homepage-navbar {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .homepage-navbar .nav-links {
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .dropdown-menu {
+      position: static;
+      box-shadow: none;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .dropdown-menu a {
+      color: white;
+    }
+
+    .dropdown-menu a:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Marketing Navbar with Solutions Dropdown -->
+<nav class="homepage-navbar">
+  <a href="{{ url_for('index') }}" class="logo" style="text-decoration: none;">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM">
+    <span>PhysiologicPRISM</span>
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('index') }}">Home</a>
+    <div class="dropdown">
+      <span class="dropdown-toggle">Solutions</span>
+      <div class="dropdown-menu">
+        <a href="{{ url_for('for_clinics') }}">For Clinics</a>
+        <a href="{{ url_for('for_universities') }}" class="active">For Universities</a>
+        <a href="{{ url_for('for_researchers') }}">For Researchers</a>
+      </div>
+    </div>
+    <a href="{{ url_for('pricing') }}">Pricing</a>
+    <a href="{{ url_for('pilot_program') }}">Pilot Program</a>
+    <a href="{{ url_for('security_page') }}">Security</a>
+    <a href="{{ url_for('blog_list') }}">Blog</a>
+    <a href="{{ url_for('login') }}" class="cta-btn">Sign in</a>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-content">
+    <h1 class="hero-headline">Teach clinical reasoning step by step</h1>
+    <p class="hero-subheadline">
+      PhysiologicPRISM helps physiotherapy programs teach assessment, reasoning, goal setting, and treatment planning through a structured 15-module workflow aligned to real clinical thinking.
+    </p>
+
+    <ul class="hero-bullets">
+      <li>Structured learning across the assessment journey</li>
+      <li>Supports ICF-based subjective reasoning</li>
+      <li>Useful for classroom, lab, and clinical placement preparation</li>
+    </ul>
+
+    <div class="hero-cta-group">
+      <a href="mailto:contact@physiologicprism.com?subject=Request a University Pilot" class="btn-primary">Request a university pilot</a>
+      <a href="mailto:contact@physiologicprism.com?subject=Book an Academic Demo" class="btn-secondary">Book an academic demo</a>
+    </div>
+
+    <p class="form-microcopy">No spam. No hard sell. We'll tailor the demo to your use case.</p>
+  </div>
+</section>
+
+<!-- Problem Section -->
+<section class="section">
+  <div class="problem-section">
+    <h2 class="problem-title">Students often know the theory, but struggle with structure</h2>
+    <p style="font-size: 18px; color: #555; margin-bottom: 24px; line-height: 1.6;">
+      One of the hardest parts of physiotherapy education is helping students move from isolated facts to a repeatable reasoning process. They may know the concepts, but still miss key links between history, flags, diagnosis, goals, and treatment planning. PhysiologicPRISM gives them a framework to think through the case in order.
+    </p>
+  </div>
+</section>
+
+<!-- Solution Section -->
+<section class="section section-alt">
+  <h2 class="section-title">A teaching tool for real clinical reasoning</h2>
+  <p class="section-body">
+    PhysiologicPRISM breaks the assessment journey into guided modules so students can learn how each decision connects to the next. This supports clearer thinking, more consistent case work, and a stronger bridge between theory and practice.
+  </p>
+
+  <div class="feature-blocks">
+    <div class="feature-block fade-in-element">
+      <h3 class="feature-title">Structured subjective assessment</h3>
+      <p class="feature-text">
+        Support history-taking and ICF-informed reasoning with a more organized process.
+      </p>
+    </div>
+    <div class="feature-block fade-in-element">
+      <h3 class="feature-title">Flags and diagnostic thinking</h3>
+      <p class="feature-text">
+        Help students identify relevant warning signs and connect findings to clinical interpretation.
+      </p>
+    </div>
+    <div class="feature-block fade-in-element">
+      <h3 class="feature-title">Goals, treatment, and follow-up</h3>
+      <p class="feature-text">
+        Teach students how to convert assessment findings into SMART goals, intervention plans, and ongoing review.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="section">
+  <h2 class="section-title">What universities gain</h2>
+
+  <div class="benefit-cards">
+    <div class="benefit-card fade-in-element">
+      <h3 class="benefit-title">Better student structure</h3>
+      <p class="benefit-text">
+        Students learn how to move through assessment in a sequence they can repeat.
+      </p>
+    </div>
+    <div class="benefit-card fade-in-element">
+      <h3 class="benefit-title">More consistent case work</h3>
+      <p class="benefit-text">
+        Faculty can evaluate reasoning against a common framework rather than scattered note styles.
+      </p>
+    </div>
+    <div class="benefit-card fade-in-element">
+      <h3 class="benefit-title">Teaching support for clinical placements</h3>
+      <p class="benefit-text">
+        Students can carry the same reasoning structure from classroom to supervised practice.
+      </p>
+    </div>
+    <div class="benefit-card fade-in-element">
+      <h3 class="benefit-title">A modern academic pilot opportunity</h3>
+      <p class="benefit-text">
+        Position your department as an early adopter of structured AI-guided clinical reasoning tools.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Use Cases Section -->
+<section class="use-cases">
+  <h2 class="section-title">Where it fits in education</h2>
+
+  <ul class="use-case-bullets">
+    <li>Classroom demonstrations</li>
+    <li>Case-based learning</li>
+    <li>OSCE preparation</li>
+    <li>Clinical placement readiness</li>
+    <li>Reflective learning after patient encounters</li>
+  </ul>
+</section>
+
+<!-- Pilot Section -->
+<section class="pilot-section">
+  <h2 class="section-title">Run a pilot with your department</h2>
+  <p class="section-body">
+    Offer departments a guided pilot to explore how PhysiologicPRISM supports student learning, structured assessment, and academic innovation in physiotherapy education.
+  </p>
+  <div style="margin-top: 32px;">
+    <a href="mailto:contact@physiologicprism.com?subject=Request a University Pilot" class="btn-primary">Request a university pilot</a>
+  </div>
+  <p class="form-microcopy">Best for clinics, universities, and research teams.</p>
+</section>
+
+<!-- FAQ Section -->
+<section class="faq-section">
+  <div class="faq-container">
+    <h2 class="section-title">Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+      <h4 class="faq-question">Is this meant to replace teaching?</h4>
+      <p class="faq-answer">
+        No. It is designed to support teaching by giving students a structured framework for applying what faculty already teach.
+      </p>
+    </div>
+
+    <div class="faq-item">
+      <h4 class="faq-question">Which parts of training does it support?</h4>
+      <p class="faq-answer">
+        It is especially relevant for subjective assessment, clinical reasoning, flags, diagnosis, goal setting, treatment planning, and follow-up thinking.
+      </p>
+    </div>
+
+    <div class="faq-item">
+      <h4 class="faq-question">Can it be used for case-based learning?</h4>
+      <p class="faq-answer">
+        Yes. The modular workflow makes it well suited for guided case work and structured discussion.
+      </p>
+    </div>
+
+    <div class="faq-item">
+      <h4 class="faq-question">Why would a university adopt this early?</h4>
+      <p class="faq-answer">
+        Because it helps standardize reasoning practice and gives students a more usable bridge between theory and real-world assessment.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final-cta">
+  <h2 class="section-title">Help students think like clinicians, not just memorize theory</h2>
+  <p class="section-body">
+    Book an academic demo or request a pilot for your physiotherapy program.
+  </p>
+  <a href="mailto:contact@physiologicprism.com?subject=Request a University Pilot" class="btn-white">Request a university pilot</a>
+</section>
+
+<!-- Footer -->
+<footer class="homepage-footer">
+  <div class="footer-content">
+    <div class="footer-section">
+      <h3>PhysiologicPRISM</h3>
+      <p style="opacity: 0.8; line-height: 1.6;">
+        AI-guided clinical reasoning platform for physiotherapy that structures assessment, documentation, and follow-up through a proprietary 15-module workflow.
+      </p>
+    </div>
+    <div class="footer-section">
+      <h3>Solutions</h3>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('for_clinics') }}">For Clinics</a></li>
+        <li><a href="{{ url_for('for_universities') }}">For Universities</a></li>
+        <li><a href="{{ url_for('for_researchers') }}">For Researchers</a></li>
+      </ul>
+    </div>
+    <div class="footer-section">
+      <h3>Product</h3>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('pricing') }}">Pricing</a></li>
+        <li><a href="{{ url_for('security_page') }}">Security</a></li>
+        <li><a href="{{ url_for('blog_list') }}">Blog</a></li>
+        <li><a href="{{ url_for('faq') }}">FAQ</a></li>
+      </ul>
+    </div>
+    <div class="footer-section">
+      <h3>Company</h3>
+      <ul class="footer-links">
+        <li><a href="mailto:contact@physiologicprism.com">Contact</a></li>
+        <li><a href="{{ url_for('framework_page') }}">PRISM Framework</a></li>
+        <li><a href="{{ url_for('terms_of_service') }}">Terms of Service</a></li>
+        <li><a href="{{ url_for('privacy_policy') }}">Privacy Policy</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p style="margin-bottom: 8px;">
+      &copy; 2025 PhysiologicPRISM. All rights reserved.
+    </p>
+    <p style="font-size: 0.85em; opacity: 0.75;">
+      Built by a practicing physiotherapist for clinicians, educators, and researchers.
+    </p>
+  </div>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce() }}">
+  document.addEventListener('DOMContentLoaded', function() {
+    // Mobile dropdown toggle
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+
+    if (window.innerWidth <= 768 && dropdownToggle) {
+      dropdownToggle.addEventListener('click', function() {
+        const menu = document.querySelector('.dropdown-menu');
+        if (menu.style.display === 'block') {
+          menu.style.display = 'none';
+        } else {
+          menu.style.display = 'block';
+        }
+      });
+    }
+
+    // Scroll-triggered fade-in animations using Intersection Observer
+    const fadeInObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          fadeInObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    });
+
+    // Observe all fade-in elements
+    document.querySelectorAll('.fade-in-element').forEach(element => {
+      fadeInObserver.observe(element);
+    });
+  });
+</script>
+{% endblock %}
