@@ -1,10 +1,11 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
 {% block title %}Welcome – Physiologic PRISM{% endblock %}
 
 {% block head %}
 <style>
   /* Hide the navbar on the landing page */
   body > .navbar { display: none !important; }
+
   .button-group {
     display: flex;
     flex-wrap: wrap;
@@ -12,21 +13,42 @@
     justify-content: center;
     margin-top: 32px;
   }
-  .container {
-    max-width: 600px;
-    margin: 100px auto;
+
+  .homepage-container {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 40px 20px;
     text-align: center;
   }
+
   h1 {
-    color: var(--primary);
+    color: #1a5f5a;
     font-size: 36px;
     margin-bottom: 16px;
+  }
+
+  .button {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: 2px solid #1a5f5a;
+    background: white;
+    color: #1a5f5a;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .button:hover {
+    background: #1a5f5a;
+    color: white;
   }
 </style>
 {% endblock %}
 
 {% block content %}
-  <div class="container">
+  <div class="homepage-container">
     <h1>Welcome to Physiologic PRISM</h1>
     <p style="font-size: 20px; color: #555; margin-bottom: 30px; max-width: 700px; margin-left: auto; margin-right: auto;">
       AI-powered clinical reasoning platform for physiotherapy. Structure your assessments, document with confidence, and deliver better patient care.
@@ -73,5 +95,10 @@
         <a href="{{ url_for('blog_list') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">Blog</a>
       </div>
     </div>
+  </div>
+
+  <!-- Copyright Footer -->
+  <div style="text-align: center; padding: 20px; margin-top: 60px; border-top: 1px solid #e0e0e0; color: #666; font-size: 14px;">
+    <p>&copy; 2025 PhysiologicPRISM. All rights reserved.</p>
   </div>
 {% endblock %}
