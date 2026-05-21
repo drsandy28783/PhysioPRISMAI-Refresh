@@ -1,7 +1,7 @@
 {% extends "base_public.html" %}
-{% block title %}Blog – Physiologic PRISM{% endblock %}
+{% block title %}Physiotherapy Blog: Clinical Reasoning, ICF Framework & Evidence-Based Practice – PhysiologicPRISM{% endblock %}
 
-{% block og_description %}Expert insights on physiotherapy practice, clinical reasoning frameworks, and AI-powered documentation. Learn how to enhance patient outcomes with evidence-based PRISM methodology{% endblock %}
+{% block og_description %}Evidence-based insights for physiotherapists on clinical reasoning frameworks, biopsychosocial assessment, ICF implementation, SMART goals, red and yellow flags, AI documentation, and structured treatment planning. Expert articles for modern physiotherapy practice{% endblock %}
 
 {% block head %}
 <style>
@@ -172,6 +172,53 @@
     margin-bottom: 1rem;
   }
 
+  /* Blog intro section */
+  .blog-intro {
+    max-width: 900px;
+    margin: 0 auto 3rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8fffe 0%, #e6f7f5 100%);
+    border-radius: 12px;
+    border-left: 4px solid #1a5f5a;
+  }
+
+  .blog-intro h2 {
+    font-size: 1.75rem;
+    color: #1a5f5a;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .blog-intro p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .blog-intro ul {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+  }
+
+  .blog-intro ul li {
+    padding-left: 1.75rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #333;
+  }
+
+  .blog-intro ul li:before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: #1a5f5a;
+    font-weight: 700;
+  }
+
   /* Mobile menu toggle */
   .mobile-menu-toggle {
     display: none;
@@ -270,6 +317,21 @@
       padding: 0.75rem 1.5rem;
       min-height: 48px;
     }
+
+    .blog-intro {
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .blog-intro h2 {
+      font-size: 1.4rem;
+      line-height: 1.3;
+    }
+
+    .blog-intro p,
+    .blog-intro ul li {
+      font-size: 1rem;
+    }
   }
 </style>
 {% endblock %}
@@ -299,6 +361,31 @@
   <div class="blog-header">
     <h1>PhysiologicPRISM Blog</h1>
     <p>Insights, tips, and best practices for physiotherapy professionals</p>
+  </div>
+
+  <!-- Blog Introduction Section -->
+  <div class="blog-intro">
+    <h2>Evidence-Based Insights for Modern Physiotherapy Practice</h2>
+    <p>
+      Welcome to the PhysiologicPRISM blog, where we explore the intersection of clinical reasoning, evidence-based practice, and technology in physiotherapy. Our articles help clinicians strengthen their assessment skills, adopt structured frameworks like the ICF and biopsychosocial model, and leverage AI to improve documentation quality and patient outcomes.
+    </p>
+    <p>
+      Whether you're a practicing physiotherapist looking to refine your clinical reasoning, an educator teaching evidence-based assessment techniques, or a clinic manager standardising documentation quality across your team, you'll find practical, research-informed content here.
+    </p>
+    <p><strong>Topics we cover include:</strong></p>
+    <ul>
+      <li>Structured clinical reasoning frameworks and the PRISM methodology</li>
+      <li>Biopsychosocial assessment and the International Classification of Functioning (ICF)</li>
+      <li>Red and yellow flags in musculoskeletal assessment</li>
+      <li>SMART goal-setting and evidence-based treatment planning</li>
+      <li>AI-assisted documentation and clinical decision support</li>
+      <li>Best practices for subjective and objective assessments</li>
+      <li>Chronic disease management in physiotherapy contexts</li>
+      <li>Privacy, security, and compliance in digital health tools</li>
+    </ul>
+    <p>
+      All articles are written by physiotherapy professionals and informed by current research, clinical guidelines, and real-world practice experience. We believe in transparent, defensible reasoning that puts patient outcomes first.
+    </p>
   </div>
 
   {% if posts %}
