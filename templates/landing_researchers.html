@@ -554,6 +554,17 @@
   .benefit-card:nth-child(3) { transition-delay: 0.2s; }
   .benefit-card:nth-child(4) { transition-delay: 0.3s; }
 
+  /* Mobile menu toggle */
+  .mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    padding: 5px;
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .hero-headline {
@@ -565,29 +576,75 @@
     }
 
     .homepage-navbar {
-      flex-direction: column;
-      gap: 16px;
+      position: relative;
+      padding: 12px 20px;
+    }
+
+    .mobile-menu-toggle {
+      display: block;
     }
 
     .homepage-navbar .nav-links {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #1a5f5a;
       flex-direction: column;
-      gap: 12px;
+      gap: 0;
       width: 100%;
+      text-align: left;
+      padding: 0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+
+    .homepage-navbar .nav-links.active {
+      display: flex;
+    }
+
+    .homepage-navbar .nav-links a {
+      padding: 16px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .homepage-navbar .cta-btn {
+      margin: 8px 16px 16px 16px;
       text-align: center;
+      border-radius: 8px;
+    }
+
+    .dropdown {
+      width: 100%;
+    }
+
+    .dropdown-toggle {
+      width: 100%;
+      justify-content: space-between;
+      padding: 16px 24px;
     }
 
     .dropdown-menu {
       position: static;
       box-shadow: none;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.1);
+      margin-top: 0;
+      display: none;
+    }
+
+    .dropdown-menu.active {
+      display: block;
     }
 
     .dropdown-menu a {
-      color: white;
+      color: white !important;
+      padding: 12px 24px 12px 48px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .dropdown-menu a:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
     }
   }
 </style>
@@ -600,7 +657,10 @@
     <img src="{{ url_for('static', filename='logo.png') }}" alt="PhysiologicPRISM">
     <span>PhysiologicPRISM</span>
   </a>
-  <div class="nav-links">
+  <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">
+    ☰
+  </button>
+  <div class="nav-links" id="nav-links">
     <a href="{{ url_for('index') }}">Home</a>
     <div class="dropdown">
       <span class="dropdown-toggle">Solutions</span>
@@ -866,17 +926,26 @@
 {% block scripts %}
 <script nonce="{{ csp_nonce() }}">
   document.addEventListener('DOMContentLoaded', function() {
+    // Mobile menu toggle
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const navLinks = document.getElementById('nav-links');
+
+    if (mobileMenuToggle) {
+      mobileMenuToggle.addEventListener('click', function() {
+        navLinks.classList.toggle('active');
+      });
+    }
+
     // Mobile dropdown toggle
     const dropdown = document.querySelector('.dropdown');
     const dropdownToggle = document.querySelector('.dropdown-toggle');
+    const dropdownMenu = document.querySelector('.dropdown-menu');
 
-    if (window.innerWidth <= 768 && dropdownToggle) {
-      dropdownToggle.addEventListener('click', function() {
-        const menu = document.querySelector('.dropdown-menu');
-        if (menu.style.display === 'block') {
-          menu.style.display = 'none';
-        } else {
-          menu.style.display = 'block';
+    if (dropdownToggle) {
+      dropdownToggle.addEventListener('click', function(e) {
+        if (window.innerWidth <= 768) {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('active');
         }
       });
     }
