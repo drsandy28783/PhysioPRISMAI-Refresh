@@ -685,7 +685,8 @@
     <a href="{{ url_for('pilot_program') }}">Pilot Program</a>
     <a href="{{ url_for('security_page') }}">Security</a>
     <a href="{{ url_for('blog_list') }}">Blog</a>
-    <a href="{{ url_for('login') }}" class="cta-btn">Sign in</a>
+    <a href="{{ url_for('login') }}">Sign in</a>
+    <a href="{{ url_for('register') }}" class="cta-btn">Start Free Trial</a>
   </div>
 </nav>
 
@@ -704,11 +705,11 @@
     </ul>
 
     <div class="hero-cta-group">
-      <a href="mailto:contact@physiologicprism.com?subject=Book a Clinic Demo" class="btn-primary">Book a clinic demo</a>
-      <a href="{{ url_for('static', filename='prism-workflow-demo.pdf') }}" target="_blank" class="btn-secondary">See how the workflow works</a>
+      <a href="{{ url_for('register') }}" class="btn-primary">🎁 Start Your 14-Day Free Trial</a>
+      <a href="mailto:contact@physiologicprism.com?subject=Book a Clinic Demo" class="btn-secondary">Book a clinic demo</a>
     </div>
 
-    <p class="form-microcopy">No spam. No hard sell. We'll tailor the demo to your use case.</p>
+    <p class="form-microcopy">No credit card required • 5 patients • 25 AI assists • All features included</p>
   </div>
 </section>
 

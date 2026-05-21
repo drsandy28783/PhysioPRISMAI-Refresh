@@ -28,20 +28,50 @@
 {% block content %}
   <div class="container">
     <h1>Welcome to Physiologic PRISM</h1>
+    <p style="font-size: 20px; color: #555; margin-bottom: 30px; max-width: 700px; margin-left: auto; margin-right: auto;">
+      AI-powered clinical reasoning platform for physiotherapy. Structure your assessments, document with confidence, and deliver better patient care.
+    </p>
 
-    <div class="button-group">
-      <a href="{{ url_for('login') }}">
-        <button class="button">Individual Physiotherapist</button>
+    <!-- Primary CTA: Free Trial -->
+    <div style="margin-bottom: 40px;">
+      <a href="{{ url_for('register') }}" style="text-decoration: none;">
+        <button class="button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 20px; padding: 18px 40px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+          🎁 Start Your 14-Day Free Trial
+        </button>
       </a>
-      <a href="{{ url_for('login_institute') }}">
-        <button class="button">Institute Login</button>
-      </a>
-      <a href="{{ url_for('register_institute') }}">
-        <button class="button">Register Institute</button>
-      </a>
-      <a href="{{ url_for('register_with_institute') }}">
-        <button class="button">Join as Institute Physio</button>
-      </a>
+      <p style="margin-top: 15px; font-size: 14px; color: #888; font-style: italic;">
+        No credit card required • 5 patients • 25 AI assists • All features
+      </p>
+    </div>
+
+    <!-- Secondary Options -->
+    <div style="margin-top: 50px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+      <p style="font-size: 16px; color: #666; margin-bottom: 20px;">Already have an account?</p>
+      <div class="button-group">
+        <a href="{{ url_for('login') }}">
+          <button class="button">Individual Physiotherapist</button>
+        </a>
+        <a href="{{ url_for('login_institute') }}">
+          <button class="button">Institute Login</button>
+        </a>
+        <a href="{{ url_for('register_institute') }}">
+          <button class="button">Register Institute</button>
+        </a>
+        <a href="{{ url_for('register_with_institute') }}">
+          <button class="button">Join as Institute Physio</button>
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div style="margin-top: 50px; padding: 25px; background: #f8f9fa; border-radius: 12px;">
+      <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Explore our platform:</p>
+      <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('pricing') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">View Pricing</a>
+        <a href="{{ url_for('for_clinics') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">For Clinics</a>
+        <a href="{{ url_for('for_universities') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">For Universities</a>
+        <a href="{{ url_for('blog_list') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">Blog</a>
+      </div>
     </div>
   </div>
 {% endblock %}
