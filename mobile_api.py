@@ -1286,6 +1286,64 @@ def api_get_patient_comprehensive_report(patient_id):
         return jsonify({'error': 'Failed to fetch comprehensive report'}), 500
 
 
+@mobile_api.route('/check-duplicate-patient', methods=['POST'])
+@require_auth
+def api_check_duplicate_patient():
+    """
+    Check if a patient with the same or similar name already exists.
+    Mobile API version - Returns matching patients for confirmation dialog.
+    """
+    try:
+        data = request.get_json()
+        patient_name = data.get('name', '').strip().lower()
+
+        if not patient_name:
+            return jsonify({'duplicates': [], 'count': 0}), 200
+
+        user_email = g.user.get('email')
+        db = get_cosmos_db()
+
+        # Get all patients for this physio
+        patients_ref = db.collection('patients').where('physio_id', '==', user_email)
+        patients = patients_ref.stream()
+
+        # Find exact and similar matches
+        duplicates = []
+        for patient in patients:
+            patient_data = patient.to_dict()
+            existing_name = patient_data.get('name', '').strip().lower()
+
+            # Check for exact match (case-insensitive)
+            if existing_name == patient_name:
+                duplicates.append({
+                    'patient_id': patient_data.get('patient_id'),
+                    'name': patient_data.get('name'),
+                    'age_sex': patient_data.get('age_sex'),
+                    'contact': patient_data.get('contact'),
+                    'created_at': patient_data.get('created_at'),
+                    'match_type': 'exact'
+                })
+            # Check for very similar names (contains or is contained)
+            elif (patient_name in existing_name or existing_name in patient_name) and len(patient_name) > 3:
+                duplicates.append({
+                    'patient_id': patient_data.get('patient_id'),
+                    'name': patient_data.get('name'),
+                    'age_sex': patient_data.get('age_sex'),
+                    'contact': patient_data.get('contact'),
+                    'created_at': patient_data.get('created_at'),
+                    'match_type': 'similar'
+                })
+
+        return jsonify({
+            'duplicates': duplicates,
+            'count': len(duplicates)
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error checking duplicate patient: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @mobile_api.route('/patients', methods=['POST'])
 @require_auth
 @require_patient_quota

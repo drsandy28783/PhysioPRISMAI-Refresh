@@ -220,6 +220,49 @@
 
     // Double-submit prevention flag
     let isSubmitting = false;
+    let duplicateCheckBypass = false; // Flag to bypass duplicate check after confirmation
+
+    // Function to check for duplicate patient names
+    async function checkDuplicatePatient(patientName) {
+      try {
+        const response = await fetch('/api/check_duplicate_patient', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: patientName })
+        });
+
+        const data = await response.json();
+        return data.duplicates || [];
+      } catch (error) {
+        console.error('[Duplicate Check] Error:', error);
+        return []; // On error, allow submission
+      }
+    }
+
+    // Function to show duplicate confirmation dialog
+    function showDuplicateConfirmation(duplicates, patientName) {
+      let message = `⚠️ WARNING: Potential duplicate patient detected!\n\n`;
+      message += `You are adding: "${patientName}"\n\n`;
+      message += `Found ${duplicates.length} existing patient(s) with similar name(s):\n\n`;
+
+      duplicates.forEach((dup, index) => {
+        message += `${index + 1}. ${dup.name} (${dup.patient_id})\n`;
+        message += `   Age/Sex: ${dup.age_sex || 'N/A'}\n`;
+        message += `   Contact: ${dup.contact || 'N/A'}\n`;
+        if (dup.match_type === 'exact') {
+          message += `   ⚠️ EXACT NAME MATCH\n`;
+        }
+        message += `\n`;
+      });
+
+      message += `Do you want to proceed and create a NEW patient anyway?\n\n`;
+      message += `Click OK to create new patient\n`;
+      message += `Click Cancel to go back and check`;
+
+      return confirm(message);
+    }
 
     // FIX: Prevent "Leave site?" popup by handling form submission via AJAX
     const form = document.getElementById('add-patient-form');
@@ -234,6 +277,38 @@
           console.log('[Add Patient] Already submitting, ignoring duplicate request');
           return;
         }
+
+        // CHECK FOR DUPLICATES (unless already confirmed)
+        if (!duplicateCheckBypass) {
+          const patientName = form.querySelector('[name="name"]')?.value?.trim();
+
+          if (patientName) {
+            console.log('[Add Patient] Checking for duplicate names...');
+            const duplicates = await checkDuplicatePatient(patientName);
+
+            if (duplicates.length > 0) {
+              console.log(`[Add Patient] Found ${duplicates.length} potential duplicate(s)`);
+
+              const userConfirmed = showDuplicateConfirmation(duplicates, patientName);
+
+              if (!userConfirmed) {
+                console.log('[Add Patient] User cancelled due to duplicates');
+                return; // User cancelled, don't submit
+              }
+
+              console.log('[Add Patient] User confirmed to proceed despite duplicates');
+              duplicateCheckBypass = true; // Set flag to bypass on next submit
+
+              // Trigger form submission again with bypass flag set
+              form.dispatchEvent(new Event('submit', { cancelable: true }));
+              return;
+            }
+          }
+        }
+
+        // Reset bypass flag for next time
+        duplicateCheckBypass = false;
+
         isSubmitting = true;
 
         // Disable submit button and show loading state

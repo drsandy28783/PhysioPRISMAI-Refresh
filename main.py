@@ -5561,6 +5561,63 @@ def get_next_patient_number_atomic(physio_id):
         return 1
 
 
+@app.route('/api/check_duplicate_patient', methods=['POST'])
+@require_auth
+def check_duplicate_patient():
+    """
+    Check if a patient with the same or similar name already exists.
+    Returns matching patients for confirmation dialog.
+    """
+    try:
+        data = request.get_json()
+        patient_name = data.get('name', '').strip().lower()
+
+        if not patient_name:
+            return jsonify({'duplicates': []})
+
+        physio_id = session.get('user_id')
+
+        # Get all patients for this physio
+        patients_ref = db.collection('patients').where('physio_id', '==', physio_id)
+        patients = patients_ref.stream()
+
+        # Find exact and similar matches
+        duplicates = []
+        for patient in patients:
+            patient_data = patient.to_dict()
+            existing_name = patient_data.get('name', '').strip().lower()
+
+            # Check for exact match (case-insensitive)
+            if existing_name == patient_name:
+                duplicates.append({
+                    'patient_id': patient_data.get('patient_id'),
+                    'name': patient_data.get('name'),
+                    'age_sex': patient_data.get('age_sex'),
+                    'contact': patient_data.get('contact'),
+                    'created_at': patient_data.get('created_at'),
+                    'match_type': 'exact'
+                })
+            # Check for very similar names (contains or is contained)
+            elif (patient_name in existing_name or existing_name in patient_name) and len(patient_name) > 3:
+                duplicates.append({
+                    'patient_id': patient_data.get('patient_id'),
+                    'name': patient_data.get('name'),
+                    'age_sex': patient_data.get('age_sex'),
+                    'contact': patient_data.get('contact'),
+                    'created_at': patient_data.get('created_at'),
+                    'match_type': 'similar'
+                })
+
+        return jsonify({
+            'duplicates': duplicates,
+            'count': len(duplicates)
+        })
+
+    except Exception as e:
+        logger.error(f"Error checking duplicate patient: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/add_patient', methods=['GET', 'POST'])
 @require_auth
 @require_patient_quota
