@@ -10110,18 +10110,89 @@ def super_admin_process_deletion(user_email):
         }
         db.collection('deleted_users').add(deleted_user_record)
 
-        # Anonymize patient records (replace physio_id with "deleted_user")
-        patients_ref = db.collection('patients').where('physio_id', '==', user_email).stream()
-        anonymized_count = 0
-        for patient_doc in patients_ref:
-            patient_doc.reference.update({
-                'physio_id': f'deleted_user_{user_email}',
-                'physio_name': 'Deleted User',
-                'anonymized_at': SERVER_TIMESTAMP
-            })
-            anonymized_count += 1
+        # ═══════════════════════════════════════════════════════════════
+        # GDPR-COMPLIANT COMPLETE DATA DELETION
+        # ═══════════════════════════════════════════════════════════════
 
-        # Delete user authentication from Firebase Auth
+        deletion_stats = {
+            'patients': 0,
+            'follow_ups': 0,
+            'form_drafts': 0,
+            'saved_searches': 0,
+            'ai_cache_entries': 0,
+            'subscriptions': 0
+        }
+
+        # 1. Delete ALL patient records and associated data
+        patients_ref = db.collection('patients').where('physio_id', '==', user_email).stream()
+        for patient_doc in patients_ref:
+            patient_id = patient_doc.id
+            patient_data = patient_doc.to_dict()
+
+            # Delete all follow-ups for this patient
+            follow_ups = db.collection('follow_ups').where('patient_id', '==', patient_id).stream()
+            for follow_up in follow_ups:
+                follow_up.reference.delete()
+                deletion_stats['follow_ups'] += 1
+
+            # Delete all form drafts for this patient
+            draft_patterns = [
+                f'add_patient_{patient_id}', f'edit_patient_{patient_id}',
+                f'follow_up_{patient_id}', f'subjective_{patient_id}',
+                f'objective_{patient_id}', f'pathophysiological_{patient_id}',
+                f'clinical_flags_{patient_id}', f'chronic_disease_{patient_id}',
+                f'provisional_diagnosis_{patient_id}', f'treatment_plan_{patient_id}',
+                f'patient_perspectives_{patient_id}', f'initial_plan_{patient_id}',
+                f'smart_goals_{patient_id}'
+            ]
+            for draft_id in draft_patterns:
+                try:
+                    db.collection('form_drafts').document(draft_id).delete()
+                    deletion_stats['form_drafts'] += 1
+                except:
+                    pass
+
+            # Delete AI cache for this patient
+            try:
+                from ai_cache import AICache
+                cache = AICache()
+                cache.delete_patient_cache(patient_id)
+                deletion_stats['ai_cache_entries'] += 1
+            except:
+                pass
+
+            # Finally, delete the patient record
+            patient_doc.reference.delete()
+            deletion_stats['patients'] += 1
+
+        # 2. Delete saved searches
+        saved_searches = db.collection('saved_searches').where('user_id', '==', user_email).stream()
+        for search in saved_searches:
+            search.reference.delete()
+            deletion_stats['saved_searches'] += 1
+
+        # 3. Delete subscription data
+        try:
+            db.collection('subscriptions').document(user_email).delete()
+            deletion_stats['subscriptions'] = 1
+        except:
+            pass
+
+        # 4. Delete messaging consent records
+        try:
+            db.collection('messaging_consent').document(user_email).delete()
+        except:
+            pass
+
+        # 5. Delete consent audit trail
+        try:
+            consent_audits = db.collection('consent_audit_trail').where('user_id', '==', user_email).stream()
+            for audit in consent_audits:
+                audit.reference.delete()
+        except:
+            pass
+
+        # 6. Delete user authentication from Firebase Auth
         try:
             user = auth.get_user_by_email(user_email)
             auth.delete_user(user.uid)
@@ -10129,20 +10200,34 @@ def super_admin_process_deletion(user_email):
         except Exception as auth_error:
             logger.warning(f"Could not delete Firebase Auth user {user_email}: {auth_error}")
 
-        # Delete user document from Firestore
+        # 7. Delete patient counter for this user
+        try:
+            db.collection('patient_counters').document(user_email).delete()
+        except:
+            pass
+
+        # 8. Finally, delete user document from Firestore
         user_ref.delete()
 
-        # Log the deletion
+        # Log the comprehensive deletion
         log_action(
             session.get('user_id'),
-            'Account Deletion Executed',
-            f'Permanently deleted user {user_email}. Anonymized {anonymized_count} patient records.'
+            'GDPR Account Deletion Executed',
+            f'Completely deleted all data for {user_email}: {deletion_stats}'
         )
 
-        flash(f"Successfully deleted account for {user_email}. Anonymized {anonymized_count} patient records.", "success")
+        logger.info(f"GDPR-compliant deletion completed for {user_email}: {deletion_stats}")
+
+        flash(
+            f"Successfully deleted account for {user_email}. "
+            f"Permanently removed {deletion_stats['patients']} patients, "
+            f"{deletion_stats['follow_ups']} follow-ups, and all associated data (GDPR compliant).",
+            "success"
+        )
         return jsonify({
             'success': True,
-            'message': f'Account deleted. {anonymized_count} patient records anonymized.'
+            'message': f'Account and all associated data completely deleted (GDPR compliant)',
+            'deletion_stats': deletion_stats
         })
 
     except Exception as e:

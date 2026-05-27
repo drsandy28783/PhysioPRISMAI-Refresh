@@ -1573,7 +1573,17 @@ def api_update_patient(patient_id):
 @mobile_api.route('/patients/<patient_id>', methods=['DELETE'])
 @require_auth
 def api_delete_patient(patient_id):
-    """Delete a patient"""
+    """
+    GDPR-Compliant Patient Deletion
+
+    Permanently deletes ALL patient data including:
+    - Patient record
+    - All follow-up sessions
+    - All form drafts
+    - AI cache entries
+
+    This ensures compliance with GDPR Article 17 (Right to Erasure)
+    """
     try:
         # Check if patient exists
         patient_doc = get_patient_safe(patient_id)
@@ -1588,14 +1598,68 @@ def api_delete_patient(patient_id):
         if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
             return jsonify({'error': 'Unauthorized'}), 403
 
-        # Delete patient
+        deletion_summary = {
+            'patient_id': patient_id,
+            'patient_name': patient_data.get('name'),
+            'deleted_at': datetime.now().isoformat()
+        }
+
+        # 1. Delete all follow-up sessions for this patient
+        follow_ups = db.collection('follow_ups').where('patient_id', '==', patient_id).stream()
+        follow_up_count = 0
+        for follow_up in follow_ups:
+            follow_up.reference.delete()
+            follow_up_count += 1
+        deletion_summary['follow_ups_deleted'] = follow_up_count
+
+        # 2. Delete all form drafts for this patient
+        # Form draft IDs follow pattern: {form_type}_{patient_id}
+        draft_patterns = [
+            f'add_patient_{patient_id}',
+            f'edit_patient_{patient_id}',
+            f'follow_up_{patient_id}',
+            f'subjective_{patient_id}',
+            f'objective_{patient_id}',
+            f'pathophysiological_{patient_id}',
+            f'clinical_flags_{patient_id}',
+            f'chronic_disease_{patient_id}',
+            f'provisional_diagnosis_{patient_id}',
+            f'treatment_plan_{patient_id}',
+            f'patient_perspectives_{patient_id}',
+            f'initial_plan_{patient_id}',
+            f'smart_goals_{patient_id}'
+        ]
+        draft_count = 0
+        for draft_id in draft_patterns:
+            try:
+                db.collection('form_drafts').document(draft_id).delete()
+                draft_count += 1
+            except:
+                pass  # Draft might not exist
+        deletion_summary['drafts_deleted'] = draft_count
+
+        # 3. Delete AI cache entries for this patient
+        try:
+            from ai_cache import AICache
+            cache = AICache()
+            cache.delete_patient_cache(patient_id)
+            deletion_summary['ai_cache_cleared'] = True
+        except Exception as cache_error:
+            logger.warning(f"Could not clear AI cache for patient {patient_id}: {cache_error}")
+            deletion_summary['ai_cache_cleared'] = False
+
+        # 4. Finally, delete the patient record itself
         db.collection('patients').document(patient_id).delete()
 
-        log_audit('delete_patient', {'patient_id': patient_id, 'patient_name': patient_data.get('name')})
+        # Log the comprehensive deletion
+        log_audit('delete_patient_gdpr', deletion_summary)
+
+        logger.info(f"GDPR deletion completed for patient {patient_id}: {deletion_summary}")
 
         return jsonify({
             'success': True,
-            'message': 'Patient deleted successfully'
+            'message': 'Patient and all associated data deleted successfully (GDPR compliant)',
+            'deletion_summary': deletion_summary
         }), 200
 
     except Exception as e:

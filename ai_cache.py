@@ -627,6 +627,83 @@ class AICache:
             return 0
 
 
+    def delete_patient_cache(self, patient_id: str) -> int:
+        """
+        Delete all AI cache entries for a specific patient.
+
+        Part of GDPR "Right to Erasure" (Article 17) compliance.
+        When a patient record is deleted, all associated AI cache entries must also be removed.
+
+        Args:
+            patient_id: The patient ID whose cache entries should be deleted
+
+        Returns:
+            int: Number of cache entries deleted
+        """
+        try:
+            if not patient_id:
+                logger.warning("delete_patient_cache called with empty patient_id")
+                return 0
+
+            # Query all cache entries related to this patient
+            # Cache keys contain patient_id in various formats, so we search the metadata
+            deleted_count = 0
+            batch = self.db.batch()
+            batch_count = 0
+
+            # Search through cache entries
+            # Note: Firestore doesn't support wildcards, so we need to check each entry
+            all_cache_docs = self.db.collection(self.cache_collection).stream()
+
+            for doc in all_cache_docs:
+                doc_data = doc.to_dict()
+                cache_key = doc_data.get('cache_key', '')
+
+                # Check if this cache entry is related to the patient
+                # Cache keys follow pattern: {user_id}_{patient_id}_{prompt_hash}
+                if patient_id in cache_key:
+                    batch.delete(doc.reference)
+                    batch_count += 1
+                    deleted_count += 1
+
+                    # Commit batch every 500 operations (Firestore limit)
+                    if batch_count >= 500:
+                        batch.commit()
+                        batch = self.db.batch()
+                        batch_count = 0
+
+            # Commit remaining deletions
+            if batch_count > 0:
+                batch.commit()
+
+            # Also delete training data entries for this patient
+            training_docs = self.db.collection(self.training_data_collection).stream()
+            batch = self.db.batch()
+            batch_count = 0
+
+            for doc in training_docs:
+                doc_data = doc.to_dict()
+                if doc_data.get('patient_id') == patient_id:
+                    batch.delete(doc.reference)
+                    batch_count += 1
+                    deleted_count += 1
+
+                    if batch_count >= 500:
+                        batch.commit()
+                        batch = self.db.batch()
+                        batch_count = 0
+
+            if batch_count > 0:
+                batch.commit()
+
+            logger.info(f"Deleted {deleted_count} AI cache/training entries for patient {patient_id} (GDPR)")
+            return deleted_count
+
+        except Exception as e:
+            logger.error(f"Error deleting patient cache for {patient_id}: {e}", exc_info=True)
+            return 0
+
+
     def delete_user_training_data(self, user_id: str) -> int:
         """
         Delete all training data entries for a specific user.
