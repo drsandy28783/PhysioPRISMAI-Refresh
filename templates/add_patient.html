@@ -218,6 +218,9 @@
       console.error('Failed to initialize draft auto-save for add patient form');
     }
 
+    // Double-submit prevention flag
+    let isSubmitting = false;
+
     // FIX: Prevent "Leave site?" popup by handling form submission via AJAX
     const form = document.getElementById('add-patient-form');
     if (form) {
@@ -225,6 +228,22 @@
         e.preventDefault(); // Stop default POST behavior
         e.stopImmediatePropagation(); // Stop all other listeners
         console.log('[Add Patient] Intercepting form submission');
+
+        // PREVENT DOUBLE-SUBMIT: Check if already submitting
+        if (isSubmitting) {
+          console.log('[Add Patient] Already submitting, ignoring duplicate request');
+          return;
+        }
+        isSubmitting = true;
+
+        // Disable submit button and show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Saving...';
+          submitBtn.style.opacity = '0.6';
+        }
 
         // Set navigation flag
         isNavigating = true;
@@ -262,6 +281,14 @@
             // JSON response - validation errors
             const data = await response.json();
             isNavigating = false;
+            isSubmitting = false; // Reset flag to allow retry
+
+            // Re-enable submit button
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalBtnText;
+              submitBtn.style.opacity = '1';
+            }
 
             if (data.errors) {
               // Display validation errors
@@ -291,11 +318,29 @@
           } else {
             // Other error
             isNavigating = false;
+            isSubmitting = false; // Reset flag to allow retry
+
+            // Re-enable submit button
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalBtnText;
+              submitBtn.style.opacity = '1';
+            }
+
             console.error('[Add Patient] Submission failed');
             alert('Failed to save patient. Please try again.');
           }
         } catch (error) {
           isNavigating = false;
+          isSubmitting = false; // Reset flag to allow retry
+
+          // Re-enable submit button
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            submitBtn.style.opacity = '1';
+          }
+
           console.error('[Add Patient] Error:', error);
           alert('An error occurred. Please try again.');
         }

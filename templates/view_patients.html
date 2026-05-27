@@ -479,6 +479,7 @@
             <a href="{{ url_for('follow_ups', patient_id=patient.patient_id) }}" class="button green">Add Follow-Up</a>
             <a href="{{ url_for('view_follow_ups', patient_id=patient.patient_id) }}" class="button green">View Follow-Ups</a>
             <a href="{{ url_for('patient_report', patient_id=patient.patient_id) }}" class="button">Report</a>
+            <button class="button delete-patient-btn" data-patient-id="{{ patient.patient_id }}" data-patient-name="{{ patient.name }}" style="background: #dc3545; color: white;">Delete</button>
           </td>
         </tr>
         {% endfor %}
@@ -529,6 +530,15 @@
       if (saveSearchBtn) {
         saveSearchBtn.addEventListener('click', saveCurrentSearch);
       }
+
+      // Delete patient buttons
+      document.querySelectorAll('.delete-patient-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const patientId = this.getAttribute('data-patient-id');
+          const patientName = this.getAttribute('data-patient-name');
+          deletePatient(patientId, patientName);
+        });
+      });
     });
 
     // Quick Filters
@@ -635,6 +645,56 @@
       .catch(error => {
         console.error('Error:', error);
         alert('Error deleting search');
+      });
+    }
+
+    // Delete Patient
+    function deletePatient(patientId, patientName) {
+      const confirmMsg = `Are you sure you want to delete patient "${patientName}" (${patientId})?\n\n` +
+                         `This will permanently delete:\n` +
+                         `- Patient record\n` +
+                         `- All assessments\n` +
+                         `- All follow-ups\n` +
+                         `- All treatment plans\n\n` +
+                         `This action CANNOT be undone!`;
+
+      if (!confirm(confirmMsg)) return;
+
+      // Second confirmation
+      const finalConfirm = prompt(`Type "DELETE" (in capitals) to confirm deletion of ${patientName}:`);
+      if (finalConfirm !== 'DELETE') {
+        alert('Deletion cancelled - confirmation text did not match');
+        return;
+      }
+
+      // Show loading state
+      const deleteBtn = document.querySelector(`[data-patient-id="${patientId}"]`);
+      const originalText = deleteBtn.textContent;
+      deleteBtn.textContent = 'Deleting...';
+      deleteBtn.disabled = true;
+
+      fetch(`/api/patients/${patientId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(`Patient "${patientName}" has been deleted successfully.`);
+          location.reload();
+        } else {
+          alert('Error deleting patient: ' + (data.error || 'Unknown error'));
+          deleteBtn.textContent = originalText;
+          deleteBtn.disabled = false;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting patient: ' + error.message);
+        deleteBtn.textContent = originalText;
+        deleteBtn.disabled = false;
       });
     }
   </script>

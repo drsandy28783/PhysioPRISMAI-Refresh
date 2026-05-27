@@ -5532,6 +5532,35 @@ def export_audit_logs():
     return response
 
 
+def get_next_patient_number_atomic(physio_id):
+    """
+    Atomically get the next patient number for a given physiotherapist.
+    This prevents race conditions when multiple patients are created simultaneously.
+
+    Args:
+        physio_id: The physiotherapist's email/ID
+
+    Returns:
+        int: The next sequential patient number
+    """
+    from google.cloud.firestore import Increment
+
+    # Use a separate counters collection to track patient numbers per physio
+    counter_ref = db.collection('patient_counters').document(physio_id)
+
+    # Atomically increment the counter and get the new value
+    # This operation is thread-safe and prevents race conditions
+    counter_ref.set({'count': Increment(1)}, merge=True)
+
+    # Get the updated counter value
+    counter_doc = counter_ref.get()
+    if counter_doc.exists:
+        return counter_doc.to_dict()['count']
+    else:
+        # This should not happen, but handle it gracefully
+        return 1
+
+
 @app.route('/add_patient', methods=['GET', 'POST'])
 @require_auth
 @require_patient_quota
@@ -5578,9 +5607,8 @@ def add_patient():
         # Remove dots, underscores, hyphens and take first 8 chars
         clean_prefix = ''.join(c for c in email_prefix if c.isalnum())[:8].lower()
 
-        # Get count of existing patients for this physio
-        existing_patients = db.collection('patients').where('physio_id', '==', physio_id).stream()
-        patient_count = sum(1 for _ in existing_patients) + 1
+        # Get next patient number using atomic counter (prevents race conditions)
+        patient_count = get_next_patient_number_atomic(physio_id)
 
         # Format: prefix-001, prefix-002, etc.
         patient_id = f"{clean_prefix}-{patient_count:03d}"
