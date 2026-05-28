@@ -1639,6 +1639,73 @@ def submit_access_request():
             return redirect(url_for('request_access'))
 
 
+@app.route('/api/demo-request', methods=['POST'])
+@csrf.exempt
+def demo_request():
+    """Handle demo request form submission from marketing pages"""
+    try:
+        # Expect JSON data from the modal form
+        if not request.is_json:
+            return jsonify({
+                'success': False,
+                'error': 'Content-Type must be application/json'
+            }), 400
+
+        data = request.get_json()
+
+        # Extract and validate required fields
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        organization = data.get('organization', '').strip()
+        message = data.get('message', '').strip()
+        page_source = data.get('page_source', 'unknown')
+
+        # Basic validation
+        if not name or not email or not organization:
+            return jsonify({
+                'success': False,
+                'error': 'Name, email, and organization are required'
+            }), 400
+
+        # Store in Firestore
+        db.collection('demo_requests').add({
+            'name': name,
+            'email': email,
+            'organization': organization,
+            'message': message,
+            'page_source': page_source,
+            'timestamp': SERVER_TIMESTAMP,
+            'status': 'pending'  # pending, contacted, completed
+        })
+
+        # Send notification email to admin
+        try:
+            from email_service import send_demo_request_notification
+
+            send_demo_request_notification(
+                name=name,
+                email=email,
+                organization=organization,
+                message=message,
+                page_source=page_source
+            )
+        except Exception as e:
+            logger.error(f"Failed to send demo request notification email: {str(e)}")
+            # Don't fail the request if email fails - the data is already stored
+
+        return jsonify({
+            'success': True,
+            'message': "Thank you for your interest! We'll be in touch shortly."
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error handling demo request: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'There was an error processing your request. Please try again.'
+        }), 500
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # FIREBASE AUTH ROUTES (New authentication flow)
 # ═══════════════════════════════════════════════════════════════════════════

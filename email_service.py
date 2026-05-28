@@ -1509,3 +1509,113 @@ def send_blog_lead_notification(lead_data: Dict[str, Any]) -> bool:
     except Exception as e:
         logger.error(f"Error in send_blog_lead_notification: {str(e)}")
         return False
+
+
+def send_demo_request_notification(name: str, email: str, organization: str, message: str, page_source: str) -> bool:
+    """
+    Send notification to super admin when someone requests a demo.
+
+    Args:
+        name: Contact's name
+        email: Contact's email
+        organization: Organization name
+        message: Message from contact
+        page_source: Which page the request came from (clinics/universities/researchers)
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        # Determine source label and color
+        source_labels = {
+            'clinics': ('🏥 For Clinics', '#1a5f5a'),
+            'universities': ('🎓 For Universities', '#1a5f5a'),
+            'researchers': ('🔬 For Researchers', '#1a5f5a')
+        }
+        source_label, source_color = source_labels.get(page_source, ('📞 Demo Request', '#1a5f5a'))
+
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 650px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, {source_color} 0%, #2d8b7f 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .source-badge {{ background: rgba(255, 255, 255, 0.2); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 15px; display: inline-block; }}
+                .info-box {{ background: white; padding: 25px; border-radius: 8px; margin: 20px 0; border-left: 4px solid {source_color}; }}
+                .info-row {{ margin: 12px 0; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }}
+                .info-row:last-child {{ border-bottom: none; }}
+                .label {{ font-weight: bold; color: {source_color}; display: inline-block; min-width: 120px; }}
+                .message-box {{ background: #f8fffe; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 3px solid {source_color}; }}
+                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                .button {{ display: inline-block; padding: 12px 30px; background: {source_color}; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+                .quick-reply {{ background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #27ae60; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="source-badge">{source_label}</div>
+                    <h1>📞 New Demo Request</h1>
+                    <p style="margin: 5px 0 0 0; opacity: 0.9;">Someone wants to see PhysiologicPRISM in action!</p>
+                </div>
+                <div class="content">
+                    <p>Dear {SUPER_ADMIN_NAME},</p>
+                    <p>You've received a new demo request from the {source_label} page. Here are the details:</p>
+
+                    <div class="info-box">
+                        <h3 style="color: {source_color}; margin-top: 0;">📋 Contact Information</h3>
+                        <div class="info-row">
+                            <span class="label">Name:</span>
+                            <span>{name}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Email:</span>
+                            <span><a href="mailto:{email}" style="color: {source_color};">{email}</a></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Organization:</span>
+                            <span>{organization}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Page Source:</span>
+                            <span>{source_label}</span>
+                        </div>
+                    </div>
+
+                    <div class="message-box">
+                        <h4 style="color: {source_color}; margin-top: 0;">💬 Message:</h4>
+                        <p style="margin: 0; white-space: pre-wrap;">{message}</p>
+                    </div>
+
+                    <div class="quick-reply">
+                        <h4 style="color: #27ae60; margin-top: 0;">✉️ Quick Reply</h4>
+                        <p style="font-size: 13px; line-height: 1.5; margin: 0;">
+                            Click the button below to reply to <strong>{name}</strong> directly:
+                        </p>
+                        <div style="text-align: center;">
+                            <a href="mailto:{email}?subject=Re: Demo Request for PhysiologicPRISM&body=Hi {name.split()[0]},\n\nThank you for your interest in PhysiologicPRISM!\n\n" class="button">Reply to {name.split()[0]}</a>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>This is an automated notification from {APP_NAME}</p>
+                        <p>Demo Request System</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return send_email(
+            to=SUPER_ADMIN_EMAIL,
+            subject=f"📞 Demo Request from {name} ({organization}) - {source_label}",
+            html=html
+        )
+
+    except Exception as e:
+        logger.error(f"Error in send_demo_request_notification: {str(e)}")
+        return False
