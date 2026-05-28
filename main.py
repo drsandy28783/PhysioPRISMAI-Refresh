@@ -890,6 +890,7 @@ csp = {
         'https://cdn.razorpay.com',  # Razorpay risk detection and additional scripts
         'https://cdn.jsdelivr.net',  # Chart.js CDN
         'https://us-assets.i.posthog.com',  # PostHog Analytics
+        'https://unpkg.com',  # Lucide Icons CDN
     ],
     'style-src': [
         "'self'",
