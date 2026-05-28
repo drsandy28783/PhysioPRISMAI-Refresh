@@ -346,7 +346,7 @@
             ">
                 <h2 style="margin: 0; font-size: 24px;">Book a Demo</h2>
                 <p style="margin: 8px 0 0 0; opacity: 0.95; font-size: 14px;">Let's discuss how PhysiologicPRISM can help</p>
-                <button onclick="closeDemoModal()" style="
+                <button id="demoCloseBtn" style="
                     position: absolute;
                     top: 16px;
                     right: 16px;
@@ -361,14 +361,14 @@
                     padding: 0;
                     opacity: 0.8;
                     transition: opacity 0.2s;
-                " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">&times;</button>
+                ">&times;</button>
             </div>
 
             <!-- Modal Body -->
             <form id="demoForm" style="padding: 24px;">
                 <div style="margin-bottom: 16px;">
                     <label style="display: block; margin-bottom: 6px; color: #1a5f5a; font-weight: 600;">Name *</label>
-                    <input type="text" id="demoName" name="name" required style="
+                    <input type="text" id="demoName" name="name" required class="demo-input" style="
                         width: 100%;
                         padding: 12px;
                         border: 2px solid #e0e0e0;
@@ -376,12 +376,12 @@
                         font-size: 15px;
                         box-sizing: border-box;
                         transition: border-color 0.2s;
-                    " onfocus="this.style.borderColor='#1a5f5a'" onblur="this.style.borderColor='#e0e0e0'">
+                    ">
                 </div>
 
                 <div style="margin-bottom: 16px;">
                     <label style="display: block; margin-bottom: 6px; color: #1a5f5a; font-weight: 600;">Email *</label>
-                    <input type="email" id="demoEmail" name="email" required style="
+                    <input type="email" id="demoEmail" name="email" required class="demo-input" style="
                         width: 100%;
                         padding: 12px;
                         border: 2px solid #e0e0e0;
@@ -389,12 +389,12 @@
                         font-size: 15px;
                         box-sizing: border-box;
                         transition: border-color 0.2s;
-                    " onfocus="this.style.borderColor='#1a5f5a'" onblur="this.style.borderColor='#e0e0e0'">
+                    ">
                 </div>
 
                 <div style="margin-bottom: 16px;">
                     <label style="display: block; margin-bottom: 6px; color: #1a5f5a; font-weight: 600;">Organization *</label>
-                    <input type="text" id="demoOrganization" name="organization" required style="
+                    <input type="text" id="demoOrganization" name="organization" required class="demo-input" style="
                         width: 100%;
                         padding: 12px;
                         border: 2px solid #e0e0e0;
@@ -402,12 +402,12 @@
                         font-size: 15px;
                         box-sizing: border-box;
                         transition: border-color 0.2s;
-                    " onfocus="this.style.borderColor='#1a5f5a'" onblur="this.style.borderColor='#e0e0e0'">
+                    ">
                 </div>
 
                 <div style="margin-bottom: 24px;">
                     <label style="display: block; margin-bottom: 6px; color: #1a5f5a; font-weight: 600;">Message</label>
-                    <textarea id="demoMessage" name="message" rows="4" placeholder="Tell us about your needs..." style="
+                    <textarea id="demoMessage" name="message" rows="4" placeholder="Tell us about your needs..." class="demo-input" style="
                         width: 100%;
                         padding: 12px;
                         border: 2px solid #e0e0e0;
@@ -417,7 +417,7 @@
                         resize: vertical;
                         font-family: Arial, sans-serif;
                         transition: border-color 0.2s;
-                    " onfocus="this.style.borderColor='#1a5f5a'" onblur="this.style.borderColor='#e0e0e0'"></textarea>
+                    "></textarea>
                 </div>
 
                 <div id="demoFormStatus" style="
@@ -441,7 +441,7 @@
                     font-weight: 600;
                     cursor: pointer;
                     transition: transform 0.2s, box-shadow 0.2s;
-                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(26, 95, 90, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                ">
                     Send Request
                 </button>
             </form>
@@ -461,6 +461,48 @@
             document.getElementById('demoForm').reset();
             document.getElementById('demoFormStatus').style.display = 'none';
         }
+
+        // Close button event listeners
+        const closeBtn = document.getElementById('demoCloseBtn');
+        closeBtn.addEventListener('click', closeDemoModal);
+        closeBtn.addEventListener('mouseover', function() {
+            this.style.opacity = '1';
+        });
+        closeBtn.addEventListener('mouseout', function() {
+            this.style.opacity = '0.8';
+        });
+
+        // Input field focus/blur event listeners
+        const inputs = document.querySelectorAll('.demo-input');
+        inputs.forEach(function(input) {
+            input.addEventListener('focus', function() {
+                this.style.borderColor = '#1a5f5a';
+            });
+            input.addEventListener('blur', function() {
+                this.style.borderColor = '#e0e0e0';
+            });
+        });
+
+        // Submit button hover effects
+        const submitBtn = document.getElementById('demoSubmitBtn');
+        submitBtn.addEventListener('mouseover', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 12px rgba(26, 95, 90, 0.3)';
+        });
+        submitBtn.addEventListener('mouseout', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+
+        // Event delegation for demo request buttons
+        document.addEventListener('click', function(e) {
+            const demoBtn = e.target.closest('[data-demo-page]');
+            if (demoBtn) {
+                e.preventDefault();
+                const pageSource = demoBtn.getAttribute('data-demo-page');
+                openDemoModal(pageSource);
+            }
+        });
 
         // Close modal when clicking outside
         document.getElementById('demoModal').addEventListener('click', function(e) {
