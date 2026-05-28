@@ -338,8 +338,8 @@
 
   /* Problem Section */
   .problem-section {
-    background: #fff3cd;
-    border-left: 4px solid #f39c12;
+    background: #e6f7f5;
+    border-left: 4px solid #1a5f5a;
     padding: 32px;
     border-radius: 12px;
     margin-bottom: 24px;
@@ -348,7 +348,7 @@
   .problem-title {
     font-size: 28px;
     font-weight: 700;
-    color: #333;
+    color: #1a5f5a;
     margin-bottom: 20px;
   }
 
@@ -362,16 +362,21 @@
     font-size: 18px;
     color: #333;
     margin-bottom: 16px;
-    padding-left: 40px;
+    padding-left: 0;
     position: relative;
     line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
   }
 
-  .problem-bullets li:before {
-    content: "⚠️";
-    position: absolute;
-    left: 0;
-    font-size: 20px;
+  .problem-bullets li svg {
+    width: 20px;
+    height: 20px;
+    stroke: #1a5f5a;
+    stroke-width: 2;
+    flex-shrink: 0;
+    margin-top: 2px;
   }
 
   /* Feature Blocks Grid */
@@ -469,16 +474,21 @@
   .privacy-bullets li {
     font-size: 18px;
     margin-bottom: 16px;
-    padding-left: 40px;
+    padding-left: 0;
     position: relative;
     line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
   }
 
-  .privacy-bullets li:before {
-    content: "🔒";
-    position: absolute;
-    left: 0;
-    font-size: 20px;
+  .privacy-bullets li svg {
+    width: 20px;
+    height: 20px;
+    stroke: white;
+    stroke-width: 2;
+    flex-shrink: 0;
+    margin-top: 2px;
   }
 
   /* FAQ Section */
@@ -765,7 +775,7 @@
     </ul>
 
     <div class="hero-cta-group">
-      <a href="{{ url_for('register') }}" class="btn-primary">🎁 Start Your 14-Day Free Trial</a>
+      <a href="{{ url_for('register') }}" class="btn-primary">Start Your 14-Day Free Trial</a>
       <a href="mailto:contact@physiologicprism.com?subject=Book a Clinic Demo" class="btn-secondary">Book a clinic demo</a>
     </div>
 
@@ -795,10 +805,10 @@
       In many clinics, assessments vary from one clinician to the next. Important details get missed, notes become inconsistent, and documentation quality depends too much on individual habits instead of a repeatable process. PhysiologicPRISM is built to solve that by giving your team a structured pathway for reasoning and recording care.
     </p>
     <ul class="problem-bullets">
-      <li>Subjective and objective findings are captured inconsistently.</li>
-      <li>Red flags, yellow flags, and contextual factors may be under-documented.</li>
-      <li>Treatment goals and rationale are often not linked clearly enough to the assessment.</li>
-      <li>Notes can be difficult to defend, review, or standardize across a growing team.</li>
+      <li><i data-lucide="alert-circle"></i><span>Subjective and objective findings are captured inconsistently.</span></li>
+      <li><i data-lucide="flag"></i><span>Red flags, yellow flags, and contextual factors may be under-documented.</span></li>
+      <li><i data-lucide="target"></i><span>Treatment goals and rationale are often not linked clearly enough to the assessment.</span></li>
+      <li><i data-lucide="shield-alert"></i><span>Notes can be difficult to defend, review, or standardize across a growing team.</span></li>
     </ul>
   </div>
 </section>
@@ -872,9 +882,9 @@
   </p>
 
   <ul class="privacy-bullets">
-    <li>AES-256 encryption and secure data handling described in your privacy materials</li>
-    <li>Role-based access and audit trail concepts highlighted on the site</li>
-    <li>De-identified AI processing approach for clinical content</li>
+    <li><i data-lucide="lock"></i><span>AES-256 encryption and secure data handling described in your privacy materials</span></li>
+    <li><i data-lucide="shield-check"></i><span>Role-based access and audit trail concepts highlighted on the site</span></li>
+    <li><i data-lucide="user-check"></i><span>De-identified AI processing approach for clinical content</span></li>
   </ul>
 </section>
 

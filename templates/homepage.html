@@ -358,8 +358,16 @@
   }
 
   .who-for-icon {
-    font-size: 48px;
     margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .who-for-icon svg {
+    width: 48px;
+    height: 48px;
+    stroke: #1a5f5a;
+    stroke-width: 1.5;
   }
 
   .who-for-card-title {
@@ -450,8 +458,8 @@
 
   /* Problem Section */
   .problem-section {
-    background: #fff3cd;
-    border-left: 4px solid #f39c12;
+    background: #e6f7f5;
+    border-left: 4px solid #1a5f5a;
     padding: 32px;
     border-radius: 12px;
     margin-bottom: 24px;
@@ -467,7 +475,7 @@
   .problem-title {
     font-size: 28px;
     font-weight: 700;
-    color: #333;
+    color: #1a5f5a;
     margin-bottom: 24px;
   }
 
@@ -485,6 +493,10 @@
     position: relative;
     font-weight: 500;
     line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-left: 0;
   }
 
   @media (max-width: 768px) {
@@ -495,11 +507,13 @@
     }
   }
 
-  .pain-points li:before {
-    content: "⚠️";
-    position: absolute;
-    left: 0;
-    font-size: 20px;
+  .pain-points li svg {
+    width: 20px;
+    height: 20px;
+    stroke: #1a5f5a;
+    stroke-width: 2;
+    flex-shrink: 0;
+    margin-top: 2px;
   }
 
   .solution-text {
@@ -534,8 +548,16 @@
   }
 
   .pillar-icon {
-    font-size: 48px;
     margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .pillar-icon svg {
+    width: 48px;
+    height: 48px;
+    stroke: #1a5f5a;
+    stroke-width: 1.5;
   }
 
   .pillar-title {
@@ -662,6 +684,13 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .security-badge svg {
+    width: 18px;
+    height: 18px;
+    stroke: #1b5e20;
+    stroke-width: 2;
   }
 
   .security-text {
@@ -1428,19 +1457,19 @@
     <h2 class="who-for-title">Who is PhysiologicPRISM for?</h2>
     <div class="who-for-grid">
       <a href="{{ url_for('for_clinics') }}" class="who-for-card fade-in-element">
-        <div class="who-for-icon">🏥</div>
+        <div class="who-for-icon"><i data-lucide="building-2"></i></div>
         <h3 class="who-for-card-title">Clinics & Practices</h3>
         <p class="who-for-card-text">Standardize assessments across your team and create more defensible documentation</p>
         <span class="who-for-link">Learn more →</span>
       </a>
       <a href="{{ url_for('for_universities') }}" class="who-for-card fade-in-element">
-        <div class="who-for-icon">🎓</div>
+        <div class="who-for-icon"><i data-lucide="graduation-cap"></i></div>
         <h3 class="who-for-card-title">Universities & Educators</h3>
         <p class="who-for-card-text">Teach students structured clinical reasoning they can apply in real practice</p>
         <span class="who-for-link">Learn more →</span>
       </a>
       <a href="{{ url_for('for_researchers') }}" class="who-for-card fade-in-element">
-        <div class="who-for-icon">🔬</div>
+        <div class="who-for-icon"><i data-lucide="microscope"></i></div>
         <h3 class="who-for-card-title">Researchers & Academics</h3>
         <p class="who-for-card-text">Capture structured physiotherapy data for more consistent research workflows</p>
         <span class="who-for-link">Learn more →</span>
@@ -1454,11 +1483,11 @@
   <div class="problem-section">
     <h2 class="problem-title">Clinical reasoning is taught well — but breaks down in practice.</h2>
     <ul class="pain-points">
-      <li>Important questions get missed under time pressure</li>
-      <li>Assessments become inconsistent between patients</li>
-      <li>Psychosocial factors are often overlooked</li>
-      <li>Notes don't reflect actual clinical reasoning</li>
-      <li>Decisions become harder to justify and defend</li>
+      <li><i data-lucide="clock"></i><span>Important questions get missed under time pressure</span></li>
+      <li><i data-lucide="alert-circle"></i><span>Assessments become inconsistent between patients</span></li>
+      <li><i data-lucide="user-x"></i><span>Psychosocial factors are often overlooked</span></li>
+      <li><i data-lucide="file-x"></i><span>Notes don't reflect actual clinical reasoning</span></li>
+      <li><i data-lucide="shield-alert"></i><span>Decisions become harder to justify and defend</span></li>
     </ul>
     <p class="solution-text">
       ✓ PhysiologicPRISM turns best-practice reasoning into a structured, repeatable workflow.
@@ -1471,35 +1500,35 @@
   <h2 class="section-title">Why physiotherapists use PRISM</h2>
   <div class="pillars-grid">
     <div class="pillar-card fade-in-element">
-      <div class="pillar-icon">🎯</div>
+      <div class="pillar-icon"><i data-lucide="target"></i></div>
       <h3 class="pillar-title">Never miss key clinical findings</h3>
       <p class="pillar-text">
         Guided prompts ensure red flags, psychosocial factors, and important history details are captured every time.
       </p>
     </div>
     <div class="pillar-card fade-in-element">
-      <div class="pillar-icon">🧠</div>
+      <div class="pillar-icon"><i data-lucide="brain"></i></div>
       <h3 class="pillar-title">Think systematically for every patient</h3>
       <p class="pillar-text">
         Structured workflow keeps your clinical reasoning sharp and consistent, even during back-to-back appointments.
       </p>
     </div>
     <div class="pillar-card fade-in-element">
-      <div class="pillar-icon">⚡</div>
+      <div class="pillar-icon"><i data-lucide="zap"></i></div>
       <h3 class="pillar-title">Reduce cognitive overload during busy clinics</h3>
       <p class="pillar-text">
         Let the system handle structure and prompts so you can focus on clinical decision-making and patient care.
       </p>
     </div>
     <div class="pillar-card fade-in-element">
-      <div class="pillar-icon">💬</div>
+      <div class="pillar-icon"><i data-lucide="message-circle"></i></div>
       <h3 class="pillar-title">Capture biopsychosocial factors consistently</h3>
       <p class="pillar-text">
         Integrated prompts help you document patient perspectives, lifestyle factors, and psychosocial context.
       </p>
     </div>
     <div class="pillar-card fade-in-element">
-      <div class="pillar-icon">📄</div>
+      <div class="pillar-icon"><i data-lucide="file-text"></i></div>
       <h3 class="pillar-title">Generate structured, defensible documentation</h3>
       <p class="pillar-text">
         Complete clinical records that clearly show your reasoning and decision-making process.
@@ -1552,11 +1581,11 @@
       Enterprise-grade infrastructure with patient privacy and regulatory compliance at its core.
     </p>
     <div class="security-badges">
-      <span class="security-badge">🔐 HIPAA-ready architecture</span>
-      <span class="security-badge">🌍 GDPR-aligned data workflows</span>
-      <span class="security-badge">🔒 End-to-end encryption (in transit and at rest)</span>
-      <span class="security-badge">🎭 De-identified data processing</span>
-      <span class="security-badge">📝 Role-based access control and audit logs</span>
+      <span class="security-badge"><i data-lucide="lock-keyhole"></i> HIPAA-ready architecture</span>
+      <span class="security-badge"><i data-lucide="globe"></i> GDPR-aligned data workflows</span>
+      <span class="security-badge"><i data-lucide="lock"></i> End-to-end encryption (in transit and at rest)</span>
+      <span class="security-badge"><i data-lucide="shield-check"></i> De-identified data processing</span>
+      <span class="security-badge"><i data-lucide="clipboard-list"></i> Role-based access control and audit logs</span>
     </div>
     <div class="center-cta" style="margin-top: 32px;">
       <a href="{{ url_for('security_page') }}" class="btn-secondary">Learn more about security →</a>

@@ -94,6 +94,9 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
 
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <!-- Mobile Responsive Styles for Public Pages -->
     <style>
         /* Base responsive styles for all public pages */
@@ -262,6 +265,13 @@
     </div>
 
     {% block scripts %}{% endblock %}
+
+    <!-- Initialize Lucide Icons -->
+    <script nonce="{{ csp_nonce() }}">
+      document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+      });
+    </script>
 
     <!-- NO Firebase initialization on public pages -->
     <!-- NO authentication checks -->
