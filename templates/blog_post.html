@@ -72,7 +72,7 @@
 
   /* Marketing navbar */
   .homepage-navbar {
-    background: #1a5f5a;
+    background: var(--primary);
     padding: 16px 24px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -112,10 +112,10 @@
   }
 
   .homepage-navbar .cta-btn {
-    background: white;
-    color: #1a5f5a;
+    background: var(--white);
+    color: var(--primary);
     padding: 10px 20px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-weight: 600;
   }
 
@@ -128,12 +128,12 @@
   .blog-post-header {
     margin-bottom: 2rem;
     padding-bottom: 2rem;
-    border-bottom: 1px solid #ecf0f1;
+    border-bottom: 1px solid var(--border-light);
   }
 
   .blog-post-back {
     display: inline-block;
-    color: #7cb342;
+    color: var(--primary);
     text-decoration: none;
     margin-bottom: 1.5rem;
     font-weight: 500;
@@ -145,7 +145,7 @@
 
   .blog-post-title {
     font-size: 2.5rem;
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 1rem;
     line-height: 1.2;
   }
@@ -155,17 +155,17 @@
     flex-wrap: wrap;
     gap: 1rem;
     align-items: center;
-    color: #7f8c8d;
+    color: var(--text-secondary);
     font-size: 0.95rem;
   }
 
   .blog-post-author {
     font-weight: 500;
-    color: #555;
+    color: var(--text-primary);
   }
 
   .blog-post-date {
-    color: #7f8c8d;
+    color: var(--text-secondary);
   }
 
   .blog-post-tags {
@@ -178,27 +178,27 @@
   .blog-post-tag {
     background: rgba(26, 95, 90, 0.1);
     padding: 0.25rem 0.75rem;
-    border-radius: 12px;
+    border-radius: var(--radius-full);
     font-size: 0.85rem;
-    color: #1a5f5a;
+    color: var(--primary);
     border: 1px solid rgba(26, 95, 90, 0.2);
   }
 
   .blog-post-content {
     font-size: 1.1rem;
     line-height: 1.8;
-    color: #333;
+    color: var(--text-primary);
   }
 
   .blog-post-content h2 {
     font-size: 1.75rem;
-    color: #2c3e50;
+    color: var(--text-primary);
     margin: 2rem 0 1rem;
   }
 
   .blog-post-content h3 {
     font-size: 1.4rem;
-    color: #34495e;
+    color: var(--text-primary);
     margin: 1.5rem 0 0.75rem;
   }
 
@@ -216,20 +216,20 @@
   }
 
   .blog-post-content a {
-    color: #7cb342;
+    color: var(--primary);
     text-decoration: underline;
   }
 
   .blog-post-content a:hover {
-    color: #689f38;
+    color: var(--primary-hover);
   }
 
   .blog-post-content blockquote {
-    border-left: 4px solid #7cb342;
+    border-left: 4px solid var(--primary);
     padding-left: 1.5rem;
     margin: 1.5rem 0;
     font-style: italic;
-    color: #555;
+    color: var(--text-primary);
   }
 
   .blog-post-content code {
@@ -256,35 +256,35 @@
   .blog-post-footer {
     margin-top: 3rem;
     padding-top: 2rem;
-    border-top: 1px solid #ecf0f1;
+    border-top: 1px solid var(--border-light);
   }
 
   .blog-post-cta {
-    background: #f8f9fa;
+    background: var(--background);
     padding: 2rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     text-align: center;
     margin-top: 2rem;
   }
 
   .blog-post-cta h3 {
     margin-bottom: 1rem;
-    color: #2c3e50;
+    color: var(--text-primary);
   }
 
   .blog-post-cta .button {
     display: inline-block;
-    background: #7cb342;
+    background: var(--primary);
     color: white;
     padding: 0.75rem 2rem;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-weight: 600;
-    transition: background 0.2s;
+    transition: background-color 0.2s ease;
   }
 
   .blog-post-cta .button:hover {
-    background: #689f38;
+    background: var(--primary-hover);
   }
 
   /* Mobile menu toggle */
@@ -296,6 +296,14 @@
     font-size: 28px;
     cursor: pointer;
     padding: 5px;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .homepage-navbar .nav-links a,
+    .blog-post-cta .button {
+      transition: none;
+    }
   }
 
   @media (max-width: 768px) {
@@ -314,7 +322,7 @@
       top: 100%;
       left: 0;
       right: 0;
-      background: #1a5f5a;
+      background: var(--primary);
       flex-direction: column;
       gap: 0;
       width: 100%;
