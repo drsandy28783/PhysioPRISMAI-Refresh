@@ -22,7 +22,7 @@
   }
 
   h1 {
-    color: #1a5f5a;
+    color: var(--primary);
     font-size: 36px;
     margin-bottom: 16px;
   }
@@ -30,19 +30,125 @@
   .button {
     display: inline-block;
     padding: 12px 24px;
-    border-radius: 8px;
-    border: 2px solid #1a5f5a;
-    background: white;
-    color: #1a5f5a;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--primary);
+    background: var(--white);
+    color: var(--primary);
     text-decoration: none;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .button:hover {
-    background: #1a5f5a;
-    color: white;
+    background: var(--primary);
+    color: var(--white);
+  }
+
+  .button:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .button {
+      transition: none;
+    }
+  }
+
+  /* Mobile Responsive: Small phones (<576px) */
+  @media (max-width: 576px) {
+    .homepage-container {
+      margin: 30px auto 20px;
+      padding: 20px 16px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    /* Hero paragraph - reduce font size on mobile */
+    .homepage-container > p:first-of-type {
+      font-size: 16px !important;
+      margin-bottom: 24px !important;
+    }
+
+    /* Primary CTA button - full width on mobile */
+    .homepage-container > div:first-of-type .button {
+      width: 100%;
+      max-width: 320px;
+      padding: 16px 24px !important;
+      font-size: 18px !important;
+    }
+
+    /* Secondary buttons - stack vertically with proper spacing */
+    .button-group {
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .button-group .button {
+      width: 100%;
+      min-height: 44px;
+      padding: 14px 20px;
+    }
+
+    /* Quick links - vertical stack on small screens */
+    .homepage-container > div:last-of-type > div {
+      flex-direction: column !important;
+      gap: 12px !important;
+      align-items: flex-start;
+    }
+
+    .homepage-container > div:last-of-type > div a {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  /* Tablet Responsive: Medium devices (577px-768px) */
+  @media (min-width: 577px) and (max-width: 768px) {
+    .homepage-container {
+      margin: 40px auto 30px;
+      padding: 30px 20px;
+    }
+
+    h1 {
+      font-size: 32px;
+    }
+
+    .homepage-container > p:first-of-type {
+      font-size: 18px !important;
+    }
+
+    /* Button group - 2 columns on tablet */
+    .button-group {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .button-group .button {
+      min-height: 44px;
+    }
+  }
+
+  /* Large devices: Touch target optimization */
+  @media (pointer: coarse) {
+    .button {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 14px 24px;
+    }
+
+    .homepage-container > div:last-of-type > div a {
+      min-height: 44px;
+      padding: 8px 0;
+    }
   }
 </style>
 {% endblock %}
@@ -50,25 +156,25 @@
 {% block content %}
   <div class="homepage-container">
     <h1>Welcome to Physiologic PRISM</h1>
-    <p style="font-size: 20px; color: #555; margin-bottom: 30px; max-width: 700px; margin-left: auto; margin-right: auto;">
+    <p style="font-size: 20px; color: var(--text-primary); margin-bottom: 30px; max-width: 700px; margin-left: auto; margin-right: auto;">
       AI-powered clinical reasoning platform for physiotherapy. Structure your assessments, document with confidence, and deliver better patient care.
     </p>
 
     <!-- Primary CTA: Free Trial -->
     <div style="margin-bottom: 40px;">
       <a href="{{ url_for('register') }}" style="text-decoration: none;">
-        <button class="button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 20px; padding: 18px 40px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+        <button class="button" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; font-size: 20px; padding: 18px 40px; box-shadow: 0 4px 15px rgba(26, 95, 90, 0.3);">
           🎁 Start Your 14-Day Free Trial
         </button>
       </a>
-      <p style="margin-top: 15px; font-size: 14px; color: #888; font-style: italic;">
+      <p style="margin-top: 15px; font-size: 14px; color: var(--text-secondary); font-style: italic;">
         No credit card required • 5 patients • 25 AI assists • All features
       </p>
     </div>
 
     <!-- Secondary Options -->
-    <div style="margin-top: 50px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
-      <p style="font-size: 16px; color: #666; margin-bottom: 20px;">Already have an account?</p>
+    <div style="margin-top: 50px; padding-top: 30px; border-top: 2px solid var(--border-light);">
+      <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 20px;">Already have an account?</p>
       <div class="button-group">
         <a href="{{ url_for('login') }}">
           <button class="button">Individual Physiotherapist</button>
@@ -86,19 +192,19 @@
     </div>
 
     <!-- Quick Links -->
-    <div style="margin-top: 50px; padding: 25px; background: #f8f9fa; border-radius: 12px;">
-      <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Explore our platform:</p>
+    <div style="margin-top: 50px; padding: 25px; background: var(--background); border-radius: var(--radius-md);">
+      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 15px;">Explore our platform:</p>
       <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-        <a href="{{ url_for('pricing') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">View Pricing</a>
-        <a href="{{ url_for('for_clinics') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">For Clinics</a>
-        <a href="{{ url_for('for_universities') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">For Universities</a>
-        <a href="{{ url_for('blog_list') }}" style="color: #1a5f5a; text-decoration: none; font-weight: 500;">Blog</a>
+        <a href="{{ url_for('pricing') }}" style="color: var(--primary); text-decoration: none; font-weight: 500;">View Pricing</a>
+        <a href="{{ url_for('for_clinics') }}" style="color: var(--primary); text-decoration: none; font-weight: 500;">For Clinics</a>
+        <a href="{{ url_for('for_universities') }}" style="color: var(--primary); text-decoration: none; font-weight: 500;">For Universities</a>
+        <a href="{{ url_for('blog_list') }}" style="color: var(--primary); text-decoration: none; font-weight: 500;">Blog</a>
       </div>
     </div>
   </div>
 
   <!-- Copyright Footer -->
-  <div style="text-align: center; padding: 20px; margin-top: 60px; border-top: 1px solid #e0e0e0; color: #666; font-size: 14px;">
+  <div style="text-align: center; padding: 20px; margin-top: 60px; border-top: 1px solid var(--border-light); color: var(--text-secondary); font-size: 14px;">
     <p>&copy; 2025 PhysiologicPRISM. All rights reserved.</p>
   </div>
 {% endblock %}
