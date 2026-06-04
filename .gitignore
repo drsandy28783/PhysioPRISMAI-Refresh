@@ -70,6 +70,8 @@ nul
 # Claude Code
 .claude/
 .agents/
+skills-lock.json
+package-lock.json
 
 # Maintenance & Diagnostic Scripts (may contain sensitive data)
 # Legacy Firestore scripts (removed - now using Cosmos DB)
