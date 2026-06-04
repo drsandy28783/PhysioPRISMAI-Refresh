@@ -8,8 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy both requirements files (lock for production, txt for reference)
+COPY requirements.txt requirements.lock ./
+# Use locked requirements for reproducible builds
+RUN pip install --no-cache-dir -r requirements.lock
 
 # Cache buster - change this value to force rebuild
 ARG CACHE_BUST=2026-03-30-quota-fixes-launch-ready-v2.0.0
