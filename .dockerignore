@@ -157,8 +157,7 @@ physiologicprism-*-firebase-adminsdk-*.json
 n8n_workflows/
 
 # Additional Development Files
-# Note: requirements.lock is NEEDED for production builds
-!requirements.lock
+# Note: Only requirements.txt is used for production builds
 uv.lock
 Pipfile.lock
 poetry.lock
