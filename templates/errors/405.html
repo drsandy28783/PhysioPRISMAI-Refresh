@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}405 - Method Not Allowed{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 80px auto; text-align: center;">
+  <div style="margin-bottom: 40px;">
+    <svg style="width: 120px; height: 120px; color: #e67e22;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+    </svg>
+  </div>
+
+  <h1 style="font-size: 72px; font-weight: bold; color: #2c3e50; margin: 0;">405</h1>
+  <h2 style="font-size: 24px; color: #7f8c8d; margin: 16px 0;">Method Not Allowed</h2>
+
+  <p style="color: #95a5a6; margin-bottom: 40px; font-size: 16px;">
+    The {{ method }} method is not allowed for the requested URL. This endpoint may require a different HTTP method or form submission.
+  </p>
+
+  <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 32px; border-left: 4px solid #ffc107;">
+    <h3 style="margin-top: 0; color: #856404; font-size: 18px;">What does this mean?</h3>
+    <p style="color: #856404; text-align: left; margin: 8px 0;">
+      This page can only be accessed through specific actions (like clicking a button or submitting a form), not by typing the URL directly in your browser.
+    </p>
+  </div>
+
+  <div style="background-color: #ecf0f1; padding: 20px; border-radius: 8px; margin-bottom: 32px;">
+    <h3 style="margin-top: 0; color: #2c3e50; font-size: 18px;">What can you do?</h3>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+      <li style="margin: 12px 0;">
+        <a href="{{ url_for('dashboard') }}" style="color: #3498db; text-decoration: none; font-weight: 500;">
+          → Go to Dashboard
+        </a>
+      </li>
+      <li style="margin: 12px 0;">
+        <a href="{{ url_for('edit_profile') }}" style="color: #3498db; text-decoration: none; font-weight: 500;">
+          → View Profile Settings
+        </a>
+      </li>
+      <li style="margin: 12px 0;">
+        <a href="{{ url_for('index') }}" style="color: #3498db; text-decoration: none; font-weight: 500;">
+          → Go to Home Page
+        </a>
+      </li>
+      <li style="margin: 12px 0;">
+        <a href="javascript:history.back()" style="color: #3498db; text-decoration: none; font-weight: 500;">
+          → Go Back
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div style="margin-top: 32px; padding: 16px; background-color: #e3f2fd; border-radius: 8px; text-align: left;">
+    <h4 style="margin-top: 0; color: #1976d2;">Need Help?</h4>
+    <p style="margin-bottom: 8px; color: #555;">If you believe this is an error, please contact support:</p>
+    <p style="margin: 0;">
+      <a href="mailto:support@physiologicprism.com" style="color: #1976d2; text-decoration: none;">
+        support@physiologicprism.com
+      </a>
+    </p>
+  </div>
+</div>
+{% endblock %}

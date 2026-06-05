@@ -939,8 +939,16 @@ csp = {
 }
 
 # Initialize Talisman with security headers
-# Detect if running in production (Cloud Run) or locally
-is_production = bool(os.environ.get('K_SERVICE'))
+# Detect if running in production (Azure Container Apps, Cloud Run, or any cloud environment) or locally
+# K_SERVICE = Google Cloud Run
+# CONTAINER_APP_NAME = Azure Container Apps
+# WEBSITE_INSTANCE_ID = Azure App Service
+is_production = bool(
+    os.environ.get('K_SERVICE') or
+    os.environ.get('CONTAINER_APP_NAME') or
+    os.environ.get('WEBSITE_INSTANCE_ID') or
+    os.environ.get('AZURE_CONTAINER_APPS')  # Explicit Azure flag
+)
 
 Talisman(
     app,
@@ -1290,6 +1298,17 @@ def handle_404_error(error):
     """Handle 404 Page Not Found errors"""
     logger.warning(f"404 error: {request.url}")
     return render_template('errors/404.html'), 404
+
+
+@app.errorhandler(405)
+def handle_405_error(error):
+    """Handle 405 Method Not Allowed errors"""
+    logger.warning(f"405 error: {request.method} {request.url}")
+    # Return JSON for API requests
+    if request.path.startswith('/api/') or request.accept_mimetypes.best == 'application/json':
+        return jsonify({'ok': False, 'error': 'Method not allowed', 'message': f'{request.method} method is not allowed for this endpoint'}), 405
+    # Return HTML for web requests
+    return render_template('errors/405.html', method=request.method, url=request.url), 405
 
 
 @app.errorhandler(500)
