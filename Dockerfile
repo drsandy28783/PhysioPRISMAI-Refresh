@@ -8,9 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-# Copy both requirements files (lock for production, txt for reference)
-COPY requirements.txt requirements.lock ./
-# Temporarily use requirements.txt until we debug requirements.lock issue
+# Copy requirements file
+COPY requirements.txt ./
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Cache buster - change this value to force rebuild
