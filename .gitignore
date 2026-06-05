@@ -205,3 +205,4 @@ docs/PHYSIOLOGICPRISM_COMPLETE_REFERENCE.md
 
 # Development Workflow Documentation (local reference only)
 .github/DEVELOPMENT_WORKFLOW.md
+bandit-report.json
