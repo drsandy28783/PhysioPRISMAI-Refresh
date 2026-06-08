@@ -11263,7 +11263,16 @@ def blog_detail(slug):
         post_ref = db.collection('blog_posts').document(post['id'])
         post_ref.update({'views': Increment(1)})
 
-        return render_template('blog_post.html', post=post)
+        # Fetch up to 3 other published posts for related links
+        related_docs = db.collection('blog_posts').where('status', '==', 'published').limit(6).stream()
+        related_posts = []
+        for doc in related_docs:
+            if doc.id != post['id'] and len(related_posts) < 3:
+                d = doc.to_dict()
+                if d.get('slug') and d.get('title'):
+                    related_posts.append({'slug': d['slug'], 'title': d['title']})
+
+        return render_template('blog_post.html', post=post, related_posts=related_posts)
     except Exception as e:
         logger.error(f"Error loading blog post by slug {slug}: {e}")
         flash('Error loading blog post', 'error')

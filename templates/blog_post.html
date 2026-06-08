@@ -471,6 +471,21 @@
     {{ post.content|safe }}
   </div>
 
+  {% if related_posts %}
+  <div class="related-posts" style="margin: 48px 0 32px; padding: 32px; background: #f8f9fa; border-radius: 12px;">
+    <h3 style="margin: 0 0 16px; font-size: 1.1rem; color: #2c3e50;">Continue reading</h3>
+    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
+      {% for rp in related_posts %}
+      <li>
+        <a href="{{ url_for('blog_detail', slug=rp.slug) }}" style="color: #1a5f5a; font-weight: 500; text-decoration: none;">
+          {{ rp.title }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
   <div class="blog-post-footer">
     <div class="blog-post-cta">
       <h3>Ready to enhance your clinical practice?</h3>
