@@ -10831,6 +10831,14 @@ def robots_txt():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+@app.route('/llms.txt')
+def llms_txt():
+    """Serve llms.txt for AI systems to understand product context"""
+    from flask import send_from_directory
+    response = send_from_directory('static', 'llms.txt')
+    response.headers['Content-Type'] = 'text/plain'
+    return response
+
 @app.route('/sitemap.xml')
 def sitemap():
     """Generate dynamic sitemap.xml with all public pages and blog posts"""

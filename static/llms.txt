@@ -1,0 +1,56 @@
+# PhysiologicPRISM
+
+## What it is
+PhysiologicPRISM is an AI-powered clinical reasoning and documentation platform for physiotherapists. It guides clinicians through a structured 11-module assessment workflow — from subjective examination to treatment planning — and uses AI to generate defensible, evidence-based clinical documentation.
+
+## Who it is for
+- Solo physiotherapists who want consistent, structured documentation
+- Physiotherapy clinics standardizing assessments across a team
+- University physiotherapy programs teaching clinical reasoning to students
+- Research teams capturing structured physiotherapy assessment data
+
+## Core problem it solves
+Physiotherapists know how to reason clinically but struggle to document it consistently — especially under time pressure. PhysiologicPRISM structures the entire reasoning process so nothing is missed, and AI generates the documentation automatically.
+
+## Key features
+- 11-module PRISM clinical reasoning framework (subjective, pathophysiological mechanisms, chronic disease factors, clinical flags, objective assessment, functioning assessment, patient perspectives, initial plan, provisional diagnosis, SMART goals, treatment plan)
+- Quick Mode: AI pre-fills all fields at once using only 8 AI calls per full assessment (2-3x more efficient than field-by-field mode)
+- Normal Mode: AI suggests content field-by-field on demand
+- Biopsychosocial factor capture built into every assessment
+- PDF report generation
+- HIPAA-conscious architecture on Microsoft Azure
+- GDPR-aligned data workflows
+- Voice input (Azure Speech Services)
+- 14-day free trial, no credit card required
+
+## Pricing (INR)
+- Free Trial: 14 days, full access, no credit card
+- Solo Professional: ₹4,499/month (~$50 USD) — 1 user, unlimited patients, 250 AI calls/month
+- Team (5 users): ₹16,299/month — 5 users, unlimited patients, 1,250 AI calls/month
+- Team Pro (10 users): ₹32,799/month — 10 users, unlimited patients, 2,500 AI calls/month
+- Institute (15 users): ₹49,199/month — 15 users, unlimited patients, 3,750 AI calls/month
+- Institute (20 users): ₹65,599/month — 20 users, unlimited patients, 5,000 AI calls/month
+
+## Technology
+- Web application (browser-based, mobile-responsive, PWA)
+- Works on Windows, macOS, Linux, iOS, Android
+- Backend: Python/Flask on Azure Container Apps
+- Database: Azure Cosmos DB
+- AI: Azure OpenAI (GPT-4o)
+- Voice: Azure Speech Services
+
+## Built by
+Dr Roopa Rao — a practicing physiotherapist. PhysiologicPRISM is built by a clinician for clinicians, grounded in the evidence-based biopsychosocial PRISM clinical reasoning framework.
+
+## Key pages
+- Homepage: https://physiologicprism.com
+- Pricing: https://physiologicprism.com/pricing
+- For Clinics: https://physiologicprism.com/for-clinics
+- For Universities: https://physiologicprism.com/for-universities
+- For Researchers: https://physiologicprism.com/for-researchers
+- PRISM Framework: https://physiologicprism.com/framework
+- Blog: https://physiologicprism.com/blog
+- Free Trial: https://physiologicprism.com/free-trial
+- FAQ: https://physiologicprism.com/faq
+- Security: https://physiologicprism.com/security
+- Pricing (machine-readable): https://physiologicprism.com/pricing.txt
