@@ -6,6 +6,22 @@
 {% block og_description %}See what physiotherapists, clinics, and university programs say about PhysiologicPRISM. Real reviews from clinicians using AI-assisted clinical reasoning in practice.{% endblock %}
 
 {% block head %}
+{% if total_reviews > 0 %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PhysiologicPRISM",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "{{ avg_rating }}",
+    "reviewCount": "{{ total_reviews }}",
+    "bestRating": "5",
+    "worstRating": "1"
+  }
+}
+</script>
+{% endif %}
 <style>
     .reviews-hero {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
