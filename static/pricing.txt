@@ -1,0 +1,63 @@
+# PhysiologicPRISM — Pricing
+
+Last updated: 2026-06-08
+Full pricing page: https://physiologicprism.com/pricing
+
+## Free Trial
+- Price: Free for 14 days
+- Credit card required: No
+- Patients: Up to 5
+- AI calls: 25
+- Users: 1
+- Features: Full access to all workflows and features
+
+## Solo Professional
+- Price: ₹4,499/month (approximately $50 USD/month)
+- Users: 1
+- Patients: Unlimited
+- AI calls/month: 250
+- Features: All 11 PRISM assessment workflows, PDF reports, usage analytics, priority email support
+
+## Team (5 Users)
+- Price: ₹16,299/month (approximately $185 USD/month)
+- Users: Up to 5
+- Patients: Unlimited
+- AI calls/month: 1,250 (250 per user)
+- Features: All workflows, PDF reports, team dashboard, usage analytics, priority support
+
+## Team Pro (10 Users)
+- Price: ₹32,799/month (approximately $375 USD/month)
+- Price per user: ₹3,644/month (10% tier discount)
+- Users: Up to 10
+- Patients: Unlimited
+- AI calls/month: 2,500 (250 per user)
+- Features: All workflows, PDF reports, advanced analytics, custom branding, dedicated account manager
+
+## Institute (15 Users)
+- Price: ₹49,199/month (approximately $560 USD/month)
+- Price per user: ₹3,280/month
+- Users: Up to 15
+- Patients: Unlimited
+- AI calls/month: 3,750 (250 per user)
+- Features: All workflows, API access, white-label options, priority phone support
+
+## Institute (20 Users)
+- Price: ₹65,599/month (approximately $750 USD/month)
+- Price per user: ₹2,952/month
+- Users: Up to 20
+- Patients: Unlimited
+- AI calls/month: 5,000 (250 per user)
+- Features: All workflows, API access, white-label options, priority phone support
+
+## Additional AI Calls (Top-up packs)
+- 25 calls: ₹325 (₹13.00/call)
+- 50 calls: ₹599 (₹11.98/call)
+- 100 calls: ₹1,099 (₹10.99/call)
+- 250 calls: ₹2,499 (₹9.99/call)
+- 500 calls: ₹4,499 (₹8.99/call)
+
+## Notes
+- All plans are billed monthly
+- Payments processed via Razorpay
+- 14-day free trial available on all plans, no credit card required
+- Primary market: India (INR pricing); USD equivalents are approximate

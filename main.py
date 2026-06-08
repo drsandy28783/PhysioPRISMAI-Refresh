@@ -10839,6 +10839,14 @@ def llms_txt():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+@app.route('/pricing.txt')
+def pricing_txt():
+    """Serve machine-readable pricing for AI agents"""
+    from flask import send_from_directory
+    response = send_from_directory('static', 'pricing.txt')
+    response.headers['Content-Type'] = 'text/plain'
+    return response
+
 @app.route('/sitemap.xml')
 def sitemap():
     """Generate dynamic sitemap.xml with all public pages and blog posts"""
