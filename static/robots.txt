@@ -1,6 +1,32 @@
 # Physiologic Prism - Robots.txt
 # Allow all search engines to crawl public pages
 
+# AI search bots — explicitly allowed to crawl and cite public content
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Block Common Crawl (used for AI training datasets, not search citation)
+User-agent: CCBot
+Disallow: /
+
 User-agent: *
 
 # Disallow authentication and account management pages
