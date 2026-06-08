@@ -13,13 +13,40 @@
   "description": "Structured clinical reasoning and documentation software for physiotherapists. AI-powered PRISM-based assessments that help capture biopsychosocial factors, reduce cognitive load, and generate defensible documentation.",
   "applicationCategory": "MedicalApplication",
   "operatingSystem": "Web-based (Windows, macOS, Linux, iOS, Android)",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD",
-    "availability": "https://schema.org/PreOrder",
-    "description": "Early access available for pilot program participants"
-  },
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Free Trial",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "description": "14-day free trial, no credit card required"
+    },
+    {
+      "@type": "Offer",
+      "name": "Solo Professional",
+      "price": "4499",
+      "priceCurrency": "INR",
+      "availability": "https://schema.org/InStock",
+      "description": "Single user, unlimited patients, 250 AI calls/month"
+    },
+    {
+      "@type": "Offer",
+      "name": "Team (5 Users)",
+      "price": "16299",
+      "priceCurrency": "INR",
+      "availability": "https://schema.org/InStock",
+      "description": "Up to 5 users, unlimited patients, 1250 AI calls/month"
+    },
+    {
+      "@type": "Offer",
+      "name": "Institute",
+      "price": "49199",
+      "priceCurrency": "INR",
+      "availability": "https://schema.org/InStock",
+      "description": "Up to 15 users, unlimited patients, 3750 AI calls/month"
+    }
+  ],
   "url": "{{ url_for('index', _external=True) }}",
   "image": "{{ url_for('static', filename='logo.png', _external=True) }}",
   "provider": {
