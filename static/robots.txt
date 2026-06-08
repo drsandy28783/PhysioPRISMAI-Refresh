@@ -31,7 +31,9 @@ User-agent: *
 
 # Disallow authentication and account management pages
 Disallow: /login
+Disallow: /login_institute
 Disallow: /register
+Disallow: /register_institute
 Disallow: /logout
 Disallow: /forgot-password
 Disallow: /reset-password
