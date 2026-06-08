@@ -40,7 +40,7 @@
     <meta name="msapplication-config" content="{{ url_for('static', filename='browserconfig.xml') }}">
 
     <!-- SEO and Description -->
-    <meta name="description" content="PhysiologicPRISM helps physiotherapists structure clinical reasoning, capture biopsychosocial factors, and generate defensible documentation — in every session.">
+    <meta name="description" content="{% block meta_description %}PhysiologicPRISM helps physiotherapists structure clinical reasoning, capture biopsychosocial factors, and generate defensible documentation — in every session.{% endblock %}">
     <meta name="keywords" content="physiotherapy, practice management, clinical reasoning, patient management, AI-powered, healthcare">
 
     <!-- Canonical URL (always non-www for SEO consistency) -->

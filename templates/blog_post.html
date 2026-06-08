@@ -1,9 +1,10 @@
 {% extends "base_public.html" %}
 {% block title %}{{ post.title }} – Physiologic PRISM Blog{% endblock %}
 
+{% block meta_description %}{{ post.meta_description }}{% endblock %}
+
 {% block head %}
 <!-- SEO Meta Tags -->
-<meta name="description" content="{{ post.meta_description }}">
 <meta name="author" content="{{ post.author }}">
 {% if post.tags %}
 <meta name="keywords" content="{{ post.tags|join(', ') }}">
