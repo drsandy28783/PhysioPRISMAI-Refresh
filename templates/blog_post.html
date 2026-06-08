@@ -452,7 +452,10 @@
 
     <div class="blog-post-meta">
       <span class="blog-post-author">By {{ post.author }}</span>
-      <span class="blog-post-date">{{ post.published_at_formatted }}</span>
+      <span class="blog-post-date">Published {{ post.published_at_formatted }}</span>
+      {% if post.updated_at_formatted and post.updated_at_formatted != post.published_at_formatted %}
+        <span class="blog-post-date">Updated {{ post.updated_at_formatted }}</span>
+      {% endif %}
       {% if post.views %}
         <span>{{ post.views }} views</span>
       {% endif %}

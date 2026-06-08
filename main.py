@@ -11275,6 +11275,17 @@ def blog_detail(slug):
             else:
                 post['published_at_formatted'] = 'Unknown'
 
+        # Format the last updated date
+        if post.get('updated_at'):
+            upd_date = post['updated_at']
+            if isinstance(upd_date, str):
+                try:
+                    upd_date = datetime.fromisoformat(upd_date.replace('Z', '+00:00'))
+                except:
+                    upd_date = None
+            if upd_date:
+                post['updated_at_formatted'] = upd_date.strftime('%B %d, %Y')
+
         # Increment view count
         post_ref = db.collection('blog_posts').document(post['id'])
         post_ref.update({'views': Increment(1)})
