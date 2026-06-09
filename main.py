@@ -6811,28 +6811,32 @@ def treatment_plan(patient_id):
             'physio_id') != session.get('user_id'):
         return "Access denied."
     if request.method == 'POST':
-        # Validate treatment plan data
-        form_data = {
-            'patient_id': patient_id,
-            'treatment_plan': request.form.get('treatment_plan', ''),
-            'reasoning': request.form.get('reasoning', '')
-        }
+        try:
+            # Validate treatment plan data
+            form_data = {
+                'patient_id': patient_id,
+                'treatment_plan': request.form.get('treatment_plan', ''),
+                'reasoning': request.form.get('reasoning', '')
+            }
 
-        is_valid, result = validate_data(TreatmentPlanSchema, form_data)
-        if not is_valid:
-            # Show detailed validation errors to user
-            logger.warning(f"Treatment Plan validation failed: {result}")
-            for field, errors in result.items():
-                for error in errors:
-                    flash(f'{field.replace("_", " ").title()}: {error}', 'error')
+            is_valid, result = validate_data(TreatmentPlanSchema, form_data)
+            if not is_valid:
+                logger.warning(f"Treatment Plan validation failed: {result}")
+                for field, errors in result.items():
+                    for error in errors:
+                        flash(f'{field.replace("_", " ").title()}: {error}', 'error')
+                return redirect(f'/treatment_plan/{patient_id}')
+
+            keys = ['treatment_plan', 'reasoning']
+            entry = {k: result.get(k, request.form.get(k, '')) for k in keys}
+            entry['patient_id'] = patient_id
+            entry['timestamp'] = SERVER_TIMESTAMP
+            db.collection('treatment_plan').add(entry)
+            return redirect('/dashboard')
+        except Exception as e:
+            logger.error(f"Treatment plan save error for {patient_id}: {e}", exc_info=True)
+            flash('Unable to save treatment plan. Please try again.', 'error')
             return redirect(f'/treatment_plan/{patient_id}')
-
-        keys = ['treatment_plan', 'reasoning']
-        entry = {k: result.get(k, request.form.get(k, '')) for k in keys}
-        entry['patient_id'] = patient_id
-        entry['timestamp'] = SERVER_TIMESTAMP
-        db.collection('treatment_plan').add(entry)
-        return redirect('/dashboard')
 
     # GET: Fetch saved treatment plan data
     saved_data = {}
