@@ -6832,6 +6832,11 @@ def treatment_plan(patient_id):
             entry['patient_id'] = patient_id
             entry['timestamp'] = SERVER_TIMESTAMP
             db.collection('treatment_plan').add(entry)
+            # Mark patient assessment as completed
+            db.collection('patients').document(patient_id).update({
+                'status': 'completed',
+                'updated_at': SERVER_TIMESTAMP
+            })
             return redirect('/dashboard')
         except Exception as e:
             logger.error(f"Treatment plan save error for {patient_id}: {e}", exc_info=True)
