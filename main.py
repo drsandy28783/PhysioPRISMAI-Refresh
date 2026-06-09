@@ -6,6 +6,7 @@ import uuid
 import secrets
 import string
 import sys
+import markdown as md_lib
 from typing import Optional, Dict, Any, List, Tuple
 from dotenv import load_dotenv
 
@@ -11222,6 +11223,7 @@ def blog_post(post_id):
         # Increment view count
         post_ref.update({'views': Increment(1)})
 
+        post['content'] = md_lib.markdown(post.get('content', ''), extensions=['extra', 'nl2br'])
         return render_template('blog_post.html', post=post)
     except Exception as e:
         logger.error(f"Error loading blog post {post_id}: {e}")
@@ -11299,6 +11301,7 @@ def blog_detail(slug):
                 if d.get('slug') and d.get('title'):
                     related_posts.append({'slug': d['slug'], 'title': d['title']})
 
+        post['content'] = md_lib.markdown(post.get('content', ''), extensions=['extra', 'nl2br'])
         return render_template('blog_post.html', post=post, related_posts=related_posts)
     except Exception as e:
         logger.error(f"Error loading blog post by slug {slug}: {e}")
