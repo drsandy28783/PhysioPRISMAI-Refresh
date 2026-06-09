@@ -457,9 +457,9 @@ document.addEventListener('DOMContentLoaded', () => {
     AIModal.show('Provisional Diagnosis');
 
     try {
-      // Create abort controller for timeout (60 seconds for longer prompts with past history)
+      // Create abort controller for timeout (120 seconds to match server-side Azure OpenAI timeout)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout
 
       const res  = await fetch('/api/ai_suggestion/provisional_diagnosis', {
         method: 'POST',
@@ -1130,9 +1130,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           };
 
-          // Create abort controller for timeout
+          // Create abort controller for timeout (120 seconds to match server-side Azure OpenAI timeout)
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+          const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout
 
           const res = await fetch(
             `/provisional_diagnosis_suggest/${getPatientId()}?field=${field}`,
