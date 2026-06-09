@@ -193,6 +193,9 @@
     <div id="incomplete-assessments-alert"></div>
     <script nonce="{{ csp_nonce() }}">
       (function() {
+        function isAssessmentComplete(p) {
+          return p.status === 'completed' || p.status === 'archived';
+        }
         const patients = {{ analytics.patients_list | tojson }};
         const incompletePatients = patients.filter(p => !isAssessmentComplete(p));
 
