@@ -5631,8 +5631,6 @@ def get_next_patient_number_atomic(physio_id):
     Returns:
         int: The next sequential patient number
     """
-    from google.cloud.firestore import Increment
-
     # Use a separate counters collection to track patient numbers per physio
     counter_ref = db.collection('patient_counters').document(physio_id)
 
