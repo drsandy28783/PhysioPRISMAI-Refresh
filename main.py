@@ -6853,7 +6853,8 @@ def treatment_plan(patient_id):
     except Exception as e:
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
-    return render_template('treatment_plan.html', patient_id=patient_id, patho_data=patho_data, saved_data=saved_data)
+    quick_mode = patient.get('quick_mode_enabled', False) or (session.get('qm_active_patient') == patient_id)
+    return render_template('treatment_plan.html', patient_id=patient_id, patho_data=patho_data, saved_data=saved_data, quick_mode=quick_mode)
 
 @app.route('/follow_ups/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
