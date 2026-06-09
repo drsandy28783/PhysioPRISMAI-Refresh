@@ -6828,7 +6828,7 @@ def treatment_plan(patient_id):
             return redirect(f'/treatment_plan/{patient_id}')
 
         keys = ['treatment_plan', 'reasoning']
-        entry = {k: result.get(k, request.form[k]) for k in keys}
+        entry = {k: result.get(k, request.form.get(k, '')) for k in keys}
         entry['patient_id'] = patient_id
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('treatment_plan').add(entry)
