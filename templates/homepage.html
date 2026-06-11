@@ -197,7 +197,7 @@
   /* Hero Section */
   .hero-section {
     background: linear-gradient(180deg, #f8fffe 0%, #e6f7f5 50%, #F8F9FA 100%);
-    padding: 72px 24px 56px;
+    padding: 80px 40px 72px;
   }
 
   @media (max-width: 768px) {
@@ -207,15 +207,15 @@
   }
 
   .hero-content {
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
     display: flex;
     align-items: center;
-    gap: 48px;
+    gap: 56px;
   }
 
   .hero-text {
-    flex: 0 0 420px;
+    flex: 0 0 38%;
     text-align: left;
   }
 
@@ -226,10 +226,10 @@
 
   .hero-visual img {
     width: 100%;
-    max-width: 720px;
     height: auto;
     display: block;
     border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(26, 95, 90, 0.10);
   }
 
   @media (max-width: 1024px) {
@@ -239,7 +239,11 @@
     }
     .hero-text {
       flex: none;
+      width: 100%;
       text-align: center;
+    }
+    .hero-visual {
+      width: 100%;
     }
     .hero-visual img {
       max-width: 100%;
