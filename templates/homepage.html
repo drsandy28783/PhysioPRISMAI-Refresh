@@ -197,19 +197,53 @@
   /* Hero Section */
   .hero-section {
     background: linear-gradient(180deg, #f8fffe 0%, #e6f7f5 50%, #F8F9FA 100%);
-    padding: 80px 24px 60px;
-    text-align: center;
+    padding: 72px 24px 56px;
   }
 
   @media (max-width: 768px) {
     .hero-section {
-      padding: 60px 20px 48px;
+      padding: 48px 20px 40px;
     }
   }
 
   .hero-content {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 48px;
+  }
+
+  .hero-text {
+    flex: 0 0 420px;
+    text-align: left;
+  }
+
+  .hero-visual {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .hero-visual img {
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+  }
+
+  @media (max-width: 1024px) {
+    .hero-content {
+      flex-direction: column;
+      gap: 36px;
+    }
+    .hero-text {
+      flex: none;
+      text-align: center;
+    }
+    .hero-visual img {
+      max-width: 100%;
+    }
   }
 
   .hero-headline {
@@ -229,35 +263,67 @@
   }
 
   .hero-subheadline {
-    font-size: 20px;
+    font-size: 18px;
     color: #333;
     line-height: 1.6;
     margin-bottom: 32px;
-    max-width: 700px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 420px;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     .hero-subheadline {
       font-size: 18px;
       line-height: 1.7;
-      max-width: 90%;
+      max-width: 100%;
+      margin-left: auto;
+      margin-right: auto;
     }
   }
 
   .hero-cta-group {
     display: flex;
     gap: 16px;
-    justify-content: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 1024px) {
+    .hero-cta-group {
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: #1a5f5a;
+    padding: 16px 28px;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 600;
+    border: 2px solid #1a5f5a;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+    min-height: 48px;
+  }
+
+  .btn-outline:hover {
+    background: #1a5f5a;
+    color: white;
   }
 
   @media (max-width: 768px) {
-    .hero-cta-group {
-      gap: 14px;
-      margin-bottom: 20px;
+    .btn-outline {
+      padding: 16px 24px;
+      font-size: 16px;
+      min-height: 56px;
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
     }
   }
 
@@ -1473,15 +1539,24 @@
 <!-- 1. Hero Section -->
 <section class="hero-section">
   <div class="hero-content">
-    <h1 class="hero-headline">Clinical reasoning, structured from start to finish.</h1>
-    <p class="hero-subheadline">
-      An 11-module AI-guided workflow that helps physiotherapists document consistently, think clearly, and build defensible assessments — every time.
-    </p>
-    <div class="hero-cta-group">
-      <!-- Links to registration choice page where users can select individual, admin, or join existing institute -->
-      <a href="{{ url_for('register') }}" class="btn-primary">Start free 14-day trial</a>
+    <div class="hero-text">
+      <h1 class="hero-headline">Stop spending half your clinic day on documentation.</h1>
+      <p class="hero-subheadline">
+        PhysiologicPRISM is an AI-powered clinical reasoning tool built by a physiotherapist. Run structured assessments, get AI-assisted diagnosis reasoning, and generate evidence-based treatment plans — in minutes.
+      </p>
+      <div class="hero-cta-group">
+        <a href="{{ url_for('register') }}" class="btn-primary">Start free 14-day trial</a>
+        <a href="#how-it-works" class="btn-outline">See how it works →</a>
+      </div>
+      <p class="credibility-text">Built by Dr Roopa Rao PT — BPT, MPT Orthopaedics, 14 years clinical experience • No credit card required</p>
     </div>
-    <p class="credibility-text">Built by a practicing physiotherapist • Trusted by clinics, universities & research teams</p>
+    <div class="hero-visual">
+      <img
+        src="{{ url_for('static', filename='Hero Image .png') }}"
+        alt="PhysiologicPRISM workflow: Add Patient → AI Assessment → AI Diagnosis → Treatment Plan"
+        loading="eager"
+      >
+    </div>
   </div>
 </section>
 
