@@ -79,6 +79,17 @@ Copy `.env.example` to `.env`. Required vars the app validates at startup: `SECR
 - All quota enforcement in `quota_middleware.py` uses atomic Cosmos DB operations — do not bypass or replicate quota logic outside that module.
 - CSRF protection (Flask-WTF) is active on all mutating endpoints.
 
+## CSP Nonce Rule (Critical)
+
+Flask-Talisman is configured with `content_security_policy_nonce_in=['script-src']`, which means **every `<script>` tag in every template must have `nonce="{{ csp_nonce() }}"`** — no exceptions. This includes:
+
+- Inline scripts: `<script nonce="{{ csp_nonce() }}">...</script>`
+- External scripts: `<script src="..." nonce="{{ csp_nonce() }}"></script>`
+- JSON-LD structured data: `<script type="application/ld+json" nonce="{{ csp_nonce() }}">...</script>`
+- Third-party snippets (Google Analytics, Razorpay, Firebase, GTM, etc.)
+
+Missing a nonce silently blocks the script at runtime and can break login, payments, or analytics. When adding any `<script>` tag — especially when copy-pasting from third-party docs — always add the nonce before committing.
+
 ---
 
 # Behavioral Guidelines
