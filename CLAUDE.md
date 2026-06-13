@@ -1,6 +1,87 @@
 # CLAUDE.md
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
+# PhysiologicPRISM — Project Overview
+
+A HIPAA-compliant physiotherapy clinical decision-support SaaS (Flask/Python). Clinicians use it to manage patients, run AI-assisted assessments, and generate treatment plans. Key constraints: all data handling must respect HIPAA BAA compliance; PHI must never leave Azure-backed services.
+
+## Architecture
+
+| Concern | Technology |
+|---|---|
+| Web framework | Flask 3.x + Gunicorn (3 gthread workers) |
+| Database | Azure Cosmos DB (`azure_cosmos_db.py`) |
+| Auth | Firebase Auth (token verification) + Flask-Login sessions |
+| AI | Azure OpenAI GPT-4o (`azure_openai_client.py`) |
+| Voice | Azure Speech Services (`azure_speech_client.py`) |
+| Payments | Razorpay (`razorpay_integration.py`) |
+| Email | Resend (`email_service.py`) |
+| Messaging | Twilio SMS/WhatsApp (`messaging_service.py`) |
+| Rate limiting | Flask-Limiter + Redis (`rate_limiter.py`) |
+| Validation | Marshmallow schemas (`schemas.py`) |
+| Security headers | Flask-Talisman |
+| Error tracking | Sentry SDK |
+| Deployment | Azure Container Apps via GitHub Actions (push to `main`) |
+
+**`main.py`** is the monolithic Flask app — all routes live here. Supporting modules are imported at the top. There is no Blueprint/package split.
+
+Key module roles:
+- `app_auth.py` — `require_firebase_auth` / `require_auth` decorators
+- `quota_middleware.py` — `require_ai_quota`, `require_patient_quota`, `require_voice_quota` decorators (atomic, race-condition safe)
+- `ai_cache.py` — caches Azure OpenAI responses
+- `ai_prompts.py` — all clinical AI prompt templates
+- `schemas.py` — Marshmallow schemas + `validate_data` / `validate_json` helpers
+- `azure_cosmos_db.py` — Cosmos DB client wrapper; `SERVER_TIMESTAMP`, `DELETE_FIELD`, `Increment` are sentinel values
+- `subscription_manager.py` — subscription state and quota tracking
+
+## Commands
+
+**Run locally:**
+```bash
+cp .env.example .env   # fill in values first
+python main.py
+```
+
+**Run with Gunicorn (production-like):**
+```bash
+gunicorn -w 3 -k gthread -b 0.0.0.0:8080 --timeout 120 main:app
+```
+
+**Run tests:**
+```bash
+pip install -r requirements-test.txt
+pytest                          # all tests
+pytest -m unit                  # unit tests only
+pytest tests/test_foo.py::test_bar  # single test
+```
+
+**Build Docker image:**
+```bash
+docker build -t physiologicprism-app .
+docker run --env-file .env -p 8080:8080 physiologicprism-app
+```
+
+**Deployment** happens automatically on push to `main` via `.github/workflows/azure-container-app.yml` — it builds, pushes to ACR (`physiologicprismacr`), and updates the `physiologicprism-app` Container App in `rg-physiologicprism-prod`.
+
+## Environment Setup
+
+Copy `.env.example` to `.env`. Required vars the app validates at startup: `SECRET_KEY`, `RESEND_API_KEY`. Additional required in practice: `COSMOS_DB_*`, `AZURE_OPENAI_*`, `FIREBASE_PROJECT_ID`, `RAZORPAY_*`, `REDIS_HOST`. Redis can be absent (rate limiter degrades gracefully). See `.env.example` for the full list.
+
+## HIPAA / Security Constraints
+
+- PHI must only flow to Azure-backed services (Cosmos DB, Azure OpenAI, Azure Speech). Never Sentry, logs, or third-party APIs.
+- `data_sanitization.py` sanitizes events before they reach Sentry.
+- `geo_restriction.py` enforces geographic access controls.
+- `consent_manager.py` tracks patient consent.
+- All quota enforcement in `quota_middleware.py` uses atomic Cosmos DB operations — do not bypass or replicate quota logic outside that module.
+- CSRF protection (Flask-WTF) is active on all mutating endpoints.
+
+---
+
+# Behavioral Guidelines
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 

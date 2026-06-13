@@ -926,6 +926,7 @@ csp = {
         'https://cdn.jsdelivr.net',  # Chart.js CDN (for source maps)
         'https://us.i.posthog.com',  # PostHog Analytics API
         'https://us-assets.i.posthog.com',  # PostHog Assets (source maps, surveys)
+        'https://unpkg.com',  # Lucide Icons source maps
     ],
     'frame-src': [
         "'self'",

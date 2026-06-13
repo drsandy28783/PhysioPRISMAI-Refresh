@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <!-- Google Analytics 4 -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MTYYB60PT"></script>
-    <script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6MTYYB60PT" nonce="{{ csp_nonce() }}"></script>
+    <script nonce="{{ csp_nonce() }}">
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
@@ -72,7 +72,7 @@
     {% endblock %}
 
     <!-- Organization Structured Data (JSON-LD) -->
-    <script type="application/ld+json">
+    <script type="application/ld+json" nonce="{{ csp_nonce() }}">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
