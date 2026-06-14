@@ -283,7 +283,7 @@
 
       popup.style.display = 'flex';
       popupShown = true;
-      sessionStorage.setItem(SESSION_KEY, 'true');
+      sessionStorage.setItem(SESSION_KEY, 'true'); // SAFE: only stores a flag, never PHI — do not store patient data here
 
       // Track event (if analytics available)
       if (typeof gtag !== 'undefined') {

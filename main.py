@@ -8993,7 +8993,7 @@ def treatment_plan_summary(patient_id):
     pat_doc = db.collection('patients').document(patient_id).get()
     if not pat_doc.exists:
         logger.warning(f"[Treatment Summary] Patient {patient_id} not found")
-        return jsonify({'error': f'Patient {patient_id} not found'}), 404
+        return jsonify({'error': 'Patient not found'}), 404
     patient_info = pat_doc.to_dict() if pat_doc.exists else {}
 
     # Helper to fetch the latest entry from a collection
