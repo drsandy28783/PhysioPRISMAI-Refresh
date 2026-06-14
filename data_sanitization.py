@@ -141,7 +141,12 @@ def flatten_docs(docs_dict: dict) -> dict:
         if not isinstance(doc, dict):
             continue
         for k, v in doc.items():
-            if k in ('patient_id', 'timestamp', 'created_by', 'uid', 'mrn'):
+            if k in (
+                'patient_id', 'timestamp', 'created_by', 'uid', 'mrn',
+                'name', 'email', 'phone', 'contact', 'address',
+                'dob', 'date_of_birth', 'diagnosis', 'treatment',
+                'prescription', 'medical_history', 'insurance',
+            ):
                 continue
             if v is None or v == "":
                 continue
