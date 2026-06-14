@@ -5971,6 +5971,7 @@ def subjective(patient_id):
         entry['patient_id'] = patient_id
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('subjective_examination').add(entry)
+        log_action(session.get('user_id'), 'Subjective Examination Saved', f"Saved for patient {patient_id}")
         return redirect(f'/perspectives/{patient_id}')
 
     # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
@@ -6019,6 +6020,7 @@ def perspectives(patient_id):
 
         # save to your collection
         db.collection('patient_perspectives').add(entry)
+        log_action(session.get('user_id'), 'Patient Perspectives Saved', f"Saved for patient {patient_id}")
 
         # Quick Mode patients continue to the QM initial plan screen
         if patient.get('quick_mode_enabled'):
@@ -6058,6 +6060,7 @@ def initial_plan(patient_id):
             entry[s] = request.form.get(s)
             entry[f"{s}_details"] = request.form.get(f"{s}_details", '')
         db.collection('initial_plan').add(entry)
+        log_action(session.get('user_id'), 'Initial Plan Saved', f"Saved for patient {patient_id}")
         # Redirect to merged Risk Factors & Clinical Flags screen
         return redirect(url_for('risk_factors_clinical_flags', patient_id=patient_id))
 
@@ -6095,6 +6098,7 @@ def patho_mechanism(patient_id):
         entry['patient_id'] = patient_id
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('patho_mechanism').add(entry)
+        log_action(session.get('user_id'), 'Patho Mechanism Saved', f"Saved for patient {patient_id}")
         # Redirect to subjective examination (NEW: patho moved to position 2)
         return redirect(url_for('subjective', patient_id=patient_id))
     return render_template('patho_mechanism.html', patient_id=patient_id)
@@ -6613,6 +6617,7 @@ def clinical_flags(patient_id):
             'timestamp':     SERVER_TIMESTAMP
         }
         db.collection('clinical_flags').add(entry)
+        log_action(session.get('user_id'), 'Clinical Flags Saved', f"Saved for patient {patient_id}")
         return redirect(url_for('objective_assessment', patient_id=patient_id))
 
 
@@ -6656,6 +6661,7 @@ def risk_factors_clinical_flags(patient_id):
             'timestamp':     SERVER_TIMESTAMP
         }
         db.collection('clinical_flags').add(flags_entry)
+        log_action(session.get('user_id'), 'Risk Factors & Clinical Flags Saved', f"Saved for patient {patient_id}")
 
         # Redirect to objective assessment
         return redirect(url_for('objective_assessment', patient_id=patient_id))
@@ -6682,6 +6688,7 @@ def objective_assessment(patient_id):
             'timestamp':     SERVER_TIMESTAMP
         }
         db.collection('objective_assessments').add(entry)
+        log_action(session.get('user_id'), 'Objective Assessment Saved', f"Saved for patient {patient_id}")
         return redirect(f'/provisional_diagnosis/{patient_id}')
 
     # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
@@ -6737,6 +6744,7 @@ def provisional_diagnosis(patient_id):
         entry['patient_id'] = patient_id
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('provisional_diagnosis').add(entry)
+        log_action(session.get('user_id'), 'Provisional Diagnosis Saved', f"Saved for patient {patient_id}")
         return redirect(f'/smart_goals/{patient_id}')
 
     # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
@@ -6786,6 +6794,7 @@ def smart_goals(patient_id):
         entry['patient_id'] = patient_id
         entry['timestamp'] = SERVER_TIMESTAMP
         db.collection('smart_goals').add(entry)
+        log_action(session.get('user_id'), 'SMART Goals Saved', f"Saved for patient {patient_id}")
         return redirect(f'/treatment_plan/{patient_id}')
 
     # GET: Fetch pathophysiological mechanism data (NEW: for AI context)
@@ -6838,6 +6847,7 @@ def treatment_plan(patient_id):
                 'status': 'completed',
                 'updated_at': SERVER_TIMESTAMP
             })
+            log_action(session.get('user_id'), 'Treatment Plan Saved', f"Saved for patient {patient_id}")
             return redirect('/dashboard')
         except Exception as e:
             logger.error(f"Treatment plan save error for {patient_id}: {e}", exc_info=True)
@@ -7029,6 +7039,8 @@ def patient_report(patient_id):
     if session.get('is_admin') == 0 and patient.get(
             'physio_id') != session.get('user_id'):
         return "Access denied."
+
+    log_action(session.get('user_id'), 'Patient Report Viewed', f"Viewed report for patient {patient_id}")
 
     # Fetch each assessment section
     def fetch_one(coll):
