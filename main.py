@@ -13082,6 +13082,7 @@ def health_check():
 # ═══════════════════════════════════════════════════════════════════
 
 @app.route('/sentry-debug')
+@login_required()
 def sentry_debug():
     """
     Test endpoint to verify Sentry error tracking.
@@ -13097,6 +13098,7 @@ def sentry_debug():
 
 
 @app.route('/sentry-test-phi')
+@login_required()
 def sentry_test_phi():
     """
     Test endpoint to verify PHI sanitization in Sentry.
@@ -13119,6 +13121,7 @@ def sentry_test_phi():
 
 
 @app.route('/sentry-test-message')
+@login_required()
 def sentry_test_message():
     """
     Test endpoint to send a test message to Sentry.
