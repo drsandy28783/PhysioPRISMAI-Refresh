@@ -1410,11 +1410,10 @@ def set_sentry_context():
                 # DO NOT include email, name, or any other PHI
             })
         elif 'user_id' in session:
-            # Session-based auth
-            sentry_sdk.set_user({
-                "id": session.get('user_id'),  # Email/UID from session (not PHI if it's UID)
-                # DO NOT include other session data
-            })
+            # Session-based auth — skip if user_id is an email (PHI)
+            uid = session.get('user_id', '')
+            if uid and '@' not in uid:
+                sentry_sdk.set_user({"id": uid})
 
         # Add custom tags for filtering in Sentry
         sentry_sdk.set_tag("environment", ENVIRONMENT)
