@@ -1063,14 +1063,26 @@ def sanitize_sentry_event(event, hint):
             event['user'] = user_sanitized
 
     # Sanitize breadcrumbs (may contain PHI in logs)
+    _PHI_KEYWORDS = {
+        'patient', 'email', 'phone', 'name', 'address', 'dob', 'date_of_birth',
+        'diagnosis', 'prescription', 'medical_history', 'treatment', 'medication',
+        'symptom', 'complaint', 'aadhaar', 'ssn', 'nhs', 'mrn', 'insurance',
+        'contact', 'gender', 'age_sex',
+    }
+    _PHI_PATTERNS = re.compile(
+        r'(\b[\w.+-]+@[\w-]+\.[a-z]{2,}\b'   # email address
+        r'|\b\+?[\d\s\-().]{7,15}\d\b'        # phone number
+        r'|\b\d{4}[-/]\d{2}[-/]\d{2}\b)',     # date (YYYY-MM-DD)
+        re.IGNORECASE,
+    )
     if 'breadcrumbs' in event:
         breadcrumbs = event['breadcrumbs']
         if isinstance(breadcrumbs, dict) and 'values' in breadcrumbs:
             for breadcrumb in breadcrumbs['values']:
                 if 'message' in breadcrumb:
-                    # Redact any message that might contain PHI
-                    message = breadcrumb['message']
-                    if any(sensitive in message.lower() for sensitive in ['patient', 'email', 'phone', 'name']):
+                    message = breadcrumb['message'] or ''
+                    if (any(kw in message.lower() for kw in _PHI_KEYWORDS)
+                            or _PHI_PATTERNS.search(message)):
                         breadcrumb['message'] = '[REDACTED - potentially contains PHI]'
                 if 'data' in breadcrumb:
                     breadcrumb['data'] = '[REDACTED]'
