@@ -613,6 +613,16 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
+// Get a fresh Firebase ID token — never read from localStorage
+async function getFirebaseToken() {
+    try {
+        const { getAuth } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
+        const user = getAuth().currentUser;
+        if (user) return await user.getIdToken();
+    } catch (_) {}
+    return '';
+}
+
 // Add event listeners
 document.getElementById('view-plans-btn').addEventListener('click', function() {
     window.location.href = '/pricing';
@@ -634,7 +644,7 @@ async function loadDashboard() {
     try {
         const response = await fetch('/api/subscription', {
             headers: {
-                'Authorization': 'Bearer ' + (localStorage.getItem('idToken') || '')
+                'Authorization': 'Bearer ' + await getFirebaseToken()
             }
         });
 
@@ -843,7 +853,7 @@ async function confirmCancellation() {
         const response = await fetch('/api/subscription/cancel', {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + (localStorage.getItem('idToken') || ''),
+                'Authorization': 'Bearer ' + await getFirebaseToken(),
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ reason, feedback })
