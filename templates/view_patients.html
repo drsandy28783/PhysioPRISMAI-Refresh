@@ -345,7 +345,7 @@
       <div class="filter-grid">
         <div class="filter-input-group">
           <label>Patient Name:</label>
-          <input type="text" name="name" placeholder="Search by name" value="{{ request.args.get('name', '') }}">
+          <input type="text" id="client-filter-name" placeholder="Search by name" autocomplete="off">
         </div>
 
         <div class="filter-input-group">
@@ -355,12 +355,12 @@
 
         <div class="filter-input-group">
           <label>Contact Number:</label>
-          <input type="text" name="contact" placeholder="Search by contact" value="{{ request.args.get('contact', '') }}">
+          <input type="text" id="client-filter-contact" placeholder="Search by contact" autocomplete="off">
         </div>
 
         <div class="filter-input-group">
           <label>Chief Complaint:</label>
-          <input type="text" name="complaint" placeholder="Search complaint" value="{{ request.args.get('complaint', '') }}">
+          <input type="text" id="client-filter-complaint" placeholder="Search complaint" autocomplete="off">
         </div>
 
         <div class="filter-input-group">
@@ -449,7 +449,7 @@
       </thead>
       <tbody>
         {% for patient in patients %}
-        <tr>
+        <tr data-name="{{ (patient.name or '')|lower }}" data-contact="{{ patient.contact or '' }}" data-complaint="{{ (patient.present_history or '')|lower }}">
           <td>{{ patient.patient_id }}</td>
           <td>{{ patient.name }}</td>
           <td>{{ patient.age_sex }}</td>
@@ -697,5 +697,46 @@
         deleteBtn.disabled = false;
       });
     }
+  </script>
+
+  <script nonce="{{ csp_nonce() }}">
+    // Client-side filtering for PHI fields (name, contact, complaint)
+    // These never appear in the URL — filtered entirely in the browser.
+    (function () {
+      const nameInput     = document.getElementById('client-filter-name');
+      const contactInput  = document.getElementById('client-filter-contact');
+      const complaintInput = document.getElementById('client-filter-complaint');
+      const rows = document.querySelectorAll('tbody tr');
+      const countEl = document.querySelector('.filter-stats');
+
+      function applyClientFilters() {
+        const name      = (nameInput     ? nameInput.value.trim().toLowerCase()     : '');
+        const contact   = (contactInput  ? contactInput.value.trim().toLowerCase()  : '');
+        const complaint = (complaintInput ? complaintInput.value.trim().toLowerCase() : '');
+
+        let visible = 0;
+        rows.forEach(function (row) {
+          const matchName      = !name      || row.dataset.name.includes(name);
+          const matchContact   = !contact   || row.dataset.contact.toLowerCase().includes(contact);
+          const matchComplaint = !complaint || row.dataset.complaint.includes(complaint);
+          const show = matchName && matchContact && matchComplaint;
+          row.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+
+        if (countEl) {
+          const total = rows.length;
+          const active = name || contact || complaint;
+          countEl.textContent = active
+            ? ('Showing ' + visible + ' of ' + total + ' patients')
+            : countEl.dataset.original || countEl.textContent;
+          if (!countEl.dataset.original) countEl.dataset.original = countEl.textContent;
+        }
+      }
+
+      [nameInput, contactInput, complaintInput].forEach(function (el) {
+        if (el) el.addEventListener('input', applyClientFilters);
+      });
+    })();
   </script>
 {% endblock %}

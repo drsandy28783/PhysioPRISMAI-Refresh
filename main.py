@@ -4846,10 +4846,8 @@ def admin_dashboard():
 def view_patients():
         """Enhanced patient list with advanced search and filtering"""
         # Get filter parameters (existing)
-        name_filter = request.args.get('name', '').strip()
+        # NOTE: name, contact, complaint are intentionally excluded — filtered client-side to keep PHI out of URLs/logs
         id_filter = request.args.get('patient_id', '').strip()
-        contact_filter = request.args.get('contact', '').strip()
-        complaint_filter = request.args.get('complaint', '').strip()
         date_from = request.args.get('date_from', '').strip()
         date_to = request.args.get('date_to', '').strip()
         sort_by = request.args.get('sort', 'newest')  # newest, oldest, name_asc, name_desc
@@ -4860,7 +4858,6 @@ def view_patients():
         age_min = request.args.get('age_min', '').strip()
         age_max = request.args.get('age_max', '').strip()
         gender_filter = request.args.get('gender', '').strip()
-        deep_search = request.args.get('deep_search', '').strip()
         quick_filter = request.args.get('quick_filter', '').strip()
 
         try:
@@ -4897,21 +4894,9 @@ def view_patients():
             # 4) Apply client-side filtering (to avoid Firestore query limitations)
             filtered_patients = patients
 
-            if name_filter:
-                filtered_patients = [p for p in filtered_patients
-                                    if name_filter.lower() in (p.get('name') or '').lower()]
-
             if id_filter:
                 filtered_patients = [p for p in filtered_patients
                                     if id_filter.lower() in (p.get('patient_id') or '').lower()]
-
-            if contact_filter:
-                filtered_patients = [p for p in filtered_patients
-                                    if contact_filter in (p.get('contact') or '')]
-
-            if complaint_filter:
-                filtered_patients = [p for p in filtered_patients
-                                    if complaint_filter.lower() in (p.get('present_history') or '').lower()]
 
             # Filter by treatment status
             if status_filter:
@@ -4987,53 +4972,6 @@ def view_patients():
                 except ValueError:
                     pass  # Invalid date format, skip filter
 
-            # NEW: Deep search (search within assessment notes, diagnoses, treatments)
-            if deep_search and (name_filter or complaint_filter):
-                search_term = (name_filter or complaint_filter).lower()
-                deep_matched_patient_ids = set()
-
-                # Search in assessment collections
-                assessment_collections = [
-                    'subjective_examination',
-                    'provisional_diagnosis',
-                    'treatment_plan',
-                    'follow_ups'
-                ]
-
-                for patient in filtered_patients:
-                    patient_id = patient.get('patient_id')
-                    if not patient_id:
-                        continue
-
-                    # Check if already matched
-                    if patient_id in deep_matched_patient_ids:
-                        continue
-
-                    # Search in each assessment collection
-                    for collection_name in assessment_collections:
-                        try:
-                            docs = db.collection(collection_name).where('patient_id', '==', patient_id).limit(10).stream()
-                            for doc in docs:
-                                doc_data = doc.to_dict()
-                                # Search in all string fields
-                                for key, value in doc_data.items():
-                                    if isinstance(value, str) and search_term in value.lower():
-                                        deep_matched_patient_ids.add(patient_id)
-                                        break
-                                if patient_id in deep_matched_patient_ids:
-                                    break
-                        except Exception as e:
-                            logger.warning(f"Deep search error in {collection_name} for patient {patient_id}: {e}")
-                            continue
-
-                        if patient_id in deep_matched_patient_ids:
-                            break
-
-                # Filter to only deep-matched patients if we did deep search
-                if search_term:
-                    filtered_patients = [p for p in filtered_patients
-                                        if p.get('patient_id') in deep_matched_patient_ids]
-
             # NEW: Quick filters
             if quick_filter == 'assessment_incomplete':
                 # Filter patients without completed treatment plans
@@ -5104,8 +5042,7 @@ def view_patients():
 
         # 9) Check if any filters are active
         has_active_filters = any([
-            name_filter, id_filter, contact_filter, complaint_filter,
-            date_from, date_to, status_filter, tags_filter,
+            id_filter, date_from, date_to, status_filter, tags_filter,
             age_min, age_max, gender_filter, quick_filter
         ])
 
