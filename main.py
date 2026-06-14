@@ -427,7 +427,7 @@ def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None, pa
         error_type = type(e).__name__
         error_msg = str(e)
         logger.error(f"Azure OpenAI API error [{error_type}]: {error_msg}")
-        logger.error(f"Prompt length: {len(prompt)} chars, Patient context: {patient_context}")
+        logger.error(f"Prompt length: {len(prompt)} chars, Patient context: [REDACTED]")
 
         # Return user-friendly error message based on error type
         if "content_filter" in error_msg.lower() or "ResponsibleAIPolicyViolation" in error_msg:
