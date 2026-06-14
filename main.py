@@ -8566,6 +8566,7 @@ def clinical_flags_suggest(patient_id):
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex)
         split_response = split_ai_response(suggestion)
+        log_action(session.get('user_id'), 'AI Clinical Flags Suggestion', f"Generated for patient {patient_id}")
         return jsonify({
             'suggestion': split_response['visible_text'],
             'text': split_response['visible_text'],
@@ -8829,6 +8830,7 @@ def provisional_diagnosis_suggest(patient_id):
                     suggestion = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
                     logger.info(f"✅ [Provisional Diagnosis] Successfully generated {len(suggestion)} chars: {suggestion[:100]}...")
                     split_response = split_ai_response(suggestion)
+                    log_action(session.get('user_id'), 'AI Provisional Diagnosis Suggestion', f"Generated for patient {patient_id}")
                     return jsonify({
             'suggestion': split_response['visible_text'],
             'text': split_response['visible_text'],
@@ -9163,6 +9165,7 @@ def treatment_plan_summary(patient_id):
 
         logger.info(f"✅ [Treatment Summary] Successfully generated {len(summary)} chars: {summary[:100]}...")
         split_response = split_ai_response(summary)
+        log_action(session.get('user_id'), 'AI Treatment Plan Summary', f"Generated for patient {patient_id}")
         return jsonify({
             'summary': split_response['visible_text'],  # Keep 'summary' for backward compatibility
             'suggestion': split_response['visible_text'],  # Also provide 'suggestion' for consistency
@@ -9246,6 +9249,7 @@ def ai_followup_suggestion(patient_id):
     try:
         suggestion = get_ai_suggestion(prompt).strip()
         split_response = split_ai_response(suggestion)
+        log_action(session.get('user_id'), 'AI Follow-up Suggestion', f"Generated for patient {patient_id}")
         return jsonify({
             'suggestion': split_response['visible_text'],
             'text': split_response['visible_text'],
