@@ -30,7 +30,7 @@ REDIS_DB = int(os.environ.get('REDIS_DB', 0))
 
 # Rate Limiting Configuration
 MAX_LOGIN_ATTEMPTS = 3
-LOCKOUT_DURATION = 900  # 15 minutes in seconds
+LOCKOUT_DURATION = 7 * 24 * 3600  # 7 days — effectively permanent until password reset clears it
 
 # Try to connect to Redis
 redis_client = None

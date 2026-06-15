@@ -563,6 +563,30 @@ def clear_reset_token(db, email):
     except Exception as e:
         logger.error(f"Failed to clear reset token for {email}: {str(e)}")
 
+
+def send_lockout_reset_email(email: str) -> None:
+    """Send a password reset email after account is locked due to too many failed attempts."""
+    try:
+        user_doc = db.collection('users').document(email).get()
+        if not user_doc.exists:
+            return
+        user_data = user_doc.to_dict()
+        reset_token = generate_reset_token()
+        if not store_reset_token(db, email, reset_token):
+            return
+        base_url = 'https://physiologicprism.com'
+        reset_url = f"{base_url}/reset-password/{reset_token}"
+        send_password_reset_notification(
+            user_data={'name': user_data.get('name', ''), 'email': email},
+            reset_token=reset_token,
+            reset_url=reset_url,
+        )
+        log_action(email, 'Account Locked', 'Account locked after 3 failed login attempts — reset email sent')
+        logger.warning(f"Account locked for {email} — password reset email sent")
+    except Exception as e:
+        logger.error(f"Failed to send lockout reset email for {email}: {str(e)}")
+
+
 def create_firebase_auth_account(email, name, temp_password=None):
     """
     Create a Firebase Authentication account for a user.
@@ -1884,8 +1908,10 @@ def login():
         # Security: Check if user is rate limited (email-based)
         is_allowed, lockout_remaining = check_login_attempts(email)
         if not is_allowed:
-            logger.warning(f"Blocked login attempt for {email} - rate limited ({lockout_remaining}s remaining)")
-            return f"Too many failed attempts. Please try again in {int(lockout_remaining/60)} minutes.", 429
+            logger.warning(f"Blocked login attempt for {email} - account locked after too many failures")
+            send_lockout_reset_email(email)
+            flash('Your account has been locked after too many failed attempts. We have sent a password reset link to your email.', 'error')
+            return redirect('/login')
         
         try:
             # Get client IP for logging
@@ -2351,8 +2377,9 @@ def reset_password_page(token):
                     logger.warning(f"Failed to update Firebase Auth password for {email}: {str(firebase_error)}")
                     # Continue - Firestore password is updated
 
-            # Clear reset token
+            # Clear reset token and any login lockout
             clear_reset_token(db, email)
+            clear_login_attempts(email)
 
             # Log action
             client_ip = request.environ.get('REMOTE_ADDR', 'unknown')
@@ -2843,7 +2870,8 @@ def api_login_deprecated_old():
         # Security: Check rate limiting (email-based, Redis-backed)
         is_allowed, lockout_remaining = check_login_attempts(email)
         if not is_allowed:
-            return jsonify({'ok': False, 'error': 'TOO_MANY_ATTEMPTS', 'retry_after': lockout_remaining}), 429
+            send_lockout_reset_email(email)
+            return jsonify({'ok': False, 'error': 'ACCOUNT_LOCKED', 'message': 'Your account has been locked after too many failed attempts. A password reset link has been sent to your email.'}), 429
 
         # Get user from Firestore
         doc = db.collection('users').document(email).get()
@@ -5213,8 +5241,10 @@ def login_institute():
         # Security: Check rate limiting (email-based, Redis-backed)
         is_allowed, lockout_remaining = check_login_attempts(email)
         if not is_allowed:
-            logger.warning(f"Blocked institute login attempt for {email} - rate limited ({lockout_remaining}s remaining)")
-            return f"Too many failed attempts. Please try again in {int(lockout_remaining/60)} minutes.", 429
+            logger.warning(f"Blocked institute login attempt for {email} - account locked after too many failures")
+            send_lockout_reset_email(email)
+            flash('Your account has been locked after too many failed attempts. We have sent a password reset link to your email.', 'error')
+            return redirect('/login')
 
         try:
             # Get client IP for logging
