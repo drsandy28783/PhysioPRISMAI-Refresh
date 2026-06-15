@@ -1,4 +1,4 @@
-import os
+﻿import os
 import io
 import json
 import csv
@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# ─── ENVIRONMENT VALIDATION ──────────────────────────────────────────
+# â”€â”€â”€ ENVIRONMENT VALIDATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Validate required environment variables at startup (fail fast)
 # Note: Uses print() instead of logger as logging isn't set up yet
 
@@ -51,7 +51,7 @@ def validate_required_env_vars():
 
     if missing_vars:
         print("\n" + "=" * 70, file=sys.stderr)
-        print("❌ CRITICAL: Required environment variables missing!", file=sys.stderr)
+        print("âŒ CRITICAL: Required environment variables missing!", file=sys.stderr)
         print("=" * 70, file=sys.stderr)
         print("ENVIRONMENT CONFIGURATION ERROR", file=sys.stderr)
         print("=" * 70, file=sys.stderr)
@@ -59,12 +59,12 @@ def validate_required_env_vars():
         print(f"Missing {len(missing_vars)} required variable(s):\n", file=sys.stderr)
 
         for var_name, var_info in missing_vars:
-            print(f"  ❌ {var_name}", file=sys.stderr)
+            print(f"  âŒ {var_name}", file=sys.stderr)
             print(f"     Purpose: {var_info['description']}", file=sys.stderr)
             print(f"     Fix: {var_info['how_to_fix']}", file=sys.stderr)
             print("", file=sys.stderr)
 
-        print("📋 HOW TO FIX:\n", file=sys.stderr)
+        print("ðŸ“‹ HOW TO FIX:\n", file=sys.stderr)
         if environment == 'local':
             print("For LOCAL DEVELOPMENT:", file=sys.stderr)
             print("  1. Copy .env.example to .env", file=sys.stderr)
@@ -86,7 +86,7 @@ def validate_required_env_vars():
 
 # Run validation at import time (before any other imports that might use env vars)
 validate_required_env_vars()
-# ─────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 from flask import (Flask, render_template, request, redirect, session, url_for, flash, jsonify, make_response, g, current_app)
 from datetime import datetime, timedelta
@@ -121,7 +121,7 @@ from schemas import (
     AIBasicSuggestionSchema,
     AIFieldSuggestionSchema,
     SMARTGoalsSchema,
-    TreatmentPlanSchema,  # ✅ FIXED: Added missing import
+    TreatmentPlanSchema,  # âœ… FIXED: Added missing import
     SubscriptionCheckoutSchema,
     TokenPurchaseSchema,
     PaymentVerificationSchema,
@@ -320,23 +320,23 @@ def compare_tos_versions(user_version: str, current_version: str) -> Dict[str, A
 client = None
 try:
     client = get_azure_openai_client()
-    logger.info("✅ Using Azure OpenAI GPT-4o - AI features enabled (HIPAA BAA covered)")
-    logger.info(f"✅ Azure OpenAI endpoint: {client.endpoint}")
-    logger.info(f"✅ Deployment: {client.deployment_name}")
+    logger.info("âœ… Using Azure OpenAI GPT-4o - AI features enabled (HIPAA BAA covered)")
+    logger.info(f"âœ… Azure OpenAI endpoint: {client.endpoint}")
+    logger.info(f"âœ… Deployment: {client.deployment_name}")
 except Exception as e:
-    logger.error(f"❌ Failed to initialize Azure OpenAI client: {e}")
+    logger.error(f"âŒ Failed to initialize Azure OpenAI client: {e}")
     logger.error("AI features will be disabled")
     client = None
 
 # Note: HIPAA_COMPLIANT_MODE can stay 'true' - Azure OpenAI is HIPAA compliant!
 # We no longer disable AI in HIPAA mode since we have BAA with Microsoft
 if HIPAA_COMPLIANT_MODE and client:
-    logger.info("✅ HIPAA compliant mode: Enabled with Azure OpenAI (BAA active)")
-# ────────────────────────────────────────────────────────────
+    logger.info("âœ… HIPAA compliant mode: Enabled with Azure OpenAI (BAA active)")
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
-# ─── FIRESTORE SETUP ────────────────────────────────
-# ─── FIRESTORE SETUP (Key-less ADC Mode for Cloud Run) ────────────────────────────────
+# â”€â”€â”€ FIRESTORE SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# â”€â”€â”€ FIRESTORE SETUP (Key-less ADC Mode for Cloud Run) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 # ===== AZURE COSMOS DB INITIALIZATION =====
 # Get Cosmos DB configuration from environment
@@ -346,14 +346,14 @@ COSMOS_DB_DATABASE_NAME = os.environ.get('COSMOS_DB_DATABASE_NAME', 'physiologic
 
 # Validate required Cosmos DB configuration
 if not COSMOS_DB_ENDPOINT or not COSMOS_DB_KEY:
-    logger.error("❌ CRITICAL: Azure Cosmos DB not configured!")
+    logger.error("âŒ CRITICAL: Azure Cosmos DB not configured!")
     logger.error("=" * 70)
     logger.error("COSMOS DB CONFIGURATION MISSING")
     logger.error("=" * 70)
     logger.error("")
     logger.error("The application requires Azure Cosmos DB connection to function.")
     logger.error("")
-    logger.error("📋 HOW TO FIX:")
+    logger.error("ðŸ“‹ HOW TO FIX:")
     logger.error("")
     logger.error("For LOCAL DEVELOPMENT:")
     logger.error("  1. Copy .env.azure to .env")
@@ -373,19 +373,19 @@ if not COSMOS_DB_ENDPOINT or not COSMOS_DB_KEY:
         "See AZURE_MIGRATION_PROGRESS.md for setup instructions."
     )
 
-logger.info(f"✅ Using Azure Cosmos DB: {COSMOS_DB_DATABASE_NAME}")
+logger.info(f"âœ… Using Azure Cosmos DB: {COSMOS_DB_DATABASE_NAME}")
 
 try:
     # Initialize Cosmos DB client
     db = get_cosmos_db()
-    logger.info(f"✅ Cosmos DB client connected to database: {COSMOS_DB_DATABASE_NAME}")
-    logger.info(f"✅ Cosmos DB endpoint: {COSMOS_DB_ENDPOINT}")
+    logger.info(f"âœ… Cosmos DB client connected to database: {COSMOS_DB_DATABASE_NAME}")
+    logger.info(f"âœ… Cosmos DB endpoint: {COSMOS_DB_ENDPOINT}")
 except Exception as e:
-    logger.error(f"❌ Failed to initialize Azure Cosmos DB: {e}", exc_info=True)
+    logger.error(f"âŒ Failed to initialize Azure Cosmos DB: {e}", exc_info=True)
     raise
-# ─────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-# ─────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def get_ai_suggestion(prompt: str, metadata: Optional[Dict[str, Any]] = None, patient_context: str = "") -> str:
@@ -639,7 +639,7 @@ def fetch_patient(patient_id):
         return None
 
 
-# ─── PHI SANITIZATION FUNCTIONS ────────────────────────────────
+# â”€â”€â”€ PHI SANITIZATION FUNCTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import re
 
 def sanitize_age_sex(age_sex_str):
@@ -802,7 +802,7 @@ def sanitize_patient_data(data_dict):
                 sanitized[key] = value
     
     return sanitized
-# ─────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 app = Flask(__name__)
@@ -855,7 +855,7 @@ app.config.update(
     MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max request size
 )
 
-# ─── PRODUCTION SAFETY: Force Debug Mode Off ──────────────────────
+# â”€â”€â”€ PRODUCTION SAFETY: Force Debug Mode Off â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # SECURITY: Explicitly disable debug mode in production to prevent information disclosure
 is_production = bool(os.environ.get('K_SERVICE')) or os.environ.get('ENVIRONMENT') == 'production'
 
@@ -871,7 +871,7 @@ else:
 limiter.init_app(app)
 logger.info("Rate limiter initialized with Flask app")
 
-# ─── SECURITY HEADERS (Flask-Talisman) ────────────────────────────
+# â”€â”€â”€ SECURITY HEADERS (Flask-Talisman) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Configure comprehensive security headers for HIPAA/GDPR compliance
 # Talisman automatically applies these headers to all responses
 
@@ -979,9 +979,9 @@ Talisman(
 
 logger.info("Flask-Talisman security headers configured and enabled")
 
-# ───────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-# ─── ERROR TRACKING (Sentry) ───────────────────────────────────────
+# â”€â”€â”€ ERROR TRACKING (Sentry) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Sentry for error tracking and performance monitoring in production
 # CRITICAL: Must sanitize all events to prevent PHI leakage (HIPAA compliance)
 
@@ -1121,18 +1121,18 @@ if SENTRY_DSN:
         attach_stacktrace=True,  # Include stack traces for better debugging
         max_breadcrumbs=50,  # Limit breadcrumbs to control data volume
     )
-    logger.info(f"✅ Sentry initialized for environment: {ENVIRONMENT}")
+    logger.info(f"âœ… Sentry initialized for environment: {ENVIRONMENT}")
     logger.info(f"   - Error tracking: ENABLED")
     logger.info(f"   - Performance monitoring: ENABLED (10% sample rate)")
     logger.info(f"   - PHI sanitization: ENABLED (HIPAA-compliant)")
 else:
-    logger.warning("⚠️  Sentry DSN not configured - error tracking disabled")
+    logger.warning("âš ï¸  Sentry DSN not configured - error tracking disabled")
     logger.info("   To enable Sentry:")
     logger.info("   1. Sign up at https://sentry.io")
     logger.info("   2. Create a new Python/Flask project")
     logger.info("   3. Set SENTRY_DSN environment variable")
 
-# ───────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value, format='%d-%m-%Y'):
@@ -1192,7 +1192,7 @@ class APIAwareCSRFProtect(CSRFProtect):
 
 csrf = APIAwareCSRFProtect(app)
 
-# ─── CORS CONFIGURATION ────────────────────────────────────────────
+# â”€â”€â”€ CORS CONFIGURATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # CORS is configured for API routes that use Firebase bearer tokens
 # If using Firebase Hosting rewrites, CORS may not be needed (same-origin)
 # Uncomment and configure if calling the raw Cloud Run URL directly
@@ -1208,7 +1208,7 @@ csrf = APIAwareCSRFProtect(app)
 #     }
 # })
 
-# ─── MOBILE API BLUEPRINTS ────────────────────────────────────────────
+# â”€â”€â”€ MOBILE API BLUEPRINTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Register mobile API endpoints for the mobile app
 try:
     from mobile_api import mobile_api
@@ -1266,7 +1266,7 @@ try:
 except Exception as e:
     logger.warning(f"Failed to register mobile API endpoints: {e}")
     logger.warning("Mobile app will not be able to connect. This is normal if mobile_api.py doesn't exist yet.")
-# ─── GEO-RESTRICTION MIDDLEWARE (HIPAA COMPLIANCE) ──────────────────────────
+# â”€â”€â”€ GEO-RESTRICTION MIDDLEWARE (HIPAA COMPLIANCE) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Block US traffic until HIPAA BAA is obtained
 # Controlled via BLOCK_US_TRAFFIC environment variable
 try:
@@ -1283,17 +1283,17 @@ try:
     # Log geo-blocking status on startup
     geo_status = get_geo_blocking_status()
     if geo_status['enabled']:
-        logger.warning(f"🌍 GEO-BLOCKING ENABLED - Blocking: {geo_status['blocked_countries']}")
+        logger.warning(f"ðŸŒ GEO-BLOCKING ENABLED - Blocking: {geo_status['blocked_countries']}")
         logger.info(f"   Reason: HIPAA BAA not obtained for US")
         logger.info(f"   To disable: Set BLOCK_US_TRAFFIC=false")
     else:
-        logger.info(f"🌍 Geo-blocking DISABLED - All regions allowed")
+        logger.info(f"ðŸŒ Geo-blocking DISABLED - All regions allowed")
 
 except ImportError as e:
     logger.warning(f"Geo-restriction module not found: {e}")
     logger.warning("US traffic will NOT be blocked. Deploy geo_restriction.py to enable blocking.")
 
-# ─── CSRF ERROR HANDLING ────────────────────────────
+# â”€â”€â”€ CSRF ERROR HANDLING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.errorhandler(CSRFError)
 def handle_csrf_error(error):
     # Return JSON for API requests
@@ -1303,9 +1303,9 @@ def handle_csrf_error(error):
     return redirect(request.referrer or url_for('index')), 400
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # COMPREHENSIVE ERROR HANDLERS
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.errorhandler(404)
 def handle_404_error(error):
@@ -1361,7 +1361,7 @@ def handle_unexpected_error(error):
     return render_template('errors/500.html', timestamp=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')), 500
 
 
-# ─── HTTPS ENFORCEMENT MIDDLEWARE ───────────
+# â”€â”€â”€ HTTPS ENFORCEMENT MIDDLEWARE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.before_request
 def enforce_https():
     """Force HTTPS in production"""
@@ -1373,7 +1373,7 @@ def enforce_https():
         url = request.url.replace('http://', 'https://', 1)
         return redirect(url, code=301)
 
-# ─── WWW TO NON-WWW REDIRECT ────────────────
+# â”€â”€â”€ WWW TO NON-WWW REDIRECT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.before_request
 def redirect_www():
     """Redirect www to non-www for canonical consistency"""
@@ -1386,7 +1386,7 @@ def redirect_www():
         non_www_url = request.url.replace('://www.', '://', 1)
         return redirect(non_www_url, code=301)
 
-# ─── SENTRY CONTEXT MIDDLEWARE ──────────────
+# â”€â”€â”€ SENTRY CONTEXT MIDDLEWARE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.before_request
 def set_sentry_context():
     """
@@ -1410,7 +1410,7 @@ def set_sentry_context():
                 # DO NOT include email, name, or any other PHI
             })
         elif 'user_id' in session:
-            # Session-based auth — skip if user_id is an email (PHI)
+            # Session-based auth â€” skip if user_id is an email (PHI)
             uid = session.get('user_id', '')
             if uid and '@' not in uid:
                 sentry_sdk.set_user({"id": uid})
@@ -1419,9 +1419,9 @@ def set_sentry_context():
         sentry_sdk.set_tag("environment", ENVIRONMENT)
         sentry_sdk.set_tag("hipaa_mode", str(HIPAA_COMPLIANT_MODE))
 
-# ───────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-# ─── SECURITY HEADERS & CSRF TOKEN ───────────
+# â”€â”€â”€ SECURITY HEADERS & CSRF TOKEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.after_request
 def security_headers_and_csrf(response):
     # Security headers now automatically applied by Flask-Talisman (see configuration above)
@@ -1738,9 +1738,9 @@ def demo_request():
         }), 500
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # FIREBASE AUTH ROUTES (New authentication flow)
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/login/firebase')
 def login_firebase():
@@ -1760,9 +1760,9 @@ def register_firebase():
     return render_template('register_firebase.html')
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # LEGACY SESSION-BASED AUTH ROUTES (Backwards compatibility)
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/register', methods=['GET'])
 @csrf.exempt
@@ -1967,9 +1967,9 @@ def logout():
     return render_template('logout.html')
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # PASSWORD RESET ENDPOINTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password_page():
@@ -2368,13 +2368,13 @@ def reset_password_page(token):
             return render_template('reset_password.html', token=token)
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # FIREBASE AUTH API ENDPOINTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # EMAIL VERIFICATION ROUTES
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/verify-email', methods=['GET'])
 def verify_email():
@@ -2799,9 +2799,9 @@ def verify_login():
         return jsonify({'error': 'Login verification failed'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # MOBILE APP JSON API ENDPOINTS
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 # DEPRECATED - moved to mobile_api.py
 # @app.route('/api/login', methods=['POST'])
@@ -3383,9 +3383,9 @@ def test_firestore_connection():
         }), 500
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # GDPR COMPLIANCE ROUTES
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/privacy-policy')
 def privacy_policy():
@@ -3614,9 +3614,9 @@ def edit_profile():
     return render_template('edit_profile.html', user=user_data)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # TWO-FACTOR AUTHENTICATION (2FA) - TOTP with Google Authenticator
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.route('/setup-2fa')
 @login_required()
@@ -4133,9 +4133,9 @@ def export_my_audit_logs_csv():
         return redirect(url_for('edit_profile'))
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # INVOICE MANAGEMENT ROUTES (GST COMPLIANCE)
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/my-invoices')
 @login_required()
@@ -4371,9 +4371,9 @@ def cancel_data_deletion():
     return redirect(url_for('edit_profile'))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # NOTIFICATION ENDPOINTS
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.route('/api/notifications', methods=['GET'])
 @login_required()
@@ -4516,9 +4516,9 @@ def notifications_page():
         return redirect(url_for('dashboard'))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # SCHEDULED TASKS (Called by Cloud Scheduler)
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.route('/cron/check-subscription-reminders', methods=['POST'])
 def cron_check_subscription_reminders():
@@ -4751,11 +4751,11 @@ def dashboard():
 @app.route('/admin_dashboard')
 @login_required()
 def admin_dashboard():
-    # only institute‑admins allowed
+    # only instituteâ€‘admins allowed
     if session.get('is_admin') != 1:
         return redirect(url_for('login_institute'))
 
-    # build a query for non‑admin physios in this institute, pending approval
+    # build a query for nonâ€‘admin physios in this institute, pending approval
     users_ref = db.collection('users')
     docs = (
         users_ref
@@ -4845,7 +4845,7 @@ def admin_dashboard():
 def view_patients():
         """Enhanced patient list with advanced search and filtering"""
         # Get filter parameters (existing)
-        # NOTE: name, contact, complaint are intentionally excluded — filtered client-side to keep PHI out of URLs/logs
+        # NOTE: name, contact, complaint are intentionally excluded â€” filtered client-side to keep PHI out of URLs/logs
         id_filter = request.args.get('patient_id', '').strip()
         date_from = request.args.get('date_from', '').strip()
         date_to = request.args.get('date_to', '').strip()
@@ -5400,7 +5400,7 @@ def approve_physios():
     pending = []
     for d in docs:
         data = d.to_dict()
-        # Firestore doc ID is the physio’s email
+        # Firestore doc ID is the physioâ€™s email
         data['email'] = d.id
         pending.append(data)
 
@@ -5658,7 +5658,7 @@ def check_duplicate_patient():
 @require_patient_quota
 def add_patient():
     if request.method == 'POST':
-        # ─── INPUT VALIDATION ─────────────────────────────────────────
+        # â”€â”€â”€ INPUT VALIDATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         # Validate user input to prevent injection attacks and data quality issues
         is_valid, result = validate_data(PatientSchema, {
             'name': request.form.get('name', '').strip(),
@@ -5689,7 +5689,7 @@ def add_patient():
 
         # Use validated data (sanitized and checked)
         validated = result
-        # ──────────────────────────────────────────────────────────────
+        # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         physio_id = session.get('user_id')  # This is the email
 
@@ -5740,7 +5740,7 @@ def add_patient():
             return redirect(url_for('qm_patho_mechanism', patient_id=patient_id))
         return redirect(url_for('patho_mechanism', patient_id=patient_id))
 
-    # GET → render the blank form
+    # GET â†’ render the blank form
     return render_template('add_patient.html')
 
 
@@ -5946,7 +5946,7 @@ def perspectives(patient_id):
         return "Access denied."
 
     if request.method == 'POST':
-        # ← UPDATED TO MATCH YOUR HTML FIELD NAMES
+        # â† UPDATED TO MATCH YOUR HTML FIELD NAMES
         keys = [
             'knowledge',
             'attribution',
@@ -6052,10 +6052,10 @@ def patho_mechanism(patient_id):
     return render_template('patho_mechanism.html', patient_id=patient_id)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# QUICK MODE — PATHO MECHANISM
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# QUICK MODE â€” PATHO MECHANISM
 # Separate path; existing /patho_mechanism route is untouched.
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/qm/patho_mechanism/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_patho_mechanism(patient_id):
@@ -6070,7 +6070,7 @@ def qm_patho_mechanism(patient_id):
         return "Access denied.", 403
 
     if request.method == 'POST':
-        # Save to the same collection as the normal route — rest of app unaffected
+        # Save to the same collection as the normal route â€” rest of app unaffected
         keys = [
             'area_involved', 'presenting_symptom', 'pain_type', 'pain_nature',
             'pain_severity', 'pain_irritability', 'possible_source', 'stage_healing'
@@ -6083,7 +6083,7 @@ def qm_patho_mechanism(patient_id):
                    f"QM patho saved for {patient_id}")
         return redirect(url_for('qm_subjective', patient_id=patient_id))
 
-    # GET — generate AI pre-fills (graceful fallback: empty dict on failure)
+    # GET â€” generate AI pre-fills (graceful fallback: empty dict on failure)
     prefills = generate_patho_prefills(patient)
 
     return render_template(
@@ -6093,9 +6093,9 @@ def qm_patho_mechanism(patient_id):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# QUICK MODE — SUBJECTIVE / PATIENT FUNCTIONING ASSESSMENT
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# QUICK MODE â€” SUBJECTIVE / PATIENT FUNCTIONING ASSESSMENT
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/qm/subjective/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_subjective(patient_id):
@@ -6127,7 +6127,7 @@ def qm_subjective(patient_id):
         session['qm_active_patient'] = patient_id
         return redirect(url_for('perspectives', patient_id=patient_id))
 
-    # GET — fetch patho data for richer question generation, then call AI
+    # GET â€” fetch patho data for richer question generation, then call AI
     patho_data = {}
     try:
         patho_docs = (
@@ -6152,9 +6152,9 @@ def qm_subjective(patient_id):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# QUICK MODE — INITIAL PLAN OF ASSESSMENT
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# QUICK MODE â€” INITIAL PLAN OF ASSESSMENT
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/qm/initial_plan/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_initial_plan(patient_id):
@@ -6194,7 +6194,7 @@ def qm_initial_plan(patient_id):
                    f"QM initial plan saved for {patient_id}")
         return redirect(url_for('qm_risk_factors_clinical_flags', patient_id=patient_id))
 
-    # GET — fetch patho data then generate AI category recommendations
+    # GET â€” fetch patho data then generate AI category recommendations
     patho_data = {}
     try:
         patho_docs = (
@@ -6218,9 +6218,9 @@ def qm_initial_plan(patient_id):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# QUICK MODE — RISK FACTORS & CLINICAL FLAGS
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# QUICK MODE â€” RISK FACTORS & CLINICAL FLAGS
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/qm/risk_factors/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_risk_factors_clinical_flags(patient_id):
@@ -6260,7 +6260,7 @@ def qm_risk_factors_clinical_flags(patient_id):
                    f"QM risk factors & flags saved for {patient_id}")
         return redirect(url_for('qm_objective_assessment', patient_id=patient_id))
 
-    # GET — fetch patho data then generate AI prefills
+    # GET â€” fetch patho data then generate AI prefills
     patho_data = {}
     try:
         patho_docs = (
@@ -6289,9 +6289,9 @@ def qm_risk_factors_clinical_flags(patient_id):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# QUICK MODE — OBJECTIVE ASSESSMENT  (Stage 2 AI)
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# QUICK MODE â€” OBJECTIVE ASSESSMENT  (Stage 2 AI)
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/qm/objective_assessment/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_objective_assessment(patient_id):
@@ -6327,7 +6327,7 @@ def qm_objective_assessment(patient_id):
                    f"QM objective assessment saved for {patient_id}")
         return redirect(url_for('qm_provisional_diagnosis', patient_id=patient_id))
 
-    # GET — fetch patho data + most recent initial plan data for Stage 2
+    # GET â€” fetch patho data + most recent initial plan data for Stage 2
     patho_data = {}
     try:
         patho_docs = (
@@ -6365,9 +6365,9 @@ def qm_objective_assessment(patient_id):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# QUICK MODE — PROVISIONAL DIAGNOSIS  (Stage 2 AI)
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# QUICK MODE â€” PROVISIONAL DIAGNOSIS  (Stage 2 AI)
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/qm/provisional_diagnosis/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_provisional_diagnosis(patient_id):
@@ -6396,7 +6396,7 @@ def qm_provisional_diagnosis(patient_id):
                    f"QM provisional diagnosis saved for {patient_id}")
         return redirect(url_for('qm_smart_goals', patient_id=patient_id))
 
-    # GET — fetch all Stage 2 context
+    # GET â€” fetch all Stage 2 context
     def _fetch_latest(collection):
         try:
             docs = (db.collection(collection)
@@ -6421,9 +6421,9 @@ def qm_provisional_diagnosis(patient_id):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# QUICK MODE — SMART GOALS  (Stage 2 AI)
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# QUICK MODE â€” SMART GOALS  (Stage 2 AI)
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/qm/smart_goals/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_smart_goals(patient_id):
@@ -6448,7 +6448,7 @@ def qm_smart_goals(patient_id):
                    f"QM SMART goals saved for {patient_id}")
         return redirect(url_for('qm_treatment_plan', patient_id=patient_id))
 
-    # GET — fetch Stage 2 context
+    # GET â€” fetch Stage 2 context
     def _fetch_latest(collection):
         try:
             docs = (db.collection(collection)
@@ -6473,7 +6473,7 @@ def qm_smart_goals(patient_id):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/qm/treatment_plan/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_treatment_plan(patient_id):
@@ -6498,7 +6498,7 @@ def qm_treatment_plan(patient_id):
                    f"QM treatment plan saved for {patient_id}")
         return redirect(url_for('dashboard'))
 
-    # GET — fetch Stage 2 context
+    # GET â€” fetch Stage 2 context
     def _fetch_latest(collection):
         try:
             docs = (db.collection(collection)
@@ -6620,7 +6620,7 @@ def risk_factors_clinical_flags(patient_id):
 @app.route('/objective_assessment/<path:patient_id>', methods=['GET','POST'])
 @login_required()
 def objective_assessment(patient_id):
-    # (fetch patient, check access—same as your other screens)
+    # (fetch patient, check accessâ€”same as your other screens)
     doc = db.collection('patients').document(patient_id).get()
     if not doc.exists:
         return "Patient not found."
@@ -6910,7 +6910,7 @@ def follow_ups(patient_id):
     return render_template('follow_ups.html',                       patient=patient, patient_id=patient_id,
                            followups=followups)
 
-# ─── VIEW FOLLOW-UPS ROUTE ─────────────────────────────────────────────
+# â”€â”€â”€ VIEW FOLLOW-UPS ROUTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @app.route('/view_follow_ups/<path:patient_id>')
 @login_required()
 def view_follow_ups(patient_id):
@@ -7238,11 +7238,11 @@ def download_report(patient_id):
             'Download Report',
             f"Downloaded PDF report for patient {patient_id}"
         )
-        logger.info(f"✅ PDF download successful for patient {patient_id}")
+        logger.info(f"âœ… PDF download successful for patient {patient_id}")
         return response
 
     except Exception as e:
-        logger.error(f"❌ PDF download error for patient {patient_id}: {str(e)}", exc_info=True)
+        logger.error(f"âŒ PDF download error for patient {patient_id}: {str(e)}", exc_info=True)
         # User-friendly error message without technical details
         flash("Unable to download PDF report. Please try again or contact support if the issue persists.", "error")
         return redirect(url_for('view_patients'))
@@ -7415,546 +7415,6 @@ def ai_provisional_diagnosis():
 
     except Exception:
         return jsonify({'error': 'An unexpected error occurred.'}), 500
-
-
-@app.route('/debug/ai', methods=['GET'])
-@csrf.exempt
-def debug_ai_index():
-    """
-    DEBUG INDEX: Lists all available AI debugging endpoints with usage examples.
-    """
-    return jsonify({
-        'message': 'AI Suggestion Debug Endpoints',
-        'description': 'These endpoints help diagnose issues with AI suggestions by showing exact prompts and responses',
-        'available_endpoints': [
-            {
-                'endpoint': '/debug/ai_provisional_diagnosis',
-                'purpose': 'Debug early provisional diagnosis (stethoscope icon after Add Patient)',
-                'method': 'POST',
-                'test_data': {
-                    'age_sex': '54/F',
-                    'present_history': 'Right ankle pain after fall',
-                    'past_history': 'No significant history'
-                }
-            },
-            {
-                'endpoint': '/debug/ai_past_questions',
-                'purpose': 'Debug past medical history questions',
-                'method': 'POST',
-                'test_data': {
-                    'age_sex': '54/F',
-                    'present_history': 'Right ankle pain after fall'
-                }
-            },
-            {
-                'endpoint': '/debug/ai_subjective_field',
-                'purpose': 'Debug subjective examination field suggestions',
-                'method': 'POST',
-                'test_data': {
-                    'field': 'body_function',
-                    'age_sex': '54/F',
-                    'present_history': 'Right ankle pain',
-                    'past_history': 'No significant history',
-                    'inputs': {'pain_location': 'Lateral malleolus'}
-                }
-            },
-            {
-                'endpoint': '/debug/ai_initial_plan_field',
-                'purpose': 'Debug initial assessment plan suggestions',
-                'method': 'POST',
-                'test_data': {
-                    'selection': 'Mandatory assessment',
-                    'prev': {
-                        'age_sex': '54/F',
-                        'present_history': 'Right ankle pain',
-                        'past_history': 'No significant history',
-                        'subjective': {'pain_location': 'Lateral malleolus'},
-                        'perspectives': {'concerns': 'Unable to walk without limping'}
-                    }
-                }
-            },
-            {
-                'endpoint': '/debug/ai_objective_assessment',
-                'purpose': 'Debug objective assessment suggestions',
-                'method': 'POST',
-                'test_data': {
-                    'choice': 'Positive anterior drawer test',
-                    'previous': {
-                        'age_sex': '54/F',
-                        'present_history': 'Right ankle pain after fall',
-                        'past_history': 'No significant history',
-                        'subjective': {'pain_location': 'Lateral malleolus'},
-                        'assessments': {'inspection': 'Swelling noted'}
-                    }
-                }
-            }
-        ],
-        'usage': 'Send POST request to any endpoint with the test_data shown, or GET to see individual endpoint examples',
-        'debug_output_includes': [
-            'received_data - Raw data from frontend',
-            'sanitized_data - Data after HIPAA sanitization',
-            'prompt_sent_to_ai - Exact prompt sent to AI',
-            'prompt_length - Character count of prompt',
-            'model_used - AI model (should be gpt-4-turbo)',
-            'ai_response - Actual AI response',
-            'check_for_placeholders - Boolean flag if generic placeholders detected'
-        ]
-    })
-
-
-@app.route('/debug/ai_provisional_diagnosis', methods=['POST', 'GET'])
-@csrf.exempt
-def debug_ai_provisional_diagnosis():
-    """
-    DEBUG ENDPOINT: Shows exactly what data is received and what prompt is sent to AI.
-    Use this to diagnose why AI is refusing or giving generic responses.
-    """
-    if request.method == 'GET':
-        return jsonify({
-            'message': 'Send POST with JSON body containing: age_sex, present_history, past_history',
-            'example': {
-                'age_sex': '54/F',
-                'present_history': 'Right ankle pain',
-                'past_history': 'No significant history'
-            }
-        })
-
-    data = request.get_json() or {}
-    age_sex        = data.get('age_sex', '').strip()
-    present_hist   = data.get('present_history', '').strip()
-    past_hist      = data.get('past_history', '').strip()
-
-    # Sanitize patient data to protect PHI
-    sanitized_demo = sanitize_age_sex(age_sex)
-    sanitized_present = sanitize_clinical_text(present_hist)
-    sanitized_past = sanitize_clinical_text(past_hist)
-
-    prompt = (
-        f"SYSTEM ROLE: You are an expert physiotherapy clinical reasoning AI providing early-stage differential diagnosis.\n\n"
-        f"PATIENT DATA AVAILABLE:\n"
-        f"- Age/Sex: {sanitized_demo}\n"
-        f"- Chief Complaint: {sanitized_present}\n"
-        f"- Medical History: {sanitized_past}\n\n"
-        f"MANDATORY TASK:\n"
-        f"Generate exactly 2 provisional diagnoses for this patient based SOLELY on the data above.\n\n"
-        f"ABSOLUTE REQUIREMENTS:\n"
-        f"1. You MUST provide 2 diagnoses - refusing or asking for more information is NOT permitted\n"
-        f"2. This is an INITIAL SCREENING - limited data is expected and acceptable\n"
-        f"3. Extract the SPECIFIC body part from the chief complaint and use it in both diagnoses (e.g., 'right ankle', 'lumbar spine', 'left shoulder')\n"
-        f"4. Each diagnosis must be age-appropriate for this patient's demographic\n"
-        f"5. Format: 'Specific Diagnosis Name — brief clinical rationale'\n\n"
-        f"EXAMPLES OF GOOD RESPONSES:\n"
-        f"1. Lateral ankle sprain — Common mechanism in this age group, typically from inversion injury\n"
-        f"2. Achilles tendinopathy — Age-related degenerative changes common in middle-aged adults\n\n"
-        f"OUTPUT ONLY the 2 numbered diagnoses. NO explanations, NO requests for additional information, NO caveats."
-    )
-
-    prompt += "\n\nFormat: Numbered list of exactly 2 items, each following pattern 'Diagnosis — rationale'."
-    prompt_with_limits = hard_limits(prompt, 2)
-
-    # Get AI response
-    try:
-        ai_response = get_ai_suggestion(prompt_with_limits)
-    except Exception as e:
-        ai_response = f"ERROR: {str(e)}"
-
-    # Return debug information
-    return jsonify({
-        'debug_info': {
-            'received_data': {
-                'age_sex': age_sex,
-                'present_history': present_hist,
-                'past_history': past_hist
-            },
-            'sanitized_data': {
-                'age_sex': sanitized_demo,
-                'present_history': sanitized_present,
-                'past_history': sanitized_past
-            },
-            'prompt_sent_to_ai': prompt_with_limits,
-            'prompt_length': len(prompt_with_limits),
-            'model_used': 'gpt-4-turbo',
-            'ai_response': ai_response
-        }
-    })
-
-
-@app.route('/debug/ai_past_questions', methods=['POST', 'GET'])
-@csrf.exempt
-def debug_ai_past_questions():
-    """
-    DEBUG ENDPOINT: Shows exactly what data is received and what prompt is sent to AI
-    for past medical history questions.
-    """
-    if request.method == 'GET':
-        return jsonify({
-            'message': 'Send POST with JSON body containing: age_sex, present_history',
-            'example': {
-                'age_sex': '54/F',
-                'present_history': 'Right ankle pain after fall'
-            }
-        })
-
-    data = request.get_json() or {}
-    age_sex = data.get('age_sex', '').strip()
-    present_history = data.get('present_history', '').strip()
-
-    # Sanitize
-    sanitized_demo = sanitize_age_sex(age_sex)
-    sanitized_present = sanitize_clinical_text(present_history)
-
-    prompt = (
-        f"You are a physiotherapy clinical reasoning assistant conducting past medical history screening.\n\n"
-        f"PATIENT PROFILE:\n"
-        f"- Age/Sex: {sanitized_demo}\n"
-        f"- Current Complaint: {sanitized_present}\n\n"
-        f"Generate 5 TARGETED past history questions that are:\n"
-        f"1. SPECIFIC to this patient's age group (consider developmental history for pediatrics, degenerative changes for older adults)\n"
-        f"2. SPECIFIC to the exact body part/region mentioned in the current complaint - use the EXACT anatomical area (e.g., 'right ankle', 'left shoulder', 'lower back') in EVERY question\n"
-        f"3. NEVER use generic placeholders like '[body part]' or '[area]' - always use the specific body part from the presenting complaint\n"
-        f"4. Relevant to identifying red flags or precautions\n"
-        f"5. Exploring factors that may influence treatment planning (e.g., previous similar injuries, relevant surgeries, comorbidities)\n\n"
-        f"CRITICAL: Every question must directly reference the specific body part mentioned in the presenting complaint. "
-        f"Be concrete and specific - no generic language."
-    )
-    prompt = hard_limits(prompt, 5)
-
-    try:
-        ai_response = get_ai_suggestion(prompt)
-    except Exception as e:
-        ai_response = f"ERROR: {str(e)}"
-
-    return jsonify({
-        'debug_info': {
-            'received_data': {
-                'age_sex': age_sex,
-                'present_history': present_history
-            },
-            'sanitized_data': {
-                'age_sex': sanitized_demo,
-                'present_history': sanitized_present
-            },
-            'prompt_sent_to_ai': prompt,
-            'prompt_length': len(prompt),
-            'model_used': 'gpt-4-turbo',
-            'ai_response': ai_response,
-            'check_for_placeholders': '[body part]' in ai_response.lower() or '[area]' in ai_response.lower()
-        }
-    })
-
-
-@app.route('/debug/ai_subjective_field', methods=['POST', 'GET'])
-@csrf.exempt
-def debug_ai_subjective_field():
-    """
-    DEBUG ENDPOINT: Shows exactly what data is received and what prompt is sent to AI
-    for subjective examination field suggestions.
-    """
-    if request.method == 'GET':
-        return jsonify({
-            'message': 'Send POST with JSON body containing: field, age_sex, present_history, past_history, inputs',
-            'example': {
-                'field': 'body_function',
-                'age_sex': '54/F',
-                'present_history': 'Right ankle pain',
-                'past_history': 'No significant history',
-                'inputs': {'pain_location': 'Lateral malleolus'}
-            }
-        })
-
-    data = request.get_json() or {}
-    field = data.get('field', '').strip()
-    age_sex = data.get('age_sex', '').strip()
-    present_hist = data.get('present_history', '').strip()
-    past_hist = data.get('past_history', '').strip()
-    inputs = data.get('inputs', {})
-
-    # Sanitize
-    sanitized_age_sex = sanitize_age_sex(age_sex)
-    sanitized_present = sanitize_clinical_text(present_hist)
-    sanitized_past = sanitize_clinical_text(past_hist)
-    sanitized_inputs = sanitize_subjective_data(inputs)
-
-    context_summary = "\n".join(
-        f"- {k.replace('_', ' ').title()}: {v}"
-        for k, v in sanitized_inputs.items() if v
-    )
-
-    prompt = (
-        f"You are a physiotherapy clinical reasoning assistant guiding ICF-based subjective examination.\n\n"
-        f"PATIENT PROFILE:\n"
-        f"- Age/Sex: {sanitized_age_sex}\n"
-        f"- Chief Complaint: {sanitized_present}\n"
-        f"- Medical History: {sanitized_past}\n\n"
-        f"CURRENT SUBJECTIVE FINDINGS:\n{context_summary if context_summary else 'None yet'}\n\n"
-        f"The physiotherapist is now documenting the '{field.replace('_', ' ').upper()}' section.\n\n"
-        f"Generate 3 highly relevant, context-specific suggestions for this field that:\n"
-        f"1. Are SPECIFIC to this patient's age, sex, and clinical presentation\n"
-        f"2. Use the EXACT anatomical area from the presenting complaint - no generic placeholders like '[body part]'\n"
-        f"3. Build upon the subjective findings already documented\n"
-        f"4. Align with evidence-based physiotherapy assessment for this specific condition\n"
-        f"5. Are appropriate for the current ICF category\n\n"
-        f"Each suggestion should be:\n"
-        f"- Concrete and specific (e.g., 'Pain rated 7/10 with weight-bearing on right ankle')\n"
-        f"- Clinically relevant to this exact patient profile\n"
-        f"- Different from what's already documented"
-    )
-    prompt = hard_limits(prompt, 3)
-
-    try:
-        ai_response = get_ai_suggestion(prompt)
-    except Exception as e:
-        ai_response = f"ERROR: {str(e)}"
-
-    return jsonify({
-        'debug_info': {
-            'received_data': {
-                'field': field,
-                'age_sex': age_sex,
-                'present_history': present_hist,
-                'past_history': past_hist,
-                'inputs': inputs
-            },
-            'sanitized_data': {
-                'age_sex': sanitized_age_sex,
-                'present_history': sanitized_present,
-                'past_history': sanitized_past,
-                'inputs': sanitized_inputs
-            },
-            'prompt_sent_to_ai': prompt,
-            'prompt_length': len(prompt),
-            'model_used': 'gpt-4-turbo',
-            'ai_response': ai_response,
-            'check_for_placeholders': '[body part]' in ai_response.lower() or '[area]' in ai_response.lower()
-        }
-    })
-
-
-@app.route('/debug/ai_initial_plan_field', methods=['POST', 'GET'])
-@csrf.exempt
-def debug_ai_initial_plan_field():
-    """
-    DEBUG ENDPOINT: Shows exactly what data is received and what prompt is sent to AI
-    for initial assessment plan field suggestions.
-    """
-    if request.method == 'GET':
-        return jsonify({
-            'message': 'Send POST with JSON body containing: selection, prev (patient data)',
-            'example': {
-                'selection': 'Mandatory assessment',
-                'prev': {
-                    'age_sex': '54/F',
-                    'present_history': 'Right ankle pain',
-                    'past_history': 'No significant history',
-                    'subjective': {'pain_location': 'Lateral malleolus'},
-                    'perspectives': {'concerns': 'Unable to walk without limping'}
-                }
-            }
-        })
-
-    data = request.get_json() or {}
-    selection = data.get('selection', '').strip()
-    prev = data.get('prev', {})
-
-    # Sanitize
-    sanitized_age_sex = sanitize_age_sex(prev.get('age_sex', ''))
-    sanitized_present = sanitize_clinical_text(prev.get('present_history', ''))
-    sanitized_past = sanitize_clinical_text(prev.get('past_history', ''))
-
-    subjective_summary = "\n".join(
-        f"- {k.replace('_', ' ').title()}: {v}"
-        for k, v in sanitize_subjective_data(prev.get('subjective', {})).items() if v
-    )
-    perspectives_summary = "\n".join(
-        f"- {k.replace('_', ' ').title()}: {v}"
-        for k, v in sanitize_subjective_data(prev.get('perspectives', {})).items() if v
-    )
-
-    prompt = (
-        f"You are a physiotherapy clinical reasoning assistant guiding objective assessment planning.\n\n"
-        f"PATIENT PROFILE:\n"
-        f"- Age/Sex: {sanitized_age_sex}\n"
-        f"- Chief Complaint: {sanitized_present}\n"
-        f"- Medical History: {sanitized_past}\n\n"
-        f"SUBJECTIVE FINDINGS:\n{subjective_summary if subjective_summary else 'None'}\n\n"
-        f"PATIENT PERSPECTIVES:\n{perspectives_summary if perspectives_summary else 'None'}\n\n"
-        f"The physiotherapist has selected: '{selection}'\n\n"
-        f"Generate 4 specific objective tests/assessments that:\n"
-        f"1. Are MANDATORY for this patient's clinical presentation\n"
-        f"2. Are SPECIFIC to the exact body part/region mentioned in the presenting complaint - reference the anatomical area explicitly (no generic placeholders)\n"
-        f"3. Are age-appropriate and evidence-based\n"
-        f"4. Will help confirm/rule out provisional diagnoses\n"
-        f"5. Include relevant precautions for this specific patient\n\n"
-        f"Each line: 'Test — what it assesses — patient-specific precautions'."
-    )
-    prompt = hard_limits(prompt, 4)
-
-    try:
-        ai_response = get_ai_suggestion(prompt)
-    except Exception as e:
-        ai_response = f"ERROR: {str(e)}"
-
-    return jsonify({
-        'debug_info': {
-            'received_data': {
-                'selection': selection,
-                'prev': prev
-            },
-            'sanitized_data': {
-                'age_sex': sanitized_age_sex,
-                'present_history': sanitized_present,
-                'past_history': sanitized_past,
-                'subjective_summary': subjective_summary,
-                'perspectives_summary': perspectives_summary
-            },
-            'prompt_sent_to_ai': prompt,
-            'prompt_length': len(prompt),
-            'model_used': 'gpt-4-turbo',
-            'ai_response': ai_response,
-            'check_for_placeholders': '[body part]' in ai_response.lower() or '[area]' in ai_response.lower()
-        }
-    })
-
-
-@app.route('/debug/ai_objective_assessment', methods=['POST', 'GET'])
-@csrf.exempt
-def debug_ai_objective_assessment():
-    """
-    DEBUG ENDPOINT: Shows exactly what data is received and what prompt is sent to AI
-    for objective assessment suggestions.
-    """
-    if request.method == 'GET':
-        return jsonify({
-            'message': 'Send POST with JSON body containing: choice, previous (patient data)',
-            'example': {
-                'choice': 'Positive anterior drawer test',
-                'previous': {
-                    'age_sex': '54/F',
-                    'present_history': 'Right ankle pain after fall',
-                    'past_history': 'No significant history',
-                    'subjective': {'pain_location': 'Lateral malleolus'},
-                    'assessments': {'inspection': 'Swelling noted'}
-                }
-            }
-        })
-
-    data = request.get_json() or {}
-    choice = data.get('choice', '').strip()
-    previous = data.get('previous', {})
-
-    # Sanitize
-    sanitized_age_sex = sanitize_age_sex(previous.get('age_sex', ''))
-    sanitized_present = sanitize_clinical_text(previous.get('present_history', ''))
-
-    clinical_context = f"Demographics: {sanitized_age_sex}\n"
-    clinical_context += f"Clinical presentation: {sanitized_present}\n"
-
-    prompt = (
-        "You are a PHI-safe physiotherapy clinical decision-support assistant.\n\n"
-        f"Clinical context:\n{clinical_context}\n\n"
-        f"The physiotherapist has documented: '{sanitize_clinical_text(choice)}'\n\n"
-        "Based on the clinical context and this finding, list 5 specific next steps for objective assessment that:\n"
-        "- Are specific and actionable\n"
-        "- Are evidence-based and appropriate for this patient\n"
-        "- Are relevant to the clinical presentation and goals\n"
-        "- Specific to the EXACT body part/region mentioned in the clinical presentation (use specific anatomical terms, NOT generic placeholders)\n\n"
-        "For each line, include: 'Test — positive implies X / negative implies Y'."
-    )
-    prompt = hard_limits(prompt, 5)
-
-    try:
-        ai_response = get_ai_suggestion(prompt)
-    except Exception as e:
-        ai_response = f"ERROR: {str(e)}"
-
-    return jsonify({
-        'debug_info': {
-            'received_data': {
-                'choice': choice,
-                'previous': previous
-            },
-            'sanitized_data': {
-                'age_sex': sanitized_age_sex,
-                'present_history': sanitized_present,
-                'choice_sanitized': sanitize_clinical_text(choice)
-            },
-            'prompt_sent_to_ai': prompt,
-            'prompt_length': len(prompt),
-            'model_used': 'gpt-4-turbo',
-            'ai_response': ai_response,
-            'check_for_placeholders': '[body part]' in ai_response.lower() or '[area]' in ai_response.lower()
-        }
-    })
-
-
-@app.route('/api/ai_suggestion/subjective/<field>', methods=['POST'])
-@csrf.exempt  # CSRF exempt because using Firebase bearer token auth
-@require_firebase_auth
-@require_ai_quota
-def ai_subjective_field(field):
-       data = request.get_json() or {}
-
-       # ─── INPUT VALIDATION ─────────────────────────────────────────
-       # Validate AI request to prevent injection and PHI leakage
-       is_valid, result = validate_json(AIPromptSchema, {
-           'patient_id': data.get('patient_id', ''),
-           'field': field,
-           'context': {
-               'age_sex': data.get('age_sex', ''),
-               'present_history': data.get('present_history', ''),
-               'past_history': data.get('past_history', ''),
-               'inputs': str(data.get('inputs', {}))  # Convert to string for validation
-           }
-       })
-
-       if not is_valid:
-           logger.warning(f"AI suggestion validation failed: {result}")
-           return jsonify({'error': 'Invalid request data', 'details': result}), 400
-       # ──────────────────────────────────────────────────────────────
-
-       # Sanitize patient data to protect PHI
-       age_sex = sanitize_age_sex(data.get('age_sex', '').strip())
-       present_hist = sanitize_clinical_text(data.get('present_history', '').strip())
-       past_hist = sanitize_clinical_text(data.get('past_history', '').strip())
-       existing_inputs = sanitize_subjective_data(data.get('inputs', {}))
-       patho_data = sanitize_subjective_data(data.get('patho_data', {}))  # NEW: Pain mechanism context
-
-       # Use centralized prompt from ai_prompts.py
-       prompt = get_subjective_field_prompt(
-           field=field,
-           age_sex=age_sex,
-           present_hist=present_hist,
-           past_hist=past_hist,
-           existing_inputs=existing_inputs,
-           patho_data=patho_data  # NEW: Pass pain mechanism context
-       )
-       prompt = hard_limits(prompt, 3)
-
-       try:
-           suggestion = get_ai_suggestion(prompt)
-
-           # DEBUG: Log AI response and split results
-           logger.info(f"🔍 [SUBJECTIVE AI RAW OUTPUT for {field}] Length: {len(suggestion)}")
-           logger.info(f"🔍 [SUBJECTIVE AI RAW] First 500 chars: {suggestion[:500]}")
-
-           split_response = split_ai_response(suggestion)
-
-           logger.info(f"✅ [SUBJECTIVE SPLIT] visible_text length: {len(split_response['visible_text']) if split_response['visible_text'] else 0}")
-           logger.info(f"✅ [SUBJECTIVE SPLIT] visible_text: {split_response['visible_text'][:300] if split_response['visible_text'] else 'None'}")
-           logger.info(f"✅ [SUBJECTIVE SPLIT] reasoning_text length: {len(split_response['reasoning_text']) if split_response['reasoning_text'] else 0}")
-           logger.info(f"✅ [SUBJECTIVE SPLIT] reasoning_text: {split_response['reasoning_text'][:300] if split_response['reasoning_text'] else 'None'}")
-
-           return jsonify({
-            'suggestion': split_response['visible_text'],
-            'text': split_response['visible_text'],
-            'visible_text': split_response['visible_text'],
-            'reasoning': split_response['reasoning_text'],
-            'reasoning_text': split_response['reasoning_text']
-        })
-       except OpenAIError:
-           return jsonify({'error': 'AI service unavailable.'}), 503
-       except Exception:
-           return jsonify({'error': 'Unexpected error.'}), 500
 
 
 @app.route('/api/ai_suggestion/subjective_diagnosis', methods=['POST'])
@@ -8144,7 +7604,7 @@ def ai_perspectives_diagnosis():
             f"3. Integrate patient beliefs, expectations, and concerns if available\n"
             f"4. Consider age-appropriate conditions\n"
             f"5. Address biopsychosocial factors that may influence treatment\n"
-            f"6. Format: 'Clinical Impression — brief rationale'\n\n"
+            f"6. Format: 'Clinical Impression â€” brief rationale'\n\n"
             f"OUTPUT ONLY the 2 numbered impressions. NO explanations, NO requests for additional information."
         )
 
@@ -8580,7 +8040,7 @@ def clinical_flags_all_suggest(patient_id):
 
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex)
-        # Flags screen: return full text unsplit — the emoji flag sections (🔴🟠🟡⚫🔵)
+        # Flags screen: return full text unsplit â€” the emoji flag sections (ðŸ”´ðŸŸ ðŸŸ¡âš«ðŸ”µ)
         # must all be visible at once. split_ai_response would hide the detailed
         # breakdown after any "Clinical Reasoning:" marker the model spontaneously adds.
         return jsonify({
@@ -8621,7 +8081,7 @@ def objective_assessment_field_suggest(field):
         logger.warning(f"AI suggestion validation failed: {result}")
         return jsonify({'error': 'Invalid request data', 'details': result}), 400
 
-    logger.info(f"🧠 [server] ObjectiveAssessment payload: {data}")
+    logger.info(f"ðŸ§  [server] ObjectiveAssessment payload: {data}")
     previous = data.get('previous', {})
 
     # NEW: Get current form inputs for intra-form adaptive AI
@@ -8656,7 +8116,7 @@ def objective_assessment_field_suggest(field):
 
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex).strip()
-        logger.info(f"🧠 [server] ObjectiveAssessment suggestion for '{field}': {suggestion}")
+        logger.info(f"ðŸ§  [server] ObjectiveAssessment suggestion for '{field}': {suggestion}")
         split_response = split_ai_response(suggestion)
         return jsonify({
             'suggestion': split_response['visible_text'],
@@ -8698,7 +8158,7 @@ def provisional_diagnosis_suggest(patient_id):
                 """
                 # which field was clicked?
                 field = request.args.get('field', '')
-                logger.info(f"🧠 [server] provisional_diagnosis_suggest for patient {patient_id}, field {field}")
+                logger.info(f"ðŸ§  [server] provisional_diagnosis_suggest for patient {patient_id}, field {field}")
 
                 # pull together all prior patient data from Firestore collections
                 doc = db.collection('patients').document(patient_id).get()
@@ -8776,7 +8236,7 @@ def provisional_diagnosis_suggest(patient_id):
 
                 try:
                     suggestion = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
-                    logger.info(f"✅ [Provisional Diagnosis] Successfully generated {len(suggestion)} chars: {suggestion[:100]}...")
+                    logger.info(f"âœ… [Provisional Diagnosis] Successfully generated {len(suggestion)} chars: {suggestion[:100]}...")
                     split_response = split_ai_response(suggestion)
                     log_action(session.get('user_id'), 'AI Provisional Diagnosis Suggestion', f"Generated for patient {patient_id}")
                     return jsonify({
@@ -8787,10 +8247,10 @@ def provisional_diagnosis_suggest(patient_id):
             'reasoning_text': split_response['reasoning_text']
         })
                 except OpenAIError as e:
-                    logger.error(f"❌ [Provisional Diagnosis] OpenAI API error: {str(e)}", exc_info=True)
+                    logger.error(f"âŒ [Provisional Diagnosis] OpenAI API error: {str(e)}", exc_info=True)
                     return jsonify({'suggestion': 'AI service unavailable. Please try again later.'}), 503
                 except Exception as e:
-                    logger.error(f"❌ [Provisional Diagnosis] Unexpected error: {str(e)}", exc_info=True)
+                    logger.error(f"âŒ [Provisional Diagnosis] Unexpected error: {str(e)}", exc_info=True)
                     return jsonify({'suggestion': f'Error: {str(e)}'}), 500
 
 
@@ -8898,7 +8358,7 @@ def treatment_plan_suggest(field):
         return jsonify({'error': 'Invalid request data', 'details': result}), 400
 
     patient_id = data.get('patient_id', '')
-    logger.info(f"🧠 [server] TreatmentPlan payload for patient {patient_id}: {data}")
+    logger.info(f"ðŸ§  [server] TreatmentPlan payload for patient {patient_id}: {data}")
     text_input = data.get('input', '').strip()
 
     # NEW: Get current form inputs for intra-form adaptive AI
@@ -8962,7 +8422,7 @@ def treatment_plan_suggest(field):
 
     try:
         suggestion = get_ai_suggestion(prompt, patient_context=age_sex).strip()
-        logger.info(f"🧠 [server] TreatmentPlan suggestion for '{field}': {suggestion}")
+        logger.info(f"ðŸ§  [server] TreatmentPlan suggestion for '{field}': {suggestion}")
         split_response = split_ai_response(suggestion)
         return jsonify({
             'field': field,
@@ -8985,9 +8445,9 @@ def treatment_plan_suggest(field):
 def treatment_plan_summary(patient_id):
     """
     Gathers every saved screen for this patient and asks the AI to
-    produce a concise treatment‑plan summary.
+    produce a concise treatmentâ€‘plan summary.
     """
-    logger.info(f"🧠 [server] treatment_plan_summary for patient {patient_id}")
+    logger.info(f"ðŸ§  [server] treatment_plan_summary for patient {patient_id}")
 
     # 1) Load patient demographics
     pat_doc = db.collection('patients').document(patient_id).get()
@@ -9046,7 +8506,7 @@ def treatment_plan_summary(patient_id):
 
     # 3) Build a single prompt that walks the AI through each section
     prompt = (
-        "You are a PHI‑safe clinical summarization assistant.\n\n"
+        "You are a PHIâ€‘safe clinical summarization assistant.\n\n"
         f"Patient demographics: {sanitized_age_sex}; "
         f"Past medical history: {sanitized_past}.\n\n"
 
@@ -9111,7 +8571,7 @@ def treatment_plan_summary(patient_id):
             logger.warning(f"[Treatment Summary] Prompt was: {prompt[:500]}...")
             return jsonify({'error': 'AI returned an empty summary. Please ensure all assessment sections are completed and saved.'}), 400
 
-        logger.info(f"✅ [Treatment Summary] Successfully generated {len(summary)} chars: {summary[:100]}...")
+        logger.info(f"âœ… [Treatment Summary] Successfully generated {len(summary)} chars: {summary[:100]}...")
         split_response = split_ai_response(summary)
         log_action(session.get('user_id'), 'AI Treatment Plan Summary', f"Generated for patient {patient_id}")
         return jsonify({
@@ -9123,10 +8583,10 @@ def treatment_plan_summary(patient_id):
             'reasoning_text': split_response['reasoning_text']
         })
     except OpenAIError as e:
-        logger.error(f"❌ [Treatment Summary] OpenAI API error: {str(e)}", exc_info=True)
+        logger.error(f"âŒ [Treatment Summary] OpenAI API error: {str(e)}", exc_info=True)
         return jsonify({ 'error': 'AI service unavailable. Please try again later.' }), 503
     except Exception as e:
-        logger.error(f"❌ [Treatment Summary] Unexpected error: {str(e)}", exc_info=True)
+        logger.error(f"âŒ [Treatment Summary] Unexpected error: {str(e)}", exc_info=True)
         return jsonify({ 'error': f'An unexpected error occurred: {str(e)}' }), 500
 
 
@@ -9311,9 +8771,9 @@ def ai_followup_field(field):
         return jsonify({'error': 'Unexpected error'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # SUPER ADMIN ROUTES - Global Administration
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/super_admin_dashboard')
 @super_admin_required()
@@ -9823,7 +9283,7 @@ def super_admin_fix_subscription():
             sub_ref.update(updates)
             flash("Updated Super Admin subscription to unlimited quotas", "success")
 
-        logger.info(f"✅ Fixed Super Admin subscription for {user_email}")
+        logger.info(f"âœ… Fixed Super Admin subscription for {user_email}")
         return jsonify({'success': True, 'message': 'Subscription fixed successfully'})
 
     except Exception as e:
@@ -10171,9 +9631,9 @@ def super_admin_process_deletion(user_email):
         }
         db.collection('deleted_users').add(deleted_user_record)
 
-        # ═══════════════════════════════════════════════════════════════
+        # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         # GDPR-COMPLIANT COMPLETE DATA DELETION
-        # ═══════════════════════════════════════════════════════════════
+        # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         deletion_stats = {
             'patients': 0,
@@ -10296,14 +9756,14 @@ def super_admin_process_deletion(user_email):
         return jsonify({'error': 'Failed to process deletion'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # END SUPER ADMIN ROUTES
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # RAZORPAY WEBHOOK HANDLER
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/razorpay/webhook', methods=['POST'])
 @csrf.exempt  # Webhooks don't have CSRF tokens
@@ -10348,9 +9808,9 @@ def razorpay_webhook():
         return jsonify({'error': 'Webhook processing failed'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # PAYMENT & SUBSCRIPTION API ENDPOINTS
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/api/subscription', methods=['GET'])
 @require_auth
@@ -10778,9 +10238,9 @@ def export_patient_data():
         return jsonify({'error': 'Failed to export data'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # PWA OFFLINE PAGE & ICON TEST
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/service-worker.js')
 def service_worker():
@@ -10931,9 +10391,9 @@ def icon_test():
     """PWA icon test page (development only)"""
     return render_template('icon_test.html')
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # PAYMENT & SUBSCRIPTION WEB PAGES
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/pricing')
 def pricing():
@@ -11021,9 +10481,9 @@ def test_razorpay():
     return render_template('test_razorpay.html')
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # TEST API ENDPOINTS (for debugging)
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/api/test/razorpay-config', methods=['GET'])
 def test_razorpay_config():
@@ -11094,9 +10554,9 @@ def test_razorpay_connection():
         }), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # BLOG SYSTEM
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/blog')
 def blog_list():
@@ -11716,9 +11176,9 @@ Systematic objective assessment provides the evidence base for clinical reasonin
         return redirect(url_for('blog_admin'))
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # FEEDBACK & REVIEWS
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/feedback')
 @login_required()
@@ -11988,9 +11448,9 @@ def toggle_feedback_public(feedback_id):
         return jsonify({'ok': False, 'error': 'Failed to update feedback'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # FOLLOW-UP REMINDER MANAGEMENT
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/api/patient/<patient_id>/set_next_followup', methods=['POST'])
 @login_required()
@@ -12261,9 +11721,9 @@ def check_followup_reminders():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # DRAFT AUTO-SAVE SYSTEM
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/api/draft/save', methods=['POST'])
 @login_required()
@@ -12617,9 +12077,9 @@ def get_patient_context(patient_id):
         return jsonify({'ok': False, 'error': 'Failed to load patient context'}), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # CSP VIOLATION REPORTING
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/api/csp-report', methods=['POST'])
 def csp_violation_report():
@@ -12668,9 +12128,9 @@ def csp_violation_report():
         return '', 400
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # VOICE TRANSCRIPTION (Azure Speech Services)
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/api/transcribe', methods=['POST'])
 @require_auth
@@ -12780,9 +12240,9 @@ def api_transcribe_audio():
         }), 500
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # TEXT AUTOCOMPLETE API - Learn from user's historical phrases
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/api/autocomplete/suggestions', methods=['POST'])
 @login_required()
@@ -12933,9 +12393,9 @@ def api_autocomplete_suggestions():
         return jsonify({'suggestions': []}), 200  # Return empty on error
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # HEALTH CHECK
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route("/healthz")
 def healthz():
@@ -13025,9 +12485,9 @@ def health_check():
     return jsonify(health_status), status_code
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # SENTRY TEST ENDPOINTS (FOR DEVELOPMENT/TESTING ONLY)
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/sentry-debug')
 @login_required()
@@ -13080,7 +12540,7 @@ def sentry_test_message():
     """
     if ENVIRONMENT != 'production' and SENTRY_DSN:
         sentry_sdk.capture_message(
-            "Test message from PhysiologicPRISM! 🎉 Sentry is working correctly.",
+            "Test message from PhysiologicPRISM! ðŸŽ‰ Sentry is working correctly.",
             level="info"
         )
         return jsonify({
@@ -13100,9 +12560,9 @@ def sentry_test_message():
         }), 403
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # BLOG LEAD CAPTURE & WAITLIST ROUTES
-# ═══════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/coming-soon')
 def coming_soon():
