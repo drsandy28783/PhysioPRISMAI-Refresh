@@ -29,7 +29,7 @@ REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', None)
 REDIS_DB = int(os.environ.get('REDIS_DB', 0))
 
 # Rate Limiting Configuration
-MAX_LOGIN_ATTEMPTS = 5
+MAX_LOGIN_ATTEMPTS = 3
 LOCKOUT_DURATION = 900  # 15 minutes in seconds
 
 # Try to connect to Redis
