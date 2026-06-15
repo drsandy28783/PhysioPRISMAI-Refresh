@@ -1908,9 +1908,8 @@ def login():
         # Security: Check if user is rate limited (email-based)
         is_allowed, lockout_remaining = check_login_attempts(email)
         if not is_allowed:
-            logger.warning(f"Blocked login attempt for {email} - account locked after too many failures")
-            send_lockout_reset_email(email)
-            flash('Your account has been locked after too many failed attempts. We have sent a password reset link to your email.', 'error')
+            logger.warning(f"Blocked login attempt for {email} - account locked")
+            flash('Your account is locked. Please check your email for a password reset link.', 'error')
             return redirect('/login')
         
         try:
@@ -1972,7 +1971,11 @@ def login():
                     return "Your registration is pending admin approval.", 403
             else:
                 # Invalid password
-                record_failed_login(email)
+                just_locked = record_failed_login(email)
+                if just_locked:
+                    send_lockout_reset_email(email)
+                    flash('Your account has been locked after too many failed attempts. We have sent a password reset link to your email.', 'error')
+                    return redirect('/login')
                 return "Invalid login credentials.", 401
 
         except Exception as e:
@@ -2870,8 +2873,7 @@ def api_login_deprecated_old():
         # Security: Check rate limiting (email-based, Redis-backed)
         is_allowed, lockout_remaining = check_login_attempts(email)
         if not is_allowed:
-            send_lockout_reset_email(email)
-            return jsonify({'ok': False, 'error': 'ACCOUNT_LOCKED', 'message': 'Your account has been locked after too many failed attempts. A password reset link has been sent to your email.'}), 429
+            return jsonify({'ok': False, 'error': 'ACCOUNT_LOCKED', 'message': 'Your account is locked. Please check your email for a password reset link.'}), 429
 
         # Get user from Firestore
         doc = db.collection('users').document(email).get()
@@ -2883,7 +2885,10 @@ def api_login_deprecated_old():
 
         # Verify password
         if not check_password_hash(user.get('password_hash', ''), password):
-            record_failed_login(email)
+            just_locked = record_failed_login(email)
+            if just_locked:
+                send_lockout_reset_email(email)
+                return jsonify({'ok': False, 'error': 'ACCOUNT_LOCKED', 'message': 'Your account has been locked after too many failed attempts. A password reset link has been sent to your email.'}), 429
             return jsonify({'ok': False, 'error': 'INVALID_LOGIN_CREDENTIALS'}), 401
 
         # Check approval status
@@ -5241,9 +5246,8 @@ def login_institute():
         # Security: Check rate limiting (email-based, Redis-backed)
         is_allowed, lockout_remaining = check_login_attempts(email)
         if not is_allowed:
-            logger.warning(f"Blocked institute login attempt for {email} - account locked after too many failures")
-            send_lockout_reset_email(email)
-            flash('Your account has been locked after too many failed attempts. We have sent a password reset link to your email.', 'error')
+            logger.warning(f"Blocked institute login attempt for {email} - account locked")
+            flash('Your account is locked. Please check your email for a password reset link.', 'error')
             return redirect('/login')
 
         try:
@@ -5300,7 +5304,11 @@ def login_institute():
                 return redirect('/dashboard')
             else:
                 # Invalid password
-                record_failed_login(email)
+                just_locked = record_failed_login(email)
+                if just_locked:
+                    send_lockout_reset_email(email)
+                    flash('Your account has been locked after too many failed attempts. We have sent a password reset link to your email.', 'error')
+                    return redirect('/login')
                 return "Invalid credentials.", 401
 
         except Exception as e:

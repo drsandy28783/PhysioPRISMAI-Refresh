@@ -179,52 +179,48 @@ def check_login_attempts(email):
         return True, 0
 
 
-def record_failed_login(email):
+def record_failed_login(email) -> bool:
     """
     Record a failed login attempt.
 
     Args:
         email (str): User email address
+
+    Returns:
+        bool: True if this attempt just crossed the lockout threshold (account just locked),
+              False otherwise. Callers should send a reset email only when True.
     """
     if not email:
-        return
+        return False
 
     key = f"login_attempts:{email.lower()}"
 
     if redis_available and redis_client:
         try:
-            # Increment attempt count
             attempts = redis_client.incr(key)
-
-            # Set expiry on first attempt
             if attempts == 1:
                 redis_client.expire(key, LOCKOUT_DURATION)
-
             logger.info(f"Failed login attempt {attempts}/{MAX_LOGIN_ATTEMPTS} for {email}")
-
+            return attempts == MAX_LOGIN_ATTEMPTS
         except Exception as e:
             logger.error(f"Redis error recording failed login: {str(e)}")
+            return False
 
     else:
-        # In-memory fallback
         import time
         if key in _in_memory_storage:
             attempts, timestamp = _in_memory_storage[key]
-
-            # Check if lockout expired
             elapsed = time.time() - timestamp
             if elapsed >= LOCKOUT_DURATION:
-                # Reset counter
                 _in_memory_storage[key] = (1, time.time())
             else:
-                # Increment counter
                 _in_memory_storage[key] = (attempts + 1, timestamp)
         else:
-            # First attempt
             _in_memory_storage[key] = (1, time.time())
 
         attempts = _in_memory_storage[key][0]
         logger.info(f"Failed login attempt {attempts}/{MAX_LOGIN_ATTEMPTS} for {email}")
+        return attempts == MAX_LOGIN_ATTEMPTS
 
 
 def clear_login_attempts(email):
