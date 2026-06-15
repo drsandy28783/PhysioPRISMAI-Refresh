@@ -1,8 +1,9 @@
 """
-Redis-based Rate Limiting for PhysiologicPRISM
+Rate Limiting for PhysiologicPRISM
 
-This module provides persistent, distributed rate limiting using Redis.
-Falls back to in-memory rate limiting if Redis is unavailable.
+Route-level rate limiting via Flask-Limiter (in-memory).
+Login attempt tracking is persisted in Cosmos DB so lockouts survive
+restarts and are shared across all Gunicorn workers.
 
 Usage:
     from rate_limiter import limiter, check_login_attempts, record_failed_login
@@ -22,52 +23,12 @@ from flask_limiter.util import get_remote_address
 
 logger = logging.getLogger("app.rate_limiter")
 
-# Redis Configuration
-REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
-REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', None)
-REDIS_DB = int(os.environ.get('REDIS_DB', 0))
-
-# Rate Limiting Configuration
+# Login attempt tracking — state lives in Cosmos DB user documents
 MAX_LOGIN_ATTEMPTS = 3
-LOCKOUT_DURATION = 7 * 24 * 3600  # 7 days — effectively permanent until password reset clears it
 
-# Try to connect to Redis
+# Redis stubs kept for import compatibility (health check in main.py references these)
 redis_client = None
 redis_available = False
-
-try:
-    import redis
-
-    # Create Redis client
-    redis_client = redis.Redis(
-        host=REDIS_HOST,
-        port=REDIS_PORT,
-        password=REDIS_PASSWORD if REDIS_PASSWORD else None,
-        db=REDIS_DB,
-        decode_responses=True,
-        socket_connect_timeout=5,
-        socket_timeout=5,
-        retry_on_timeout=True
-    )
-
-    # Test connection
-    redis_client.ping()
-    redis_available = True
-    logger.info(f"✅ Redis connected successfully at {REDIS_HOST}:{REDIS_PORT}")
-
-except ImportError:
-    logger.warning("⚠️ Redis package not installed. Using in-memory rate limiting.")
-    redis_available = False
-
-except Exception as e:
-    logger.warning(f"⚠️ Redis connection failed: {str(e)}. Using in-memory rate limiting.")
-    redis_available = False
-    redis_client = None
-
-
-# In-memory fallback (only used if Redis unavailable)
-_in_memory_storage = {}
 
 
 def get_user_identifier():
@@ -89,204 +50,110 @@ def get_user_identifier():
     return f"ip:{get_remote_address()}"
 
 
-def get_storage_uri():
-    """
-    Get storage URI for Flask-Limiter.
-
-    Returns:
-        str: Redis URI if available, otherwise in-memory URI
-    """
-    if redis_available and redis_client:
-        # Build Redis URI
-        if REDIS_PASSWORD:
-            return f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
-        else:
-            return f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
-    else:
-        return "memory://"
-
-
-# Initialize Flask-Limiter
+# Initialize Flask-Limiter with in-memory storage (route-level throttling only)
 limiter = Limiter(
     key_func=get_user_identifier,
     default_limits=["1000 per hour", "100 per minute"],
-    storage_uri=get_storage_uri(),
+    storage_uri="memory://",
     storage_options={},
     strategy="fixed-window",
     headers_enabled=True,
-    swallow_errors=True  # Don't crash app if rate limiting fails
+    swallow_errors=True,
 )
 
-logger.info(f"Rate limiter initialized with storage: {'Redis' if redis_available else 'Memory'}")
+logger.info("Rate limiter initialized with in-memory storage (login lockouts use Cosmos DB)")
 
 
-# ─── LOGIN ATTEMPT TRACKING ─────────────────────────────────────────
+# ─── LOGIN ATTEMPT TRACKING (Cosmos DB) ─────────────────────────────
+#
+# Lockout state is stored on the user document so it survives restarts
+# and is visible to all Gunicorn workers.
+#
+# Fields written: failed_login_attempts (int), account_locked (bool)
 
 
-def check_login_attempts(email):
+def check_login_attempts(email, db=None):
     """
-    Check if user is locked out due to failed login attempts.
-
-    Args:
-        email (str): User email address
-
-    Returns:
-        tuple: (is_allowed, remaining_lockout_seconds)
-            - is_allowed: True if user can attempt login, False if locked out
-            - remaining_lockout_seconds: Seconds remaining in lockout (0 if not locked)
+    Return (is_allowed, 0).  is_allowed is False when the account is locked.
+    db is the Cosmos DB client (db.collection('users').document(...)).
     """
     if not email:
         return True, 0
-
-    key = f"login_attempts:{email.lower()}"
-
-    if redis_available and redis_client:
-        try:
-            # Get attempt count from Redis
-            attempts = redis_client.get(key)
-
-            if attempts and int(attempts) >= MAX_LOGIN_ATTEMPTS:
-                # Check TTL (time remaining)
-                ttl = redis_client.ttl(key)
-                if ttl > 0:
-                    logger.warning(f"User {email} is locked out. {ttl}s remaining.")
-                    return False, ttl
-
-            return True, 0
-
-        except Exception as e:
-            logger.error(f"Redis error checking login attempts: {str(e)}")
-            # Fail open - allow login if Redis fails
-            return True, 0
-
-    else:
-        # In-memory fallback
-        import time
-        if key in _in_memory_storage:
-            attempts, timestamp = _in_memory_storage[key]
-
-            # Check if lockout expired
-            elapsed = time.time() - timestamp
-            if elapsed < LOCKOUT_DURATION:
-                if attempts >= MAX_LOGIN_ATTEMPTS:
-                    remaining = int(LOCKOUT_DURATION - elapsed)
-                    logger.warning(f"User {email} is locked out. {remaining}s remaining.")
-                    return False, remaining
-            else:
-                # Lockout expired, clear it
-                del _in_memory_storage[key]
-
+    if db is None:
         return True, 0
 
+    try:
+        doc = db.collection('users').document(email.lower()).get()
+        if doc.exists and doc.get('account_locked'):
+            logger.warning(f"Login blocked — account locked: {email}")
+            return False, 0
+    except Exception as e:
+        logger.error(f"check_login_attempts error for {email}: {e}")
+        # Fail open so a Cosmos DB hiccup doesn't lock everyone out
+    return True, 0
 
-def record_failed_login(email) -> bool:
+
+def record_failed_login(email, db=None) -> bool:
     """
-    Record a failed login attempt.
-
-    Args:
-        email (str): User email address
-
-    Returns:
-        bool: True if this attempt just crossed the lockout threshold (account just locked),
-              False otherwise. Callers should send a reset email only when True.
+    Increment failed_login_attempts on the user document.
+    Sets account_locked=True when the count reaches MAX_LOGIN_ATTEMPTS.
+    Returns True only on the attempt that just crossed the threshold
+    (so callers send the reset email exactly once).
     """
     if not email:
         return False
+    if db is None:
+        return False
 
-    key = f"login_attempts:{email.lower()}"
-
-    if redis_available and redis_client:
-        try:
-            attempts = redis_client.incr(key)
-            if attempts == 1:
-                redis_client.expire(key, LOCKOUT_DURATION)
-            logger.info(f"Failed login attempt {attempts}/{MAX_LOGIN_ATTEMPTS} for {email}")
-            return attempts == MAX_LOGIN_ATTEMPTS
-        except Exception as e:
-            logger.error(f"Redis error recording failed login: {str(e)}")
+    try:
+        ref = db.collection('users').document(email.lower())
+        doc = ref.get()
+        if not doc.exists:
             return False
 
-    else:
-        import time
-        if key in _in_memory_storage:
-            attempts, timestamp = _in_memory_storage[key]
-            elapsed = time.time() - timestamp
-            if elapsed >= LOCKOUT_DURATION:
-                _in_memory_storage[key] = (1, time.time())
-            else:
-                _in_memory_storage[key] = (attempts + 1, timestamp)
-        else:
-            _in_memory_storage[key] = (1, time.time())
+        current = doc.get('failed_login_attempts') or 0
+        new_count = current + 1
+        just_locked = new_count == MAX_LOGIN_ATTEMPTS
 
-        attempts = _in_memory_storage[key][0]
-        logger.info(f"Failed login attempt {attempts}/{MAX_LOGIN_ATTEMPTS} for {email}")
-        return attempts == MAX_LOGIN_ATTEMPTS
+        update = {'failed_login_attempts': new_count}
+        if just_locked:
+            update['account_locked'] = True
+
+        ref.update(update)
+        logger.info(f"Failed login attempt {new_count}/{MAX_LOGIN_ATTEMPTS} for {email}")
+        return just_locked
+
+    except Exception as e:
+        logger.error(f"record_failed_login error for {email}: {e}")
+        return False
 
 
-def clear_login_attempts(email):
+def clear_login_attempts(email, db=None):
     """
-    Clear failed login attempts (called after successful login).
-
-    Args:
-        email (str): User email address
+    Clear the lockout state after a successful login or password reset.
     """
     if not email:
         return
+    if db is None:
+        return
 
-    key = f"login_attempts:{email.lower()}"
-
-    if redis_available and redis_client:
-        try:
-            redis_client.delete(key)
-            logger.info(f"Cleared login attempts for {email}")
-        except Exception as e:
-            logger.error(f"Redis error clearing login attempts: {str(e)}")
-
-    else:
-        # In-memory fallback
-        if key in _in_memory_storage:
-            del _in_memory_storage[key]
-            logger.info(f"Cleared login attempts for {email}")
+    try:
+        db.collection('users').document(email.lower()).update({
+            'failed_login_attempts': 0,
+            'account_locked': False,
+        })
+        logger.info(f"Cleared login lockout for {email}")
+    except Exception as e:
+        logger.error(f"clear_login_attempts error for {email}: {e}")
 
 
 def get_rate_limit_stats():
-    """
-    Get rate limiting statistics (for debugging/monitoring).
-
-    Returns:
-        dict: Rate limiting statistics
-    """
-    stats = {
-        'redis_available': redis_available,
-        'storage_type': 'redis' if redis_available else 'memory',
-        'redis_host': REDIS_HOST if redis_available else None,
-        'redis_port': REDIS_PORT if redis_available else None,
+    return {
+        'redis_available': False,
+        'storage_type': 'cosmos_db',
+        'login_lockout_backend': 'cosmos_db',
     }
 
-    if redis_available and redis_client:
-        try:
-            info = redis_client.info('stats')
-            stats['redis_total_connections'] = info.get('total_connections_received', 0)
-            stats['redis_connected_clients'] = info.get('connected_clients', 0)
-        except Exception as e:
-            stats['redis_error'] = str(e)
 
-    return stats
-
-
-# Health check function
 def health_check():
-    """
-    Check if rate limiter is healthy.
-
-    Returns:
-        tuple: (is_healthy, status_message)
-    """
-    if redis_available and redis_client:
-        try:
-            redis_client.ping()
-            return True, "Redis connection healthy"
-        except Exception as e:
-            return False, f"Redis connection unhealthy: {str(e)}"
-    else:
-        return True, "Using in-memory rate limiting (Redis not available)"
+    return True, "Rate limiter healthy (in-memory routes, Cosmos DB login lockouts)"

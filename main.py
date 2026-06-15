@@ -111,8 +111,6 @@ from rate_limiter import (
     record_failed_login,
     clear_login_attempts,
     get_rate_limit_stats,
-    redis_client,
-    redis_available
 )
 from schemas import (
     PatientSchema,
@@ -1906,19 +1904,19 @@ def login():
         pwd = result['password']
 
         # Security: Check if user is rate limited (email-based)
-        is_allowed, lockout_remaining = check_login_attempts(email)
+        is_allowed, lockout_remaining = check_login_attempts(email, db)
         if not is_allowed:
             logger.warning(f"Blocked login attempt for {email} - account locked")
             flash('Your account is locked. Please check your email for a password reset link.', 'error')
             return redirect('/login')
-        
+
         try:
             # Get client IP for logging
             client_ip = request.environ.get('REMOTE_ADDR', 'unknown')
 
             doc = db.collection('users').document(email).get()
             if not doc.exists:
-                record_failed_login(email)
+                record_failed_login(email, db)
                 return "Invalid login credentials.", 401
 
             user = doc.to_dict()
@@ -1951,8 +1949,8 @@ def login():
                     # Debug: Log session after setting
                     logger.info(f"Session set for {email}: keys = {list(session.keys())}")
 
-                    # Clear failed login attempts (Redis-based)
-                    clear_login_attempts(email)
+                    # Clear failed login attempts
+                    clear_login_attempts(email, db)
 
                     # Security audit logging
                     role = "Super Admin" if is_super_admin == 1 else ("Admin" if user.get('is_admin') == 1 else "User")
@@ -1971,7 +1969,7 @@ def login():
                     return "Your registration is pending admin approval.", 403
             else:
                 # Invalid password
-                just_locked = record_failed_login(email)
+                just_locked = record_failed_login(email, db)
                 if just_locked:
                     send_lockout_reset_email(email)
                     flash('Your account has been locked after too many failed attempts. We have sent a password reset link to your email.', 'error')
@@ -1980,7 +1978,7 @@ def login():
 
         except Exception as e:
             logger.error(f"Login error for {email} from IP {client_ip}: {str(e)}")
-            record_failed_login(email)
+            record_failed_login(email, db)
             return "Login service temporarily unavailable. Please try again.", 503
     
     return render_template('login.html')
@@ -2382,7 +2380,7 @@ def reset_password_page(token):
 
             # Clear reset token and any login lockout
             clear_reset_token(db, email)
-            clear_login_attempts(email)
+            clear_login_attempts(email, db)
 
             # Log action
             client_ip = request.environ.get('REMOTE_ADDR', 'unknown')
@@ -2870,22 +2868,22 @@ def api_login_deprecated_old():
         if not email or not password:
             return jsonify({'ok': False, 'error': 'EMAIL_PASSWORD_REQUIRED'}), 400
 
-        # Security: Check rate limiting (email-based, Redis-backed)
-        is_allowed, lockout_remaining = check_login_attempts(email)
+        # Security: Check if account is locked
+        is_allowed, lockout_remaining = check_login_attempts(email, db)
         if not is_allowed:
             return jsonify({'ok': False, 'error': 'ACCOUNT_LOCKED', 'message': 'Your account is locked. Please check your email for a password reset link.'}), 429
 
-        # Get user from Firestore
+        # Get user from Cosmos DB
         doc = db.collection('users').document(email).get()
         if not doc.exists:
-            record_failed_login(email)
+            record_failed_login(email, db)
             return jsonify({'ok': False, 'error': 'INVALID_LOGIN_CREDENTIALS'}), 401
 
         user = doc.to_dict()
 
         # Verify password
         if not check_password_hash(user.get('password_hash', ''), password):
-            just_locked = record_failed_login(email)
+            just_locked = record_failed_login(email, db)
             if just_locked:
                 send_lockout_reset_email(email)
                 return jsonify({'ok': False, 'error': 'ACCOUNT_LOCKED', 'message': 'Your account has been locked after too many failed attempts. A password reset link has been sent to your email.'}), 429
@@ -2902,8 +2900,8 @@ def api_login_deprecated_old():
             if active != 1:
                 return jsonify({'ok': False, 'error': 'DEACTIVATED'}), 403
 
-        # Clear failed login attempts (Redis-based)
-        clear_login_attempts(email)
+        # Clear failed login attempts
+        clear_login_attempts(email, db)
 
         # Generate a simple bearer token (or use Firebase if available)
         # For now, we'll create a session-based token
@@ -5243,8 +5241,8 @@ def login_institute():
         if len(email) > 254 or len(pwd) > 128:  # RFC 5321 limits
             return "Invalid credentials.", 401
 
-        # Security: Check rate limiting (email-based, Redis-backed)
-        is_allowed, lockout_remaining = check_login_attempts(email)
+        # Security: Check if account is locked
+        is_allowed, lockout_remaining = check_login_attempts(email, db)
         if not is_allowed:
             logger.warning(f"Blocked institute login attempt for {email} - account locked")
             flash('Your account is locked. Please check your email for a password reset link.', 'error')
@@ -5256,7 +5254,7 @@ def login_institute():
 
             doc = db.collection('users').document(email).get()
             if not doc.exists:
-                record_failed_login(email)
+                record_failed_login(email, db)
                 return "Invalid credentials.", 401
 
             user = doc.to_dict()
@@ -5289,8 +5287,8 @@ def login_institute():
                     'last_activity': datetime.utcnow().isoformat()
                 })
 
-                # Clear failed login attempts (Redis-based)
-                clear_login_attempts(email)
+                # Clear failed login attempts
+                clear_login_attempts(email, db)
 
                 # Security audit logging
                 user_type = "Super Admin" if is_super_admin == 1 else ("Admin" if user.get('is_admin', 0) == 1 else "User")
@@ -5304,7 +5302,7 @@ def login_institute():
                 return redirect('/dashboard')
             else:
                 # Invalid password
-                just_locked = record_failed_login(email)
+                just_locked = record_failed_login(email, db)
                 if just_locked:
                     send_lockout_reset_email(email)
                     flash('Your account has been locked after too many failed attempts. We have sent a password reset link to your email.', 'error')
@@ -5313,7 +5311,7 @@ def login_institute():
 
         except Exception as e:
             logger.error(f"Institute login error for {email} from IP {client_ip}: {str(e)}")
-            record_failed_login(email)
+            record_failed_login(email, db)
             return "Login service temporarily unavailable. Please try again.", 503
     
     return render_template('login_institute.html')
@@ -12487,21 +12485,8 @@ def health_check():
         health_status['status'] = 'unhealthy'
         logger.error(f"Health check: Firestore failed - {str(e)}")
 
-    # Check Redis connection
-    try:
-        if redis_available and redis_client:
-            # Test Redis connection with ping
-            redis_client.ping()
-            health_status['checks']['redis'] = 'ok'
-            logger.debug("Health check: Redis OK")
-        else:
-            # Redis not available, using in-memory fallback
-            health_status['checks']['redis'] = 'degraded'
-            logger.debug("Health check: Redis degraded (using in-memory fallback)")
-    except Exception as e:
-        health_status['checks']['redis'] = 'error'
-        health_status['status'] = 'unhealthy'
-        logger.error(f"Health check: Redis failed - {str(e)}")
+    # Login lockouts use Cosmos DB — no Redis health check needed
+    health_status['checks']['login_lockout'] = 'cosmos_db'
 
     # Check OpenAI availability
     if not HIPAA_COMPLIANT_MODE and client:
