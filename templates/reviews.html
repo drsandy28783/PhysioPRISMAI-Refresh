@@ -7,7 +7,7 @@
 
 {% block head %}
 {% if total_reviews > 0 %}
-<script type="application/ld+json">
+<script type="application/ld+json" nonce="{{ csp_nonce() }}">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",

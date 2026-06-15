@@ -95,7 +95,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
 
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest" nonce="{{ csp_nonce() }}"></script>
 
     <!-- Mobile Responsive Styles for Public Pages -->
     <style>
