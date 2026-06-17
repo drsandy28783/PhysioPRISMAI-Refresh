@@ -415,30 +415,42 @@
   <div class="report-section">
     <h2 class="section-header">1. Subjective Examination (ICF Framework)</h2>
     <div class="section-content">
+      {% if subjective.body_structure %}
       <div class="field-group">
         <div class="field-label">Body Structure & Function</div>
-        <div class="field-value">{{ subjective.body_structure or 'Not documented' }}</div>
+        <div class="field-value">{{ subjective.body_structure }}</div>
       </div>
+      {% endif %}
+      {% if subjective.body_function %}
       <div class="field-group">
         <div class="field-label">Body Function</div>
-        <div class="field-value">{{ subjective.body_function or 'Not documented' }}</div>
+        <div class="field-value">{{ subjective.body_function }}</div>
       </div>
+      {% endif %}
+      {% if subjective.activity_performance %}
       <div class="field-group">
         <div class="field-label">Activity Performance</div>
-        <div class="field-value">{{ subjective.activity_performance or 'Not documented' }}</div>
+        <div class="field-value">{{ subjective.activity_performance }}</div>
       </div>
+      {% endif %}
+      {% if subjective.activity_capacity %}
       <div class="field-group">
         <div class="field-label">Activity Capacity</div>
-        <div class="field-value">{{ subjective.activity_capacity or 'Not documented' }}</div>
+        <div class="field-value">{{ subjective.activity_capacity }}</div>
       </div>
+      {% endif %}
+      {% if subjective.contextual_environmental %}
       <div class="field-group">
         <div class="field-label">Contextual - Environmental Factors</div>
-        <div class="field-value">{{ subjective.contextual_environmental or 'Not documented' }}</div>
+        <div class="field-value">{{ subjective.contextual_environmental }}</div>
       </div>
+      {% endif %}
+      {% if subjective.contextual_personal %}
       <div class="field-group">
         <div class="field-label">Contextual - Personal Factors</div>
-        <div class="field-value">{{ subjective.contextual_personal or 'Not documented' }}</div>
+        <div class="field-value">{{ subjective.contextual_personal }}</div>
       </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -448,30 +460,42 @@
   <div class="report-section">
     <h2 class="section-header">2. Patient Perspectives & Beliefs</h2>
     <div class="section-content">
+      {% if perspectives.knowledge %}
       <div class="field-group">
         <div class="field-label">Knowledge & Understanding</div>
-        <div class="field-value">{{ perspectives.knowledge or 'Not documented' }}</div>
+        <div class="field-value">{{ perspectives.knowledge }}</div>
       </div>
+      {% endif %}
+      {% if perspectives.attribution %}
       <div class="field-group">
         <div class="field-label">Attribution (Cause)</div>
-        <div class="field-value">{{ perspectives.attribution or 'Not documented' }}</div>
+        <div class="field-value">{{ perspectives.attribution }}</div>
       </div>
+      {% endif %}
+      {% if perspectives.expectation %}
       <div class="field-group">
         <div class="field-label">Expectations</div>
-        <div class="field-value">{{ perspectives.expectation or 'Not documented' }}</div>
+        <div class="field-value">{{ perspectives.expectation }}</div>
       </div>
+      {% endif %}
+      {% if perspectives.consequences_awareness %}
       <div class="field-group">
         <div class="field-label">Consequences Awareness</div>
-        <div class="field-value">{{ perspectives.consequences_awareness or 'Not documented' }}</div>
+        <div class="field-value">{{ perspectives.consequences_awareness }}</div>
       </div>
+      {% endif %}
+      {% if perspectives.locus_of_control %}
       <div class="field-group">
         <div class="field-label">Locus of Control</div>
-        <div class="field-value">{{ perspectives.locus_of_control or 'Not documented' }}</div>
+        <div class="field-value">{{ perspectives.locus_of_control }}</div>
       </div>
+      {% endif %}
+      {% if perspectives.affective_aspect %}
       <div class="field-group">
         <div class="field-label">Affective Aspect (Emotional Response)</div>
-        <div class="field-value">{{ perspectives.affective_aspect or 'Not documented' }}</div>
+        <div class="field-value">{{ perspectives.affective_aspect }}</div>
       </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -483,23 +507,12 @@
     <div class="section-content">
 
       <!-- Active Movements -->
+      {% if initial_plan.active_movements_tests or initial_plan.active_movements_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">🏃 Active Movements</h3>
-        <div class="field-group">
-          <div class="field-label">Plan Category</div>
-          <div class="field-value" style="font-weight: 600; color: {{ 'green' if initial_plan.active_movements == 'Recommended' else 'orange' if initial_plan.active_movements == 'Cautious' else 'red' }};">
-            {{ initial_plan.active_movements or 'Not planned' }}
-          </div>
-        </div>
-        {% if initial_plan.active_movements_reasoning %}
-        <div class="field-group">
-          <div class="field-label">Clinical Rationale</div>
-          <div class="field-value" style="font-style: italic; background: white; padding: 12px; border-radius: 4px;">{{ initial_plan.active_movements_reasoning }}</div>
-        </div>
-        {% endif %}
         {% if initial_plan.active_movements_tests %}
         <div class="field-group">
-          <div class="field-label">Recommended Tests</div>
+          <div class="field-label">Tests Performed</div>
           <ul style="margin: 8px 0; padding-left: 20px;">
             {% for test in initial_plan.active_movements_tests %}
             <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
@@ -514,25 +527,15 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- Passive Movements -->
+      {% if initial_plan.passive_movements_tests or initial_plan.passive_movements_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">🤲 Passive Movements</h3>
-        <div class="field-group">
-          <div class="field-label">Plan Category</div>
-          <div class="field-value" style="font-weight: 600; color: {{ 'green' if initial_plan.passive_movements == 'Recommended' else 'orange' if initial_plan.passive_movements == 'Cautious' else 'red' }};">
-            {{ initial_plan.passive_movements or 'Not planned' }}
-          </div>
-        </div>
-        {% if initial_plan.passive_movements_reasoning %}
-        <div class="field-group">
-          <div class="field-label">Clinical Rationale</div>
-          <div class="field-value" style="font-style: italic; background: white; padding: 12px; border-radius: 4px;">{{ initial_plan.passive_movements_reasoning }}</div>
-        </div>
-        {% endif %}
         {% if initial_plan.passive_movements_tests %}
         <div class="field-group">
-          <div class="field-label">Recommended Tests</div>
+          <div class="field-label">Tests Performed</div>
           <ul style="margin: 8px 0; padding-left: 20px;">
             {% for test in initial_plan.passive_movements_tests %}
             <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
@@ -547,25 +550,15 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- Passive Over-Pressure -->
+      {% if initial_plan.passive_over_pressure_tests or initial_plan.passive_over_pressure_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">💪 Passive Over-Pressure</h3>
-        <div class="field-group">
-          <div class="field-label">Plan Category</div>
-          <div class="field-value" style="font-weight: 600; color: {{ 'green' if initial_plan.passive_over_pressure == 'Recommended' else 'orange' if initial_plan.passive_over_pressure == 'Cautious' else 'red' }};">
-            {{ initial_plan.passive_over_pressure or 'Not planned' }}
-          </div>
-        </div>
-        {% if initial_plan.passive_over_pressure_reasoning %}
-        <div class="field-group">
-          <div class="field-label">Clinical Rationale</div>
-          <div class="field-value" style="font-style: italic; background: white; padding: 12px; border-radius: 4px;">{{ initial_plan.passive_over_pressure_reasoning }}</div>
-        </div>
-        {% endif %}
         {% if initial_plan.passive_over_pressure_tests %}
         <div class="field-group">
-          <div class="field-label">Recommended Tests</div>
+          <div class="field-label">Tests Performed</div>
           <ul style="margin: 8px 0; padding-left: 20px;">
             {% for test in initial_plan.passive_over_pressure_tests %}
             <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
@@ -580,25 +573,15 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- Resisted Movements -->
+      {% if initial_plan.resisted_movements_tests or initial_plan.resisted_movements_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">💥 Resisted Movements</h3>
-        <div class="field-group">
-          <div class="field-label">Plan Category</div>
-          <div class="field-value" style="font-weight: 600; color: {{ 'green' if initial_plan.resisted_movements == 'Recommended' else 'orange' if initial_plan.resisted_movements == 'Cautious' else 'red' }};">
-            {{ initial_plan.resisted_movements or 'Not planned' }}
-          </div>
-        </div>
-        {% if initial_plan.resisted_movements_reasoning %}
-        <div class="field-group">
-          <div class="field-label">Clinical Rationale</div>
-          <div class="field-value" style="font-style: italic; background: white; padding: 12px; border-radius: 4px;">{{ initial_plan.resisted_movements_reasoning }}</div>
-        </div>
-        {% endif %}
         {% if initial_plan.resisted_movements_tests %}
         <div class="field-group">
-          <div class="field-label">Recommended Tests</div>
+          <div class="field-label">Tests Performed</div>
           <ul style="margin: 8px 0; padding-left: 20px;">
             {% for test in initial_plan.resisted_movements_tests %}
             <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
@@ -613,25 +596,15 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- Combined Movements -->
+      {% if initial_plan.combined_movements_tests or initial_plan.combined_movements_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">🔄 Combined Movements</h3>
-        <div class="field-group">
-          <div class="field-label">Plan Category</div>
-          <div class="field-value" style="font-weight: 600; color: {{ 'green' if initial_plan.combined_movements == 'Recommended' else 'orange' if initial_plan.combined_movements == 'Cautious' else 'red' }};">
-            {{ initial_plan.combined_movements or 'Not planned' }}
-          </div>
-        </div>
-        {% if initial_plan.combined_movements_reasoning %}
-        <div class="field-group">
-          <div class="field-label">Clinical Rationale</div>
-          <div class="field-value" style="font-style: italic; background: white; padding: 12px; border-radius: 4px;">{{ initial_plan.combined_movements_reasoning }}</div>
-        </div>
-        {% endif %}
         {% if initial_plan.combined_movements_tests %}
         <div class="field-group">
-          <div class="field-label">Recommended Tests</div>
+          <div class="field-label">Tests Performed</div>
           <ul style="margin: 8px 0; padding-left: 20px;">
             {% for test in initial_plan.combined_movements_tests %}
             <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
@@ -646,25 +619,15 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- Special Tests -->
+      {% if initial_plan.special_tests_tests or initial_plan.special_tests_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">🔬 Special Tests</h3>
-        <div class="field-group">
-          <div class="field-label">Plan Category</div>
-          <div class="field-value" style="font-weight: 600; color: {{ 'green' if initial_plan.special_tests == 'Recommended' else 'orange' if initial_plan.special_tests == 'Cautious' else 'red' }};">
-            {{ initial_plan.special_tests or 'Not planned' }}
-          </div>
-        </div>
-        {% if initial_plan.special_tests_reasoning %}
-        <div class="field-group">
-          <div class="field-label">Clinical Rationale</div>
-          <div class="field-value" style="font-style: italic; background: white; padding: 12px; border-radius: 4px;">{{ initial_plan.special_tests_reasoning }}</div>
-        </div>
-        {% endif %}
         {% if initial_plan.special_tests_tests %}
         <div class="field-group">
-          <div class="field-label">Recommended Tests</div>
+          <div class="field-label">Tests Performed</div>
           <ul style="margin: 8px 0; padding-left: 20px;">
             {% for test in initial_plan.special_tests_tests %}
             <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
@@ -679,39 +642,32 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- Neuro-Dynamic Examination -->
+      {% set neuro_tests = initial_plan.neurodynamic_tests or initial_plan.neuro_dynamic_examination_tests %}
+      {% set neuro_details = initial_plan.neurodynamic_details or initial_plan.neuro_dynamic_examination_details %}
+      {% if neuro_tests or neuro_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">⚡ Neuro-Dynamic Examination</h3>
+        {% if neuro_tests %}
         <div class="field-group">
-          <div class="field-label">Plan Category</div>
-          <div class="field-value" style="font-weight: 600; color: {{ 'green' if initial_plan.neurodynamic == 'Recommended' else 'orange' if initial_plan.neurodynamic == 'Cautious' else 'red' }};">
-            {{ initial_plan.neurodynamic or initial_plan.neuro_dynamic_examination or 'Not planned' }}
-          </div>
-        </div>
-        {% if initial_plan.neurodynamic_reasoning or initial_plan.neuro_dynamic_examination_reasoning %}
-        <div class="field-group">
-          <div class="field-label">Clinical Rationale</div>
-          <div class="field-value" style="font-style: italic; background: white; padding: 12px; border-radius: 4px;">{{ initial_plan.neurodynamic_reasoning or initial_plan.neuro_dynamic_examination_reasoning }}</div>
-        </div>
-        {% endif %}
-        {% if initial_plan.neurodynamic_tests or initial_plan.neuro_dynamic_examination_tests %}
-        <div class="field-group">
-          <div class="field-label">Recommended Tests</div>
+          <div class="field-label">Tests Performed</div>
           <ul style="margin: 8px 0; padding-left: 20px;">
-            {% for test in (initial_plan.neurodynamic_tests or initial_plan.neuro_dynamic_examination_tests) %}
+            {% for test in neuro_tests %}
             <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
             {% endfor %}
           </ul>
         </div>
         {% endif %}
-        {% if initial_plan.neurodynamic_details or initial_plan.neuro_dynamic_examination_details %}
+        {% if neuro_details %}
         <div class="field-group">
           <div class="field-label">Findings / Results</div>
-          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ initial_plan.neurodynamic_details or initial_plan.neuro_dynamic_examination_details }}</div>
+          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ neuro_details }}</div>
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       {% if ai_initial_plan_summary %}
       <div class="ai-generated-content" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #4caf50;">
@@ -734,38 +690,54 @@
   <div class="report-section">
     <h2 class="section-header">4. Pathophysiological Mechanism</h2>
     <div class="section-content">
+      {% if patho_mechanism.area_involved %}
       <div class="field-group">
         <div class="field-label">Area Involved</div>
-        <div class="field-value">{{ patho_mechanism.area_involved or 'Not documented' }}</div>
+        <div class="field-value">{{ patho_mechanism.area_involved }}</div>
       </div>
+      {% endif %}
+      {% if patho_mechanism.presenting_symptom %}
       <div class="field-group">
         <div class="field-label">Presenting Symptom</div>
-        <div class="field-value">{{ patho_mechanism.presenting_symptom or 'Not documented' }}</div>
+        <div class="field-value">{{ patho_mechanism.presenting_symptom }}</div>
       </div>
+      {% endif %}
+      {% if patho_mechanism.pain_type %}
       <div class="field-group">
         <div class="field-label">Pain Type</div>
-        <div class="field-value">{{ patho_mechanism.pain_type or 'Not documented' }}</div>
+        <div class="field-value">{{ patho_mechanism.pain_type }}</div>
       </div>
+      {% endif %}
+      {% if patho_mechanism.pain_nature %}
       <div class="field-group">
         <div class="field-label">Pain Nature</div>
-        <div class="field-value">{{ patho_mechanism.pain_nature or 'Not documented' }}</div>
+        <div class="field-value">{{ patho_mechanism.pain_nature }}</div>
       </div>
+      {% endif %}
+      {% if patho_mechanism.pain_severity %}
       <div class="field-group">
         <div class="field-label">Pain Severity</div>
-        <div class="field-value">{{ patho_mechanism.pain_severity or 'Not documented' }}</div>
+        <div class="field-value">{{ patho_mechanism.pain_severity }}</div>
       </div>
+      {% endif %}
+      {% if patho_mechanism.pain_irritability %}
       <div class="field-group">
         <div class="field-label">Pain Irritability</div>
-        <div class="field-value">{{ patho_mechanism.pain_irritability or 'Not documented' }}</div>
+        <div class="field-value">{{ patho_mechanism.pain_irritability }}</div>
       </div>
+      {% endif %}
+      {% if patho_mechanism.possible_source %}
       <div class="field-group">
         <div class="field-label">Possible Source</div>
-        <div class="field-value">{{ patho_mechanism.possible_source or 'Not documented' }}</div>
+        <div class="field-value">{{ patho_mechanism.possible_source }}</div>
       </div>
+      {% endif %}
+      {% if patho_mechanism.stage_healing %}
       <div class="field-group">
         <div class="field-label">Stage of Healing</div>
-        <div class="field-value">{{ patho_mechanism.stage_healing or 'Not documented' }}</div>
+        <div class="field-value">{{ patho_mechanism.stage_healing }}</div>
       </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -786,10 +758,12 @@
         </ul>
       </div>
       {% endif %}
+      {% if chronic_diseases.specific_factors %}
       <div class="field-group">
         <div class="field-label">Specific Factors / Details</div>
-        <div class="field-value">{{ chronic_diseases.specific_factors or 'Not documented' }}</div>
+        <div class="field-value">{{ chronic_diseases.specific_factors }}</div>
       </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -834,14 +808,18 @@
   <div class="report-section">
     <h2 class="section-header">6. Objective Assessment</h2>
     <div class="section-content">
+      {% if objective.plan %}
       <div class="field-group">
         <div class="field-label">Assessment Plan</div>
-        <div class="field-value">{{ objective.plan or 'Not documented' }}</div>
+        <div class="field-value">{{ objective.plan }}</div>
       </div>
+      {% endif %}
+      {% if objective.plan_details %}
       <div class="field-group">
         <div class="field-label">Assessment Notes / Modifications</div>
-        <div class="field-value">{{ objective.plan_details or 'Not documented' }}</div>
+        <div class="field-value">{{ objective.plan_details }}</div>
       </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -851,30 +829,42 @@
   <div class="report-section">
     <h2 class="section-header">7. Provisional Diagnosis</h2>
     <div class="section-content">
+      {% if diagnosis.likelihood %}
       <div class="field-group">
         <div class="field-label">Likelihood / Diagnosis</div>
-        <div class="field-value">{{ diagnosis.likelihood or 'Not documented' }}</div>
+        <div class="field-value">{{ diagnosis.likelihood }}</div>
       </div>
+      {% endif %}
+      {% if diagnosis.structure_fault %}
       <div class="field-group">
         <div class="field-label">Structure at Fault</div>
-        <div class="field-value">{{ diagnosis.structure_fault or 'Not documented' }}</div>
+        <div class="field-value">{{ diagnosis.structure_fault }}</div>
       </div>
+      {% endif %}
+      {% if diagnosis.symptom %}
       <div class="field-group">
         <div class="field-label">Primary Symptom</div>
-        <div class="field-value">{{ diagnosis.symptom or 'Not documented' }}</div>
+        <div class="field-value">{{ diagnosis.symptom }}</div>
       </div>
+      {% endif %}
+      {% if diagnosis.findings_support %}
       <div class="field-group">
         <div class="field-label">Findings that Support Hypothesis</div>
-        <div class="field-value">{{ diagnosis.findings_support or 'Not documented' }}</div>
+        <div class="field-value">{{ diagnosis.findings_support }}</div>
       </div>
+      {% endif %}
+      {% if diagnosis.findings_reject %}
       <div class="field-group">
         <div class="field-label">Findings that Reject Hypothesis</div>
-        <div class="field-value">{{ diagnosis.findings_reject or 'Not documented' }}</div>
+        <div class="field-value">{{ diagnosis.findings_reject }}</div>
       </div>
+      {% endif %}
+      {% if diagnosis.hypothesis_supported %}
       <div class="field-group">
         <div class="field-label">Is Hypothesis Supported?</div>
-        <div class="field-value">{{ diagnosis.hypothesis_supported or 'Not documented' }}</div>
+        <div class="field-value">{{ diagnosis.hypothesis_supported }}</div>
       </div>
+      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -884,14 +874,18 @@
   <div class="report-section page-break">
     <h2 class="section-header">8. SMART Goals</h2>
     <div class="section-content">
+      {% if goals.patient_goal %}
       <div class="field-group">
         <div class="field-label">Patient's Goal</div>
-        <div class="field-value">{{ goals.patient_goal or 'Not documented' }}</div>
+        <div class="field-value">{{ goals.patient_goal }}</div>
       </div>
+      {% endif %}
+      {% if goals.outcome_timeframe %}
       <div class="field-group">
         <div class="field-label">Outcomes & Timeframe</div>
-        <div class="field-value">{{ goals.outcome_timeframe or 'Not documented' }}</div>
+        <div class="field-value">{{ goals.outcome_timeframe }}</div>
       </div>
+      {% endif %}
 
       {% if ai_smart_goals_summary %}
       <div class="ai-generated-content" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #2196f3;">
@@ -914,10 +908,12 @@
   <div class="report-section">
     <h2 class="section-header">9. Treatment Plan</h2>
     <div class="section-content">
+      {% if treatment.treatment_plan %}
       <div class="field-group">
         <div class="field-label">Treatment Approach</div>
-        <div class="field-value" style="background: #f8f9fa; padding: 16px; border-radius: 6px; border-left: 4px solid var(--primary);">{{ treatment.treatment_plan or 'Not documented' }}</div>
+        <div class="field-value" style="background: #f8f9fa; padding: 16px; border-radius: 6px; border-left: 4px solid var(--primary);">{{ treatment.treatment_plan }}</div>
       </div>
+      {% endif %}
 
       {% if treatment.reasoning %}
       <div class="field-group">
@@ -956,29 +952,39 @@
           <h3 style="color: #856404; margin-top: 0; font-size: 16px;">📋 Initial Assessment</h3>
 
           {% if subjective %}
+          {% if subjective.activity_performance %}
           <div style="margin-bottom: 12px;">
             <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Activity Limitation:</div>
-            <div style="font-size: 14px; color: #333;">{{ subjective.activity_performance or 'Not documented' }}</div>
+            <div style="font-size: 14px; color: #333;">{{ subjective.activity_performance }}</div>
           </div>
+          {% endif %}
+          {% if subjective.activity_capacity %}
           <div style="margin-bottom: 12px;">
             <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Functional Capacity:</div>
-            <div style="font-size: 14px; color: #333;">{{ subjective.activity_capacity or 'Not documented' }}</div>
+            <div style="font-size: 14px; color: #333;">{{ subjective.activity_capacity }}</div>
           </div>
+          {% endif %}
           {% endif %}
 
           {% if perspectives %}
+          {% if perspectives.affective_aspect %}
           <div style="margin-bottom: 12px;">
             <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Emotional State:</div>
-            <div style="font-size: 14px; color: #333;">{{ perspectives.affective_aspect or 'Not documented' }}</div>
+            <div style="font-size: 14px; color: #333;">{{ perspectives.affective_aspect }}</div>
           </div>
+          {% endif %}
+          {% if perspectives.expectation %}
           <div style="margin-bottom: 12px;">
             <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Patient Expectation:</div>
-            <div style="font-size: 14px; color: #333;">{{ perspectives.expectation or 'Not documented' }}</div>
+            <div style="font-size: 14px; color: #333;">{{ perspectives.expectation }}</div>
           </div>
+          {% endif %}
+          {% if perspectives.knowledge %}
           <div style="margin-bottom: 12px;">
             <div style="font-weight: 600; color: #856404; font-size: 13px; margin-bottom: 4px;">Knowledge Level:</div>
-            <div style="font-size: 14px; color: #333;">{{ perspectives.knowledge or 'Not documented' }}</div>
+            <div style="font-size: 14px; color: #333;">{{ perspectives.knowledge }}</div>
           </div>
+          {% endif %}
           {% endif %}
         </div>
 

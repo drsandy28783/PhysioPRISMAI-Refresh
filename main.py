@@ -89,7 +89,7 @@ validate_required_env_vars()
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 from flask import (Flask, render_template, request, redirect, session, url_for, flash, jsonify, make_response, g, current_app)
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask_login import login_required
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_cors import CORS
@@ -7026,10 +7026,10 @@ def patient_report(patient_id):
 
     log_action(session.get('user_id'), 'Patient Report Viewed', f"Viewed report for patient {patient_id}")
 
-    # Fetch each assessment section
+    # Fetch each assessment section (latest record — sections are appended, not overwritten)
     def fetch_one(coll):
         d = db.collection(coll).where('patient_id', '==',
-                                      patient_id).limit(1).get()
+                                      patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
         return d[0].to_dict() if d else {}
 
     # Fetch follow-ups (can have multiple)
@@ -7182,11 +7182,12 @@ def download_report(patient_id):
             logger.warning(f"PDF download: Unauthorized access attempt for patient {patient_id} by {session.get('user_id')}")
             return redirect(url_for('view_patients'))
 
-        # 2) Fetch all assessment sections
+        # 2) Fetch all assessment sections (latest record — sections are appended, not overwritten)
         def fetch_one(coll):
             try:
                 result = db.collection(coll) \
                              .where('patient_id', '==', patient_id) \
+                             .order_by('timestamp', direction='DESCENDING') \
                              .limit(1).get()
                 return result[0].to_dict() if result else {}
             except Exception as e:
