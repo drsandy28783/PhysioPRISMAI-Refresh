@@ -1201,7 +1201,7 @@ document.querySelectorAll('.ai-btn[data-screen="smart_goals"]').forEach(btn => {
       });
       const data = await resp.json();
       if (data.error) {
-        AIModal.showError(error);
+        AIModal.showError(data.error);
       } else {
         AIModal.showContent(data);
       }
