@@ -109,7 +109,10 @@
             'Others'
           ] %}
             <label class="checkbox-inline">
-              <input type="checkbox" name="maintenance_causes" value="{{ opt }}"> {{ opt }}
+              <input type="checkbox" name="maintenance_causes" value="{{ opt }}"
+                {% if request.form.getlist('maintenance_causes') %}
+                  {% if opt in request.form.getlist('maintenance_causes') %}checked{% endif %}
+                {% elif existing_chronic and opt in (existing_chronic.causes or []) %}checked{% endif %}> {{ opt }}
             </label>
           {% endfor %}
         </div>
@@ -118,7 +121,7 @@
       <div class="field-block">
         <label for="specific_factors">Specific Factors (Optional):</label>
         <div class="control-group">
-          <textarea id="specific_factors" name="specific_factors" class="input-field" rows="3" placeholder="Describe contributing factors…" data-voice-enabled></textarea>
+          <textarea id="specific_factors" name="specific_factors" class="input-field" rows="3" placeholder="Describe contributing factors…" data-voice-enabled>{{ request.form.specific_factors or (existing_chronic.specific_factors if existing_chronic else '') }}</textarea>
           <button type="button" class="ai-btn" data-field="specific_factors" title="Ask AI for follow-up questions">🧠</button>
         </div>
         <div id="specific_factors_popup" class="ai-popup"></div>
@@ -142,7 +145,7 @@
           <label for="{{ name }}">{{ label }}</label>
           <textarea id="{{ name }}" name="{{ name }}"
                     class="input-field" rows="3"
-                    placeholder="{{ placeholder }}" data-voice-enabled>{{ request.form[name] or '' }}</textarea>
+                    placeholder="{{ placeholder }}" data-voice-enabled>{{ request.form[name] or (existing_flags[name] if existing_flags else '') }}</textarea>
           <div id="{{ name }}_hint" class="ai-hint"></div>
         </div>
       {% endfor %}

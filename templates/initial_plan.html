@@ -39,18 +39,19 @@
       ] %}
 
       {% for name, label in fields %}
+        {% set cur_val = request.form[name] or (existing[name] if existing else '') %}
         <div class="field-block">
           <label for="{{ name }}">{{ label }}</label>
           <div class="control-group">
             <select id="{{ name }}" name="{{ name }}" class="input-field" required>
-              <option value="" disabled selected>Select</option>
+              <option value="" disabled {% if not cur_val %}selected{% endif %}>Select</option>
               {% for opt in options %}
-                <option value="{{ opt }}" {% if request.form[name] == opt %}selected{% endif %}>{{ opt }}</option>
+                <option value="{{ opt }}" {% if cur_val == opt %}selected{% endif %}>{{ opt }}</option>
               {% endfor %}
             </select>
             <button type="button" class="ai-btn" data-field="{{ name }}" title="Suggest tests for {{ label }}">🧠</button>
           </div>
-          <textarea id="{{ name }}_details" name="{{ name }}_details" class="input-field" rows="5" placeholder="Details (optional)..." data-voice-enabled>{{ request.form[name + '_details'] or '' }}</textarea>
+          <textarea id="{{ name }}_details" name="{{ name }}_details" class="input-field" rows="5" placeholder="Details (optional)..." data-voice-enabled>{{ request.form[name + '_details'] or (existing[name + '_details'] if existing else '') }}</textarea>
         </div>
       {% endfor %}
 

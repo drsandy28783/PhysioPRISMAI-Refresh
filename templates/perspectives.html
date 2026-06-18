@@ -52,10 +52,11 @@
     <div class="field-block">
       <label for="{{ name }}">{{ label }}</label>
       <div class="control-group">
+        {% set cur_val = request.form[name] or (existing[name] if existing else '') %}
         <select id="{{ name }}" name="{{ name }}" class="input-field" required>
-          <option value="" disabled selected>Select</option>
+          <option value="" disabled {% if not cur_val %}selected{% endif %}>Select</option>
           {% for opt in opts %}
-            <option value="{{ opt }}" {% if request.form[name] == opt %}selected{% endif %}>{{ opt }}</option>
+            <option value="{{ opt }}" {% if cur_val == opt %}selected{% endif %}>{{ opt }}</option>
           {% endfor %}
         </select>
         <button type="button" class="ai-btn" data-field="{{ name }}" title="Ask AI follow-up">🧠</button>

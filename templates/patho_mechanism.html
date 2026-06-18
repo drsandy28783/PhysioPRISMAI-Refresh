@@ -18,59 +18,64 @@
 
     <div class="field-block">
       <label for="area_involved">Area Involved:</label>
-      <textarea id="area_involved" name="area_involved" class="input-field" rows="2" data-voice-enabled>{{ request.form.area_involved or '' }}</textarea>
+      <textarea id="area_involved" name="area_involved" class="input-field" rows="2" data-voice-enabled>{{ request.form.area_involved or (existing.area_involved if existing else '') }}</textarea>
     </div>
 
     <div class="field-block">
       <label for="presenting_symptom">Presenting Symptom:</label>
-      <textarea id="presenting_symptom" name="presenting_symptom" class="input-field" rows="2" data-voice-enabled>{{ request.form.presenting_symptom or '' }}</textarea>
+      <textarea id="presenting_symptom" name="presenting_symptom" class="input-field" rows="2" data-voice-enabled>{{ request.form.presenting_symptom or (existing.presenting_symptom if existing else '') }}</textarea>
     </div>
 
+    {% set cur_pain_type = request.form.pain_type or (existing.pain_type if existing else '') %}
     <div class="field-block">
       <label for="pain_type">Pain Type:</label>
       <select id="pain_type" name="pain_type" class="input-field" required>
-        <option value="" disabled>Select</option>
+        <option value="" disabled {% if not cur_pain_type %}selected{% endif %}>Select</option>
         {% for opt in ['Pulling','Sharp','Dull','Stabbing','Radiating'] %}
-          <option value="{{ opt }}" {% if request.form.pain_type == opt %}selected{% endif %}>{{ opt }}</option>
+          <option value="{{ opt }}" {% if cur_pain_type == opt %}selected{% endif %}>{{ opt }}</option>
         {% endfor %}
       </select>
     </div>
 
+    {% set cur_pain_nature = request.form.pain_nature or (existing.pain_nature if existing else '') %}
     <div class="field-block">
       <label for="pain_nature">Pain Nature:</label>
       <select id="pain_nature" name="pain_nature" class="input-field" required>
-        <option value="" disabled>Select</option>
+        <option value="" disabled {% if not cur_pain_nature %}selected{% endif %}>Select</option>
         {% for opt in ['Constant/Continuous','Intermittent','Activity dependent'] %}
-          <option value="{{ opt }}" {% if request.form.pain_nature == opt %}selected{% endif %}>{{ opt }}</option>
+          <option value="{{ opt }}" {% if cur_pain_nature == opt %}selected{% endif %}>{{ opt }}</option>
         {% endfor %}
       </select>
     </div>
 
+    {% set cur_severity = request.form.pain_severity or (existing.pain_severity if existing else 5) %}
     <div class="field-block">
       <label for="pain_severity">Pain Severity / VAS:</label>
       <div class="slider-container">
-        <input type="range" id="pain_severity" name="pain_severity" min="0" max="10" step="1" value="{{ request.form.pain_severity or 5 }}" />
-        <span id="pain_severity_val">{{ request.form.pain_severity or 5 }}</span>/10
+        <input type="range" id="pain_severity" name="pain_severity" min="0" max="10" step="1" value="{{ cur_severity }}" />
+        <span id="pain_severity_val">{{ cur_severity }}</span>/10
       </div>
     </div>
 
+    {% set cur_irritability = request.form.pain_irritability or (existing.pain_irritability if existing else '') %}
     <div class="field-block">
       <label for="pain_irritability">Pain Irritability:</label>
       <select id="pain_irritability" name="pain_irritability" class="input-field" required>
-        <option value="" disabled>Select</option>
+        <option value="" disabled {% if not cur_irritability %}selected{% endif %}>Select</option>
         {% for opt in ['Present','Absent'] %}
-          <option value="{{ opt }}" {% if request.form.pain_irritability == opt %}selected{% endif %}>{{ opt }}</option>
+          <option value="{{ opt }}" {% if cur_irritability == opt %}selected{% endif %}>{{ opt }}</option>
         {% endfor %}
       </select>
     </div>
 
+    {% set cur_source = request.form.possible_source or (existing.possible_source if existing else '') %}
     <div class="field-block">
       <label for="possible_source">Possible Source of Symptoms:</label>
       <div class="control-group">
         <select id="possible_source" name="possible_source" class="input-field" required>
-          <option value="" disabled>Select</option>
+          <option value="" disabled {% if not cur_source %}selected{% endif %}>Select</option>
           {% for opt in ['Somatic Local','Somatic Referred','Neurogenic','Visceral'] %}
-            <option value="{{ opt }}" {% if request.form.possible_source == opt %}selected{% endif %}>{{ opt }}</option>
+            <option value="{{ opt }}" {% if cur_source == opt %}selected{% endif %}>{{ opt }}</option>
           {% endfor %}
         </select>
         <button type="button" class="ai-btn" data-field="possible_source" title="Ask AI for likely sources">🧠</button>
@@ -78,12 +83,13 @@
       <div id="possible_source_popup" class="ai-popup"></div>
     </div>
 
+    {% set cur_stage = request.form.stage_healing or (existing.stage_healing if existing else '') %}
     <div class="field-block">
       <label for="stage_healing">Stage of Tissue Healing:</label>
       <select id="stage_healing" name="stage_healing" class="input-field" required>
-        <option value="" disabled>Select</option>
+        <option value="" disabled {% if not cur_stage %}selected{% endif %}>Select</option>
         {% for opt in ['Acute Inflammatory (0-72h)','Subacute (4-21 days)','Chronic (>3 weeks)'] %}
-          <option value="{{ opt }}" {% if request.form.stage_healing == opt %}selected{% endif %}>{{ opt }}</option>
+          <option value="{{ opt }}" {% if cur_stage == opt %}selected{% endif %}>{{ opt }}</option>
         {% endfor %}
       </select>
     </div>

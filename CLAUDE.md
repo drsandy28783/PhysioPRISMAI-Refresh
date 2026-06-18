@@ -26,7 +26,9 @@ A HIPAA-compliant physiotherapy clinical decision-support SaaS (Flask/Python). C
 | Error tracking | Sentry SDK |
 | Deployment | Azure Container Apps via GitHub Actions (push to `main`) |
 
-**`main.py`** is the monolithic Flask app — all routes live here. Supporting modules are imported at the top. There is no Blueprint/package split.
+**`main.py`** is the primary Flask app — the majority of web routes live here. Two Flask Blueprints extend it:
+- `mobile_api.py` — REST endpoints for the mobile app (`/api/*`), registered in `main.py`
+- `mobile_api_ai.py` — AI suggestion endpoints for the mobile app (`/api/ai_suggestion/*`), also registered in `main.py`
 
 Key module roles:
 - `app_auth.py` — `require_firebase_auth` / `require_auth` decorators
@@ -36,6 +38,9 @@ Key module roles:
 - `schemas.py` — Marshmallow schemas + `validate_data` / `validate_json` helpers
 - `azure_cosmos_db.py` — Cosmos DB client wrapper; `SERVER_TIMESTAMP`, `DELETE_FIELD`, `Increment` are sentinel values
 - `subscription_manager.py` — subscription state and quota tracking
+- `quick_mode_service.py` — AI pre-fills for Quick Mode assessment screens; every public function returns a plain `dict` and never raises (empty dict signals failure so callers fall back to a blank form)
+- `notification_service.py` — in-app notifications stored in Cosmos DB
+- `appointment_reminder_scheduler.py` — triggered on-demand (not a daemon) to send SMS/WhatsApp reminders via `messaging_service.py`
 
 ## Commands
 
@@ -55,8 +60,11 @@ gunicorn -w 3 -k gthread -b 0.0.0.0:8080 --timeout 120 main:app
 pip install -r requirements-test.txt
 pytest                          # all tests
 pytest -m unit                  # unit tests only
+pytest -m "not integration"     # skip tests that hit external services
 pytest tests/test_foo.py::test_bar  # single test
 ```
+
+Available pytest markers: `unit`, `integration`, `slow`, `critical`, `api`. Playwright e2e tests live under `tests/playwright/` and have their own `pytest.ini`.
 
 **Build Docker image:**
 ```bash
@@ -69,6 +77,16 @@ docker run --env-file .env -p 8080:8080 physiologicprism-app
 ## Environment Setup
 
 Copy `.env.example` to `.env`. Required vars the app validates at startup: `SECRET_KEY`, `RESEND_API_KEY`. Additional required in practice: `COSMOS_DB_*`, `AZURE_OPENAI_*`, `FIREBASE_PROJECT_ID`, `RAZORPAY_*`, `REDIS_HOST`. Redis can be absent (rate limiter degrades gracefully). See `.env.example` for the full list.
+
+## Critical Invariants
+
+**Append-only assessment sections.** Assessment records (subjective, objective, provisional diagnosis, etc.) are accumulated as separate Cosmos DB documents — they are never overwritten. When reading the latest assessment for a section, always order by `timestamp` DESC and take the first result. Overwriting instead of appending will silently corrupt the clinical history.
+
+**Load-bearing `timezone` import in `main.py:92`.** The `timezone` symbol is imported via `from datetime import datetime, timedelta, timezone` on line 92 and referenced at ~10 call sites throughout `main.py`. Don't remove it when editing nearby imports because linters may flag it as "unused" on that line.
+
+**`TOS_VERSION` must stay in sync.** `TOS_VERSION = '1.0'` is defined in both `main.py` and `mobile_api.py`. Bumping one without the other will break ToS acceptance flows in the other client.
+
+**Cosmos DB partition key is `/id`.** All containers are created with `PartitionKey(path="/id")`. Every document is in its own logical partition, which means any query that doesn't filter on `id` is a cross-partition (fan-out) query. This is intentional for the current scale but relevant when adding new query patterns.
 
 ## HIPAA / Security Constraints
 

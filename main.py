@@ -5967,7 +5967,14 @@ def subjective(patient_id):
     except Exception as e:
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
-    return render_template('subjective.html', patient_id=patient_id, patient=patient, patho_data=patho_data)
+    existing = None
+    try:
+        docs = db.collection('subjective_examination').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if docs:
+            existing = docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch existing subjective_examination for {patient_id}: {e}")
+    return render_template('subjective.html', patient_id=patient_id, patient=patient, patho_data=patho_data, existing=existing)
 
 
 
@@ -6024,7 +6031,14 @@ def perspectives(patient_id):
     # Use patient doc flag OR session fallback (covers patients created before
     # quick_mode_enabled field was added to the schema).
     quick_mode = patient.get('quick_mode_enabled', False) or (session.get('qm_active_patient') == patient_id)
-    return render_template('perspectives.html', patient_id=patient_id, patho_data=patho_data, quick_mode=quick_mode)
+    existing = None
+    try:
+        docs = db.collection('patient_perspectives').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if docs:
+            existing = docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch existing patient_perspectives for {patient_id}: {e}")
+    return render_template('perspectives.html', patient_id=patient_id, patho_data=patho_data, quick_mode=quick_mode, existing=existing)
 
 
 @app.route('/initial_plan/<path:patient_id>', methods=['GET','POST'])
@@ -6057,7 +6071,17 @@ def initial_plan(patient_id):
     except Exception as e:
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
-    return render_template('initial_plan.html', patient_id=patient_id, patho_data=patho_data)
+    existing = None
+    try:
+        docs = db.collection('initial_plan').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if docs:
+            existing = docs[0].to_dict()
+            if 'neuro_dynamic_examination' in existing:
+                existing['neurodynamic'] = existing['neuro_dynamic_examination']
+                existing['neurodynamic_details'] = existing.get('neuro_dynamic_examination_details', '')
+    except Exception as e:
+        logger.warning(f"Could not fetch existing initial_plan for {patient_id}: {e}")
+    return render_template('initial_plan.html', patient_id=patient_id, patho_data=patho_data, existing=existing)
 
 
 
@@ -6085,7 +6109,14 @@ def patho_mechanism(patient_id):
         log_action(session.get('user_id'), 'Patho Mechanism Saved', f"Saved for patient {patient_id}")
         # Redirect to subjective examination (NEW: patho moved to position 2)
         return redirect(url_for('subjective', patient_id=patient_id))
-    return render_template('patho_mechanism.html', patient_id=patient_id)
+    existing = None
+    try:
+        docs = db.collection('patho_mechanism').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if docs:
+            existing = docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch existing patho_mechanism for {patient_id}: {e}")
+    return render_template('patho_mechanism.html', patient_id=patient_id, existing=existing)
 
 
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -6650,7 +6681,21 @@ def risk_factors_clinical_flags(patient_id):
         # Redirect to objective assessment
         return redirect(url_for('objective_assessment', patient_id=patient_id))
 
-    return render_template('risk_factors_clinical_flags.html', patient_id=patient_id)
+    existing_chronic = None
+    existing_flags = None
+    try:
+        chronic_docs = db.collection('chronic_diseases').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if chronic_docs:
+            existing_chronic = chronic_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch existing chronic_diseases for {patient_id}: {e}")
+    try:
+        flags_docs = db.collection('clinical_flags').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if flags_docs:
+            existing_flags = flags_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch existing clinical_flags for {patient_id}: {e}")
+    return render_template('risk_factors_clinical_flags.html', patient_id=patient_id, existing_chronic=existing_chronic, existing_flags=existing_flags)
 
 
 @app.route('/objective_assessment/<path:patient_id>', methods=['GET','POST'])
@@ -6684,7 +6729,16 @@ def objective_assessment(patient_id):
     except Exception as e:
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
-    return render_template('objective_assessment.html', patient_id=patient_id, patho_data=patho_data)
+    existing = None
+    try:
+        docs = db.collection('objective_assessments').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if docs:
+            existing = docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch existing objective_assessments for {patient_id}: {e}")
+    return render_template('objective_assessment.html', patient_id=patient_id, patho_data=patho_data,
+                           plan=existing.get('plan', '') if existing else '',
+                           plan_details=existing.get('plan_details', '') if existing else '')
 
 
 
@@ -6740,7 +6794,14 @@ def provisional_diagnosis(patient_id):
     except Exception as e:
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
-    return render_template('provisional_diagnosis.html', patient_id=patient_id, patho_data=patho_data)
+    existing = None
+    try:
+        docs = db.collection('provisional_diagnosis').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if docs:
+            existing = docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch existing provisional_diagnosis for {patient_id}: {e}")
+    return render_template('provisional_diagnosis.html', patient_id=patient_id, patho_data=patho_data, existing=existing)
 
 
 @app.route('/smart_goals/<path:patient_id>', methods=['GET', 'POST'])
@@ -6790,7 +6851,14 @@ def smart_goals(patient_id):
     except Exception as e:
         logger.warning(f"Could not fetch patho_data for patient {patient_id}: {e}")
 
-    return render_template('smart_goals.html', patient_id=patient_id, patho_data=patho_data)
+    existing = None
+    try:
+        docs = db.collection('smart_goals').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
+        if docs:
+            existing = docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"Could not fetch existing smart_goals for {patient_id}: {e}")
+    return render_template('smart_goals.html', patient_id=patient_id, patho_data=patho_data, existing=existing)
 
 
 @app.route('/treatment_plan/<path:patient_id>', methods=['GET', 'POST'])
