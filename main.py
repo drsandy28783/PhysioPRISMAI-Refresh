@@ -1552,8 +1552,7 @@ def welcome():
 
 @app.route('/request-access')
 def request_access():
-    """Display early access request form"""
-    return render_template('request_access.html')
+    return redirect(url_for('register'))
 
 @app.route('/pilot-program')
 def pilot_program():
@@ -1593,114 +1592,12 @@ def faq():
 @app.route('/submit-access-request', methods=['POST'])
 @app.route('/api/submit-access-request', methods=['POST'])
 def submit_access_request():
-    """Handle early access request form submission (web form or mobile JSON)"""
-    try:
-        # Support both form data (web) and JSON (mobile)
-        if request.is_json:
-            data = request.get_json()
-            access_data = {
-                'name': data.get('full_name'),
-                'email': data.get('email'),
-                'phone': data.get('phone', ''),
-                'institute': data.get('organisation', ''),
-                'message': data.get('use_case', '')
-            }
-
-            is_valid, result = validate_json(AccessRequestSchema, access_data)
-            if not is_valid:
-                return jsonify({'error': 'Validation failed', 'details': result}), 400
-
-            full_name = result['name']
-            email = result['email']
-            role = data.get('role')
-            organisation = result['institute']
-            country = data.get('country')
-            use_case = result['message']
-            pilot_interest = data.get('pilot_interest', False)
-        else:
-            # Form data from web
-            access_data = {
-                'name': request.form.get('full_name'),
-                'email': request.form.get('email'),
-                'phone': request.form.get('phone', ''),
-                'institute': request.form.get('organisation', ''),
-                'message': request.form.get('use_case', '')
-            }
-
-            is_valid, result = validate_data(AccessRequestSchema, access_data)
-            if not is_valid:
-                flash(f"Validation error: {result}", "error")
-                return redirect('/request-access')
-
-            full_name = result['name']
-            email = result['email']
-            role = request.form.get('role')
-            organisation = result['institute']
-            country = request.form.get('country')
-            use_case = result['message']
-            pilot_interest = request.form.get('pilot_interest') == 'yes'
-
-        # Store in Cosmos DB
-        _, access_request_ref = db.collection('access_requests').add({
-            'full_name': full_name,
-            'email': email,
-            'role': role,
-            'organisation': organisation,
-            'country': country,
-            'use_case': use_case,
-            'pilot_interest': pilot_interest,
-            'timestamp': SERVER_TIMESTAMP,
-            'status': 'pending'  # pending, approved, rejected
-        })
-
-        # Send notification email to admin
-        try:
-            from email_service import send_early_access_notification, send_early_access_confirmation
-
-            # Email to admin
-            send_early_access_notification(
-                admin_email=os.environ.get('ADMIN_EMAIL', 'drsandeep@physiologicprism.com'),
-                full_name=full_name,
-                email=email,
-                role=role,
-                organisation=organisation,
-                country=country,
-                use_case=use_case,
-                pilot_interest=pilot_interest
-            )
-
-            # Confirmation email to user
-            send_early_access_confirmation(
-                full_name=full_name,
-                email=email,
-                role=role,
-                pilot_interest=pilot_interest
-            )
-        except Exception as e:
-            logger.error(f"Failed to send early access notification emails: {str(e)}")
-
-        # Return JSON for mobile, redirect for web
-        if request.is_json:
-            return jsonify({
-                'success': True,
-                'message': "Thank you for your interest! We'll review your request and get back to you by email soon."
-            }), 200
-        else:
-            flash('Thank you for your interest! We\'ll review your request and get back to you by email soon.', 'success')
-            return redirect(url_for('request_access'))
-
-    except Exception as e:
-        logger.error(f"Error submitting access request: {str(e)}")
-
-        # Return JSON error for mobile, redirect for web
-        if request.is_json:
-            return jsonify({
-                'success': False,
-                'error': 'There was an error submitting your request. Please try again or contact us directly.'
-            }), 500
-        else:
-            flash('There was an error submitting your request. Please try again or contact us directly.', 'error')
-            return redirect(url_for('request_access'))
+    if request.is_json:
+        return jsonify({
+            'success': False,
+            'message': 'Early access requests are no longer accepted. Sign up directly at /register.'
+        }), 410
+    return redirect(url_for('register'))
 
 
 @app.route('/api/demo-request', methods=['POST'])
