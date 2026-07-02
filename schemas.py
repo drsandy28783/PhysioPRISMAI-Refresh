@@ -961,22 +961,40 @@ class ProvisionalDiagnosisSchema(Schema):
         ]
     )
 
-    diagnosis = fields.Str(
+    likelihood = fields.Str(
         required=False,
         allow_none=True,
-        validate=[
-            validate.Length(max=2000),
-            validate_no_html
-        ]
+        validate=[validate.Length(max=2000), validate_no_html]
     )
 
-    clinical_reasoning = fields.Str(
+    structure_fault = fields.Str(
         required=False,
         allow_none=True,
-        validate=[
-            validate.Length(max=3000),
-            validate_no_html
-        ]
+        validate=[validate.Length(max=2000), validate_no_html]
+    )
+
+    symptom = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[validate.Length(max=2000), validate_no_html]
+    )
+
+    findings_support = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[validate.Length(max=3000), validate_no_html]
+    )
+
+    findings_reject = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[validate.Length(max=3000), validate_no_html]
+    )
+
+    hypothesis_supported = fields.Str(
+        required=False,
+        allow_none=True,
+        validate=[validate.OneOf(['Yes', 'No', ''])]
     )
 
 

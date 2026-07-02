@@ -88,6 +88,10 @@ Copy `.env.example` to `.env`. Required vars the app validates at startup: `SECR
 
 **Cosmos DB partition key is `/id`.** All containers are created with `PartitionKey(path="/id")`. Every document is in its own logical partition, which means any query that doesn't filter on `id` is a cross-partition (fan-out) query. This is intentional for the current scale but relevant when adding new query patterns.
 
+## Pricing (source of truth)
+
+Full canonical pricing lives in `docs/FINAL_PRICING_UPDATE.md` — read that before touching any pricing copy. Quick reference: Free trial = 14 days / 5 patients / 25 AI Documentation Assists (`subscription_manager.py:33-36`). Paid: Solo ₹4,499/$50/mo, Team-5 ₹20,249/$225 (10% tier discount), Team Pro-10 ₹36,449/$405 (19%), Institute-15 ₹49,199/$547 (27%), Institute Plus-20 ₹59,049/$656 (34%), Custom Enterprise = Contact Sales. Standard user-facing term for AI usage is **"AI Documentation Assists"** ("AI Assists" for short) — not "AI calls" (that's the internal field name only) or "documentation assists" (old inconsistent copy). Prices are current as of 2 Jul 2026 and were explicitly confirmed with the founder — don't recalculate or "correct" them without asking.
+
 ## HIPAA / Security Constraints
 
 - PHI must only flow to Azure-backed services (Cosmos DB, Azure OpenAI, Azure Speech). Never Sentry, logs, or third-party APIs.

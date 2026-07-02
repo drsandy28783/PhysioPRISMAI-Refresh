@@ -1466,6 +1466,16 @@ def inject_csrf_token():
     return dict(csrf_token=generate_csrf)
 
 
+@app.context_processor
+def inject_trial_limits():
+    from subscription_manager import FREE_TRIAL_DAYS, FREE_TRIAL_PATIENTS, FREE_TRIAL_AI_CALLS
+    return dict(
+        free_trial_days=FREE_TRIAL_DAYS,
+        free_trial_patients=FREE_TRIAL_PATIENTS,
+        free_trial_ai_calls=FREE_TRIAL_AI_CALLS,
+    )
+
+
 def login_required(approved_only=True):
     def wrapper(f):
         @wraps(f)

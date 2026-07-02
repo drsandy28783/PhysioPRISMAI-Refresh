@@ -570,7 +570,7 @@
     {% if not session.get('user_id') %}
     <div style="text-align: center; margin: 40px auto; max-width: 600px; padding: 25px; background: linear-gradient(135deg, #1a5f5a 0%, #2d8b7f 100%); border-radius: 15px; color: white;">
         <h3 style="margin: 0 0 10px 0; font-size: 1.5em;">Start Your Free Trial</h3>
-        <p style="margin: 0; font-size: 1.1em;">14 days free • 5 patients • 25 AI calls • All features</p>
+        <p style="margin: 0; font-size: 1.1em;">14 days free • {{ free_trial_patients }} patients • {{ free_trial_ai_calls }} AI Documentation Assists • All features</p>
         <p style="margin: 10px 0 0 0; font-size: 0.9em; opacity: 0.9;">No credit card required</p>
     </div>
     {% endif %}
@@ -650,7 +650,7 @@
                 ₹36,449<br><small style="font-size: 0.5em; color: #7f8c8d;">$405 USD</small>
                 <small>/month</small>
             </div>
-            <div class="per-user-cost">₹3,644 per user/month (10% tier discount)</div>
+            <div class="per-user-cost">₹3,644 per user/month (19% tier discount)</div>
             <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
             <ul class="plan-features">
                 <li class="feature-item">Store unlimited patients</li>
@@ -685,7 +685,7 @@
                 ₹49,199<br><small style="font-size: 0.5em; color: #7f8c8d;">$547 USD</small>
                 <small>/month</small>
             </div>
-            <div class="per-user-cost">₹3,280 per user/month (10% tier discount)</div>
+            <div class="per-user-cost">₹3,280 per user/month (27% tier discount)</div>
             <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
             <ul class="plan-features">
                 <li class="feature-item">Store unlimited patients</li>
@@ -712,7 +712,7 @@
                 ₹59,049<br><small style="font-size: 0.5em; color: #7f8c8d;">$656 USD</small>
                 <small>/month</small>
             </div>
-            <div class="per-user-cost">₹2,952 per user/month (10% tier discount)</div>
+            <div class="per-user-cost">₹2,952 per user/month (34% tier discount)</div>
             <div class="unlimited-badge">∞ UNLIMITED PATIENTS</div>
             <ul class="plan-features">
                 <li class="feature-item">Store unlimited patients</li>
@@ -835,7 +835,7 @@
 
         <div style="margin-bottom: 20px;">
             <h4 style="color: #3498db; margin-bottom: 10px;">❓ Is there a free trial?</h4>
-            <p style="color: #7f8c8d; margin: 0;">Yes! 14 days free on all plans. 10 patients, 25 documentation assists, all features. No credit card required.</p>
+            <p style="color: #7f8c8d; margin: 0;">Yes! 14 days free on all plans. {{ free_trial_patients }} patients, {{ free_trial_ai_calls }} AI Documentation Assists, all features. No credit card required.</p>
         </div>
     </div>
 </div>
