@@ -1788,6 +1788,83 @@ def api_list_follow_ups(patient_id):
         return jsonify({'error': 'Failed to fetch follow-ups'}), 500
 
 
+@mobile_api.route('/patients/<patient_id>/follow-ups/<follow_up_id>', methods=['PATCH'])
+@require_auth
+def api_update_follow_up(patient_id, follow_up_id):
+    """
+    Update an existing follow-up for a patient.
+
+    Accepts the same mobile field names (camelCase) as create and maps them
+    to the web storage format (snake_case), same convention as
+    api_create_follow_up.
+
+    Mobile sends           → Stored as (web format)
+    ─────────────────────────────────────────────
+    followUpDate           → session_date
+    sessionNumber          → session_number
+    gradeOfAchievement     → grade
+    perceptionOfTreatment  → perception
+    feedback               → feedback
+    planForNextTreatment   → treatment_plan
+    """
+    try:
+        # Verify patient exists and user has access
+        patient_doc = get_patient_safe(patient_id)
+        if not patient_doc.exists:
+            return jsonify({'error': 'Patient not found'}), 404
+
+        patient_data = patient_doc.to_dict()
+        user_email = g.user.get('email')
+
+        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # Verify follow-up exists and belongs to this patient
+        follow_up_ref = db.collection('follow_ups').document(follow_up_id)
+        follow_up_doc = follow_up_ref.get()
+
+        if not follow_up_doc.exists:
+            return jsonify({'error': 'Follow-up not found'}), 404
+
+        existing = follow_up_doc.to_dict()
+        if existing.get('patient_id') != patient_id:
+            return jsonify({'error': 'Follow-up does not belong to this patient'}), 404
+
+        data = request.get_json() or {}
+
+        session_date = data.get('followUpDate', data.get('session_date', existing.get('session_date', '')))
+
+        update_data = {
+            'session_date': session_date,
+            'session_number': data.get('sessionNumber', data.get('session_number', existing.get('session_number', ''))),
+            'grade': data.get('gradeOfAchievement', data.get('grade', existing.get('grade', ''))),
+            'perception': data.get('perceptionOfTreatment', data.get('perception', existing.get('perception', ''))),
+            'feedback': data.get('feedback', existing.get('feedback', '')),
+            'treatment_plan': data.get('planForNextTreatment', data.get('treatment_plan', existing.get('treatment_plan', ''))),
+            'updated_at': SERVER_TIMESTAMP
+        }
+
+        follow_up_ref.update(update_data)
+
+        # Keep patient's last_follow_up in sync if this was the most recent session
+        db.collection('patients').document(patient_id).update({
+            'last_follow_up': session_date,
+            'updated_at': SERVER_TIMESTAMP
+        })
+
+        log_audit('update_follow_up', {'patient_id': patient_id, 'follow_up_id': follow_up_id})
+
+        return jsonify({
+            'success': True,
+            'follow_up_id': follow_up_id,
+            'message': 'Follow-up updated successfully'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error updating follow-up: {e}")
+        return jsonify({'error': 'Failed to update follow-up'}), 500
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # INSTITUTE ADMIN ENDPOINTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3219,16 +3296,31 @@ def api_export_patient_report_pdf(patient_id):
             logger.warning(f'Unauthorized PDF export attempt: {user_email} tried to export patient {patient_id}')
             return jsonify({'success': False, 'error': 'Access denied'}), 403
 
-        # 2) Fetch all assessment sections
-        def fetch_one(coll):
+        # 2) Fetch all assessment sections.
+        # Same fallback convention as api_get_patient_comprehensive_report: if the
+        # separate Firestore-style collection has no record (mobile storage path),
+        # fall back to the nested camelCase field on the patient document itself,
+        # translating field names via _MOBILE_FIELD_MAP so mobile-created patients
+        # don't get blank PDF sections.
+        def fetch_one(coll, mobile_key=None):
             try:
                 result = db.collection(coll) \
                              .where('patient_id', '==', patient_id) \
                              .limit(1).get()
-                return result[0].to_dict() if result else {}
+                if result:
+                    return result[0].to_dict()
             except Exception as e:
                 logger.warning(f"Could not fetch {coll} for patient {patient_id}: {e}")
-                return {}
+
+            if mobile_key and patient.get(mobile_key):
+                mobile_data = patient[mobile_key]
+                if isinstance(mobile_data, dict):
+                    field_map = _MOBILE_FIELD_MAP.get(mobile_key, {})
+                    if field_map:
+                        return {field_map.get(k, k): v for k, v in mobile_data.items()}
+                    return mobile_data
+                return {mobile_key: mobile_data}
+            return {}
 
         def fetch_all(coll):
             try:
@@ -3239,16 +3331,16 @@ def api_export_patient_report_pdf(patient_id):
                 logger.warning(f"Could not fetch {coll} list for patient {patient_id}: {e}")
                 return []
 
-        subjective = fetch_one('subjective_examination')
-        perspectives = fetch_one('patient_perspectives')
-        initial_plan = fetch_one('initial_plan')
-        patho_mechanism = fetch_one('patho_mechanism')
-        chronic_diseases = fetch_one('chronic_diseases')
-        clinical_flags = fetch_one('clinical_flags')
-        objective = fetch_one('objective_assessments')
-        diagnosis = fetch_one('provisional_diagnosis')
-        goals = fetch_one('smart_goals')
-        treatment = fetch_one('treatment_plan')
+        subjective = fetch_one('subjective_examination', 'subjectiveExamination')
+        perspectives = fetch_one('patient_perspectives', 'patientPerspectives')
+        initial_plan = fetch_one('initial_plan', 'initialPlan')
+        patho_mechanism = fetch_one('patho_mechanism', 'pathoMechanism')
+        chronic_diseases = fetch_one('chronic_diseases', 'chronicDiseaseFactors')
+        clinical_flags = fetch_one('clinical_flags', 'clinicalFlags')
+        objective = fetch_one('objective_assessments', 'objectiveAssessment')
+        diagnosis = fetch_one('provisional_diagnosis', 'provisionalDiagnosis')
+        goals = fetch_one('smart_goals', 'smartGoals')
+        treatment = fetch_one('treatment_plan', 'treatmentPlan')
         follow_ups = fetch_all('follow_ups')
 
         # Get therapist info
@@ -3585,7 +3677,10 @@ def api_get_dashboard_analytics():
         plan_info = PLANS.get(plan_type, {})
 
         # Get total patient count (all time)
-        patients_ref = db.collection('patients').where('created_by', '==', user_email)
+        # NOTE: patients are stored with 'physio_id', not 'created_by' (which is
+        # never written) — use the same field every other patient query in this
+        # file uses.
+        patients_ref = db.collection('patients').where('physio_id', '==', user_email)
         total_patients = len(list(patients_ref.stream()))
 
         # Get recent patients (last 30 days)
