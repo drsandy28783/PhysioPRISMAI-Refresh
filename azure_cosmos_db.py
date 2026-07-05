@@ -76,7 +76,9 @@ class CosmosDBQuery:
         if sql_op == 'ARRAY_CONTAINS':
             condition = f"ARRAY_CONTAINS(c.{field}, {param_name})"
         elif sql_op == 'IN':
-            condition = f"c.{field} IN {param_name}"
+            # Cosmos DB SQL doesn't support binding an array directly to IN (...);
+            # ARRAY_CONTAINS(@param, c.field) is the equivalent that accepts an array parameter.
+            condition = f"ARRAY_CONTAINS({param_name}, c.{field})"
         else:
             condition = f"c.{field} {sql_op} {param_name}"
 
