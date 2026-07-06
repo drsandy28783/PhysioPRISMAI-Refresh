@@ -2025,6 +2025,10 @@ def api_approve_physio_by_uid(uid):
         # Get user data before updating
         user_data = user_doc.to_dict()
 
+        # Security: institute admins may only approve users in their own institute
+        if g.user.get('is_super_admin', 0) != 1 and user_data.get('institute') != g.user.get('institute'):
+            return jsonify({'error': 'Access denied'}), 403
+
         # Update user approval status
         db.collection('users').document(user_email).update({
             'approved': 1,
@@ -2076,6 +2080,11 @@ def api_reject_physio_by_uid(uid):
             return jsonify({'error': 'User not found'}), 404
 
         user_email = user_doc.id
+        user_data = user_doc.to_dict()
+
+        # Security: institute admins may only reject users in their own institute
+        if g.user.get('is_super_admin', 0) != 1 and user_data.get('institute') != g.user.get('institute'):
+            return jsonify({'error': 'Access denied'}), 403
 
         # Delete user
         db.collection('users').document(user_email).delete()
@@ -2113,6 +2122,10 @@ def api_approve_user_by_email():
             return jsonify({'error': 'User not found'}), 404
 
         user_data = user_doc.to_dict()
+
+        # Security: institute admins may only approve users in their own institute
+        if g.user.get('is_super_admin', 0) != 1 and user_data.get('institute') != g.user.get('institute'):
+            return jsonify({'error': 'Access denied'}), 403
 
         # Update user approval status
         db.collection('users').document(user_email).update({
@@ -2159,6 +2172,14 @@ def api_reject_user_by_email():
 
         if not user_email:
             return jsonify({'error': 'Email required'}), 400
+
+        # Security: institute admins may only reject users in their own institute
+        user_doc = db.collection('users').document(user_email).get()
+        if not user_doc.exists:
+            return jsonify({'error': 'User not found'}), 404
+        user_data = user_doc.to_dict()
+        if g.user.get('is_super_admin', 0) != 1 and user_data.get('institute') != g.user.get('institute'):
+            return jsonify({'error': 'Access denied'}), 403
 
         # Delete user
         db.collection('users').document(user_email).delete()

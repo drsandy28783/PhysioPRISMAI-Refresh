@@ -5398,6 +5398,11 @@ def approve_user(user_email):
         user_name = user_data.get('name', '')
         user_type = user_data.get('user_type', '')
 
+        # Security: an institute admin may only approve users in their own institute
+        if user_data.get('institute') != session.get('institute'):
+            flash("Access denied.", "error")
+            return redirect('/approve_physios')
+
         # Check if already approved by institute
         if user_data.get('approved_by_institute') == 1:
             flash(f"User {user_email} has already been approved by institute admin (Tier 1 complete). Awaiting super admin approval (Tier 2).", "info")
