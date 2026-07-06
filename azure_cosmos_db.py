@@ -225,6 +225,58 @@ class CosmosDBDocumentReference:
         """Update document fields"""
         self.set(data, merge=True)
 
+    def increment_if(
+        self,
+        field: str,
+        delta: float = 1,
+        min_value: Optional[float] = None,
+        max_value: Optional[float] = None,
+        also_set: Optional[Dict[str, Any]] = None,
+    ) -> "tuple[bool, Optional[float]]":
+        """
+        Atomically increment (or decrement) a numeric field via a Cosmos DB
+        conditional patch (server-side compare-and-swap), instead of
+        read-then-write.
+
+        max_value rejects the patch if the field's current value is already
+        >= max_value (for incrementing counters up to a cap). min_value
+        rejects it if the current value is already < min_value (for
+        decrementing a balance without it going negative). Both are
+        evaluated and applied by Cosmos DB itself against the value at the
+        moment the patch executes -- not a value read moments earlier in
+        Python -- so two concurrent callers can't both succeed past the
+        limit.
+
+        Returns (applied, new_value). new_value is None when the increment
+        was rejected.
+        """
+        patch_operations = [{"op": "incr", "path": f"/{field}", "value": delta}]
+        if also_set:
+            for key, value in also_set.items():
+                patch_operations.append({"op": "set", "path": f"/{key}", "value": value})
+
+        conditions = []
+        if min_value is not None:
+            conditions.append(f'(IS_DEFINED(c.{field}) ? c.{field} : 0) >= {min_value}')
+        if max_value is not None:
+            conditions.append(f'(IS_DEFINED(c.{field}) ? c.{field} : 0) < {max_value}')
+        filter_predicate = f'FROM c WHERE {" AND ".join(conditions)}' if conditions else None
+
+        try:
+            updated_item = self.container.patch_item(
+                item=self.id,
+                partition_key=self.id,
+                patch_operations=patch_operations,
+                filter_predicate=filter_predicate,
+            )
+            return True, updated_item.get(field)
+        except exceptions.CosmosHttpResponseError as e:
+            if e.status_code == 412:
+                # Filter predicate not met -- the limit would have been exceeded
+                return False, None
+            logger.error(f"Error incrementing {field} on document {self.id}: {e}", exc_info=True)
+            raise
+
     def delete(self) -> None:
         """Delete document"""
         try:

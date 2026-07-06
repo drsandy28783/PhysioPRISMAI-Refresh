@@ -111,15 +111,17 @@ def record_failed_login(email, db=None) -> bool:
         if not doc.exists:
             return False
 
-        current = doc.get('failed_login_attempts') or 0
-        new_count = current + 1
+        # Atomic increment closes the race where concurrent failed attempts
+        # all read the same pre-increment count and undercount the total,
+        # letting brute force exceed MAX_LOGIN_ATTEMPTS.
+        applied, new_count = ref.increment_if('failed_login_attempts', 1)
+        if not applied:
+            return False
+
         just_locked = new_count == MAX_LOGIN_ATTEMPTS
+        if new_count >= MAX_LOGIN_ATTEMPTS:
+            ref.update({'account_locked': True})
 
-        update = {'failed_login_attempts': new_count}
-        if just_locked:
-            update['account_locked'] = True
-
-        ref.update(update)
         logger.info(f"Failed login attempt {new_count}/{MAX_LOGIN_ATTEMPTS} for {email}")
         return just_locked
 

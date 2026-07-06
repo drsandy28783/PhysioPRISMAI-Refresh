@@ -21,10 +21,11 @@ from functools import wraps
 from flask import jsonify, g, request
 from subscription_manager import (
     check_patient_limit,
-    check_ai_limit,
     check_voice_limit,
     deduct_patient_usage,
-    deduct_ai_usage,
+    reserve_ai_usage_atomic,
+    release_ai_usage_atomic,
+    log_ai_usage,
     deduct_voice_usage,
     get_user_subscription,
     increment_patient_usage_atomic,
@@ -32,6 +33,26 @@ from subscription_manager import (
 )
 
 logger = logging.getLogger("app.quota_middleware")
+
+
+def _peek_ai_quota(user_id):
+    """
+    Non-mutating, advisory AI quota check for GET requests that never
+    deduct quota (e.g. treatment_plan_summary). No reservation needed since
+    there's no write to race on.
+    """
+    subscription = get_user_subscription(user_id)
+    if subscription.get('status') != 'active':
+        return False, "Your subscription has expired. Please upgrade to continue using AI features."
+
+    ai_calls_limit = subscription.get('ai_calls_limit', 0)
+    ai_calls_used = subscription.get('ai_calls_this_month', 0)
+    ai_tokens = subscription.get('ai_tokens_balance', 0)
+
+    if ai_calls_limit == -1 or ai_calls_used < ai_calls_limit or ai_tokens > 0:
+        return True, ""
+
+    return False, f"AI quota exhausted ({ai_calls_limit} calls). Purchase tokens or upgrade your plan."
 
 
 def require_patient_quota(f):
@@ -132,10 +153,27 @@ def require_ai_quota(f):
             if not user_id:
                 return jsonify({'error': 'User not authenticated'}), 401
 
-            # Check AI quota
-            can_use_ai, will_use_token, message = check_ai_limit(user_id)
+            # GET requests (e.g. treatment_plan_summary) never deduct quota,
+            # same as before -- just an advisory, non-mutating check.
+            if request.method != 'POST':
+                can_use_ai, message = _peek_ai_quota(user_id)
+                if not can_use_ai:
+                    logger.warning(f"AI quota exceeded for {user_id}: {message}")
+                    return jsonify({
+                        'error': 'Quota exceeded',
+                        'message': message,
+                        'quota_type': 'ai_calls',
+                        'action_required': 'upgrade_or_buy_tokens'
+                    }), 403
+                return f(*args, **kwargs)
 
-            if not can_use_ai:
+            # ATOMIC RESERVATION: reserve quota/token FIRST (pessimistic
+            # locking) so two concurrent requests can't both read the same
+            # pre-increment count and both pass. Released below if the
+            # request turns out to be a cache hit or fails.
+            reserved, will_use_token, message = reserve_ai_usage_atomic(user_id)
+
+            if not reserved:
                 logger.warning(f"AI quota exceeded for {user_id}: {message}")
                 return jsonify({
                     'error': 'Quota exceeded',
@@ -144,11 +182,14 @@ def require_ai_quota(f):
                     'action_required': 'upgrade_or_buy_tokens'
                 }), 403
 
-            # Store whether we'll use a token
+            # Store whether we used a token
             g.use_ai_token = will_use_token
 
-            # Execute the function
-            result = f(*args, **kwargs)
+            try:
+                result = f(*args, **kwargs)
+            except Exception:
+                release_ai_usage_atomic(user_id, will_use_token)
+                raise
 
             # Check if the response indicates success
             if isinstance(result, tuple):
@@ -156,23 +197,19 @@ def require_ai_quota(f):
             else:
                 response, status_code = result, 200
 
-            # Only deduct if:
-            # 1. Request was successful (2xx status)
-            # 2. It was a POST request (AI suggestions are always POST)
-            # Also check if it was a cache hit (no deduction needed)
-            from flask import request
-            if request.method == 'POST' and 200 <= status_code < 300:
-                # Check if response indicates cache hit
-                cache_hit = False
-                if hasattr(g, 'cache_hit'):
-                    cache_hit = g.cache_hit
+            cache_hit = getattr(g, 'cache_hit', False)
 
-                deduct_ai_usage(user_id, use_token=will_use_token, cache_hit=cache_hit)
-
-                if cache_hit:
-                    logger.info(f"AI cache hit for {user_id} - no quota deducted")
-                elif will_use_token:
-                    logger.info(f"Deducted 1 AI token for {user_id}")
+            if not (200 <= status_code < 300):
+                # Request failed -- release the reservation
+                release_ai_usage_atomic(user_id, will_use_token)
+            elif cache_hit:
+                # Cache hits are free -- release the reservation
+                release_ai_usage_atomic(user_id, will_use_token)
+                logger.info(f"AI cache hit for {user_id} - quota reservation released")
+            else:
+                log_ai_usage(user_id, used_token=will_use_token, cache_hit=False)
+                if will_use_token:
+                    logger.info(f"Used 1 AI token for {user_id}")
                 else:
                     logger.info(f"Deducted AI quota for {user_id}")
 

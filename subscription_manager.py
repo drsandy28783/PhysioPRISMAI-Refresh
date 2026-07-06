@@ -482,46 +482,98 @@ def check_user_limit(institute_id: str) -> Tuple[bool, str, int, int]:
         return False, "Error checking user limit. Please try again.", 0, 0
 
 
-def check_ai_limit(user_id: str) -> Tuple[bool, bool, str]:
+def reserve_ai_usage_atomic(user_id: str) -> Tuple[bool, bool, str]:
     """
-    Check if user can make AI calls.
+    Atomically reserve one AI call before the AI work runs: increments the
+    monthly quota counter, or -- if quota is exhausted -- decrements the
+    token balance, as a single Cosmos DB conditional patch. This closes the
+    check-then-write race where multiple concurrent requests could all read
+    the same pre-increment count and all pass. Callers must roll back with
+    release_ai_usage_atomic() if the request turns out to be a cache hit or
+    the AI call fails.
 
     Args:
         user_id: User's email or Firebase UID
 
     Returns:
-        tuple: (can_use_ai: bool, will_use_token: bool, message: str)
+        tuple: (success: bool, used_token: bool, message: str)
     """
     try:
-        subscription = get_user_subscription(user_id)
+        sub_ref = db.collection('subscriptions').document(user_id)
+        sub_doc = sub_ref.get()
 
-        # Check if subscription is active
+        if not sub_doc.exists:
+            return False, False, "Subscription not found"
+
+        subscription = sub_doc.to_dict()
+
         if subscription.get('status') != 'active':
             return False, False, "Your subscription has expired. Please upgrade to continue using AI features."
 
-        # Get limits
         ai_calls_limit = subscription.get('ai_calls_limit', 0)
-        ai_calls_used = subscription.get('ai_calls_this_month', 0)
-        ai_tokens = subscription.get('ai_tokens_balance', 0)
 
-        # Check for unlimited AI calls (-1 means unlimited)
+        # Unlimited AI calls (-1) -- still track usage, nothing to cap
         if ai_calls_limit == -1:
+            sub_ref.increment_if('ai_calls_this_month', 1, also_set={'updated_at': SERVER_TIMESTAMP})
             return True, False, ""
 
-        # Check if within quota
-        if ai_calls_used < ai_calls_limit:
+        applied, _ = sub_ref.increment_if(
+            'ai_calls_this_month', 1,
+            max_value=ai_calls_limit,
+            also_set={'updated_at': SERVER_TIMESTAMP},
+        )
+        if applied:
             return True, False, ""
 
-        # Quota exhausted, check if user has tokens
-        if ai_tokens > 0:
+        # Monthly quota exhausted -- try to reserve a token instead
+        applied_token, _ = sub_ref.increment_if(
+            'ai_tokens_balance', -1,
+            min_value=1,
+            also_set={'updated_at': SERVER_TIMESTAMP},
+        )
+        if applied_token:
             return True, True, "Using AI token from your balance"
 
-        # No quota, no tokens
         return False, False, f"AI quota exhausted ({ai_calls_limit} calls). Purchase tokens or upgrade your plan."
 
     except Exception as e:
-        logger.error(f"Error checking AI limit for {user_id}: {e}")
+        logger.error(f"Error reserving AI usage for {user_id}: {e}")
         return False, False, "Error checking AI quota. Please try again."
+
+
+def release_ai_usage_atomic(user_id: str, used_token: bool) -> None:
+    """
+    Roll back a reservation made by reserve_ai_usage_atomic() -- used when
+    the AI call turns out to be a cache hit or the request fails.
+    """
+    try:
+        sub_ref = db.collection('subscriptions').document(user_id)
+        if used_token:
+            sub_ref.increment_if('ai_tokens_balance', 1, also_set={'updated_at': SERVER_TIMESTAMP})
+        else:
+            sub_ref.increment_if('ai_calls_this_month', -1, also_set={'updated_at': SERVER_TIMESTAMP})
+    except Exception as e:
+        logger.error(f"Error releasing AI usage reservation for {user_id}: {e}")
+
+
+def log_ai_usage(user_id: str, used_token: bool, cache_hit: bool = False) -> None:
+    """
+    Record an AI usage log entry and fire quota-threshold notifications.
+    Call this after the AI request completes, once cache_hit is known.
+    """
+    try:
+        db.collection('ai_usage_logs').add({
+            'user_id': user_id,
+            'charged': not cache_hit,
+            'used_token': used_token,
+            'cache_hit': cache_hit,
+            'timestamp': SERVER_TIMESTAMP
+        })
+
+        if not used_token and not cache_hit:
+            check_and_notify_quota(user_id, 'ai')
+    except Exception as e:
+        logger.warning(f"Failed to log AI usage for {user_id}: {e}")
 
 
 def increment_patient_usage_atomic(user_id: str) -> Tuple[bool, int, str]:
@@ -548,23 +600,22 @@ def increment_patient_usage_atomic(user_id: str) -> Tuple[bool, int, str]:
         if subscription.get('status') != 'active':
             return False, 0, "Your subscription has expired. Please upgrade to continue adding patients."
 
-        current_count = subscription.get('patients_created_this_month', 0)
         limit = subscription.get('patients_limit', 0)
 
-        # Calculate new count
-        new_count = current_count + 1
+        # Atomic conditional increment: Cosmos DB evaluates the limit check
+        # and applies the increment as one server-side operation, so two
+        # concurrent requests both sitting at (limit - 1) can't both pass.
+        applied, new_count = sub_ref.increment_if(
+            'patients_created_this_month', 1,
+            max_value=None if limit == -1 else limit,
+            also_set={'updated_at': SERVER_TIMESTAMP},
+        )
 
-        # Check limit AFTER increment (pessimistic locking)
-        if limit != -1 and new_count > limit:
+        if not applied:
+            current_count = subscription.get('patients_created_this_month', 0)
             return False, current_count, f"Patient limit reached ({limit}). Cannot create more patients this month."
 
-        # Atomically increment
-        sub_ref.update({
-            'patients_created_this_month': new_count,
-            'updated_at': SERVER_TIMESTAMP
-        })
-
-        logger.info(f"Incremented patient usage for {user_id}: {current_count} → {new_count}")
+        logger.info(f"Incremented patient usage for {user_id}: new count = {new_count}")
 
         # Check and send quota notifications
         try:
@@ -633,79 +684,6 @@ def deduct_patient_usage(user_id: str) -> bool:
     return success
 
 
-def deduct_ai_usage(user_id: str, use_token: bool = False, cache_hit: bool = False) -> bool:
-    """
-    Deduct AI usage from user's quota or token balance.
-
-    Args:
-        user_id: User's email or Firebase UID
-        use_token: Whether to use a token instead of quota
-        cache_hit: Whether this was a cache hit (free, don't deduct)
-
-    Returns:
-        bool: Success status
-    """
-    try:
-        # Cache hits are free
-        if cache_hit:
-            logger.info(f"Cache hit for {user_id} - no usage deducted")
-            return True
-
-        sub_ref = db.collection('subscriptions').document(user_id)
-        sub_doc = sub_ref.get()
-
-        if not sub_doc.exists:
-            return False
-
-        subscription = sub_doc.to_dict()
-
-        if use_token:
-            # Deduct from token balance
-            tokens = subscription.get('ai_tokens_balance', 0)
-            if tokens <= 0:
-                logger.error(f"No tokens available for {user_id}")
-                return False
-
-            sub_ref.update({
-                'ai_tokens_balance': tokens - 1,
-                'updated_at': SERVER_TIMESTAMP
-            })
-
-            logger.info(f"Deducted 1 token from {user_id}, remaining: {tokens - 1}")
-        else:
-            # Deduct from monthly quota
-            ai_calls = subscription.get('ai_calls_this_month', 0)
-
-            sub_ref.update({
-                'ai_calls_this_month': ai_calls + 1,
-                'updated_at': SERVER_TIMESTAMP
-            })
-
-            logger.info(f"Deducted AI quota for {user_id}: {ai_calls + 1}")
-
-        # Log usage
-        db.collection('ai_usage_logs').add({
-            'user_id': user_id,
-            'charged': not cache_hit,
-            'used_token': use_token,
-            'cache_hit': cache_hit,
-            'timestamp': SERVER_TIMESTAMP
-        })
-
-        # Check and send quota notifications (only for quota usage, not tokens)
-        if not use_token:
-            try:
-                check_and_notify_quota(user_id, 'ai')
-            except Exception as e:
-                logger.warning(f"Failed to check quota notifications: {e}")
-
-        return True
-
-    except Exception as e:
-        logger.error(f"Error deducting AI usage for {user_id}: {e}")
-        return False
-
-
 def check_voice_limit(user_id: str) -> Tuple[bool, str]:
     """
     Check if user can use voice typing.
@@ -769,16 +747,15 @@ def deduct_voice_usage(user_id: str, duration_seconds: float) -> bool:
         if not sub_doc.exists:
             return False
 
-        subscription = sub_doc.to_dict()
-        current_minutes = subscription.get('voice_minutes_used_this_month', 0)
+        # Atomic increment: closes the race where two concurrent deductions
+        # both read the same pre-update total and one silently overwrites
+        # the other's write.
+        _, new_total = sub_ref.increment_if(
+            'voice_minutes_used_this_month', minutes_used,
+            also_set={'updated_at': SERVER_TIMESTAMP},
+        )
 
-        # Update count
-        sub_ref.update({
-            'voice_minutes_used_this_month': current_minutes + minutes_used,
-            'updated_at': SERVER_TIMESTAMP
-        })
-
-        logger.info(f"Deducted {minutes_used} minutes of voice typing for {user_id}: total={current_minutes + minutes_used}")
+        logger.info(f"Deducted {minutes_used} minutes of voice typing for {user_id}: total={new_total}")
 
         # Log usage
         db.collection('voice_usage_logs').add({

@@ -319,18 +319,17 @@ class MessagingService:
                     'error': 'OTP has expired'
                 }
 
-            # Check attempts
-            attempts = otp_data.get('attempts', 0)
+            # Atomic increment closes the race where concurrent verification
+            # attempts all read the same pre-increment count and undercount
+            # attempts, letting brute force exceed max_attempts.
+            applied, new_attempts = otp_ref.increment_if('attempts', 1, max_value=max_attempts)
 
-            if attempts >= max_attempts:
+            if not applied:
                 logger.warning(f"Max OTP attempts exceeded for user {user_id}")
                 return {
                     'valid': False,
                     'error': 'Maximum verification attempts exceeded'
                 }
-
-            # Increment attempts
-            otp_ref.update({'attempts': attempts + 1})
 
             # Verify code
             if otp_code == otp_data['code']:
@@ -351,7 +350,7 @@ class MessagingService:
                 return {
                     'valid': False,
                     'error': 'Invalid OTP code',
-                    'attempts_remaining': max_attempts - attempts - 1
+                    'attempts_remaining': max_attempts - new_attempts
                 }
 
         except Exception as e:

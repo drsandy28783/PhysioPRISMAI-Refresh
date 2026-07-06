@@ -128,10 +128,10 @@ def verify_token(email: str, token: str) -> tuple[bool, str]:
         # Verify token hash
         token_hash = hash_token(token)
         if token_hash != token_data.get('token_hash'):
-            # Increment attempts (manual increment for Cosmos DB)
-            db.collection('email_verification_tokens').document(email).update({
-                'attempts': attempts + 1
-            })
+            # Atomic increment closes the race where concurrent wrong
+            # guesses all read the same pre-increment count and undercount
+            # attempts, letting brute force exceed the 5-try cap.
+            db.collection('email_verification_tokens').document(email).increment_if('attempts', 1, max_value=5)
             return False, "Invalid verification token"
 
         # Token is valid - mark as verified
