@@ -1,9 +1,13 @@
 """
 Rate Limiting for PhysiologicPRISM
 
-Route-level rate limiting via Flask-Limiter (in-memory).
+Route-level rate limiting via Flask-Limiter, backed by Redis when
+REDIS_HOST is configured (shared limits across all Gunicorn workers),
+falling back to in-memory storage otherwise (per-worker limits only --
+up to 3x looser than configured under 3 gthread workers).
 Login attempt tracking is persisted in Cosmos DB so lockouts survive
-restarts and are shared across all Gunicorn workers.
+restarts and are shared across all Gunicorn workers regardless of the
+rate limiter's storage backend.
 
 Usage:
     from rate_limiter import limiter, check_login_attempts, record_failed_login
@@ -20,15 +24,40 @@ import logging
 from flask import g, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import redis
 
 logger = logging.getLogger("app.rate_limiter")
 
 # Login attempt tracking — state lives in Cosmos DB user documents
 MAX_LOGIN_ATTEMPTS = 3
 
-# Redis stubs kept for import compatibility (health check in main.py references these)
+# Connect to Redis when configured, so rate limits are shared across all
+# Gunicorn workers instead of each worker enforcing its own independent
+# in-memory counter. Falls back to in-memory storage if REDIS_HOST is
+# unset or unreachable.
 redis_client = None
 redis_available = False
+_storage_uri = "memory://"
+
+_REDIS_HOST = os.environ.get('REDIS_HOST')
+if _REDIS_HOST:
+    _redis_port = os.environ.get('REDIS_PORT', '6379')
+    _redis_password = os.environ.get('REDIS_PASSWORD', '')
+    _redis_db = os.environ.get('REDIS_DB', '0')
+    _redis_ssl = os.environ.get('REDIS_SSL', 'false').lower() == 'true'
+    _scheme = 'rediss' if _redis_ssl else 'redis'
+    _auth = f':{_redis_password}@' if _redis_password else ''
+    _redis_uri = f'{_scheme}://{_auth}{_REDIS_HOST}:{_redis_port}/{_redis_db}'
+
+    try:
+        _test_client = redis.from_url(_redis_uri, socket_connect_timeout=2)
+        _test_client.ping()
+        redis_client = _test_client
+        redis_available = True
+        _storage_uri = _redis_uri
+        logger.info(f"Rate limiter using Redis storage at {_REDIS_HOST}:{_redis_port}")
+    except Exception as e:
+        logger.warning(f"Redis configured but unreachable ({e}) -- falling back to in-memory rate limiting")
 
 
 def get_user_identifier():
@@ -50,18 +79,19 @@ def get_user_identifier():
     return f"ip:{get_remote_address()}"
 
 
-# Initialize Flask-Limiter with in-memory storage (route-level throttling only)
+# Initialize Flask-Limiter with Redis storage when available, else in-memory
 limiter = Limiter(
     key_func=get_user_identifier,
     default_limits=["1000 per hour", "100 per minute"],
-    storage_uri="memory://",
+    storage_uri=_storage_uri,
     storage_options={},
     strategy="fixed-window",
     headers_enabled=True,
     swallow_errors=True,
 )
 
-logger.info("Rate limiter initialized with in-memory storage (login lockouts use Cosmos DB)")
+_backend = "Redis" if redis_available else "in-memory"
+logger.info(f"Rate limiter initialized with {_backend} storage (login lockouts use Cosmos DB)")
 
 
 # ─── LOGIN ATTEMPT TRACKING (Cosmos DB) ─────────────────────────────
@@ -151,11 +181,12 @@ def clear_login_attempts(email, db=None):
 
 def get_rate_limit_stats():
     return {
-        'redis_available': False,
-        'storage_type': 'cosmos_db',
+        'redis_available': redis_available,
+        'storage_type': 'redis' if redis_available else 'memory',
         'login_lockout_backend': 'cosmos_db',
     }
 
 
 def health_check():
-    return True, "Rate limiter healthy (in-memory routes, Cosmos DB login lockouts)"
+    backend = "Redis" if redis_available else "in-memory"
+    return True, f"Rate limiter healthy ({backend} routes, Cosmos DB login lockouts)"
