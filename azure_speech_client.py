@@ -174,6 +174,12 @@ class AzureSpeechClient:
                 f"original content_type={content_type}"
             )
             if wav_size < 1000:
+                # Clean up temp file -- this early-return path previously
+                # skipped the cleanup block below, leaking the file.
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
                 return {
                     'success': False,
                     'text': '',
