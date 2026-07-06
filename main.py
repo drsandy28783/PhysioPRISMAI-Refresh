@@ -10509,6 +10509,7 @@ def subscription_dashboard():
 
 
 @app.route('/test-razorpay')
+@super_admin_required()
 def test_razorpay():
     """Display Razorpay configuration test page"""
     return render_template('test_razorpay.html')
@@ -10519,6 +10520,7 @@ def test_razorpay():
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/api/test/razorpay-config', methods=['GET'])
+@super_admin_required()
 def test_razorpay_config():
     """Check if Razorpay environment variables are configured"""
     try:
@@ -10547,6 +10549,7 @@ def test_razorpay_config():
 
 
 @app.route('/api/test/razorpay-connection', methods=['GET'])
+@super_admin_required()
 def test_razorpay_connection():
     """Test Razorpay API connection"""
     try:

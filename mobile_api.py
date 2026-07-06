@@ -361,15 +361,9 @@ def api_login():
 
     except Exception as e:
         logger.error(f"Login error: {e}", exc_info=True)
-        # Return more detailed error for debugging (remove in production)
-        import traceback
-        error_details = str(e)
-        stack_trace = traceback.format_exc()
-        logger.error(f"Login stack trace: {stack_trace}")
         return jsonify({
             'ok': False,
-            'error': 'Login failed',
-            'debug': error_details  # Include error details for debugging
+            'error': 'Login failed'
         }), 500
 
 
@@ -3934,7 +3928,7 @@ def api_save_draft():
 
     except Exception as e:
         logger.error(f"Error saving draft: {e}", exc_info=True)
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'Failed to save draft'}), 500
 
 
 @mobile_api.route('/draft/get/<patient_id>/<form_type>', methods=['GET'])
@@ -3983,7 +3977,7 @@ def api_get_draft(patient_id, form_type):
 
     except Exception as e:
         logger.error(f"Error getting draft: {e}", exc_info=True)
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'Failed to get draft'}), 500
 
 
 @mobile_api.route('/draft/delete/<patient_id>/<form_type>', methods=['DELETE'])
@@ -4008,7 +4002,7 @@ def api_delete_draft(patient_id, form_type):
 
     except Exception as e:
         logger.error(f"Error deleting draft: {e}", exc_info=True)
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'Failed to delete draft'}), 500
 
 
 @mobile_api.route('/health', methods=['GET'])
