@@ -144,22 +144,36 @@ class AzureADB2CAuth:
 
     def validate_token(self, id_token: str) -> Optional[Dict[str, Any]]:
         """
-        Validate ID token and extract user info
+        Validate ID token and extract user info.
+
+        Verifies the token's signature against the B2C tenant's published
+        JWKS keys, plus issuer/audience/expiration, instead of decoding it
+        unverified -- an unverified decode would let any attacker-crafted
+        JWT with arbitrary claims authenticate as any user.
 
         Args:
             id_token: JWT ID token from Azure AD B2C
 
         Returns:
-            Decoded token claims (user info)
+            Decoded token claims (user info), or None if invalid
         """
         try:
-            # For production, you should validate the token signature
-            # For now, we'll decode without validation (development only)
             import jwt
-            decoded = jwt.decode(id_token, options={"verify_signature": False})
+
+            jwks_uri = f"{self.authority_signin}/discovery/v2.0/keys"
+            jwks_client = jwt.PyJWKClient(jwks_uri)
+            signing_key = jwks_client.get_signing_key_from_jwt(id_token)
+
+            decoded = jwt.decode(
+                id_token,
+                signing_key.key,
+                algorithms=["RS256"],
+                audience=self.client_id,
+                issuer=f"{self.authority_signin}/v2.0/",
+            )
             return decoded
         except Exception as e:
-            print(f"Token validation error: {e}")
+            print(f"Token validation error: {type(e).__name__}: {e}")
             return None
 
     def get_user_from_token(self, token_response: Dict[str, Any]) -> Optional[Dict[str, str]]:
