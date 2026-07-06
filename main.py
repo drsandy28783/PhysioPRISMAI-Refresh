@@ -9703,8 +9703,8 @@ def super_admin_process_deletion(user_email):
                 try:
                     db.collection('form_drafts').document(draft_id).delete()
                     deletion_stats['form_drafts'] += 1
-                except:
-                    pass
+                except Exception as draft_error:
+                    logger.warning(f"GDPR deletion: failed to delete form draft {draft_id}: {draft_error}")
 
             # Delete AI cache for this patient
             try:
@@ -9712,8 +9712,8 @@ def super_admin_process_deletion(user_email):
                 cache = AICache(db)
                 cache.delete_patient_cache(patient_id)
                 deletion_stats['ai_cache_entries'] += 1
-            except:
-                pass
+            except Exception as cache_error:
+                logger.warning(f"GDPR deletion: failed to clear AI cache for patient {patient_id}: {cache_error}")
 
             # Finally, delete the patient record
             patient_doc.reference.delete()
@@ -9729,22 +9729,22 @@ def super_admin_process_deletion(user_email):
         try:
             db.collection('subscriptions').document(user_email).delete()
             deletion_stats['subscriptions'] = 1
-        except:
-            pass
+        except Exception as sub_error:
+            logger.warning(f"GDPR deletion: failed to delete subscription for {user_email}: {sub_error}")
 
         # 4. Delete messaging consent records
         try:
             db.collection('messaging_consent').document(user_email).delete()
-        except:
-            pass
+        except Exception as consent_error:
+            logger.warning(f"GDPR deletion: failed to delete messaging consent for {user_email}: {consent_error}")
 
         # 5. Delete consent audit trail
         try:
             consent_audits = db.collection('consent_audit_trail').where('user_id', '==', user_email).stream()
             for audit in consent_audits:
                 audit.reference.delete()
-        except:
-            pass
+        except Exception as audit_error:
+            logger.warning(f"GDPR deletion: failed to delete consent audit trail for {user_email}: {audit_error}")
 
         # 6. Delete user authentication from Firebase Auth
         try:
@@ -9757,8 +9757,8 @@ def super_admin_process_deletion(user_email):
         # 7. Delete patient counter for this user
         try:
             db.collection('patient_counters').document(user_email).delete()
-        except:
-            pass
+        except Exception as counter_error:
+            logger.warning(f"GDPR deletion: failed to delete patient counter for {user_email}: {counter_error}")
 
         # 8. Finally, delete user document from Firestore
         user_ref.delete()
