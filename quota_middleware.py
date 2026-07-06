@@ -370,10 +370,13 @@ def add_usage_info_to_response(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        try:
-            # Execute the function
-            result = f(*args, **kwargs)
+        # Execute the function outside the try -- if f() itself raises, let
+        # it propagate normally instead of falling into the except below,
+        # which previously referenced `result` before it was ever assigned
+        # (UnboundLocalError), masking the real error.
+        result = f(*args, **kwargs)
 
+        try:
             # Get user ID
             user_id = g.user.get('email') or g.user.get('uid')
 
