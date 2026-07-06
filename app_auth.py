@@ -199,6 +199,18 @@ def require_firebase_auth(f):
                     'active': user_data.get('active', 1),
                     'auth_method': 'bearer',
                 }
+
+                # Security: reject pending-approval or deactivated accounts,
+                # same as require_auth (session-based) already does. Super
+                # admins bypass the approval check. Only enforced here, where
+                # the Cosmos lookup actually succeeded and this data is
+                # trustworthy -- the Cosmos-down fallback below intentionally
+                # keeps degrading gracefully rather than blocking everyone.
+                if g.user.get('is_super_admin', 0) != 1:
+                    if g.user.get('approved', 0) != 1:
+                        return jsonify({'error': 'Account pending approval'}), 403
+                    if g.user.get('active', 1) != 1:
+                        return jsonify({'error': 'Account deactivated'}), 403
             except Exception as profile_err:
                 # Don't fail the request if Cosmos lookup hiccups — fall back
                 # to token-only data so endpoints that just need email keep
