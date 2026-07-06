@@ -45,13 +45,17 @@ def validate_no_html(value):
 
 def validate_name(value):
     """
-    Validate person names (letters, spaces, hyphens, apostrophes, periods only)
+    Validate person names (letters from any language, spaces, hyphens, apostrophes, periods only)
     """
     if not value:
         return
 
-    # Allow: letters (any language), spaces, hyphens, apostrophes, periods
-    if not re.match(r"^[a-zA-Z\s.\-']+$", value):
+    # Strip allowed punctuation/whitespace, then confirm what's left is
+    # entirely alphabetic. str.isalpha() is Unicode-aware (café, José,
+    # Müller, etc.) -- the previous regex [a-zA-Z\s.\-'] was ASCII-only
+    # despite this docstring claiming any-language support.
+    stripped = re.sub(r"[\s.\-']", '', value)
+    if not stripped or not stripped.isalpha():
         raise ValidationError('Name can only contain letters, spaces, periods, hyphens, and apostrophes')
 
 

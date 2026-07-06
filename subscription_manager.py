@@ -1148,14 +1148,17 @@ def get_usage_stats(user_id: str) -> Dict:
         voice_minutes_limit = subscription.get('voice_minutes_limit', 0)
         tokens = subscription.get('ai_tokens_balance', 0)
 
-        # Safeguard: Ensure no negative limits (data corruption protection)
-        if ai_calls_limit < 0:
+        # Safeguard: Ensure no negative limits (data corruption protection).
+        # -1 is the valid "unlimited" sentinel used throughout this module
+        # (see check_ai_limit/check_patient_limit/check_voice_limit) -- only
+        # values below that are actual corruption.
+        if ai_calls_limit < -1:
             logger.warning(f"User {user_id} has negative ai_calls_limit: {ai_calls_limit}. Setting to default.")
             ai_calls_limit = FREE_TRIAL_AI_CALLS  # Use default from free trial
-        if patients_limit < 0:
+        if patients_limit < -1:
             logger.warning(f"User {user_id} has negative patients_limit: {patients_limit}. Setting to default.")
             patients_limit = FREE_TRIAL_PATIENTS
-        if voice_minutes_limit < 0:
+        if voice_minutes_limit < -1:
             logger.warning(f"User {user_id} has negative voice_minutes_limit: {voice_minutes_limit}. Setting to default.")
             voice_minutes_limit = FREE_TRIAL_VOICE_MINUTES
 
@@ -1258,14 +1261,18 @@ def check_and_notify_quota(user_id: str, quota_type: str = 'all') -> None:
             if ai_calls_limit > 0:
                 ai_percent = (ai_calls_used / ai_calls_limit) * 100
 
-                # Create notification at 80%, 90%, and 100% thresholds
-                if ai_percent >= 100 and ai_calls_used == ai_calls_limit:
+                # Create notification at 80%, 90%, and 100% thresholds.
+                # Uses >= rather than exact == -- a counter that jumps by
+                # more than 1 between checks (e.g. concurrent requests)
+                # could otherwise step over the exact threshold value and
+                # never match, silently skipping the notification.
+                if ai_percent >= 100 and ai_calls_used >= ai_calls_limit:
                     notify_quota_warning(user_id, 'AI Calls', 100, ai_calls_used, ai_calls_limit)
                     logger.info(f"Sent 100% AI quota notification to {user_id}")
-                elif ai_percent >= 90 and ai_calls_used == int(ai_calls_limit * 0.9):
+                elif ai_percent >= 90 and ai_calls_used >= int(ai_calls_limit * 0.9):
                     notify_quota_warning(user_id, 'AI Calls', 90, ai_calls_used, ai_calls_limit)
                     logger.info(f"Sent 90% AI quota notification to {user_id}")
-                elif ai_percent >= 80 and ai_calls_used == int(ai_calls_limit * 0.8):
+                elif ai_percent >= 80 and ai_calls_used >= int(ai_calls_limit * 0.8):
                     notify_quota_warning(user_id, 'AI Calls', 80, ai_calls_used, ai_calls_limit)
                     logger.info(f"Sent 80% AI quota notification to {user_id}")
 
@@ -1277,14 +1284,15 @@ def check_and_notify_quota(user_id: str, quota_type: str = 'all') -> None:
             if patients_limit > 0 and patients_limit != -1:  # -1 means unlimited
                 patients_percent = (patients_used / patients_limit) * 100
 
-                # Create notification at 80%, 90%, and 100% thresholds
-                if patients_percent >= 100 and patients_used == patients_limit:
+                # Create notification at 80%, 90%, and 100% thresholds.
+                # Uses >= rather than exact == -- see AI quota section above.
+                if patients_percent >= 100 and patients_used >= patients_limit:
                     notify_quota_warning(user_id, 'Patients', 100, patients_used, patients_limit)
                     logger.info(f"Sent 100% patient quota notification to {user_id}")
-                elif patients_percent >= 90 and patients_used == int(patients_limit * 0.9):
+                elif patients_percent >= 90 and patients_used >= int(patients_limit * 0.9):
                     notify_quota_warning(user_id, 'Patients', 90, patients_used, patients_limit)
                     logger.info(f"Sent 90% patient quota notification to {user_id}")
-                elif patients_percent >= 80 and patients_used == int(patients_limit * 0.8):
+                elif patients_percent >= 80 and patients_used >= int(patients_limit * 0.8):
                     notify_quota_warning(user_id, 'Patients', 80, patients_used, patients_limit)
                     logger.info(f"Sent 80% patient quota notification to {user_id}")
 

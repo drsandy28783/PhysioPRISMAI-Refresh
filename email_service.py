@@ -951,6 +951,14 @@ def send_early_access_notification(admin_email: str, full_name: str, email: str,
         }
         role_display = role_names.get(role, role)
 
+        # URL-encode the mailto: subject/body -- unescaped values previously
+        # broke the link (or injected extra params) if full_name contained
+        # '&', '?', or a newline.
+        from urllib.parse import quote
+        mailto_subject = quote("Re: PhysiologicPRISM Early Access Request")
+        mailto_body = quote(f"Hi {full_name.split()[0]},\n\nThank you for your interest in PhysiologicPRISM!\n\n")
+        mailto_link = f"mailto:{quote(email)}?subject={mailto_subject}&body={mailto_body}"
+
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -1016,7 +1024,7 @@ def send_early_access_notification(admin_email: str, full_name: str, email: str,
                         <p style="font-size: 13px; line-height: 1.5; margin: 0;">
                             Click the button below to reply to <strong>{full_name}</strong> directly:
                         </p>
-                        <a href="mailto:{email}?subject=Re: PhysiologicPRISM Early Access Request&body=Hi {full_name.split()[0]},\n\nThank you for your interest in PhysiologicPRISM!\n\n" class="button">Reply to Applicant</a>
+                        <a href="{mailto_link}" class="button">Reply to Applicant</a>
                     </div>
 
                     <div class="footer">
@@ -1534,6 +1542,14 @@ def send_demo_request_notification(name: str, email: str, organization: str, mes
         }
         source_label, source_color = source_labels.get(page_source, ('📞 Demo Request', '#1a5f5a'))
 
+        # URL-encode the mailto: subject/body -- unescaped values previously
+        # broke the link (or injected extra params) if name contained '&',
+        # '?', or a newline.
+        from urllib.parse import quote
+        mailto_subject = quote("Re: Demo Request for PhysiologicPRISM")
+        mailto_body = quote(f"Hi {name.split()[0]},\n\nThank you for your interest in PhysiologicPRISM!\n\n")
+        mailto_link = f"mailto:{quote(email)}?subject={mailto_subject}&body={mailto_body}"
+
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -1596,7 +1612,7 @@ def send_demo_request_notification(name: str, email: str, organization: str, mes
                             Click the button below to reply to <strong>{name}</strong> directly:
                         </p>
                         <div style="text-align: center;">
-                            <a href="mailto:{email}?subject=Re: Demo Request for PhysiologicPRISM&body=Hi {name.split()[0]},\n\nThank you for your interest in PhysiologicPRISM!\n\n" class="button">Reply to {name.split()[0]}</a>
+                            <a href="{mailto_link}" class="button">Reply to {name.split()[0]}</a>
                         </div>
                     </div>
 

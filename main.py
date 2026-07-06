@@ -11905,13 +11905,14 @@ def save_draft():
 
         # Save or update draft
         draft_ref = db.collection('form_drafts').document(draft_id)
+        existing_draft = draft_ref.get()
         draft_ref.set({
             'user_id': user_id,
             'patient_id': patient_id,
             'form_type': form_type,
             'form_data': form_data,
             'updated_at': SERVER_TIMESTAMP,
-            'created_at': SERVER_TIMESTAMP if not draft_ref.get().exists else draft_ref.get().to_dict().get('created_at')
+            'created_at': existing_draft.to_dict().get('created_at') if existing_draft.exists else SERVER_TIMESTAMP
         }, merge=True)
 
         logger.info(f"Draft saved: {draft_id}")
@@ -11924,7 +11925,7 @@ def save_draft():
 
     except Exception as e:
         logger.error(f"Error saving draft: {e}", exc_info=True)
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'Failed to save draft'}), 500
 
 
 @app.route('/api/draft/get/<patient_id>/<form_type>', methods=['GET'])
@@ -11975,7 +11976,7 @@ def get_draft(patient_id, form_type):
 
     except Exception as e:
         logger.error(f"Error getting draft: {e}", exc_info=True)
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'Failed to get draft'}), 500
 
 
 @app.route('/api/draft/delete/<patient_id>/<form_type>', methods=['DELETE'])
@@ -12001,7 +12002,7 @@ def delete_draft(patient_id, form_type):
 
     except Exception as e:
         logger.error(f"Error deleting draft: {e}", exc_info=True)
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'Failed to delete draft'}), 500
 
 
 @app.route('/api/draft/cleanup', methods=['POST'])
