@@ -1922,6 +1922,7 @@ def logout():
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit("3 per 15 minutes", methods=["POST"])
 def forgot_password_page():
     """
     Web page for requesting password reset.
@@ -1933,21 +1934,8 @@ def forgot_password_page():
         return render_template('forgot_password.html')
 
     elif request.method == 'POST':
-        # Get client IP for rate limiting
+        # Get client IP for logging
         client_ip = request.environ.get('REMOTE_ADDR', 'unknown')
-
-        # Rate limiting: Max 3 reset requests per 15 minutes per IP
-        reset_attempts_key = f"reset_{client_ip}"
-        reset_attempts = login_attempts.get(reset_attempts_key, [])
-        current_time = time.time()
-
-        # Clean old attempts
-        reset_attempts = [t for t in reset_attempts if current_time - t < 900]
-
-        if len(reset_attempts) >= 3:
-            logger.warning(f"Too many password reset attempts from IP {client_ip}")
-            flash('If an account exists with this email, you will receive password reset instructions.', 'success')
-            return render_template('forgot_password.html')
 
         # Get email from form
         email = request.form.get('email', '').strip().lower()
@@ -1956,10 +1944,6 @@ def forgot_password_page():
         if not email or '@' not in email or len(email) > 254:
             flash('If an account exists with this email, you will receive password reset instructions.', 'success')
             return render_template('forgot_password.html')
-
-        # Record attempt
-        reset_attempts.append(current_time)
-        login_attempts[reset_attempts_key] = reset_attempts
 
         try:
             # Check if user exists
@@ -2010,6 +1994,7 @@ def forgot_password_page():
 
 @app.route('/api/forgot-password', methods=['POST'])
 @csrf.exempt  # API endpoint - CSRF not applicable
+@limiter.limit("3 per 15 minutes")
 def forgot_password():
     """
     Initiate password reset process.
@@ -2027,23 +2012,8 @@ def forgot_password():
         500: Server error
     """
     try:
-        # Get client IP for rate limiting
+        # Get client IP for logging
         client_ip = request.environ.get('REMOTE_ADDR', 'unknown')
-
-        # Rate limiting: Max 3 reset requests per 15 minutes per IP
-        reset_attempts_key = f"reset_{client_ip}"
-        reset_attempts = login_attempts.get(reset_attempts_key, [])
-        current_time = time.time()
-
-        # Clean old attempts
-        reset_attempts = [t for t in reset_attempts if current_time - t < 900]
-
-        if len(reset_attempts) >= 3:
-            logger.warning(f"Too many password reset attempts from IP {client_ip}")
-            return jsonify({
-                'success': True,
-                'message': 'If an account exists with this email, you will receive password reset instructions.'
-            }), 200  # Don't reveal rate limiting to prevent enumeration
 
         # Get and validate email from request
         data = request.get_json() or {}
@@ -2063,10 +2033,6 @@ def forgot_password():
 
         # Use validated email
         email = result['email']
-
-        # Record attempt
-        reset_attempts.append(current_time)
-        login_attempts[reset_attempts_key] = reset_attempts
 
         # Check if user exists
         user_doc = db.collection('users').document(email).get()
