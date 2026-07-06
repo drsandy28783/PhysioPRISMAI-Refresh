@@ -3780,11 +3780,23 @@ def verify_2fa():
         if verified:
             # Complete login
             session.pop('pending_2fa_user', None)
-            session['user_id'] = pending_user
-            session['user_name'] = user_data.get('name')
-            session['is_admin'] = user_data.get('is_admin', 0)
-            session['institute'] = user_data.get('institute')
-            session['login_time'] = datetime.now().isoformat()
+            # Security: Create secure session (mirrors the regular login
+            # success path) -- previously omitted last_activity and
+            # is_super_admin, so idle-timeout never engaged for 2FA
+            # accounts and a 2FA-enabled super admin lost super-admin
+            # session privileges after login.
+            session.permanent = True
+            session.update({
+                'user_id': pending_user,
+                'user_name': user_data.get('name'),
+                'institute': user_data.get('institute'),
+                'is_admin': user_data.get('is_admin', 0),
+                'is_super_admin': user_data.get('is_super_admin', 0),
+                'approved': user_data.get('approved', 0),
+                'login_time': datetime.now().isoformat(),
+                'last_activity': datetime.now().isoformat()
+            })
+            session.modified = True
 
             log_action(pending_user, 'Login', 'Successful login with 2FA')
             return redirect(url_for('dashboard'))
