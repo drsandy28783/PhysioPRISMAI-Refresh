@@ -151,7 +151,7 @@ def verify_subscription_payment(razorpay_payment_id: str, razorpay_subscription_
             hashlib.sha256
         ).hexdigest()
 
-        if generated_signature == razorpay_signature:
+        if hmac.compare_digest(generated_signature, razorpay_signature):
             logger.info(f"Verified subscription payment: {razorpay_payment_id}")
             return True
         else:
