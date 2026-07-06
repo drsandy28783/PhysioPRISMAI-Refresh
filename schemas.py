@@ -13,8 +13,9 @@ Phase: 1C - Security Hardening
 Task: 3.2 - Input Validation with Marshmallow
 """
 
-from marshmallow import Schema, fields, validate, validates, validates_schema, ValidationError, EXCLUDE
+from marshmallow import Schema, fields, validate, validates, validates_schema, pre_load, ValidationError, EXCLUDE
 import re
+import bleach
 
 
 # ─── HELPER VALIDATORS ───────────────────────────────────────────────
@@ -498,6 +499,26 @@ class AIFieldSuggestionSchema(Schema):
         fields.Str(validate=validate.Length(max=100)),
         required=False
     )
+
+    @validates('previous')
+    def validate_previous_size(self, value):
+        """Cap value size, matching AIPromptSchema's context field -- Raw()
+        otherwise accepts an unbounded nested payload with no limit."""
+        if not value:
+            return
+        for key, val in value.items():
+            if val is not None and len(str(val)) > 10000:
+                raise ValidationError(f'Field "{key}" in "previous" exceeds maximum length (10,000 characters)')
+
+    @validates('inputs')
+    def validate_inputs_size(self, value):
+        """Cap value size, matching AIPromptSchema's context field -- Raw()
+        otherwise accepts an unbounded nested payload with no limit."""
+        if not value:
+            return
+        for key, val in value.items():
+            if val is not None and len(str(val)) > 10000:
+                raise ValidationError(f'Field "{key}" in "inputs" exceeds maximum length (10,000 characters)')
 
 
 class SMARTGoalsSchema(Schema):
@@ -1087,6 +1108,15 @@ class BlogPostSchema(Schema):
     class Meta:
         unknown = EXCLUDE
 
+    # content is rendered with |safe in blog_post.html, so it must be
+    # sanitized (not just length-checked) before it ever reaches storage.
+    # Blog posts are super-admin-only, but a compromised or careless
+    # super-admin account previously had a direct stored-XSS vector here.
+    ALLOWED_TAGS = ['p', 'br', 'b', 'strong', 'i', 'em', 'u',
+                    'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3',
+                    'blockquote', 'code', 'pre']
+    ALLOWED_ATTRIBUTES = {'a': ['href', 'title', 'rel', 'target']}
+
     title = fields.Str(
         required=True,
         validate=[
@@ -1099,7 +1129,6 @@ class BlogPostSchema(Schema):
         required=True,
         validate=[
             validate.Length(min=50, max=50000),
-            # Allow some HTML for rich text editing, but validate carefully
         ]
     )
 
@@ -1118,6 +1147,20 @@ class BlogPostSchema(Schema):
     )
 
     published = fields.Bool(required=False, missing=False)
+
+    @pre_load
+    def sanitize_content(self, data, **kwargs):
+        """Strip content down to a safelist of rich-text tags/attributes
+        before length validation runs, instead of trusting raw HTML."""
+        if isinstance(data, dict) and data.get('content'):
+            data = dict(data)
+            data['content'] = bleach.clean(
+                data['content'],
+                tags=self.ALLOWED_TAGS,
+                attributes=self.ALLOWED_ATTRIBUTES,
+                strip=True,
+            )
+        return data
 
 
 # ─── FEEDBACK & REVIEW SCHEMAS ────────────────────────────────────────
