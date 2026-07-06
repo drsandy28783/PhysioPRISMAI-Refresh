@@ -35,25 +35,20 @@ def get_client_ip(request):
     """
     Get the real client IP address, handling proxies and load balancers
 
+    main.py wraps the WSGI app in ProxyFix(x_for=1, x_proto=1), which
+    trusts exactly one proxy hop for X-Forwarded-For and rewrites
+    request.remote_addr accordingly. Re-parsing the raw X-Forwarded-For/
+    X-Real-IP headers directly here (as this used to) bypasses that
+    trust boundary -- any direct client could set those headers itself
+    to spoof its apparent IP for whitelist checks and audit logs.
+
     Args:
         request: Flask request object
 
     Returns:
         str: Client IP address
     """
-    # Check for forwarded IP (from load balancer/proxy)
-    forwarded_for = request.headers.get('X-Forwarded-For')
-    if forwarded_for:
-        # X-Forwarded-For can be a comma-separated list, get the first (original client)
-        return forwarded_for.split(',')[0].strip()
-
-    # Check for real IP header (some proxies use this)
-    real_ip = request.headers.get('X-Real-IP')
-    if real_ip:
-        return real_ip.strip()
-
-    # Fallback to remote address
-    return request.environ.get('REMOTE_ADDR', 'unknown')
+    return request.remote_addr or request.environ.get('REMOTE_ADDR', 'unknown')
 
 
 def get_client_country(request):
