@@ -35,6 +35,11 @@ FREE_TRIAL_PATIENTS = int(os.environ.get('FREE_TRIAL_PATIENTS', '5'))
 FREE_TRIAL_AI_CALLS = int(os.environ.get('FREE_TRIAL_AI_CALLS', '25'))
 FREE_TRIAL_VOICE_MINUTES = int(os.environ.get('FREE_TRIAL_VOICE_MINUTES', '30'))  # 30 minutes of voice typing
 
+# Email of the account that bypasses the free-trial quota-correction fix
+# below, regardless of its ai_calls_limit field. Configurable rather than
+# hardcoded so this isn't tied to one specific account in source.
+SUPER_ADMIN_BYPASS_EMAIL = os.environ.get('SUPER_ADMIN_BYPASS_EMAIL', 'drsandeep@physiologicprism.com')
+
 # Plan definitions with limits (Revised February 2026 - Volume Discount Strategy)
 # Volume discounts: 5% for 5 users, 10% for 10 users, 15% for 15+ users
 # All plans: $50/user base rate (~₹4,200) with 250 AI calls per user
@@ -255,7 +260,7 @@ def get_user_subscription(user_id: str) -> Dict:
             # DATA INTEGRITY FIX: Validate and correct free trial limits
             # Some subscriptions may have incorrect limits (e.g., 250 instead of 25 AI calls)
             # Skip super admin accounts (they have unlimited quotas intentionally)
-            is_super_admin = (user_id == 'drsandeep@physiologicprism.com' or
+            is_super_admin = (user_id == SUPER_ADMIN_BYPASS_EMAIL or
                             subscription.get('ai_calls_limit') == -1)
 
             if subscription.get('plan_type') == 'free_trial' and not is_super_admin:
