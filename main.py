@@ -8395,9 +8395,9 @@ def treatment_plan_suggest(field):
 
     # Fetch all relevant patient data
     subj = fetch_latest('subjective_examination')
-    persp = fetch_latest('subjective_perspectives')
-    initial_plan = fetch_latest('subjective_assessments')
-    objective = fetch_latest('objective_assessment')
+    persp = fetch_latest('patient_perspectives')
+    initial_plan = fetch_latest('initial_plan')
+    objective = fetch_latest('objective_assessments')
     prov_dx = fetch_latest('provisional_diagnosis')
     goals = fetch_latest('smart_goals')
     clinical_flags_data = fetch_latest('clinical_flags')
@@ -8748,7 +8748,7 @@ def ai_followup_field(field):
     diagnosis = sanitize_clinical_text(prov_dx_data.get('diagnosis', ''))
 
     # Get treatment plan summary
-    treatment_data = fetch_latest('treatment_plans')
+    treatment_data = fetch_latest('treatment_plan')
     treatment_summary = sanitize_clinical_text(treatment_data.get('treatment_plan', ''))
 
     # Get SMART goals

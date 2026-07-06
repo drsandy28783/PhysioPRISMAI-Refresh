@@ -1437,7 +1437,7 @@ def api_ai_followup_field(field):
             diagnosis = sanitize_clinical_text(prov_dx_data.get('diagnosis', ''))
 
             # Get treatment plan summary
-            treatment_data = fetch_latest('treatment_plans')
+            treatment_data = fetch_latest('treatment_plan')
             treatment_summary = sanitize_clinical_text(treatment_data.get('treatment_plan', ''))
 
             # Get SMART goals
