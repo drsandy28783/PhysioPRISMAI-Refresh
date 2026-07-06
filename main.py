@@ -1547,6 +1547,15 @@ def patient_access_allowed(patient):
         return True
     return session.get('is_admin') == 1 and patient.get('institute') == session.get('institute')
 
+def firebase_patient_access_allowed(patient):
+    """Same as patient_access_allowed(), for @require_firebase_auth routes
+    which authenticate via g.user instead of the Flask session."""
+    user = getattr(g, 'user', None) or {}
+    if patient.get('physio_id') == user.get('email'):
+        return True
+    is_admin = user.get('is_admin') == 1 or user.get('is_super_admin') == 1
+    return is_admin and patient.get('institute') == user.get('institute')
+
 @app.route('/')
 def index():
     """Main homepage at root URL"""
@@ -8178,6 +8187,8 @@ def provisional_diagnosis_suggest(patient_id):
                 if not doc.exists:
                     return jsonify({'suggestion': ''}), 404
                 patient = doc.to_dict()
+                if not firebase_patient_access_allowed(patient):
+                    return jsonify({'error': 'Access denied'}), 403
 
                 # Helper to fetch the latest entry from a collection
                 def fetch_latest(collection_name):
@@ -8386,6 +8397,8 @@ def treatment_plan_suggest(field):
     if not pat_doc.exists:
         return jsonify({'error': 'Patient not found'}), 404
     patient_info = pat_doc.to_dict()
+    if not firebase_patient_access_allowed(patient_info):
+        return jsonify({'error': 'Access denied'}), 403
 
     # Helper to fetch the latest entry from a collection
     def fetch_latest(collection_name):
@@ -8468,6 +8481,8 @@ def treatment_plan_summary(patient_id):
         logger.warning(f"[Treatment Summary] Patient {patient_id} not found")
         return jsonify({'error': 'Patient not found'}), 404
     patient_info = pat_doc.to_dict() if pat_doc.exists else {}
+    if not firebase_patient_access_allowed(patient_info):
+        return jsonify({'error': 'Access denied'}), 403
 
     # Helper to fetch the latest entry from a collection
     def fetch_latest(collection_name):
@@ -8629,6 +8644,8 @@ def ai_followup_suggestion(patient_id):
     if not doc.exists:
         return jsonify({'error': 'Patient not found'}), 404
     patient = doc.to_dict()
+    if not firebase_patient_access_allowed(patient):
+        return jsonify({'error': 'Access denied'}), 403
 
     # 2. Parse the current form data
     session_number = data.get('session_number')
@@ -8719,6 +8736,8 @@ def ai_followup_field(field):
     if not doc.exists:
         return jsonify({'error': 'Patient not found'}), 404
     patient = doc.to_dict()
+    if not firebase_patient_access_allowed(patient):
+        return jsonify({'error': 'Access denied'}), 403
 
     # 2. Parse current form data
     grade = data.get('grade', '')

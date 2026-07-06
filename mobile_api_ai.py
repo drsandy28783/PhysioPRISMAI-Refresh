@@ -62,6 +62,15 @@ USE_AZURE_OPENAI = None
 # HELPER FUNCTIONS (PHI Sanitization & Data Normalization)
 # ─────────────────────────────────────────────────────────────────────────────
 
+def patient_access_allowed(patient):
+    """Whether the current caller (g.user) may access this patient record:
+    owner, or an admin of the same institute the patient belongs to."""
+    user = getattr(g, 'user', None) or {}
+    if patient.get('physio_id') == user.get('email'):
+        return True
+    is_admin = user.get('is_admin') == 1 or user.get('is_super_admin') == 1
+    return is_admin and patient.get('institute') == user.get('institute')
+
 def normalize_patient_data(data):
     """
     Normalize patient data field names for backward compatibility.
@@ -1321,16 +1330,15 @@ def api_ai_followup():
         past_hist = ""
         diagnosis = ""
         if patient_id:
-            try:
-                patient_doc = get_patient_safe(patient_id)
-                if patient_doc.exists:
-                    patient_data = patient_doc.to_dict()
-                    age_sex = sanitize_age_sex(patient_data.get('age_sex', ''))
-                    present_hist = sanitize_clinical_text(patient_data.get('present_complaint', '') or patient_data.get('present_history', ''))
-                    past_hist = sanitize_clinical_text(patient_data.get('past_history', ''))
-                    diagnosis = sanitize_clinical_text(patient_data.get('provisional_diagnosis', ''))
-            except:
-                pass  # If we can't get patient data, continue without it
+            patient_doc = get_patient_safe(patient_id)
+            if patient_doc.exists:
+                patient_data = patient_doc.to_dict()
+                if not patient_access_allowed(patient_data):
+                    return jsonify({'error': 'Access denied'}), 403
+                age_sex = sanitize_age_sex(patient_data.get('age_sex', ''))
+                present_hist = sanitize_clinical_text(patient_data.get('present_complaint', '') or patient_data.get('present_history', ''))
+                past_hist = sanitize_clinical_text(patient_data.get('past_history', ''))
+                diagnosis = sanitize_clinical_text(patient_data.get('provisional_diagnosis', ''))
 
         # Construct followup data from session inputs
         followup_data = {
@@ -1402,11 +1410,15 @@ def api_ai_followup_field(field):
         treatment_summary = ""
         goals = None
 
+        # Get patient record using SAFE lookup
+        patient_doc = get_patient_safe(patient_id)
+        if patient_doc.exists:
+            patient_data = patient_doc.to_dict()
+            if not patient_access_allowed(patient_data):
+                return jsonify({'error': 'Access denied'}), 403
+
         try:
-            # Get patient record using SAFE lookup
-            patient_doc = get_patient_safe(patient_id)
             if patient_doc.exists:
-                patient_data = patient_doc.to_dict()
                 age_sex = sanitize_age_sex(patient_data.get('age_sex', ''))
                 present_hist = sanitize_clinical_text(patient_data.get('present_complaint', '') or patient_data.get('present_history', ''))
                 past_hist = sanitize_clinical_text(patient_data.get('past_history', ''))
