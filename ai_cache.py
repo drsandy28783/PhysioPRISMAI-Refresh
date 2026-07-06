@@ -50,23 +50,31 @@ class AICache:
         self.enable_semantic_matching = False  # Future: match similar prompts
 
 
-    def _generate_cache_key(self, prompt: str, model: str = "gpt-4o", patient_context: str = "") -> str:
+    def _generate_cache_key(self, prompt: str, model: str = "gpt-4o", patient_context: str = "", patient_id: Optional[str] = None) -> str:
         """
         Generate a unique cache key for a prompt.
 
-        Uses SHA-256 hash of prompt + model name + patient context.
+        Uses SHA-256 hash of prompt + model name + patient context (+
+        patient_id when known).
 
         Args:
             prompt: The sanitized prompt text
             model: The AI model name (e.g., "gpt-4o")
             patient_context: Patient-specific context (age/sex demographics) to ensure unique responses per patient profile
+            patient_id: The patient's ID, when known. patient_context alone
+                (e.g. "34F") is not unique per patient -- two different
+                patients with the same age/sex and a similar prompt would
+                otherwise collide on the same cache key and one patient
+                could be served AI output generated for a different patient.
 
         Returns:
             str: Hexadecimal hash suitable as Cosmos DB document ID
         """
         # For patient-specific queries, do NOT normalize to preserve uniqueness
         # Only normalize the prompt structure, keep patient data intact
-        if patient_context:
+        if patient_id:
+            cache_input = f"{model}:{prompt}:{patient_context}:{patient_id}"
+        elif patient_context:
             # Include patient context to ensure different patients get different cache entries
             cache_input = f"{model}:{prompt}:{patient_context}"
         else:
@@ -79,7 +87,7 @@ class AICache:
         return hash_obj.hexdigest()
 
 
-    def get_cached_response(self, prompt: str, model: str = "gpt-4o", patient_context: str = "") -> Optional[str]:
+    def get_cached_response(self, prompt: str, model: str = "gpt-4o", patient_context: str = "", patient_id: Optional[str] = None) -> Optional[str]:
         """
         Retrieve a cached AI response if available and not expired.
 
@@ -87,12 +95,13 @@ class AICache:
             prompt: The sanitized prompt text
             model: The AI model name
             patient_context: Patient-specific context for cache key uniqueness
+            patient_id: The patient's ID, when known (see _generate_cache_key)
 
         Returns:
             str: Cached response text, or None if not found/expired
         """
         try:
-            cache_key = self._generate_cache_key(prompt, model, patient_context)
+            cache_key = self._generate_cache_key(prompt, model, patient_context, patient_id)
 
             # Query Cosmos DB for cached response
             cache_doc = self.db.collection(self.cache_collection).document(cache_key).get()
@@ -173,7 +182,12 @@ class AICache:
             bool: True if saved successfully, False otherwise
         """
         try:
-            cache_key = self._generate_cache_key(prompt, model, patient_context)
+            # Cache keys are content hashes and never contain the patient_id
+            # on their own, so different patients with the same
+            # demographics and a similar prompt could otherwise collide on
+            # the same cache entry. Fold it into the key when known.
+            patient_id = (metadata or {}).get('patient_id')
+            cache_key = self._generate_cache_key(prompt, model, patient_context, patient_id)
 
             # Calculate estimated cost saved per reuse
             # Model-specific pricing (as of January 2025)
@@ -210,11 +224,6 @@ class AICache:
             # Calculate expiration date (90 days from now)
             from datetime import timezone
             expires_at = datetime.now(timezone.utc) + timedelta(days=self.cache_ttl_days)
-
-            # Cache keys are content hashes and never contain the patient_id,
-            # so store it as its own field -- otherwise a patient's cache/
-            # training entries can never be found again for GDPR erasure.
-            patient_id = (metadata or {}).get('patient_id')
 
             # Prepare cache document
             cache_doc = {
@@ -778,9 +787,10 @@ def get_ai_suggestion_with_cache(
         str: AI response (from cache or fresh API call)
     """
     cache = AICache(db)
+    patient_id = (metadata or {}).get('patient_id')
 
     # Try to get from cache first
-    cached_response = cache.get_cached_response(prompt, model, patient_context)
+    cached_response = cache.get_cached_response(prompt, model, patient_context, patient_id)
     if cached_response:
         return cached_response
 
