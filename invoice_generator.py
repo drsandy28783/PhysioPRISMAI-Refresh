@@ -17,6 +17,7 @@ Indian GST Requirements:
 import os
 import logging
 from datetime import datetime
+from html import escape as escape_html
 from typing import Dict, Optional
 from io import BytesIO
 from xhtml2pdf import pisa
@@ -228,6 +229,9 @@ def generate_invoice_html(invoice_data: Dict) -> str:
     Returns:
         str: HTML content
     """
+    def esc(value):
+        return escape_html(str(value)) if value is not None else ''
+
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -328,10 +332,10 @@ def generate_invoice_html(invoice_data: Dict) -> str:
             <!-- Header -->
             <div class="header">
                 <h1>TAX INVOICE</h1>
-                <p>{invoice_data.get('business_name', 'PhysiologicPRISM')}</p>
-                <p>{invoice_data.get('business_address', 'India')}</p>
-                <p>GSTIN: {invoice_data.get('business_gstin', 'N/A')} | PAN: {invoice_data.get('business_pan', 'N/A')}</p>
-                <p>Email: {invoice_data.get('business_email', 'support@physiologicprism.com')} | Phone: {invoice_data.get('business_phone', 'N/A')}</p>
+                <p>{esc(invoice_data.get('business_name', 'PhysiologicPRISM'))}</p>
+                <p>{esc(invoice_data.get('business_address', 'India'))}</p>
+                <p>GSTIN: {esc(invoice_data.get('business_gstin', 'N/A'))} | PAN: {esc(invoice_data.get('business_pan', 'N/A'))}</p>
+                <p>Email: {esc(invoice_data.get('business_email', 'support@physiologicprism.com'))} | Phone: {esc(invoice_data.get('business_phone', 'N/A'))}</p>
             </div>
 
             <!-- Invoice Details -->
@@ -339,18 +343,18 @@ def generate_invoice_html(invoice_data: Dict) -> str:
                 <div class="left">
                     <div class="info-block">
                         <div class="section-title">Bill To:</div>
-                        <p><strong>{invoice_data.get('customer_name', 'N/A')}</strong></p>
-                        <p>{invoice_data.get('customer_institute', 'N/A')}</p>
-                        <p>Email: {invoice_data.get('customer_email', 'N/A')}</p>
-                        <p>Phone: {invoice_data.get('customer_phone', 'N/A')}</p>
+                        <p><strong>{esc(invoice_data.get('customer_name', 'N/A'))}</strong></p>
+                        <p>{esc(invoice_data.get('customer_institute', 'N/A'))}</p>
+                        <p>Email: {esc(invoice_data.get('customer_email', 'N/A'))}</p>
+                        <p>Phone: {esc(invoice_data.get('customer_phone', 'N/A'))}</p>
                     </div>
                 </div>
                 <div class="right" style="text-align: right;">
                     <div class="info-block">
-                        <p><strong>Invoice Number:</strong> {invoice_data.get('invoice_number', 'N/A')}</p>
+                        <p><strong>Invoice Number:</strong> {esc(invoice_data.get('invoice_number', 'N/A'))}</p>
                         <p><strong>Invoice Date:</strong> {datetime.now().strftime('%d-%b-%Y')}</p>
-                        <p><strong>Payment ID:</strong> {invoice_data.get('payment_id', 'N/A')}</p>
-                        <p><strong>Payment Method:</strong> {invoice_data.get('payment_method', 'Razorpay')}</p>
+                        <p><strong>Payment ID:</strong> {esc(invoice_data.get('payment_id', 'N/A'))}</p>
+                        <p><strong>Payment Method:</strong> {esc(invoice_data.get('payment_method', 'Razorpay'))}</p>
                     </div>
                 </div>
             </div>
@@ -368,8 +372,8 @@ def generate_invoice_html(invoice_data: Dict) -> str:
                 </thead>
                 <tbody>
                     <tr>
-                        <td>{invoice_data.get('description', 'Subscription')}</td>
-                        <td>{invoice_data.get('sac_code', '998314')}</td>
+                        <td>{esc(invoice_data.get('description', 'Subscription'))}</td>
+                        <td>{esc(invoice_data.get('sac_code', '998314'))}</td>
                         <td>1</td>
                         <td class="text-right">{invoice_data.get('base_amount', 0):.2f}</td>
                         <td class="text-right">{invoice_data.get('base_amount', 0):.2f}</td>
@@ -416,12 +420,12 @@ def generate_invoice_html(invoice_data: Dict) -> str:
                 <div class="section-title">Terms & Conditions:</div>
                 <p>1. This is a computer-generated invoice and does not require a physical signature.</p>
                 <p>2. Payment is non-refundable except as per our refund policy.</p>
-                <p>3. For any queries, please contact {invoice_data.get('business_email', 'support@physiologicprism.com')}</p>
+                <p>3. For any queries, please contact {esc(invoice_data.get('business_email', 'support@physiologicprism.com'))}</p>
             </div>
 
             <!-- Digital Stamp -->
             <div class="stamp">
-                <p><strong>For {invoice_data.get('business_name', 'PhysiologicPRISM')}</strong></p>
+                <p><strong>For {esc(invoice_data.get('business_name', 'PhysiologicPRISM'))}</strong></p>
                 <p style="margin-top: 30px;">___________________</p>
                 <p>Authorized Signatory</p>
             </div>

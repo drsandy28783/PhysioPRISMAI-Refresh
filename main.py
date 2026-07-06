@@ -6,6 +6,7 @@ import uuid
 import secrets
 import string
 import sys
+import html
 import markdown as md_lib
 from typing import Optional, Dict, Any, List, Tuple
 from dotenv import load_dotenv
@@ -3961,24 +3962,27 @@ def export_patients_pdf():
         <body>
             <h1>Patient Data Export - PhysiologicPRISM</h1>
             <div class="export-info">
-                <p><strong>Exported for:</strong> {user_name} ({user_email})</p>
+                <p><strong>Exported for:</strong> {html.escape(str(user_name))} ({html.escape(str(user_email))})</p>
                 <p><strong>Export Date:</strong> {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC</p>
                 <p><strong>Total Patients:</strong> {len(patients)}</p>
             </div>
         """
 
+        def esc(value):
+            return html.escape(str(value)) if value is not None else 'N/A'
+
         for patient in patients:
             html_content += f"""
             <div class="patient-card">
-                <h2>{patient.get('name', 'N/A')}</h2>
-                <div class="field"><strong>Patient ID:</strong> {patient.get('patient_id', 'N/A')}</div>
-                <div class="field"><strong>Age/Sex:</strong> {patient.get('age_sex', 'N/A')}</div>
-                <div class="field"><strong>Contact:</strong> {patient.get('contact', 'N/A')}</div>
-                <div class="field"><strong>Chief Complaint:</strong> {patient.get('chief_complaint', 'N/A')}</div>
-                <div class="field"><strong>Present History:</strong> {patient.get('present_history', 'N/A')}</div>
-                <div class="field"><strong>Past History:</strong> {patient.get('past_history', 'N/A')}</div>
-                <div class="field"><strong>Provisional Diagnosis:</strong> {patient.get('provisional_diagnosis', 'N/A')}</div>
-                <div class="field"><strong>Created:</strong> {patient.get('created_at', 'N/A')}</div>
+                <h2>{esc(patient.get('name', 'N/A'))}</h2>
+                <div class="field"><strong>Patient ID:</strong> {esc(patient.get('patient_id', 'N/A'))}</div>
+                <div class="field"><strong>Age/Sex:</strong> {esc(patient.get('age_sex', 'N/A'))}</div>
+                <div class="field"><strong>Contact:</strong> {esc(patient.get('contact', 'N/A'))}</div>
+                <div class="field"><strong>Chief Complaint:</strong> {esc(patient.get('chief_complaint', 'N/A'))}</div>
+                <div class="field"><strong>Present History:</strong> {esc(patient.get('present_history', 'N/A'))}</div>
+                <div class="field"><strong>Past History:</strong> {esc(patient.get('past_history', 'N/A'))}</div>
+                <div class="field"><strong>Provisional Diagnosis:</strong> {esc(patient.get('provisional_diagnosis', 'N/A'))}</div>
+                <div class="field"><strong>Created:</strong> {esc(patient.get('created_at', 'N/A'))}</div>
             </div>
             """
 
