@@ -18,7 +18,6 @@ from azure_cosmos_db import get_cosmos_db, get_patient_safe, SERVER_TIMESTAMP
 from app_auth import require_firebase_auth, require_auth
 from quota_middleware import require_patient_quota
 from firebase_admin import auth
-from functools import wraps
 from rate_limiter import redis_client, redis_available
 from email_service import (
     send_registration_notification,
@@ -129,32 +128,6 @@ def get_user_profile(user_email_or_uid):
         return user_doc.to_dict()
 
     return None
-
-
-def require_role(*allowed_roles):
-    """Decorator to check if user has one of the allowed roles"""
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            user_role = g.user.get('role', 'individual')
-
-            # Normalize role
-            if user_role == 'admin':
-                user_role = 'institute_admin'
-            elif user_role == 'physio':
-                user_role = 'institute_physio'
-
-            # Check if user is admin (admins can do everything)
-            if g.user.get('is_admin') == 1 or g.user.get('is_super_admin') == 1:
-                return f(*args, **kwargs)
-
-            # Check role
-            if user_role not in allowed_roles:
-                return jsonify({'error': 'Insufficient permissions'}), 403
-
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
 
 
 # ─────────────────────────────────────────────────────────────────────────────

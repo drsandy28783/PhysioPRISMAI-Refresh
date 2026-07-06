@@ -13,7 +13,7 @@ Phase: 1C - Security Hardening
 Task: 3.2 - Input Validation with Marshmallow
 """
 
-from marshmallow import Schema, fields, validate, validates, validates_schema, pre_load, ValidationError, EXCLUDE
+from marshmallow import Schema, fields, validate, validates, validates_schema, pre_load, ValidationError, EXCLUDE, INCLUDE
 import re
 import bleach
 
@@ -290,10 +290,18 @@ class SubjectiveExaminationSchema(Schema):
 
 
 class ObjectiveAssessmentSchema(Schema):
-    """Objective assessment data validation"""
+    """Objective assessment data validation.
+
+    Currently unused (defined but never wired up to a route). Field names
+    for objective assessment vary widely (ROM, strength, palpation, special
+    tests, etc.) and aren't enumerated individually here, so unknown=INCLUDE
+    rather than EXCLUDE -- Meta.unknown = EXCLUDE would otherwise silently
+    strip every field except patient_id the moment this schema is used to
+    validate a real request.
+    """
 
     class Meta:
-        unknown = EXCLUDE
+        unknown = INCLUDE
 
     patient_id = fields.Str(
         required=True,
@@ -302,9 +310,6 @@ class ObjectiveAssessmentSchema(Schema):
             validate.Regexp(r'^[a-zA-Z0-9_-]+$')
         ]
     )
-
-    # Allow flexible field names for objective assessment
-    # (ROM, strength, palpation, special tests, etc.)
 
 
 class TreatmentPlanSchema(Schema):
