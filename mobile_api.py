@@ -2270,6 +2270,35 @@ def api_secure_query():
         if collection_name not in allowed_collections:
             return jsonify({'error': 'Collection not allowed'}), 403
 
+        is_admin = g.user.get('is_admin', 0) == 1 or g.user.get('is_super_admin', 0) == 1
+        is_super_admin = g.user.get('is_super_admin', 0) == 1
+
+        # Security: 'users' and 'audit_logs' can expose other accounts' data
+        # (password hashes, other therapists' activity) — never let a
+        # non-admin reach them through this generic endpoint. Audit logs are
+        # further restricted to super admins; institute admins should use the
+        # dedicated /audit_logs endpoint, which already scopes correctly.
+        if collection_name == 'users' and not is_admin:
+            return jsonify({'error': 'Access denied'}), 403
+        if collection_name == 'audit_logs' and not is_super_admin:
+            return jsonify({'error': 'Access denied'}), 403
+
+        # follow_ups documents carry no owner/institute field of their own —
+        # only patient_id — so ownership can't be enforced by adding a filter.
+        # Require the caller to name the patient and verify access to it.
+        if collection_name == 'follow_ups':
+            patient_id = next((f.get('value') for f in filters if f.get('field') == 'patient_id'), None)
+            if not patient_id:
+                return jsonify({'error': 'follow_ups queries require a patient_id filter'}), 400
+            patient_doc = db.collection('patients').document(patient_id).get()
+            if not patient_doc.exists:
+                return jsonify({'error': 'Patient not found'}), 404
+            patient = patient_doc.to_dict()
+            owns_patient = patient.get('physio_id') == g.user.get('email')
+            admin_same_institute = is_admin and patient.get('institute') == g.user.get('institute')
+            if not (owns_patient or admin_same_institute):
+                return jsonify({'error': 'Access denied'}), 403
+
         # Start query
         query = db.collection(collection_name)
 
@@ -2282,6 +2311,17 @@ def api_secure_query():
             if field and operator and value is not None:
                 query = query.where(field, operator, value)
 
+        # Security: force the query into the caller's own scope regardless of
+        # client-supplied filters, so a user can't enumerate other
+        # therapists'/institutes' records by omitting or loosening filters.
+        if collection_name == 'patients':
+            if not is_admin:
+                query = query.where('physio_id', '==', g.user.get('email'))
+            elif not is_super_admin:
+                query = query.where('institute', '==', g.user.get('institute'))
+        elif collection_name == 'users' and not is_super_admin:
+            query = query.where('institute', '==', g.user.get('institute'))
+
         # Apply limit
         if limit:
             query = query.limit(limit)
@@ -2291,6 +2331,9 @@ def api_secure_query():
         for doc in query.stream():
             doc_data = doc.to_dict()
             doc_data['id'] = doc.id
+            if collection_name == 'users':
+                doc_data.pop('password_hash', None)
+                doc_data.pop('firebase_uid', None)
             results.append(doc_data)
 
         return jsonify({'results': results}), 200
