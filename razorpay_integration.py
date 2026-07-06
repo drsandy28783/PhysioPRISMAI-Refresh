@@ -21,6 +21,7 @@ import hashlib
 import logging
 from typing import Dict, Optional, Tuple
 import razorpay
+from azure.cosmos import exceptions as cosmos_exceptions
 # Firebase removed - using Azure Cosmos DB
 from azure_cosmos_db import get_cosmos_db, SERVER_TIMESTAMP
 
@@ -300,6 +301,39 @@ def verify_webhook_signature(payload: bytes, signature: str) -> bool:
         return False
 
 
+def _claim_webhook_event(event_type: str, payment_id: Optional[str]) -> bool:
+    """
+    Atomically claim a (event_type, payment_id) pair before processing a
+    webhook, so a redelivered event (Razorpay retries at-least-once) can't
+    reprocess the same payment and double-invoice or double-credit tokens.
+
+    Returns True if this call claimed it (first time processing), False if
+    it was already claimed (a duplicate delivery -- caller should skip).
+    """
+    if not payment_id:
+        # Nothing to dedupe against; let the caller proceed as before.
+        return True
+
+    doc_id = f"{event_type}:{payment_id}"
+    ref = db.collection('processed_webhook_events').document(doc_id)
+    try:
+        ref.container.create_item(body={
+            'id': doc_id,
+            'event_type': event_type,
+            'payment_id': payment_id,
+            'processed_at': SERVER_TIMESTAMP,
+        })
+        return True
+    except cosmos_exceptions.CosmosResourceExistsError:
+        logger.info(f"Duplicate webhook delivery ignored: {doc_id}")
+        return False
+    except Exception as e:
+        logger.error(f"Error claiming webhook event {doc_id}: {e}")
+        # Fail open -- an infra hiccup here shouldn't block legitimate
+        # payment processing.
+        return True
+
+
 def handle_webhook_event(event_data: Dict) -> Tuple[bool, str]:
     """
     Handle Razorpay webhook event.
@@ -353,6 +387,11 @@ def handle_subscription_activated(payload: Dict) -> Tuple[bool, str]:
 
         if not user_id or not plan_type:
             return False, "Missing user_id or plan_type in notes"
+
+        # Idempotency: a redelivered webhook must not re-activate/re-invoice
+        event_payment_id = payment.get('id') if payment else subscription_id
+        if not _claim_webhook_event('subscription.activated', event_payment_id):
+            return True, "Duplicate webhook delivery ignored"
 
         # Activate subscription in our system
         from subscription_manager import upgrade_subscription
@@ -410,6 +449,11 @@ def handle_subscription_charged(payload: Dict) -> Tuple[bool, str]:
 
         if not user_id:
             return False, "Missing user_id in notes"
+
+        # Idempotency: a redelivered webhook must not reset quota or
+        # re-invoice for the same renewal payment
+        if not _claim_webhook_event('subscription.charged', payment.get('id')):
+            return True, "Duplicate webhook delivery ignored"
 
         # Reset monthly quota
         from subscription_manager import reset_monthly_quota
@@ -477,6 +521,11 @@ def handle_payment_captured(payload: Dict) -> Tuple[bool, str]:
 
             if not user_id or not package:
                 return False, "Missing user_id or package in notes"
+
+            # Idempotency: a redelivered webhook must not double-credit
+            # tokens or re-invoice for the same payment
+            if not _claim_webhook_event('payment.captured', payment_id):
+                return True, "Duplicate webhook delivery ignored"
 
             # Add tokens to user's account
             from subscription_manager import purchase_tokens

@@ -5587,17 +5587,14 @@ def get_next_patient_number_atomic(physio_id):
     # Use a separate counters collection to track patient numbers per physio
     counter_ref = db.collection('patient_counters').document(physio_id)
 
-    # Atomically increment the counter and get the new value
-    # This operation is thread-safe and prevents race conditions
-    counter_ref.set({'count': Increment(1)}, merge=True)
-
-    # Get the updated counter value
-    counter_doc = counter_ref.get()
-    if counter_doc.exists:
-        return counter_doc.to_dict()['count']
-    else:
-        # This should not happen, but handle it gracefully
-        return 1
+    # Atomic conditional increment (Cosmos DB conditional patch), not the
+    # old set({'count': Increment(1)}) which read the current value in
+    # Python and wrote current+1 back -- a read-then-write race where two
+    # concurrent patient creations could get the same "next" number.
+    if not counter_ref.get().exists:
+        counter_ref.set({'count': 0})
+    _, new_count = counter_ref.increment_if('count', 1)
+    return int(new_count) if new_count is not None else 1
 
 
 @app.route('/api/check_duplicate_patient', methods=['POST'])

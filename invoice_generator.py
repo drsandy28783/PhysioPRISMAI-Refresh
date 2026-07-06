@@ -49,26 +49,23 @@ def generate_invoice_number() -> str:
     Returns:
         str: Invoice number (e.g., INV-2025-0001)
     """
+    year = datetime.now().year
     try:
-        # Get current year
-        year = datetime.now().year
-
-        # Get latest invoice for this year
-        invoices_ref = db.collection('invoices')
-        latest_invoices = (invoices_ref
-                          .where('invoice_year', '==', year)
-                          .order_by('invoice_sequence', direction='DESCENDING')
-                          .limit(1)
-                          .get())
-
-        if latest_invoices:
-            latest_invoice = list(latest_invoices)[0].to_dict()
-            next_sequence = latest_invoice.get('invoice_sequence', 0) + 1
-        else:
-            next_sequence = 1
+        # Atomic conditional increment on a dedicated counter document, so
+        # two concurrent invoice generations can't both read the same
+        # "latest" sequence and produce duplicate invoice numbers.
+        counter_ref = db.collection('invoice_counters').document(str(year))
+        if not counter_ref.get().exists:
+            # increment_if() requires the document to already exist; create
+            # it once per year. A concurrent first-invoice-of-the-year
+            # request could in theory race this initialization, but that's
+            # a far narrower window than the previous read-then-write on
+            # every single invoice.
+            counter_ref.set({'sequence': 0})
+        _, next_sequence = counter_ref.increment_if('sequence', 1)
 
         # Format: INV-2025-0001
-        invoice_number = f"INV-{year}-{next_sequence:04d}"
+        invoice_number = f"INV-{year}-{int(next_sequence):04d}"
         return invoice_number
 
     except Exception as e:
