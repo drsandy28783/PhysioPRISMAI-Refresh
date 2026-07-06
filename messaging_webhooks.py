@@ -3,10 +3,14 @@ Twilio Webhook Handlers for Incoming Messages
 Handles STOP/START replies, message status updates, and two-way messaging
 """
 
+import os
 import logging
+from functools import wraps
 from flask import request, jsonify
 from typing import Dict, Optional
 from datetime import datetime
+
+from twilio.request_validator import RequestValidator
 
 from consent_manager import ConsentManager, ConsentType
 from message_templates import MessageTemplates
@@ -18,6 +22,30 @@ logger = logging.getLogger(__name__)
 # Initialize services
 twilio = get_twilio_provider()
 db = get_cosmos_db()
+
+
+def require_twilio_signature(f):
+    """
+    Verify the X-Twilio-Signature header before processing an inbound
+    webhook, so a forged request (e.g. From=<patient phone>, Body=STOP)
+    can't silently opt a real patient out or inject fake message history.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
+        if not auth_token:
+            logger.error("TWILIO_AUTH_TOKEN not set - rejecting webhook request")
+            return jsonify({'error': 'Server configuration error'}), 500
+
+        signature = request.headers.get('X-Twilio-Signature', '')
+        validator = RequestValidator(auth_token)
+
+        if not validator.validate(request.url, request.form.to_dict(), signature):
+            logger.warning(f"Rejected Twilio webhook with invalid signature from {request.remote_addr}")
+            return jsonify({'error': 'Invalid signature'}), 403
+
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 class TwilioWebhooks:
@@ -368,11 +396,13 @@ def register_messaging_webhooks(app):
     webhooks_bp = Blueprint('messaging_webhooks', __name__, url_prefix='/webhooks/twilio')
 
     @webhooks_bp.route('/incoming', methods=['POST'])
+    @require_twilio_signature
     def incoming_message():
         """Handle incoming SMS/WhatsApp message"""
         return TwilioWebhooks.handle_incoming_message()
 
     @webhooks_bp.route('/status', methods=['POST'])
+    @require_twilio_signature
     def status_callback():
         """Handle message delivery status update"""
         return TwilioWebhooks.handle_status_callback()
