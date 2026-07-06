@@ -752,18 +752,27 @@ def sanitize_clinical_text(text):
 
 
 def sanitize_subjective_data(inputs_dict):
-    """Sanitize subjective examination data to remove PHI."""
+    """Sanitize subjective examination data to remove PHI.
+
+    Recurses into nested dicts/lists -- a value that was itself a dict or
+    list (e.g. a sub-section of form data) previously passed through
+    untouched, since only top-level string values were sanitized, letting
+    unsanitized clinical text reach the Azure OpenAI prompt.
+    """
     if not inputs_dict:
         return {}
-    
-    sanitized = {}
-    for key, value in inputs_dict.items():
+
+    def sanitize_value(value):
         if isinstance(value, str):
-            sanitized[key] = sanitize_clinical_text(value)
+            return sanitize_clinical_text(value)
+        elif isinstance(value, dict):
+            return {k: sanitize_value(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [sanitize_value(item) for item in value]
         else:
-            sanitized[key] = value
-    
-    return sanitized
+            return value
+
+    return {key: sanitize_value(value) for key, value in inputs_dict.items()}
 
 
 # ============================================================================
@@ -1036,16 +1045,31 @@ def sanitize_sentry_event(event, hint):
         'ssn', 'social_security', 'credit_card', 'card_number',
     ]
 
+    def redact_sensitive_keys_recursive(obj):
+        """Redact values whose key matches a sensitive substring at any
+        nesting depth. A flat, top-level-only check misses PHI nested
+        inside a sub-object, e.g. data['patient'] = {'name': ..., 'diagnosis': ...} --
+        the key 'patient' alone doesn't match, so the nested dict passed
+        through untouched under the old top-level-only check."""
+        if isinstance(obj, dict):
+            result = {}
+            for key, value in obj.items():
+                if any(sensitive in str(key).lower() for sensitive in sensitive_keys):
+                    result[key] = '[REDACTED]'
+                else:
+                    result[key] = redact_sensitive_keys_recursive(value)
+            return result
+        elif isinstance(obj, list):
+            return [redact_sensitive_keys_recursive(item) for item in obj]
+        return obj
+
     # Sanitize request data
     if 'request' in event:
         # Sanitize request body data
         if 'data' in event['request']:
             data = event['request']['data']
             if isinstance(data, dict):
-                for key in list(data.keys()):
-                    # Check if key contains sensitive information
-                    if any(sensitive in key.lower() for sensitive in sensitive_keys):
-                        data[key] = '[REDACTED]'
+                event['request']['data'] = redact_sensitive_keys_recursive(data)
             elif isinstance(data, str):
                 # If data is a string (like JSON), redact the entire thing to be safe
                 event['request']['data'] = '[REDACTED - potentially contains PHI]'
@@ -1069,13 +1093,19 @@ def sanitize_sentry_event(event, hint):
     # Sanitize extra context
     if 'extra' in event:
         extra = event['extra']
-        # Remove any patient data from extra context
+        # Remove any patient data from extra context (top-level keys)
         keys_to_remove = []
         for key in extra.keys():
-            if any(sensitive in key.lower() for sensitive in ['patient', 'user', 'phi', 'personal']):
+            if any(sensitive in str(key).lower() for sensitive in ['patient', 'user', 'phi', 'personal']):
                 keys_to_remove.append(key)
         for key in keys_to_remove:
             del extra[key]
+
+        # A differently-named wrapper key could still carry PHI nested
+        # inside its value (e.g. extra['debug_info'] = {'patient_name': ...})
+        # -- the top-level check above only catches sensitive top-level keys.
+        for key in list(extra.keys()):
+            extra[key] = redact_sensitive_keys_recursive(extra[key])
 
     # Sanitize user context (keep only non-PHI identifiers)
     if 'user' in event:
