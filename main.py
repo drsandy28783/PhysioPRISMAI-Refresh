@@ -10209,7 +10209,7 @@ def export_patient_data():
         user_id = session.get('user_id')
 
         # Get all patients for this user
-        patients_ref = db.collection('patients').where('user_id', '==', user_id).stream()
+        patients_ref = db.collection('patients').where('physio_id', '==', user_id).stream()
 
         export_data = {
             'export_date': __import__('datetime').datetime.now().isoformat(),
@@ -12354,7 +12354,7 @@ def api_autocomplete_suggestions():
         phrases_with_frequency = {}
 
         # Query user's patients
-        patients_ref = db.collection('patients').where('user_id', '==', user_id)
+        patients_ref = db.collection('patients').where('physio_id', '==', user_id)
         patients = patients_ref.stream()
 
         for patient in patients:
