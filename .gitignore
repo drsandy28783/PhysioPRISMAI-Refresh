@@ -122,6 +122,9 @@ PWA_IMPLEMENTATION_COMPLETE.md
 AI_ENDPOINT_AUDIT.md
 FIX_SUMMARY.md
 
+# Security Audit Fix Documentation (2026-07-06 - local reference only)
+SECURITY_FIXES_CHANGELOG.md
+
 # Business Documents & Email Drafts
 PADDLE_REPLY_EMAIL.txt
 *_EMAIL.txt
