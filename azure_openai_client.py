@@ -6,9 +6,12 @@ Provides similar API for minimal code changes
 
 import os
 import json
+import logging
 from typing import Dict, List, Any, Optional
 from openai import AzureOpenAI
 from openai.types.chat import ChatCompletion
+
+logger = logging.getLogger("app.azure_openai_client")
 
 
 class AzureOpenAIClient:
@@ -193,10 +196,10 @@ class AzureOpenAIClient:
         try:
             return json.loads(response_text)
         except json.JSONDecodeError as e:
-            print(f"Failed to parse JSON response: {e}")
-            print(f"Response text: {response_text}")
-            # Return error structure
-            return {"error": "Failed to parse AI response", "raw_response": response_text}
+            # Never log response_text: it's derived from real patient
+            # clinical history and must not reach stdout/application logs.
+            logger.error(f"Failed to parse JSON response from AI: {e}")
+            return {"error": "Failed to parse AI response"}
 
 
 # Clinical System Prompts for PhysiologicPRISM

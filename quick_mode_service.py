@@ -96,7 +96,7 @@ def generate_patho_prefills(patient: Dict[str, Any]) -> Dict[str, Any]:
         )
 
         if not raw or "error" in raw:
-            logger.error(f"Quick Mode patho prefill: AI returned error — {raw}")
+            logger.error(f"Quick Mode patho prefill: AI returned error — {raw.get('error')}")
             return {}
 
         prefills = _validate_patho_prefills(raw)
@@ -190,7 +190,7 @@ def generate_subjective_questions(
         )
 
         if not raw or "error" in raw:
-            logger.error(f"Quick Mode subjective questions: AI returned error — {raw}")
+            logger.error(f"Quick Mode subjective questions: AI returned error — {raw.get('error')}")
             return {}
 
         questions = _validate_subjective_questions(raw)
@@ -261,7 +261,7 @@ def generate_initial_plan_prefills(
         )
 
         if not raw or "error" in raw:
-            logger.error(f"Quick Mode initial plan prefill: AI returned error — {raw}")
+            logger.error(f"Quick Mode initial plan prefill: AI returned error — {raw.get('error')}")
             return {}
 
         prefills = _validate_initial_plan_prefills(raw)
@@ -337,7 +337,7 @@ def generate_risk_flags_prefills(
         logger.info(f"Quick Mode risk flags: maintenance_causes (raw) = {raw.get('maintenance_causes') if raw else 'N/A'}")
 
         if not raw or "error" in raw:
-            logger.error(f"Quick Mode risk flags prefill: AI returned error — {raw}")
+            logger.error(f"Quick Mode risk flags prefill: AI returned error — {raw.get('error')}")
             return {}
 
         prefills = _validate_risk_flags_prefills(raw)
@@ -430,7 +430,7 @@ def generate_obj_assessment_prefills(
         )
 
         if not raw or "error" in raw:
-            logger.error(f"Quick Mode obj assessment: AI returned error — {raw}")
+            logger.error(f"Quick Mode obj assessment: AI returned error — {raw.get('error')}")
             return {}
 
         prefills = _validate_obj_assessment_prefills(raw)
@@ -505,7 +505,7 @@ def generate_prov_diag_prefills(
         )
 
         if not raw or "error" in raw:
-            logger.error(f"Quick Mode prov diag: AI returned error — {raw}")
+            logger.error(f"Quick Mode prov diag: AI returned error — {raw.get('error')}")
             return {}
 
         prefills = _validate_prov_diag_prefills(raw)
@@ -579,7 +579,7 @@ def generate_smart_goals_prefills(
         )
 
         if not raw or "error" in raw:
-            logger.error(f"Quick Mode SMART goals: AI returned error — {raw}")
+            logger.error(f"Quick Mode SMART goals: AI returned error — {raw.get('error')}")
             return {}
 
         prefills = _validate_smart_goals_prefills(raw)
@@ -653,7 +653,7 @@ def generate_treatment_plan_prefills(
         )
 
         if not raw or "error" in raw:
-            logger.error(f"Quick Mode Treatment Plan: AI returned error — {raw}")
+            logger.error(f"Quick Mode Treatment Plan: AI returned error — {raw.get('error')}")
             return {}
 
         prefills = _validate_treatment_plan_prefills(raw)
