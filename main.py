@@ -5091,10 +5091,18 @@ def api_delete_saved_search(search_id):
 def register_institute():
     if request.method == 'POST':
         name = request.form['name']
-        email = request.form['email']
+        email = request.form['email'].strip().lower()
         phone = request.form['phone']
-        pwd = generate_password_hash(request.form['password'])
+        raw_password = request.form['password']
         inst = request.form['institute']
+
+        # Security: this legacy form previously accepted passwords of any
+        # length, including empty, unlike the mobile registration path.
+        if len(raw_password) < 8:
+            flash("Password must be at least 8 characters.", "error")
+            return render_template('register_institute.html')
+
+        pwd = generate_password_hash(raw_password)
         db.collection('users').document(email).set({
             'name': name,
             'email': email,
@@ -5106,6 +5114,7 @@ def register_institute():
             'active': 1,
             'created_at': SERVER_TIMESTAMP,
             'user_type': 'institute_admin',  # Track registration type
+            'email_verified': False,  # Security: was previously never set, leaving accounts permanently stuck
             # GDPR Consent fields
             'consent_data_processing': 1,
             'consent_terms': 1,
@@ -5116,6 +5125,18 @@ def register_institute():
             'tos_version': TOS_VERSION,
         })
         log_action(None, 'Register', f"{name} registered as Institute Admin - pending super admin approval")
+
+        # Create and send email verification token (was previously skipped,
+        # leaving the account unable to ever pass the login_institute
+        # email_verified check)
+        try:
+            from email_verification import create_verification_token
+            token = create_verification_token(email)
+            app_url = request.host_url.rstrip('/')
+            send_email_verification({'name': name, 'email': email}, token, app_url)
+            logger.info(f"Verification email sent to {email}")
+        except Exception as verify_error:
+            logger.error(f"Failed to send verification email to {email}: {verify_error}")
 
         # Send notification to super admin
         try:
@@ -5228,13 +5249,21 @@ def login_institute():
 def register_with_institute():
     if request.method == 'POST':
         name = request.form['name']
-        email = request.form['email']
+        email = request.form['email'].strip().lower()
         phone = request.form['phone']
-        password = generate_password_hash(request.form['password'])
+        raw_password = request.form['password']
         institute = request.form['institute']
         is_admin = 0
         approved = 0
         active = 1
+
+        # Security: this legacy form previously accepted passwords of any
+        # length, including empty, unlike the mobile registration path.
+        if len(raw_password) < 8:
+            flash("Password must be at least 8 characters.", "error")
+            return redirect('/register_with_institute')
+
+        password = generate_password_hash(raw_password)
 
         # Check if user already exists
         existing_email = db.collection('users').where('email', '==', email).stream()
@@ -5242,6 +5271,25 @@ def register_with_institute():
 
         if any(existing_email) or any(existing_phone):
             return "Email or phone number already registered."
+
+        # Find the institute's admin to check the subscription's max_users
+        # limit -- this legacy form previously skipped that check entirely,
+        # letting an institute add unlimited staff past their plan's cap.
+        admin_email = None
+        admins = db.collection('users').where('institute', '==', institute).where('is_admin', '==', 1).limit(1).stream()
+        for admin_doc in admins:
+            admin_email = admin_doc.id
+            break
+
+        if admin_email:
+            try:
+                from subscription_manager import check_user_limit
+                can_add_more, limit_message, _, _ = check_user_limit(admin_email)
+                if not can_add_more:
+                    flash(limit_message or "This institute has reached its user limit. Contact your admin to upgrade the plan.", "error")
+                    return redirect('/register_with_institute')
+            except Exception as limit_error:
+                logger.warning(f"Could not check user limit for institute {institute}: {limit_error}")
 
         # Register new user under selected institute (use email as document ID)
         db.collection('users').document(email).set({
@@ -5255,6 +5303,7 @@ def register_with_institute():
             'active': active,
             'user_type': 'institute_staff',  # Track registration type
             'created_at': SERVER_TIMESTAMP,
+            'email_verified': False,  # Security: was previously never set, leaving accounts permanently stuck
             # GDPR Consent fields
             'consent_data_processing': 1,
             'consent_terms': 1,
@@ -5264,6 +5313,18 @@ def register_with_institute():
             'tos_accepted_at': SERVER_TIMESTAMP,
             'tos_version': TOS_VERSION,
         })
+
+        # Create and send email verification token (was previously skipped,
+        # leaving the account unable to ever pass the login_institute
+        # email_verified check)
+        try:
+            from email_verification import create_verification_token
+            token = create_verification_token(email)
+            app_url = request.host_url.rstrip('/')
+            send_email_verification({'name': name, 'email': email}, token, app_url)
+            logger.info(f"Verification email sent to {email}")
+        except Exception as verify_error:
+            logger.error(f"Failed to send verification email to {email}: {verify_error}")
 
         log_action(user_id=None, action="Register", details=f"{name} registered as Institute Staff (pending approval)")
 
@@ -5284,12 +5345,6 @@ def register_with_institute():
 
         # Also notify institute admin (they can approve)
         try:
-            admins = db.collection('users').where('institute', '==', institute).where('is_admin', '==', 1).limit(1).stream()
-            admin_email = None
-            for admin_doc in admins:
-                admin_email = admin_doc.id  # Document ID is the email
-                break
-
             if admin_email:
                 send_institute_staff_registration_notification({
                     'name': name,
