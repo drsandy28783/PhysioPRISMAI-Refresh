@@ -7,6 +7,7 @@ import secrets
 import string
 import sys
 import html
+import hmac
 import markdown as md_lib
 from typing import Optional, Dict, Any, List, Tuple
 from dotenv import load_dotenv
@@ -4455,8 +4456,9 @@ def cron_check_subscription_reminders():
     Returns:
         JSON summary of notifications sent
     """
-    # Verify this is from Cloud Scheduler or has valid secret
-    scheduler_header = request.headers.get('X-CloudScheduler-JobName')
+    # Verify this request carries the actual cron secret. The
+    # X-CloudScheduler-JobName header is attacker-controlled (any client can
+    # set it) and must never be treated as authentication by itself.
     auth_header = request.headers.get('Authorization')
 
     # SECURITY: Enforce CRON_SECRET in production (no default fallback)
@@ -4465,7 +4467,7 @@ def cron_check_subscription_reminders():
         logger.error("CRON_SECRET environment variable not set - cron jobs disabled")
         return jsonify({'error': 'Server configuration error'}), 500
 
-    if not scheduler_header and auth_header != f'Bearer {cron_secret}':
+    if not auth_header or not hmac.compare_digest(auth_header, f'Bearer {cron_secret}'):
         logger.warning("Unauthorized cron access attempt")
         return jsonify({'error': 'Unauthorized'}), 401
 
@@ -4496,8 +4498,9 @@ def cron_cleanup_old_notifications():
     Returns:
         JSON summary of deleted notifications
     """
-    # Verify this is from Cloud Scheduler or has valid secret
-    scheduler_header = request.headers.get('X-CloudScheduler-JobName')
+    # Verify this request carries the actual cron secret. The
+    # X-CloudScheduler-JobName header is attacker-controlled (any client can
+    # set it) and must never be treated as authentication by itself.
     auth_header = request.headers.get('Authorization')
 
     # SECURITY: Enforce CRON_SECRET in production (no default fallback)
@@ -4506,7 +4509,7 @@ def cron_cleanup_old_notifications():
         logger.error("CRON_SECRET environment variable not set - cron jobs disabled")
         return jsonify({'error': 'Server configuration error'}), 500
 
-    if not scheduler_header and auth_header != f'Bearer {cron_secret}':
+    if not auth_header or not hmac.compare_digest(auth_header, f'Bearer {cron_secret}'):
         logger.warning("Unauthorized cron access attempt")
         return jsonify({'error': 'Unauthorized'}), 401
 
