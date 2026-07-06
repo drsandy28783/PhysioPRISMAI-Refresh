@@ -1540,6 +1540,13 @@ def super_admin_required():
         return decorated_function
     return wrapper
 
+def patient_access_allowed(patient):
+    """Whether the current session may access this patient record: owner,
+    or an admin of the same institute the patient belongs to."""
+    if patient.get('physio_id') == session.get('user_id'):
+        return True
+    return session.get('is_admin') == 1 and patient.get('institute') == session.get('institute')
+
 @app.route('/')
 def index():
     """Main homepage at root URL"""
@@ -5702,7 +5709,7 @@ def update_patient_status(patient_id):
         patient = patient_doc.to_dict()
 
         # Check access
-        if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        if not patient_access_allowed(patient):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
 
         # Get status data and validate
@@ -5755,7 +5762,7 @@ def update_patient_tags(patient_id):
         patient = patient_doc.to_dict()
 
         # Check access
-        if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        if not patient_access_allowed(patient):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
 
         # Get tags from request
@@ -5834,8 +5841,7 @@ def subjective(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
     if request.method == 'POST':
         # Validate subjective examination data
@@ -5892,7 +5898,7 @@ def perspectives(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
 
     if request.method == 'POST':
@@ -5955,7 +5961,7 @@ def initial_plan(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
     if request.method == 'POST':
         sections = ['active_movements','passive_movements','passive_over_pressure',
@@ -6000,8 +6006,7 @@ def patho_mechanism(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
     if request.method == 'POST':
         keys = [
@@ -6040,7 +6045,7 @@ def qm_patho_mechanism(patient_id):
         return "Patient not found.", 404
     patient = doc.to_dict()
 
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied.", 403
 
     if request.method == 'POST':
@@ -6080,7 +6085,7 @@ def qm_subjective(patient_id):
         return "Patient not found.", 404
     patient = doc.to_dict()
 
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied.", 403
 
     if request.method == 'POST':
@@ -6139,7 +6144,7 @@ def qm_initial_plan(patient_id):
         return "Patient not found.", 404
     patient = doc.to_dict()
 
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied.", 403
 
     if request.method == 'POST':
@@ -6204,7 +6209,7 @@ def qm_risk_factors_clinical_flags(patient_id):
     if not doc.exists:
         return "Patient not found.", 404
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied.", 403
 
     if request.method == 'POST':
@@ -6275,7 +6280,7 @@ def qm_objective_assessment(patient_id):
     if not doc.exists:
         return "Patient not found.", 404
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied.", 403
 
     if request.method == 'POST':
@@ -6351,7 +6356,7 @@ def qm_provisional_diagnosis(patient_id):
     if not doc.exists:
         return "Patient not found.", 404
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied.", 403
 
     if request.method == 'POST':
@@ -6407,7 +6412,7 @@ def qm_smart_goals(patient_id):
     if not doc.exists:
         return "Patient not found.", 404
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied.", 403
 
     if request.method == 'POST':
@@ -6457,7 +6462,7 @@ def qm_treatment_plan(patient_id):
     if not doc.exists:
         return "Patient not found.", 404
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied.", 403
 
     if request.method == 'POST':
@@ -6525,7 +6530,7 @@ def clinical_flags(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
 
     if request.method == 'POST':
@@ -6558,7 +6563,7 @@ def risk_factors_clinical_flags(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
 
     if request.method == 'POST':
@@ -6613,7 +6618,7 @@ def objective_assessment(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
 
     if request.method == 'POST':
@@ -6657,8 +6662,7 @@ def provisional_diagnosis(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
     if request.method == 'POST':
         # Validate provisional diagnosis data
@@ -6719,8 +6723,7 @@ def smart_goals(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
     if request.method == 'POST':
         # Validate smart goals data
@@ -6776,8 +6779,7 @@ def treatment_plan(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
     if request.method == 'POST':
         try:
@@ -6843,7 +6845,7 @@ def follow_ups(patient_id):
     if not patient_doc.exists:
         return "Patient not found", 404
     patient = patient_doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied", 403
 
     # 2) handle new entry
@@ -6931,7 +6933,7 @@ def view_follow_ups(patient_id):
     patient = doc.to_dict()
 
     # Access control
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
 
     docs = (db.collection('follow_ups')
@@ -6953,7 +6955,7 @@ def edit_patient(patient_id):
 
     patient = doc.to_dict()
 
-    if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied", 403
 
     if request.method == 'POST':
@@ -6995,8 +6997,7 @@ def patient_report(patient_id):
     if not doc.exists:
         return "Patient not found."
     patient = doc.to_dict()
-    if session.get('is_admin') == 0 and patient.get(
-            'physio_id') != session.get('user_id'):
+    if not patient_access_allowed(patient):
         return "Access denied."
 
     log_action(session.get('user_id'), 'Patient Report Viewed', f"Viewed report for patient {patient_id}")
@@ -7152,7 +7153,7 @@ def download_report(patient_id):
             return redirect(url_for('view_patients'))
 
         patient = doc.to_dict()
-        if session.get('is_admin') == 0 and patient.get('physio_id') != session.get('user_id'):
+        if not patient_access_allowed(patient):
             flash("Access denied", "error")
             logger.warning(f"PDF download: Unauthorized access attempt for patient {patient_id} by {session.get('user_id')}")
             return redirect(url_for('view_patients'))
@@ -11488,7 +11489,7 @@ def set_next_followup(patient_id):
         user_id = session.get('user_id')
 
         # Access control
-        if session.get('is_admin') == 0 and patient.get('physio_id') != user_id:
+        if not patient_access_allowed(patient):
             return jsonify({'ok': False, 'error': 'Access denied'}), 403
 
         # Update patient record with next follow-up date
@@ -11572,7 +11573,7 @@ def mark_followup_notified(patient_id):
         user_id = session.get('user_id')
 
         # Access control
-        if session.get('is_admin') == 0 and patient.get('physio_id') != user_id:
+        if not patient_access_allowed(patient):
             return jsonify({'ok': False, 'error': 'Access denied'}), 403
 
         # Update patient record
@@ -11779,7 +11780,7 @@ def save_draft():
             patient = patient_doc.to_dict()
 
             # Access control
-            if session.get('is_admin') == 0 and patient.get('physio_id') != user_id:
+            if not patient_access_allowed(patient):
                 return jsonify({'ok': False, 'error': 'Access denied'}), 403
 
         # Create unique draft ID: user_id + patient_id + form_type
@@ -11830,7 +11831,7 @@ def get_draft(patient_id, form_type):
             patient = patient_doc.to_dict()
 
             # Access control
-            if session.get('is_admin') == 0 and patient.get('physio_id') != user_id:
+            if not patient_access_allowed(patient):
                 return jsonify({'ok': False, 'error': 'Access denied'}), 403
 
         # Get draft
@@ -11941,7 +11942,7 @@ def get_patient_basic_data(patient_id):
         patient = patient_doc.to_dict()
 
         # Access control
-        if session.get('is_admin') == 0 and patient.get('physio_id') != user_id:
+        if not patient_access_allowed(patient):
             return jsonify({'ok': False, 'error': 'Access denied'}), 403
 
         # Return basic data needed for AI context
@@ -11986,7 +11987,7 @@ def get_patient_context(patient_id):
         patient = patient_doc.to_dict()
 
         # Access control
-        if session.get('is_admin') == 0 and patient.get('physio_id') != user_id:
+        if not patient_access_allowed(patient):
             return jsonify({'ok': False, 'error': 'Access denied'}), 403
 
         # Build context object
