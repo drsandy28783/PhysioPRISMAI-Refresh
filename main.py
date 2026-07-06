@@ -7287,10 +7287,13 @@ def manage_users():
     return render_template('manage_users.html', users=users)
 
 
-@app.route('/deactivate_user/<user_email>')
+@app.route('/deactivate_user/<user_email>', methods=['POST'])
 @login_required()
 def deactivate_user(user_email):
     if session.get('is_admin') != 1:
+        return "Access Denied"
+    target_doc = db.collection('users').document(user_email).get()
+    if not target_doc.exists or target_doc.to_dict().get('institute') != session.get('institute'):
         return "Access Denied"
     db.collection('users').document(user_email).update({'active': 0})
     log_action(session.get('user_id'), 'Deactivate User',
@@ -7298,10 +7301,13 @@ def deactivate_user(user_email):
     return redirect('/manage_users')
 
 
-@app.route('/reactivate_user/<user_email>')
+@app.route('/reactivate_user/<user_email>', methods=['POST'])
 @login_required()
 def reactivate_user(user_email):
     if session.get('is_admin') != 1:
+        return "Access Denied"
+    target_doc = db.collection('users').document(user_email).get()
+    if not target_doc.exists or target_doc.to_dict().get('institute') != session.get('institute'):
         return "Access Denied"
     db.collection('users').document(user_email).update({'active': 1})
     log_action(session.get('user_id'), 'Reactivate User',
