@@ -1612,6 +1612,24 @@ def api_delete_patient(patient_id):
             follow_up_count += 1
         deletion_summary['follow_ups_deleted'] = follow_up_count
 
+        # 1b. Delete all clinical assessment documents for this patient.
+        # These accumulate as separate append-only documents per section
+        # (see CLAUDE.md) and were previously never touched by this
+        # "GDPR-compliant" deletion, leaving full assessment history behind.
+        assessment_collections = [
+            'subjective_examination', 'patient_perspectives', 'initial_plan',
+            'patho_mechanism', 'chronic_diseases', 'clinical_flags',
+            'objective_assessments', 'provisional_diagnosis', 'smart_goals',
+            'treatment_plan',
+        ]
+        assessment_count = 0
+        for collection_name in assessment_collections:
+            docs = db.collection(collection_name).where('patient_id', '==', patient_id).stream()
+            for doc in docs:
+                doc.reference.delete()
+                assessment_count += 1
+        deletion_summary['assessment_documents_deleted'] = assessment_count
+
         # 2. Delete all form drafts for this patient
         # Form draft IDs follow pattern: {form_type}_{patient_id}
         draft_patterns = [
@@ -1641,7 +1659,7 @@ def api_delete_patient(patient_id):
         # 3. Delete AI cache entries for this patient
         try:
             from ai_cache import AICache
-            cache = AICache()
+            cache = AICache(db)
             cache.delete_patient_cache(patient_id)
             deletion_summary['ai_cache_cleared'] = True
         except Exception as cache_error:

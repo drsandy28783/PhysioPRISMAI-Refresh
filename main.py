@@ -9654,6 +9654,7 @@ def super_admin_process_deletion(user_email):
         deletion_stats = {
             'patients': 0,
             'follow_ups': 0,
+            'assessment_documents': 0,
             'form_drafts': 0,
             'saved_searches': 0,
             'ai_cache_entries': 0,
@@ -9671,6 +9672,22 @@ def super_admin_process_deletion(user_email):
             for follow_up in follow_ups:
                 follow_up.reference.delete()
                 deletion_stats['follow_ups'] += 1
+
+            # Delete all clinical assessment documents for this patient.
+            # These accumulate as separate append-only documents per section
+            # (see CLAUDE.md) and were previously never touched here, leaving
+            # full assessment history behind after a "complete" GDPR deletion.
+            assessment_collections = [
+                'subjective_examination', 'patient_perspectives', 'initial_plan',
+                'patho_mechanism', 'chronic_diseases', 'clinical_flags',
+                'objective_assessments', 'provisional_diagnosis', 'smart_goals',
+                'treatment_plan',
+            ]
+            for collection_name in assessment_collections:
+                docs = db.collection(collection_name).where('patient_id', '==', patient_id).stream()
+                for doc in docs:
+                    doc.reference.delete()
+                    deletion_stats['assessment_documents'] += 1
 
             # Delete all form drafts for this patient
             draft_patterns = [
@@ -9692,7 +9709,7 @@ def super_admin_process_deletion(user_email):
             # Delete AI cache for this patient
             try:
                 from ai_cache import AICache
-                cache = AICache()
+                cache = AICache(db)
                 cache.delete_patient_cache(patient_id)
                 deletion_stats['ai_cache_entries'] += 1
             except:

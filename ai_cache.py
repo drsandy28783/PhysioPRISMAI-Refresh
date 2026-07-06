@@ -211,6 +211,11 @@ class AICache:
             from datetime import timezone
             expires_at = datetime.now(timezone.utc) + timedelta(days=self.cache_ttl_days)
 
+            # Cache keys are content hashes and never contain the patient_id,
+            # so store it as its own field -- otherwise a patient's cache/
+            # training entries can never be found again for GDPR erasure.
+            patient_id = (metadata or {}).get('patient_id')
+
             # Prepare cache document
             cache_doc = {
                 'cache_key': cache_key,
@@ -224,6 +229,7 @@ class AICache:
                 'cost_saved': cost_per_call,  # Estimated cost saved per hit
                 'total_savings': 0.0,  # Total savings from all hits
                 'user_id': user_id,  # For GDPR "Right to be Forgotten" compliance
+                'patient_id': patient_id,  # For GDPR "Right to Erasure" compliance
                 'metadata': metadata or {},
                 'version': 1,  # For future cache versioning
             }
@@ -232,7 +238,7 @@ class AICache:
             self.db.collection(self.cache_collection).document(cache_key).set(cache_doc)
 
             # Also save to training data collection (for future LLM training)
-            self._save_to_training_data(prompt, response, model, metadata)
+            self._save_to_training_data(prompt, response, model, metadata, patient_id=patient_id)
 
             logger.info(f"Cached response: {cache_key[:16]}... (cost/reuse: ${cost_per_call:.4f})")
             return True
@@ -248,7 +254,8 @@ class AICache:
         response: str,
         model: str,
         metadata: Optional[Dict[str, Any]] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        patient_id: Optional[str] = None
     ):
         """
         Save prompt-response pair to training data collection.
@@ -261,6 +268,7 @@ class AICache:
             model: Model name
             metadata: Additional context
             user_id: User ID for GDPR compliance (Right to be Forgotten)
+            patient_id: Patient ID for GDPR compliance (Right to Erasure)
         """
         try:
             training_doc = {
@@ -269,6 +277,7 @@ class AICache:
                 'model': model,
                 'metadata': metadata or {},
                 'user_id': user_id,  # GDPR-COMPLIANT: Track user for data deletion
+                'patient_id': patient_id,  # GDPR-COMPLIANT: Track patient for data deletion
                 'created_at': SERVER_TIMESTAMP,
                 'quality_score': None,  # Future: manual quality rating
                 'reviewed': False,  # Future: human review flag
@@ -645,53 +654,47 @@ class AICache:
                 logger.warning("delete_patient_cache called with empty patient_id")
                 return 0
 
-            # Query all cache entries related to this patient
-            # Cache keys contain patient_id in various formats, so we search the metadata
+            # Query cache entries by the patient_id field stored on each
+            # document. Cache keys themselves are pure content hashes and
+            # never contain the patient_id, so matching against cache_key
+            # (as this used to) silently deleted nothing.
             deleted_count = 0
             batch = self.db.batch()
             batch_count = 0
 
-            # Search through cache entries
-            # Note: Firestore doesn't support wildcards, so we need to check each entry
-            all_cache_docs = self.db.collection(self.cache_collection).stream()
+            matching_cache_docs = self.db.collection(self.cache_collection) \
+                .where('patient_id', '==', patient_id).stream()
 
-            for doc in all_cache_docs:
-                doc_data = doc.to_dict()
-                cache_key = doc_data.get('cache_key', '')
+            for doc in matching_cache_docs:
+                batch.delete(doc.reference)
+                batch_count += 1
+                deleted_count += 1
 
-                # Check if this cache entry is related to the patient
-                # Cache keys follow pattern: {user_id}_{patient_id}_{prompt_hash}
-                if patient_id in cache_key:
-                    batch.delete(doc.reference)
-                    batch_count += 1
-                    deleted_count += 1
-
-                    # Commit batch every 500 operations (Firestore limit)
-                    if batch_count >= 500:
-                        batch.commit()
-                        batch = self.db.batch()
-                        batch_count = 0
+                # Commit batch every 500 operations (Firestore limit)
+                if batch_count >= 500:
+                    batch.commit()
+                    batch = self.db.batch()
+                    batch_count = 0
 
             # Commit remaining deletions
             if batch_count > 0:
                 batch.commit()
 
             # Also delete training data entries for this patient
-            training_docs = self.db.collection(self.training_data_collection).stream()
+            training_docs = self.db.collection(self.training_data_collection) \
+                .where('patient_id', '==', patient_id).stream()
             batch = self.db.batch()
             batch_count = 0
 
             for doc in training_docs:
-                doc_data = doc.to_dict()
-                if doc_data.get('patient_id') == patient_id:
-                    batch.delete(doc.reference)
-                    batch_count += 1
-                    deleted_count += 1
+                batch.delete(doc.reference)
+                batch_count += 1
+                deleted_count += 1
 
-                    if batch_count >= 500:
-                        batch.commit()
-                        batch = self.db.batch()
-                        batch_count = 0
+                if batch_count >= 500:
+                    batch.commit()
+                    batch = self.db.batch()
+                    batch_count = 0
 
             if batch_count > 0:
                 batch.commit()
