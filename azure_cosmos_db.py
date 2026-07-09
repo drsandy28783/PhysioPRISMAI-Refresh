@@ -225,6 +225,38 @@ class CosmosDBDocumentReference:
         """Update document fields"""
         self.set(data, merge=True)
 
+    def _find_actual_partition_key(self) -> Optional[Any]:
+        """
+        Point operations (patch_item/delete_item) 404 if the supplied
+        partition key doesn't match the document's real physical partition,
+        even when the document exists -- the same class of mismatch get()
+        already works around with a cross-partition query. Locates the
+        document that way and returns the value at the container's actual
+        partition key path, so the caller can retry the point operation
+        with the correct key. Returns None if the document truly isn't
+        there.
+        """
+        try:
+            pk_path = self.container.read()['partitionKey']['paths'][0].strip('/')
+            query = "SELECT * FROM c WHERE c.id = @id"
+            parameters = [{"name": "@id", "value": self.id}]
+            items = list(self.container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True
+            ))
+            if not items:
+                return None
+            value = items[0]
+            for part in pk_path.split('/'):
+                if not isinstance(value, dict) or part not in value:
+                    return None
+                value = value[part]
+            return value
+        except Exception as e:
+            logger.error(f"Error locating actual partition key for document {self.id}: {e}", exc_info=True)
+            return None
+
     def increment_if(
         self,
         field: str,
@@ -274,6 +306,25 @@ class CosmosDBDocumentReference:
             if e.status_code == 412:
                 # Filter predicate not met -- the limit would have been exceeded
                 return False, None
+            if e.status_code == 404:
+                # self.id isn't this document's real partition key -- find
+                # the actual one and retry once before giving up.
+                actual_pk = self._find_actual_partition_key()
+                if actual_pk is None:
+                    return False, None
+                try:
+                    updated_item = self.container.patch_item(
+                        item=self.id,
+                        partition_key=actual_pk,
+                        patch_operations=patch_operations,
+                        filter_predicate=filter_predicate,
+                    )
+                    return True, updated_item.get(field)
+                except exceptions.CosmosHttpResponseError as retry_e:
+                    if retry_e.status_code == 412:
+                        return False, None
+                    logger.error(f"Error incrementing {field} on document {self.id} after partition-key fallback: {retry_e}", exc_info=True)
+                    raise
             logger.error(f"Error incrementing {field} on document {self.id}: {e}", exc_info=True)
             raise
 
@@ -285,7 +336,17 @@ class CosmosDBDocumentReference:
                 partition_key=self.id
             )
         except exceptions.CosmosResourceNotFoundError:
-            pass  # Document doesn't exist, ignore
+            # self.id may not be this document's real partition key (see
+            # get()'s identical fallback) -- confirm it's actually missing
+            # before treating the delete as a no-op, otherwise a
+            # partition-key mismatch silently leaves the document behind.
+            actual_pk = self._find_actual_partition_key()
+            if actual_pk is None:
+                return
+            try:
+                self.container.delete_item(item=self.id, partition_key=actual_pk)
+            except exceptions.CosmosResourceNotFoundError:
+                pass
         except Exception as e:
             logger.error(f"Error deleting document {self.id}: {e}", exc_info=True)
             raise
