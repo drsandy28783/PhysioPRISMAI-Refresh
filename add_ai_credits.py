@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dotenv import load_dotenv
 load_dotenv()
 
-from azure_cosmos_db import get_cosmos_db
+from azure_cosmos_db import get_cosmos_db, SERVER_TIMESTAMP
 db = get_cosmos_db()
 
 if len(sys.argv) < 2:
@@ -35,29 +35,26 @@ def main():
         sys.exit(1)
 
     current = sub_doc.to_dict()
-    current_limit = current.get('ai_calls_limit', 0)
-    current_used = current.get('ai_calls_this_month', 0)
+    current_balance = current.get('ai_tokens_balance', 0)
+    current_purchased = current.get('ai_tokens_purchased_total', 0)
 
-    print(f"  Current plan:           {current.get('plan_type')}")
-    print(f"  Current ai_calls_limit: {current_limit}")
-    print(f"  Current ai_calls_used:  {current_used}")
+    print(f"  Current plan:            {current.get('plan_type')}")
+    print(f"  Current ai_tokens_balance: {current_balance}")
 
-    if current_limit == -1:
-        print(f"\n  Account already has unlimited AI calls — no change needed.")
-        return
-
-    # Free-trial accounts have a repair loop in get_user_subscription() that resets
-    # ai_calls_limit back to FREE_TRIAL_AI_CALLS on every request. Setting -1 (unlimited)
-    # is the only value the repair loop skips, so we use that for test accounts.
+    # ai_tokens_balance is the same field real AI-call-pack purchases add to
+    # (see purchase_ai_calls() in subscription_manager.py) -- the quota check
+    # treats a positive balance as usable regardless of ai_calls_limit, so
+    # this tops up usage without touching the account's plan-tier limits
+    # (which get_user_subscription() now keeps in sync with plan_type on
+    # every request and would otherwise revert a direct ai_calls_limit edit).
     sub_ref.update({
-        'ai_calls_limit': -1,
-        'ai_calls_this_month': 0,
+        'ai_tokens_balance': current_balance + CREDITS_TO_ADD,
+        'ai_tokens_purchased_total': current_purchased + CREDITS_TO_ADD,
+        'updated_at': SERVER_TIMESTAMP,
     })
 
     print(f"\nUpdated successfully:")
-    print(f"  ai_calls_limit:     {current_limit} -> -1 (unlimited)")
-    print(f"  ai_calls_this_month: {current_used} -> 0 (reset)")
-    print(f"  Note: set to unlimited so the free-trial repair loop doesn't overwrite it")
+    print(f"  ai_tokens_balance: {current_balance} -> {current_balance + CREDITS_TO_ADD}")
 
 
 if __name__ == '__main__':

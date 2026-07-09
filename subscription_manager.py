@@ -35,11 +35,6 @@ FREE_TRIAL_PATIENTS = int(os.environ.get('FREE_TRIAL_PATIENTS', '5'))
 FREE_TRIAL_AI_CALLS = int(os.environ.get('FREE_TRIAL_AI_CALLS', '25'))
 FREE_TRIAL_VOICE_MINUTES = int(os.environ.get('FREE_TRIAL_VOICE_MINUTES', '30'))  # 30 minutes of voice typing
 
-# Email of the account that bypasses the free-trial quota-correction fix
-# below, regardless of its ai_calls_limit field. Configurable rather than
-# hardcoded so this isn't tied to one specific account in source.
-SUPER_ADMIN_BYPASS_EMAIL = os.environ.get('SUPER_ADMIN_BYPASS_EMAIL', 'drsandeep@physiologicprism.com')
-
 # Plan definitions with limits (Revised February 2026 - Volume Discount Strategy)
 # Volume discounts: 5% for 5 users, 10% for 10 users, 15% for 15+ users
 # All plans: $50/user base rate (~₹4,200) with 250 AI calls per user
@@ -238,6 +233,20 @@ TOKEN_PACKAGES = AI_CALL_PACKS  # Alias to new packs
 # SUBSCRIPTION MANAGEMENT
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _is_super_admin_user(user_id: str) -> bool:
+    """
+    Whether this account is a real super admin, per the same is_super_admin
+    flag on the users collection that main.py/mobile_api.py use for every
+    other admin check -- not a hardcoded email or an inferred quota value.
+    """
+    try:
+        user_doc = db.collection('users').document(user_id).get()
+        return user_doc.exists and user_doc.to_dict().get('is_super_admin') == 1
+    except Exception as e:
+        logger.error(f"Error checking super admin status for {user_id}: {e}")
+        return False
+
+
 def get_user_subscription(user_id: str) -> Dict:
     """
     Get user's subscription details from Cosmos DB.
@@ -257,41 +266,37 @@ def get_user_subscription(user_id: str) -> Dict:
             subscription = sub_doc.to_dict()
             subscription['user_id'] = user_id
 
-            # DATA INTEGRITY FIX: Validate and correct free trial limits
-            # Some subscriptions may have incorrect limits (e.g., 250 instead of 25 AI calls)
-            # Skip super admin accounts (they have unlimited quotas intentionally)
-            is_super_admin = (user_id == SUPER_ADMIN_BYPASS_EMAIL or
-                            subscription.get('ai_calls_limit') == -1)
+            # DATA INTEGRITY FIX: keep patients_limit/ai_calls_limit/
+            # voice_minutes_limit in sync with the account's actual tier.
+            # A real super admin (users.is_super_admin == 1) is always on
+            # the 'super_admin' tier for quota purposes -- which already
+            # has all three limits set to -1 in PLANS -- regardless of what
+            # plan_type happens to be stored on the subscription doc; we
+            # don't touch plan_type itself since it also drives the
+            # free-trial/paid expiry checks below. Every other account is
+            # checked against PLANS[plan_type] for whatever tier it's
+            # actually on. This covers every tier, present and future,
+            # instead of only correcting free-trial accounts -- which is
+            # what let a manual patch to only ai_calls_limit leave
+            # patients_limit stuck on the old free-trial default and break
+            # patient creation.
+            quota_tier = 'super_admin' if _is_super_admin_user(user_id) else subscription.get('plan_type')
+            plan_def = PLANS.get(quota_tier)
 
-            if subscription.get('plan_type') == 'free_trial' and not is_super_admin:
-                needs_fix = False
+            if plan_def:
                 fixes = {}
+                for field in ('ai_calls_limit', 'patients_limit', 'voice_minutes_limit'):
+                    expected = plan_def.get(field)
+                    if expected is not None and subscription.get(field) != expected:
+                        logger.warning(f"Correcting {field} for {user_id} ({quota_tier}): {subscription.get(field)} -> {expected}")
+                        fixes[field] = expected
 
-                # Check AI calls limit
-                if subscription.get('ai_calls_limit') != FREE_TRIAL_AI_CALLS:
-                    logger.warning(f"Correcting ai_calls_limit for {user_id}: {subscription.get('ai_calls_limit')} -> {FREE_TRIAL_AI_CALLS}")
-                    fixes['ai_calls_limit'] = FREE_TRIAL_AI_CALLS
-                    needs_fix = True
-
-                # Check patients limit
-                if subscription.get('patients_limit') != FREE_TRIAL_PATIENTS:
-                    logger.warning(f"Correcting patients_limit for {user_id}: {subscription.get('patients_limit')} -> {FREE_TRIAL_PATIENTS}")
-                    fixes['patients_limit'] = FREE_TRIAL_PATIENTS
-                    needs_fix = True
-
-                # Check voice minutes limit
-                if subscription.get('voice_minutes_limit') != FREE_TRIAL_VOICE_MINUTES:
-                    logger.warning(f"Correcting voice_minutes_limit for {user_id}: {subscription.get('voice_minutes_limit')} -> {FREE_TRIAL_VOICE_MINUTES}")
-                    fixes['voice_minutes_limit'] = FREE_TRIAL_VOICE_MINUTES
-                    needs_fix = True
-
-                # Apply fixes if needed
-                if needs_fix:
+                if fixes:
                     fixes['updated_at'] = SERVER_TIMESTAMP
                     db.collection('subscriptions').document(user_id).update(fixes)
                     # Update local subscription object
                     subscription.update(fixes)
-                    logger.info(f"Fixed trial subscription limits for {user_id}")
+                    logger.info(f"Fixed subscription limits for {user_id} ({quota_tier}): {fixes}")
 
             # Check if subscription is expired
             if subscription.get('status') == 'active':
