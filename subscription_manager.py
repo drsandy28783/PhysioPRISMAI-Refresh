@@ -509,18 +509,19 @@ def reserve_ai_usage_atomic(user_id: str) -> Tuple[bool, bool, str]:
         tuple: (success: bool, used_token: bool, message: str)
     """
     try:
-        sub_ref = db.collection('subscriptions').document(user_id)
-        sub_doc = sub_ref.get()
-
-        if not sub_doc.exists:
-            return False, False, "Subscription not found"
-
-        subscription = sub_doc.to_dict()
+        # Route through get_user_subscription() first so its self-heal logic
+        # (correcting ai_calls_limit to match the account's real tier) has
+        # run before we trust the stored limit -- same fix as
+        # increment_patient_usage_atomic() below, for the same reason: this
+        # used to read the raw doc directly and skip the correction.
+        subscription = get_user_subscription(user_id)
 
         if subscription.get('status') != 'active':
             return False, False, "Your subscription has expired. Please upgrade to continue using AI features."
 
         ai_calls_limit = subscription.get('ai_calls_limit', 0)
+
+        sub_ref = db.collection('subscriptions').document(user_id)
 
         # Unlimited AI calls (-1) -- still track usage, nothing to cap
         if ai_calls_limit == -1:
