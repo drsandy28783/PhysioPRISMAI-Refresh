@@ -598,19 +598,22 @@ def increment_patient_usage_atomic(user_id: str) -> Tuple[bool, int, str]:
         tuple: (success: bool, new_count: int, message: str)
     """
     try:
-        sub_ref = db.collection('subscriptions').document(user_id)
-        sub_doc = sub_ref.get()
-
-        if not sub_doc.exists:
-            return False, 0, "Subscription not found"
-
-        subscription = sub_doc.to_dict()
+        # Route through get_user_subscription() first so its self-heal logic
+        # (correcting patients_limit to match the account's real tier, e.g.
+        # -1 for super admins) has run before we trust the stored limit --
+        # this function used to read the raw doc directly, which skipped
+        # that correction entirely since nothing else calls it for patient
+        # creation, leaving super admin accounts stuck on a stale
+        # free-trial patients_limit.
+        subscription = get_user_subscription(user_id)
 
         # Check subscription status FIRST - block expired subscriptions
         if subscription.get('status') != 'active':
             return False, 0, "Your subscription has expired. Please upgrade to continue adding patients."
 
         limit = subscription.get('patients_limit', 0)
+
+        sub_ref = db.collection('subscriptions').document(user_id)
 
         # Atomic conditional increment: Cosmos DB evaluates the limit check
         # and applies the increment as one server-side operation, so two
