@@ -10,6 +10,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 from azure.cosmos import CosmosClient, PartitionKey, exceptions
+from azure.cosmos.partition_key import NonePartitionKeyValue
 
 logger = logging.getLogger("app.azure_cosmos_db")
 
@@ -235,6 +236,16 @@ class CosmosDBDocumentReference:
         partition key path, so the caller can retry the point operation
         with the correct key. Returns None if the document truly isn't
         there.
+
+        Some containers (e.g. subscriptions, whose partition key path is
+        /userId even though every document is written with a `user_id`
+        field instead) never had their partition key property set at all --
+        those documents physically live in Cosmos's reserved "undefined
+        partition key" bucket. In that case the field genuinely doesn't
+        exist on the document, so this returns NonePartitionKeyValue
+        (the SDK's sentinel for that bucket) rather than None, which would
+        otherwise make the caller wrongly treat a real, existing document as
+        not found.
         """
         try:
             pk_path = self.container.read()['partitionKey']['paths'][0].strip('/')
@@ -250,7 +261,7 @@ class CosmosDBDocumentReference:
             value = items[0]
             for part in pk_path.split('/'):
                 if not isinstance(value, dict) or part not in value:
-                    return None
+                    return NonePartitionKeyValue
                 value = value[part]
             return value
         except Exception as e:
