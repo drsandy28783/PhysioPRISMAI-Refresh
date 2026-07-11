@@ -1076,6 +1076,14 @@ def api_get_patient(patient_id):
 # each value is a dict mapping mobile inner field names to their web equivalents.
 # ─────────────────────────────────────────────────────────────────────────────
 _MOBILE_FIELD_MAP = {
+    'subjectiveExamination': {
+        'impairmentBodyStructure':        'body_structure',
+        'impairmentBodyFunction':         'body_function',
+        'activityLimitationPerformance':  'activity_performance',
+        'activityLimitationCapacity':     'activity_capacity',
+        'contextualFactorsEnvironmental': 'contextual_environmental',
+        'contextualFactorsPersonal':      'contextual_personal',
+    },
     'patientPerspectives': {
         'knowledgeOfIllness':        'knowledge',
         'illnessAttribution':        'attribution',
@@ -1100,6 +1108,16 @@ _MOBILE_FIELD_MAP = {
         'combinedMovements':      'combined_movements',
         'specialTests':           'special_tests',
         'neurodynamicExamination':'neurodynamic',
+        # "Details" free-text fields (physio-entered findings) map to web's *_details.
+        # The "Suggestions" fields are read-only AI-suggestion text with no web-side
+        # equivalent — intentionally not mapped.
+        'activeMovementsObservations':         'active_movements_details',
+        'passiveMovementsObservations':        'passive_movements_details',
+        'passiveOverPressureObservations':     'passive_over_pressure_details',
+        'resistedMovementsObservations':       'resisted_movements_details',
+        'combinedMovementsObservations':       'combined_movements_details',
+        'specialTestsObservations':            'special_tests_details',
+        'neurodynamicExaminationObservations': 'neurodynamic_details',
     },
     'pathoMechanism': {
         'areaInvolved':             'area_involved',
@@ -1121,6 +1139,17 @@ _MOBILE_FIELD_MAP = {
     'objectiveAssessment': {
         'assessmentNotes': 'plan_details',
         # 'plan' is present in both — no mapping needed
+    },
+    'chronicDiseaseFactors': {
+        'causeForMaintenance': 'causes',
+        'specificFactors':     'specific_factors',
+    },
+    'smartGoals': {
+        'goals':            'patient_goal',
+        'outcomeTimeframe': 'outcome_timeframe',
+    },
+    'treatmentPlan': {
+        'treatmentPlan': 'treatment_plan',
     },
 }
 

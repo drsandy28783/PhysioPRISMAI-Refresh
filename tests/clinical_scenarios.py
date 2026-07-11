@@ -110,8 +110,8 @@ SCENARIO_SHOULDER_ACUTE = ClinicalScenario(
         "combined_movements_details": "Hand-behind-back, hand-behind-neck for functional assessment",
         "special_tests": "Yes",
         "special_tests_details": "Hawkins-Kennedy, Neer's, Empty Can, Painful Arc, Cross Arm Test",
-        "neuro_dynamic_examination": "No",
-        "neuro_dynamic_examination_details": "",
+        "neurodynamic": "No",
+        "neurodynamic_details": "",
     },
 
     chronic_disease_data={
@@ -227,8 +227,8 @@ SCENARIO_LBP_CHRONIC = ClinicalScenario(
         "combined_movements_details": "Repeated movements assessment (McKenzie approach)",
         "special_tests": "Yes",
         "special_tests_details": "SLR, slump test, FABER, neurological screen, Waddell signs",
-        "neuro_dynamic_examination": "Yes",
-        "neuro_dynamic_examination_details": "SLR with dorsiflexion sensitisation if indicated",
+        "neurodynamic": "Yes",
+        "neurodynamic_details": "SLR with dorsiflexion sensitisation if indicated",
     },
 
     chronic_disease_data={
@@ -344,8 +344,8 @@ SCENARIO_KNEE_OA = ClinicalScenario(
         "combined_movements_details": "Sit to stand assessment, stair climbing capacity",
         "special_tests": "Yes",
         "special_tests_details": "McMurray's, Thessaly, Valgus/Varus stress, Patella grind, TUG test",
-        "neuro_dynamic_examination": "No",
-        "neuro_dynamic_examination_details": "",
+        "neurodynamic": "No",
+        "neurodynamic_details": "",
     },
 
     chronic_disease_data={
@@ -461,8 +461,8 @@ SCENARIO_CERVICAL_RADICULOPATHY = ClinicalScenario(
         "combined_movements_details": "",
         "special_tests": "Yes",
         "special_tests_details": "Spurling's, Distraction test, ULNT1 (median nerve bias), Biceps reflex, Sensory testing C6 dermatome",
-        "neuro_dynamic_examination": "Yes",
-        "neuro_dynamic_examination_details": "ULNT1 with progressive sensitisation - assess neural mechanosensitivity",
+        "neurodynamic": "Yes",
+        "neurodynamic_details": "ULNT1 with progressive sensitisation - assess neural mechanosensitivity",
     },
 
     chronic_disease_data={
@@ -578,8 +578,8 @@ SCENARIO_RED_FLAG_CAUDA_EQUINA = ClinicalScenario(
         "combined_movements_details": "",
         "special_tests": "No",
         "special_tests_details": "Minimal assessment only - PR exam for anal tone if trained, perianal sensation test",
-        "neuro_dynamic_examination": "No",
-        "neuro_dynamic_examination_details": "CONTRAINDICATED",
+        "neurodynamic": "No",
+        "neurodynamic_details": "CONTRAINDICATED",
     },
 
     chronic_disease_data={
@@ -695,8 +695,8 @@ SCENARIO_POST_TKR = ClinicalScenario(
         "combined_movements_details": "Functional: sit to stand, step up/down",
         "special_tests": "No",
         "special_tests_details": "Prosthesis in situ - standard orthopaedic tests not applicable",
-        "neuro_dynamic_examination": "No",
-        "neuro_dynamic_examination_details": "",
+        "neurodynamic": "No",
+        "neurodynamic_details": "",
     },
 
     chronic_disease_data={
@@ -812,8 +812,8 @@ SCENARIO_ACL_TEAR = ClinicalScenario(
         "combined_movements_details": "Single leg tasks: squat, hop, lateral movement assessment",
         "special_tests": "Yes",
         "special_tests_details": "Lachman (monitor only), anterior drawer (monitor), single leg hop battery (triple hop, 6m timed hop, crossover hop)",
-        "neuro_dynamic_examination": "No",
-        "neuro_dynamic_examination_details": "",
+        "neurodynamic": "No",
+        "neurodynamic_details": "",
     },
 
     chronic_disease_data={
@@ -929,8 +929,8 @@ SCENARIO_FROZEN_SHOULDER = ClinicalScenario(
         "combined_movements_details": "Hand behind back and head assessment",
         "special_tests": "Yes",
         "special_tests_details": "Shoulder external rotation (capsular pattern confirmation), Apley scratch test",
-        "neuro_dynamic_examination": "No",
-        "neuro_dynamic_examination_details": "",
+        "neurodynamic": "No",
+        "neurodynamic_details": "",
     },
 
     chronic_disease_data={

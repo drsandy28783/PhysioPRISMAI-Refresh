@@ -6046,7 +6046,7 @@ def initial_plan(patient_id):
         return "Access denied."
     if request.method == 'POST':
         sections = ['active_movements','passive_movements','passive_over_pressure',
-                    'resisted_movements','combined_movements','special_tests','neuro_dynamic_examination']
+                    'resisted_movements','combined_movements','special_tests','neurodynamic']
         entry = {'patient_id': patient_id, 'timestamp': SERVER_TIMESTAMP}
         for s in sections:
             entry[s] = request.form.get(s)
@@ -6070,9 +6070,6 @@ def initial_plan(patient_id):
         docs = db.collection('initial_plan').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
         if docs:
             existing = docs[0].to_dict()
-            if 'neuro_dynamic_examination' in existing:
-                existing['neurodynamic'] = existing['neuro_dynamic_examination']
-                existing['neurodynamic_details'] = existing.get('neuro_dynamic_examination_details', '')
     except Exception as e:
         logger.warning(f"Could not fetch existing initial_plan for {patient_id}: {e}")
     return render_template('initial_plan.html', patient_id=patient_id, patho_data=patho_data, existing=existing)
@@ -12174,7 +12171,7 @@ def get_patient_context(patient_id):
                 'resisted_movements': plan_data.get('resisted_movements', ''),
                 'combined_movements': plan_data.get('combined_movements', ''),
                 'special_tests': plan_data.get('special_tests', ''),
-                'neuro_dynamic_examination': plan_data.get('neuro_dynamic_examination', ''),
+                'neurodynamic': plan_data.get('neurodynamic', ''),
                 # Include details as well
                 'active_movements_details': plan_data.get('active_movements_details', ''),
                 'passive_movements_details': plan_data.get('passive_movements_details', ''),
@@ -12182,7 +12179,7 @@ def get_patient_context(patient_id):
                 'resisted_movements_details': plan_data.get('resisted_movements_details', ''),
                 'combined_movements_details': plan_data.get('combined_movements_details', ''),
                 'special_tests_details': plan_data.get('special_tests_details', ''),
-                'neuro_dynamic_examination_details': plan_data.get('neuro_dynamic_examination_details', '')
+                'neurodynamic_details': plan_data.get('neurodynamic_details', '')
             }
             break  # Only need the most recent
 

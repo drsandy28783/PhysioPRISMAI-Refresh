@@ -507,17 +507,13 @@
     <div class="section-content">
 
       <!-- Active Movements -->
-      {% if initial_plan.active_movements_tests or initial_plan.active_movements_details %}
+      {% if initial_plan.active_movements or initial_plan.active_movements_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">🏃 Active Movements</h3>
-        {% if initial_plan.active_movements_tests %}
+        {% if initial_plan.active_movements %}
         <div class="field-group">
-          <div class="field-label">Tests Performed</div>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            {% for test in initial_plan.active_movements_tests %}
-            <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
-            {% endfor %}
-          </ul>
+          <div class="field-label">Assessment Type</div>
+          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ initial_plan.active_movements }}</div>
         </div>
         {% endif %}
         {% if initial_plan.active_movements_details %}
@@ -530,17 +526,13 @@
       {% endif %}
 
       <!-- Passive Movements -->
-      {% if initial_plan.passive_movements_tests or initial_plan.passive_movements_details %}
+      {% if initial_plan.passive_movements or initial_plan.passive_movements_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">🤲 Passive Movements</h3>
-        {% if initial_plan.passive_movements_tests %}
+        {% if initial_plan.passive_movements %}
         <div class="field-group">
-          <div class="field-label">Tests Performed</div>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            {% for test in initial_plan.passive_movements_tests %}
-            <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
-            {% endfor %}
-          </ul>
+          <div class="field-label">Assessment Type</div>
+          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ initial_plan.passive_movements }}</div>
         </div>
         {% endif %}
         {% if initial_plan.passive_movements_details %}
@@ -553,17 +545,13 @@
       {% endif %}
 
       <!-- Passive Over-Pressure -->
-      {% if initial_plan.passive_over_pressure_tests or initial_plan.passive_over_pressure_details %}
+      {% if initial_plan.passive_over_pressure or initial_plan.passive_over_pressure_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">💪 Passive Over-Pressure</h3>
-        {% if initial_plan.passive_over_pressure_tests %}
+        {% if initial_plan.passive_over_pressure %}
         <div class="field-group">
-          <div class="field-label">Tests Performed</div>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            {% for test in initial_plan.passive_over_pressure_tests %}
-            <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
-            {% endfor %}
-          </ul>
+          <div class="field-label">Assessment Type</div>
+          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ initial_plan.passive_over_pressure }}</div>
         </div>
         {% endif %}
         {% if initial_plan.passive_over_pressure_details %}
@@ -576,17 +564,13 @@
       {% endif %}
 
       <!-- Resisted Movements -->
-      {% if initial_plan.resisted_movements_tests or initial_plan.resisted_movements_details %}
+      {% if initial_plan.resisted_movements or initial_plan.resisted_movements_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">💥 Resisted Movements</h3>
-        {% if initial_plan.resisted_movements_tests %}
+        {% if initial_plan.resisted_movements %}
         <div class="field-group">
-          <div class="field-label">Tests Performed</div>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            {% for test in initial_plan.resisted_movements_tests %}
-            <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
-            {% endfor %}
-          </ul>
+          <div class="field-label">Assessment Type</div>
+          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ initial_plan.resisted_movements }}</div>
         </div>
         {% endif %}
         {% if initial_plan.resisted_movements_details %}
@@ -599,17 +583,13 @@
       {% endif %}
 
       <!-- Combined Movements -->
-      {% if initial_plan.combined_movements_tests or initial_plan.combined_movements_details %}
+      {% if initial_plan.combined_movements or initial_plan.combined_movements_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">🔄 Combined Movements</h3>
-        {% if initial_plan.combined_movements_tests %}
+        {% if initial_plan.combined_movements %}
         <div class="field-group">
-          <div class="field-label">Tests Performed</div>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            {% for test in initial_plan.combined_movements_tests %}
-            <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
-            {% endfor %}
-          </ul>
+          <div class="field-label">Assessment Type</div>
+          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ initial_plan.combined_movements }}</div>
         </div>
         {% endif %}
         {% if initial_plan.combined_movements_details %}
@@ -622,17 +602,13 @@
       {% endif %}
 
       <!-- Special Tests -->
-      {% if initial_plan.special_tests_tests or initial_plan.special_tests_details %}
+      {% if initial_plan.special_tests or initial_plan.special_tests_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">🔬 Special Tests</h3>
-        {% if initial_plan.special_tests_tests %}
+        {% if initial_plan.special_tests %}
         <div class="field-group">
-          <div class="field-label">Tests Performed</div>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            {% for test in initial_plan.special_tests_tests %}
-            <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
-            {% endfor %}
-          </ul>
+          <div class="field-label">Assessment Type</div>
+          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ initial_plan.special_tests }}</div>
         </div>
         {% endif %}
         {% if initial_plan.special_tests_details %}
@@ -645,19 +621,15 @@
       {% endif %}
 
       <!-- Neuro-Dynamic Examination -->
-      {% set neuro_tests = initial_plan.neurodynamic_tests or initial_plan.neuro_dynamic_examination_tests %}
-      {% set neuro_details = initial_plan.neurodynamic_details or initial_plan.neuro_dynamic_examination_details %}
-      {% if neuro_tests or neuro_details %}
+      {% set neuro_value = initial_plan.neurodynamic %}
+      {% set neuro_details = initial_plan.neurodynamic_details %}
+      {% if neuro_value or neuro_details %}
       <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
         <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">⚡ Neuro-Dynamic Examination</h3>
-        {% if neuro_tests %}
+        {% if neuro_value %}
         <div class="field-group">
-          <div class="field-label">Tests Performed</div>
-          <ul style="margin: 8px 0; padding-left: 20px;">
-            {% for test in neuro_tests %}
-            <li style="color: #333; margin-bottom: 4px;">{{ test }}</li>
-            {% endfor %}
-          </ul>
+          <div class="field-label">Assessment Type</div>
+          <div class="field-value" style="background: white; padding: 12px; border-radius: 4px; border: 1px solid #dee2e6;">{{ neuro_value }}</div>
         </div>
         {% endif %}
         {% if neuro_details %}
