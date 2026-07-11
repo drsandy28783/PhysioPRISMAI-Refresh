@@ -779,7 +779,7 @@ def api_list_my_patients():
                     patient['subjectiveExamination'] = True
 
                 # Patient perspectives
-                persp_docs = db.collection('subjective_perspectives') \
+                persp_docs = db.collection('patient_perspectives') \
                     .where('patient_id', '==', patient_id).limit(1).get()
                 if persp_docs or patient.get('patientPerspectives'):
                     patient['patientPerspectives'] = True
@@ -803,7 +803,7 @@ def api_list_my_patients():
                     patient['clinicalFlags'] = True
 
                 # Objective assessment
-                obj_docs = db.collection('objective_assessment') \
+                obj_docs = db.collection('objective_assessments') \
                     .where('patient_id', '==', patient_id).limit(1).get()
                 if obj_docs or patient.get('objectiveAssessment'):
                     patient['objectiveAssessment'] = True
@@ -815,7 +815,7 @@ def api_list_my_patients():
                     patient['provisionalDiagnosis'] = True
 
                 # Initial plan
-                plan_docs = db.collection('initial_assessment') \
+                plan_docs = db.collection('initial_plan') \
                     .where('patient_id', '==', patient_id).limit(1).get()
                 if plan_docs or patient.get('initialPlan'):
                     patient['initialPlan'] = True
@@ -827,7 +827,7 @@ def api_list_my_patients():
                     patient['smartGoals'] = True
 
                 # Treatment plan
-                treatment_docs = db.collection('treatment_plans') \
+                treatment_docs = db.collection('treatment_plan') \
                     .where('patient_id', '==', patient_id).limit(1).get()
                 if treatment_docs or patient.get('treatmentPlan'):
                     patient['treatmentPlan'] = True
@@ -1722,15 +1722,22 @@ def api_create_follow_up(patient_id):
 
         session_date = data.get('followUpDate', data.get('session_date', ''))
 
+        session_number_raw = data.get('sessionNumber', data.get('session_number', ''))
+        try:
+            session_number = int(session_number_raw)
+        except (TypeError, ValueError):
+            session_number = session_number_raw
+
         follow_up_data = {
             'patient_id': patient_id,
             'physio_id': user_email,
             'session_date': session_date,
-            'session_number': data.get('sessionNumber', data.get('session_number', '')),
+            'session_number': session_number,
             'grade': data.get('gradeOfAchievement', data.get('grade', '')),
             'perception': data.get('perceptionOfTreatment', data.get('perception', '')),
             'feedback': data.get('feedback', ''),
             'treatment_plan': data.get('planForNextTreatment', data.get('treatment_plan', '')),
+            'timestamp': SERVER_TIMESTAMP,
             'created_at': SERVER_TIMESTAMP,
             'updated_at': SERVER_TIMESTAMP
         }
@@ -1848,13 +1855,22 @@ def api_update_follow_up(patient_id, follow_up_id):
 
         session_date = data.get('followUpDate', data.get('session_date', existing.get('session_date', '')))
 
+        session_number_raw = data.get('sessionNumber', data.get('session_number', existing.get('session_number', '')))
+        try:
+            session_number = int(session_number_raw)
+        except (TypeError, ValueError):
+            session_number = session_number_raw
+
         update_data = {
             'session_date': session_date,
-            'session_number': data.get('sessionNumber', data.get('session_number', existing.get('session_number', ''))),
+            'session_number': session_number,
             'grade': data.get('gradeOfAchievement', data.get('grade', existing.get('grade', ''))),
             'perception': data.get('perceptionOfTreatment', data.get('perception', existing.get('perception', ''))),
             'feedback': data.get('feedback', existing.get('feedback', '')),
             'treatment_plan': data.get('planForNextTreatment', data.get('treatment_plan', existing.get('treatment_plan', ''))),
+            # Backfill timestamp for records that predate this field (e.g. mobile-created
+            # follow-ups saved before this fix), so order_by('timestamp') picks them up.
+            'timestamp': existing.get('timestamp', SERVER_TIMESTAMP),
             'updated_at': SERVER_TIMESTAMP
         }
 

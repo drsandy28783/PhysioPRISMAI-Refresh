@@ -260,7 +260,7 @@ def fetch_patient_data_from_db(patient_id: str, user_id: str) -> dict:
 
         # Fetch subjective examination data
         subjective_data = {}
-        subjective_query = db.collection('subjective_examinations') \
+        subjective_query = db.collection('subjective_examination') \
             .where('patient_id', '==', patient_id) \
             .order_by('timestamp', direction='DESCENDING') \
             .limit(1) \
@@ -280,7 +280,7 @@ def fetch_patient_data_from_db(patient_id: str, user_id: str) -> dict:
 
         # Fetch initial plan / assessments data
         assessments_data = {}
-        assessments_query = db.collection('initial_plans') \
+        assessments_query = db.collection('initial_plan') \
             .where('patient_id', '==', patient_id) \
             .order_by('timestamp', direction='DESCENDING') \
             .limit(1) \
