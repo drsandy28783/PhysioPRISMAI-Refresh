@@ -114,6 +114,7 @@ from rate_limiter import (
     clear_login_attempts,
     get_rate_limit_stats,
 )
+from flask_limiter.errors import RateLimitExceeded
 from schemas import (
     PatientSchema,
     SubjectiveExaminationSchema,
@@ -1402,6 +1403,22 @@ def handle_request_entity_too_large(error):
         'message': 'The request payload exceeds the maximum allowed size (16MB)',
         'max_size': '16MB'
     }), 413
+
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit_error(error):
+    """Handle 429 Too Many Requests from Flask-Limiter.
+
+    Without this, RateLimitExceeded (a normal, expected condition under load)
+    falls through to the catch-all Exception handler below, which logs it at
+    ERROR level -- flooding Sentry with alerts for routine rate limiting and
+    returning the generic 500 page instead of a proper 429 response.
+    """
+    logger.warning(f"429 rate limit exceeded: {request.method} {request.path}")
+    if request.path.startswith('/api/') or request.accept_mimetypes.best == 'application/json':
+        return jsonify({'ok': False, 'error': 'Too many requests', 'message': str(error.description)}), 429
+    flash("Too many requests. Please wait a moment and try again.", "error")
+    return redirect(request.referrer or url_for('index')), 429
 
 
 @app.errorhandler(Exception)
@@ -12526,6 +12543,7 @@ def api_autocomplete_suggestions():
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @app.route("/healthz")
+@limiter.exempt
 def healthz():
     """
     Basic health check endpoint for load balancers.
@@ -12535,6 +12553,7 @@ def healthz():
 
 
 @app.route("/api/health")
+@limiter.exempt
 def health_check():
     """
     Comprehensive health check endpoint for monitoring.
