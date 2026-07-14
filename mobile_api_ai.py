@@ -14,6 +14,7 @@ from flask import Blueprint, request, jsonify, g
 from azure_cosmos_db import get_cosmos_db, get_patient_safe
 from app_auth import require_firebase_auth, require_auth
 from quota_middleware import require_voice_quota, require_ai_quota
+from patient_access import patient_access_allowed as _shared_patient_access_allowed
 import re
 
 # Import centralized AI prompts
@@ -64,12 +65,16 @@ USE_AZURE_OPENAI = None
 
 def patient_access_allowed(patient):
     """Whether the current caller (g.user) may access this patient record:
-    owner, or an admin of the same institute the patient belongs to."""
+    owner, a teammate in the same institute, or a super admin (global access).
+    Delegates to the shared patient_access.patient_access_allowed()."""
     user = getattr(g, 'user', None) or {}
-    if patient.get('physio_id') == user.get('email'):
-        return True
-    is_admin = user.get('is_admin') == 1 or user.get('is_super_admin') == 1
-    return is_admin and patient.get('institute') == user.get('institute')
+    actor = {
+        'email': user.get('email'),
+        'is_admin': user.get('is_admin'),
+        'is_super_admin': user.get('is_super_admin'),
+        'institute': user.get('institute'),
+    }
+    return _shared_patient_access_allowed(patient, actor)
 
 def normalize_patient_data(data):
     """
@@ -254,7 +259,7 @@ def fetch_patient_data_from_db(patient_id: str, user_id: str) -> dict:
         patient = patient_doc.to_dict()
 
         # Access control - verify user has permission
-        if patient.get('physio_id') != user_id:
+        if not patient_access_allowed(patient):
             logger.warning(f"User {user_id} attempted unauthorized access to patient {patient_id}")
             return {}
 
@@ -1257,11 +1262,9 @@ def api_ai_treatment_plan_summary(patient_id):
             return jsonify({'error': 'Patient not found'}), 404
 
         patient_data = patient_doc.to_dict()
-        # Always use email for physio_id comparison (consistent across auth methods)
-        user_email = g.user.get('email')
 
         # Check access
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data):
             return jsonify({'error': 'Unauthorized'}), 403
 
         # Extract and sanitize patient context

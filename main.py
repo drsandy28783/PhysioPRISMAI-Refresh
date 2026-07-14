@@ -104,6 +104,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app_auth import require_firebase_auth, require_auth
+from patient_access import patient_access_allowed as _shared_patient_access_allowed
 from quota_middleware import require_ai_quota, require_patient_quota, require_voice_quota
 from firebase_admin import auth
 from ai_cache import AICache, get_ai_suggestion_with_cache
@@ -1591,19 +1592,27 @@ def super_admin_required():
 
 def patient_access_allowed(patient):
     """Whether the current session may access this patient record: owner,
-    or an admin of the same institute the patient belongs to."""
-    if patient.get('physio_id') == session.get('user_id'):
-        return True
-    return session.get('is_admin') == 1 and patient.get('institute') == session.get('institute')
+    a teammate in the same institute, or a super admin (global access).
+    Delegates to the shared patient_access.patient_access_allowed()."""
+    actor = {
+        'email': session.get('user_id'),
+        'is_admin': session.get('is_admin'),
+        'is_super_admin': session.get('is_super_admin'),
+        'institute': session.get('institute'),
+    }
+    return _shared_patient_access_allowed(patient, actor)
 
 def firebase_patient_access_allowed(patient):
     """Same as patient_access_allowed(), for @require_firebase_auth routes
     which authenticate via g.user instead of the Flask session."""
     user = getattr(g, 'user', None) or {}
-    if patient.get('physio_id') == user.get('email'):
-        return True
-    is_admin = user.get('is_admin') == 1 or user.get('is_super_admin') == 1
-    return is_admin and patient.get('institute') == user.get('institute')
+    actor = {
+        'email': user.get('email'),
+        'is_admin': user.get('is_admin'),
+        'is_super_admin': user.get('is_super_admin'),
+        'institute': user.get('institute'),
+    }
+    return _shared_patient_access_allowed(patient, actor)
 
 @app.route('/')
 def index():
@@ -4849,14 +4858,26 @@ def view_patients():
             # 1) Base query - fetch all patients for this user
             coll = db.collection('patients')
 
-            # 2) Restrict by institute or physio
-            if session.get('is_admin') == 1:
-                q = coll.where('institute', '==', session.get('institute'))
+            # 2) Restrict by institute or physio. Super admins get everything;
+            # everyone else gets their own patients plus any teammate's patients
+            # in the same institute (team-wide access). Cosmos .where() only
+            # AND-chains, so institute+physio is two queries merged/deduped by id.
+            if session.get('is_super_admin') == 1:
+                docs = list(coll.stream())
             else:
-                q = coll.where('physio_id', '==', session.get('user_id'))
+                seen_ids = set()
+                docs = []
+                for doc in coll.where('physio_id', '==', session.get('user_id')).stream():
+                    seen_ids.add(doc.id)
+                    docs.append(doc)
+                session_institute = session.get('institute')
+                if session_institute:
+                    for doc in coll.where('institute', '==', session_institute).stream():
+                        if doc.id not in seen_ids:
+                            seen_ids.add(doc.id)
+                            docs.append(doc)
 
-            # 3) Execute query
-            docs = q.stream()
+            # 3) Convert to dicts
             patients = [doc.to_dict() for doc in docs]
 
             # Note: Removed N+1 query problem - assessment status is now loaded on demand via frontend
@@ -6603,6 +6624,13 @@ def qm_treatment_plan(patient_id):
 @app.route('/chronic_disease/<path:patient_id>', methods=['GET','POST'])
 @login_required()
 def chronic_disease(patient_id):
+    doc = db.collection('patients').document(patient_id).get()
+    if not doc.exists:
+        return "Patient not found."
+    patient = doc.to_dict()
+    if not patient_access_allowed(patient):
+        return "Access denied."
+
     if request.method == 'POST':
         # Pull back *all* selected options as a Python list:
         causes = request.form.getlist('maintenance_causes')

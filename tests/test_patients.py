@@ -150,3 +150,126 @@ def test_patient_data_structure(sample_patient_data):
         assert field in sample_patient_data
         assert sample_patient_data[field] is not None
         assert len(str(sample_patient_data[field])) > 0
+
+
+def _mock_patient_doc(physio_id='owner@example.com', institute='Clinic A'):
+    doc = MagicMock()
+    doc.exists = True
+    doc.id = 'patient-123'
+    doc.to_dict.return_value = {
+        'physio_id': physio_id,
+        'institute': institute,
+        'name': 'Test Patient',
+    }
+    return doc
+
+
+def _mock_authenticated_request(caller_email, caller_institute, is_admin=0, is_super_admin=0):
+    """Patch the require_auth bearer-token path so the request authenticates
+    as the given user, with the given institute/admin flags carried onto
+    g.user (which patient_access_allowed() reads via _actor_from_g_user())."""
+    fake_user_doc = MagicMock()
+    fake_user_doc.exists = True
+    fake_user_doc.to_dict.return_value = {
+        'email': caller_email,
+        'institute': caller_institute,
+        'is_admin': is_admin,
+        'is_super_admin': is_super_admin,
+        'approved': 1,
+        'active': 1,
+    }
+
+    mock_auth_db = MagicMock()
+    mock_auth_db.collection.return_value.where.return_value.limit.return_value.stream.return_value = []
+    mock_auth_db.collection.return_value.document.return_value.get.return_value = fake_user_doc
+
+    verify_patch = patch('app_auth.verify_firebase_token',
+                          return_value={'uid': 'caller-uid', 'email': caller_email})
+    get_db_patch = patch('app_auth.get_cosmos_db', return_value=mock_auth_db)
+    return verify_patch, get_db_patch
+
+
+@pytest.mark.integration
+def test_teammate_in_same_institute_can_view_patient(client):
+    """Team-wide access: a same-institute teammate (not the owner, not an
+    admin) can now GET a colleague's patient -- the new behavior this
+    change adds."""
+    patient_doc = _mock_patient_doc(physio_id='owner@example.com', institute='Clinic A')
+    verify_patch, get_db_patch = _mock_authenticated_request(
+        'teammate@example.com', 'Clinic A', is_admin=0
+    )
+
+    with verify_patch, get_db_patch, \
+         patch('mobile_api.get_patient_safe', return_value=patient_doc), \
+         patch('mobile_api.db') as mock_db:
+        mock_db.collection.return_value.add.return_value = None
+
+        response = client.get(
+            '/api/patients/patient-123',
+            headers={'Authorization': 'Bearer fake-token'}
+        )
+
+        assert response.status_code == 200
+
+
+@pytest.mark.integration
+def test_different_institute_user_denied(client):
+    """Regression guard: a physio from a different institute still gets 403."""
+    patient_doc = _mock_patient_doc(physio_id='owner@example.com', institute='Clinic A')
+    verify_patch, get_db_patch = _mock_authenticated_request(
+        'stranger@example.com', 'Clinic B', is_admin=1
+    )
+
+    with verify_patch, get_db_patch, \
+         patch('mobile_api.get_patient_safe', return_value=patient_doc), \
+         patch('mobile_api.db') as mock_db:
+        mock_db.collection.return_value.add.return_value = None
+
+        response = client.get(
+            '/api/patients/patient-123',
+            headers={'Authorization': 'Bearer fake-token'}
+        )
+
+        assert response.status_code == 403
+
+
+@pytest.mark.integration
+def test_solo_physio_cannot_view_another_solo_physios_patient(client):
+    """Solo physios (blank institute) remain siloed under the new rule."""
+    patient_doc = _mock_patient_doc(physio_id='solo1@example.com', institute='')
+    verify_patch, get_db_patch = _mock_authenticated_request(
+        'solo2@example.com', '', is_admin=0
+    )
+
+    with verify_patch, get_db_patch, \
+         patch('mobile_api.get_patient_safe', return_value=patient_doc), \
+         patch('mobile_api.db') as mock_db:
+        mock_db.collection.return_value.add.return_value = None
+
+        response = client.get(
+            '/api/patients/patient-123',
+            headers={'Authorization': 'Bearer fake-token'}
+        )
+
+        assert response.status_code == 403
+
+
+@pytest.mark.integration
+def test_super_admin_can_view_patient_in_different_institute(client):
+    """Super admins keep global cross-institute access."""
+    patient_doc = _mock_patient_doc(physio_id='owner@example.com', institute='Clinic A')
+    verify_patch, get_db_patch = _mock_authenticated_request(
+        'sandeep@example.com', '', is_admin=0, is_super_admin=1
+    )
+
+    with verify_patch, get_db_patch, \
+         patch('mobile_api.get_patient_safe', return_value=patient_doc), \
+         patch('mobile_api.db') as mock_db:
+        mock_db.collection.return_value.add.return_value = None
+
+        response = client.get(
+            '/api/patients/patient-123',
+            headers={'Authorization': 'Bearer fake-token'}
+        )
+
+        assert response.status_code == 200

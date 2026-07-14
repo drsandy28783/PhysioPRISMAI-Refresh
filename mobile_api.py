@@ -17,6 +17,7 @@ from flask import Blueprint, request, jsonify, g
 from azure_cosmos_db import get_cosmos_db, get_patient_safe, SERVER_TIMESTAMP
 from app_auth import require_firebase_auth, require_auth
 from quota_middleware import require_patient_quota
+from patient_access import patient_access_allowed
 from firebase_admin import auth
 from rate_limiter import redis_client, redis_available
 from email_service import (
@@ -113,6 +114,16 @@ def log_audit(action, details=None, user_id=None):
         logger.info(f"Audit log: {action} by {entry['user_id']}")
     except Exception as e:
         logger.error(f"Failed to log audit entry: {e}")
+
+def _actor_from_g_user():
+    """Build the {email, is_admin, is_super_admin, institute} dict patient_access_allowed() expects, from g.user."""
+    user = getattr(g, 'user', None) or {}
+    return {
+        'email': user.get('email'),
+        'is_admin': user.get('is_admin'),
+        'is_super_admin': user.get('is_super_admin'),
+        'institute': user.get('institute'),
+    }
 
 
 def get_user_profile(user_email_or_uid):
@@ -748,8 +759,20 @@ def api_list_my_patients():
         # Debug logging
         logger.info(f"Fetching patients for user: {user_email} with filters: name={name_filter}, id={id_filter}, contact={contact_filter}")
 
-        # Query patients for this physiotherapist
-        patients_ref = db.collection('patients').where('physio_id', '==', user_email).stream()
+        # Query patients for this physiotherapist, plus any teammate's patients
+        # if this user belongs to an institute (team-wide access). Cosmos .where()
+        # only AND-chains, so this is two queries merged/deduped by doc id.
+        actor_institute = g.user.get('institute')
+        seen_ids = set()
+        patients_ref = []
+        for patient_doc in db.collection('patients').where('physio_id', '==', user_email).stream():
+            seen_ids.add(patient_doc.id)
+            patients_ref.append(patient_doc)
+        if actor_institute:
+            for patient_doc in db.collection('patients').where('institute', '==', actor_institute).stream():
+                if patient_doc.id not in seen_ids:
+                    seen_ids.add(patient_doc.id)
+                    patients_ref.append(patient_doc)
 
         patients = []
         for patient_doc in patients_ref:
@@ -924,7 +947,7 @@ def api_update_patient_status(patient_id):
         patient = patient_doc.to_dict()
 
         # Check access
-        if patient.get('physio_id') != user_email:
+        if not patient_access_allowed(patient, _actor_from_g_user()):
             return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
         # Get new status
@@ -971,7 +994,7 @@ def api_update_patient_tags(patient_id):
         patient = patient_doc.to_dict()
 
         # Check access
-        if patient.get('physio_id') != user_email:
+        if not patient_access_allowed(patient, _actor_from_g_user()):
             return jsonify({'success': False, 'error': 'Unauthorized'}), 403
 
         # Get tags
@@ -1049,7 +1072,7 @@ def api_get_patient(patient_id):
         # Check if this patient belongs to the current user
         # Always use email for physio_id (consistent across auth methods)
         user_email = g.user.get('email')
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data, _actor_from_g_user()):
             return jsonify({'error': 'Unauthorized'}), 403
 
         # Convert timestamps
@@ -1192,7 +1215,7 @@ def api_get_patient_comprehensive_report(patient_id):
         # Check if this patient belongs to the current user
         # Always use email for physio_id (consistent across auth methods)
         user_email = g.user.get('email')
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data, _actor_from_g_user()):
             return jsonify({'error': 'Unauthorized'}), 403
 
         # 2. Fetch therapist info
@@ -1297,11 +1320,21 @@ def api_check_duplicate_patient():
             return jsonify({'duplicates': [], 'count': 0}), 200
 
         user_email = g.user.get('email')
+        actor_institute = g.user.get('institute')
         db = get_cosmos_db()
 
-        # Get all patients for this physio
-        patients_ref = db.collection('patients').where('physio_id', '==', user_email)
-        patients = patients_ref.stream()
+        # Get all patients for this physio, plus any teammate's patients if
+        # this user belongs to an institute (team-wide access), deduped by id.
+        seen_ids = set()
+        patients = []
+        for patient in db.collection('patients').where('physio_id', '==', user_email).stream():
+            seen_ids.add(patient.id)
+            patients.append(patient)
+        if actor_institute:
+            for patient in db.collection('patients').where('institute', '==', actor_institute).stream():
+                if patient.id not in seen_ids:
+                    seen_ids.add(patient.id)
+                    patients.append(patient)
 
         # Find exact and similar matches
         duplicates = []
@@ -1369,6 +1402,7 @@ def api_create_patient():
         patient_data = {
             'patient_id': patient_id,  # CRITICAL: Must match document ID for consistent lookups
             'physio_id': user_email,
+            'institute': g.user.get('institute', ''),
             'name': data.get('name', ''),
             'age_sex': data.get('age_sex', ''),
             'contact': data.get('contact', ''),
@@ -1458,7 +1492,7 @@ def api_qm_prefill():
 
         patient_data = patient_doc.to_dict()
         user_email = g.user.get('email')
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data, _actor_from_g_user()):
             return jsonify({'error': 'Unauthorized'}), 403
 
         # Helper: read assessment data from separate collection with patient-doc fallback
@@ -1544,7 +1578,7 @@ def api_update_patient(patient_id):
         user_email = g.user.get('email')
 
         # Check ownership
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data, _actor_from_g_user()):
             return jsonify({'error': 'Unauthorized'}), 403
 
         # Get update data
@@ -1591,7 +1625,7 @@ def api_delete_patient(patient_id):
         user_email = g.user.get('email')
 
         # Check ownership
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data, _actor_from_g_user()):
             return jsonify({'error': 'Unauthorized'}), 403
 
         deletion_summary = {
@@ -1713,7 +1747,7 @@ def api_create_follow_up(patient_id):
         # Always use email for physio_id (consistent across auth methods)
         user_email = g.user.get('email')
 
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data, _actor_from_g_user()):
             return jsonify({'error': 'Unauthorized'}), 403
 
         # Get follow-up data — map mobile camelCase fields to web snake_case storage format
@@ -1778,7 +1812,7 @@ def api_list_follow_ups(patient_id):
         # Always use email for physio_id (consistent across auth methods)
         user_email = g.user.get('email')
 
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data, _actor_from_g_user()):
             return jsonify({'error': 'Unauthorized'}), 403
 
         # Get follow-ups
@@ -1837,7 +1871,7 @@ def api_update_follow_up(patient_id, follow_up_id):
         patient_data = patient_doc.to_dict()
         user_email = g.user.get('email')
 
-        if patient_data.get('physio_id') != user_email and g.user.get('is_admin', 0) != 1:
+        if not patient_access_allowed(patient_data, _actor_from_g_user()):
             return jsonify({'error': 'Unauthorized'}), 403
 
         # Verify follow-up exists and belongs to this patient
@@ -3377,16 +3411,8 @@ def api_export_patient_report_pdf(patient_id):
 
         patient = doc.to_dict()
 
-        # Get user info to check permissions
-        user_doc = db.collection('users').document(user_email).get()
-        if not user_doc.exists:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
-
-        user_data = user_doc.to_dict()
-        user_role = user_data.get('role', 'solo_physio')
-
-        # Check permissions: must be the patient's physio or an admin
-        if user_role not in ['institute_admin', 'super_admin'] and patient.get('physio_id') != user_email:
+        # Check permissions: owner, teammate in the same institute, or super admin
+        if not patient_access_allowed(patient, _actor_from_g_user()):
             logger.warning(f'Unauthorized PDF export attempt: {user_email} tried to export patient {patient_id}')
             return jsonify({'success': False, 'error': 'Access denied'}), 403
 
@@ -3917,7 +3943,7 @@ def api_save_draft():
             patient = patient_doc.to_dict()
 
             # Access control
-            if g.user.get('is_admin') != 1 and patient.get('physio_id') != user_email:
+            if not patient_access_allowed(patient, _actor_from_g_user()):
                 return jsonify({'ok': False, 'error': 'Access denied'}), 403
 
         # Create unique draft ID: user_email + patient_id + form_type
@@ -3969,7 +3995,7 @@ def api_get_draft(patient_id, form_type):
             patient = patient_doc.to_dict()
 
             # Access control
-            if g.user.get('is_admin') != 1 and patient.get('physio_id') != user_email:
+            if not patient_access_allowed(patient, _actor_from_g_user()):
                 return jsonify({'ok': False, 'error': 'Access denied'}), 403
 
         # Get draft
