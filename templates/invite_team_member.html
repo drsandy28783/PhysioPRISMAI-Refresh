@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Add Team Member – Physiologic PRISM{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Add Team Member</h2>
+  <p>They'll be added to your institute immediately and emailed a link to set their own password.</p>
+
+  <div id="invite-message" style="display:none; margin-bottom: 16px; padding: 12px; border-radius: 4px;"></div>
+
+  <form id="invite-form">
+    <input class="input-field" type="text" id="invite-name" placeholder="Full Name" required>
+    <input class="input-field" type="email" id="invite-email" placeholder="Email" required>
+    <input class="input-field" type="text" id="invite-phone" placeholder="Phone Number (optional)">
+    <button type="submit" class="button" id="invite-submit">Add Team Member</button>
+  </form>
+</div>
+
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('invite-form');
+  const messageDiv = document.getElementById('invite-message');
+  const submitButton = document.getElementById('invite-submit');
+
+  function showMessage(text, isError) {
+    messageDiv.textContent = text;
+    messageDiv.style.display = 'block';
+    messageDiv.style.background = isError ? '#fdecea' : '#e8f5e9';
+    messageDiv.style.color = isError ? '#c62828' : '#2e7d32';
+  }
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    submitButton.disabled = true;
+
+    const payload = {
+      name: document.getElementById('invite-name').value.trim(),
+      email: document.getElementById('invite-email').value.trim().toLowerCase(),
+      phone: document.getElementById('invite-phone').value.trim(),
+    };
+
+    try {
+      const response = await fetch('/api/institute/invite-member', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+
+      if (data.ok) {
+        showMessage(`${payload.name} has been added and emailed a link to set their password.`, false);
+        form.reset();
+      } else if (data.error === 'EMAIL_EXISTS') {
+        showMessage('An account with this email already exists.', true);
+      } else if (data.error === 'USER_LIMIT_REACHED') {
+        showMessage(data.message || 'Your institute has reached its user limit for the current plan.', true);
+      } else {
+        showMessage(data.message || 'Failed to add team member.', true);
+      }
+    } catch (err) {
+      showMessage('Something went wrong. Please try again.', true);
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+});
+</script>
+{% endblock %}

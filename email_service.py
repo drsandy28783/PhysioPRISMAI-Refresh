@@ -842,6 +842,80 @@ def send_password_reset_notification(user_data: Dict[str, Any], reset_token: str
         return False
 
 
+def send_team_invite_notification(user_data: Dict[str, Any], institute_name: str, set_password_url: str) -> bool:
+    """
+    Notify someone an institute admin added them to their team directly.
+    The account is already active/approved -- they just need to set a
+    password via the link before they can log in.
+
+    Args:
+        user_data: Dictionary containing user information
+        institute_name: Name of the institute they were added to
+        set_password_url: Full URL to set their password (reuses the
+            existing password-reset page/token)
+
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #fa709a; }}
+                .warning-box {{ background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107; }}
+                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                .button {{ display: inline-block; padding: 12px 30px; background: #fa709a; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>👋 You've Been Added to a Team</h1>
+                </div>
+                <div class="content">
+                    <p>Dear {user_data.get('name')},</p>
+                    <p>You've been added to <strong>{institute_name}</strong> on {APP_NAME}. Your account is already active — you just need to set a password to log in.</p>
+
+                    <div class="info-box">
+                        <p>Click the button below to set your password:</p>
+                        <a href="{set_password_url}" class="button">Set Your Password</a>
+                    </div>
+
+                    <div class="warning-box">
+                        <p style="margin: 0; color: #856404;"><strong>⏰ This link expires in 30 minutes.</strong></p>
+                        <p style="margin: 10px 0 0 0; color: #856404;">If it expires before you use it, use "Forgot Password" on the login screen with this email address to get a new link — your account will already exist.</p>
+                    </div>
+
+                    <p style="font-size: 12px; color: #666;">If the button doesn't work, copy and paste this link into your browser:<br>
+                    <a href="{set_password_url}" style="color: #fa709a; word-break: break-all;">{set_password_url}</a></p>
+
+                    <div class="footer">
+                        <p>Need help? Contact us at {SUPPORT_EMAIL}</p>
+                        <p>© 2025 {APP_NAME}. All rights reserved.</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return send_email(
+            to=user_data.get('email'),
+            subject=f"You've been added to {institute_name} on {APP_NAME}",
+            html=html
+        )
+
+    except Exception as e:
+        logger.error(f"Error in send_team_invite_notification: {str(e)}")
+        return False
+
+
 def send_email_verification(user_data: Dict[str, Any], verification_token: str, app_url: str) -> bool:
     """
     Send email verification link to user.

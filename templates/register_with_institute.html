@@ -6,7 +6,7 @@
   /* Hide navbar on registration page */
   body > .navbar { display: none !important; }
   .container { max-width: 500px; margin: 60px auto; }
-  .input-field, input[list] {
+  .input-field, select.input-field {
     width: 100%;
     padding: 0.5rem;
     margin-bottom: 16px;
@@ -16,7 +16,6 @@
   }
 
   .institute-wrapper {
-    position: relative;
     margin-bottom: 16px;
   }
 
@@ -38,84 +37,12 @@
     margin-bottom: 0;
   }
 
-  /* Improve datalist dropdown appearance */
   #institute:focus {
     border-color: #4CAF50;
     outline: none;
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
   }
-
-  /* Visual feedback for valid institute selection */
-  #institute.valid-institute {
-    border-color: #4CAF50;
-    background-color: #f1f8f4;
-  }
-
-  #institute.new-institute {
-    border-color: #FF9800;
-    background-color: #fff8f0;
-  }
-
-  .institute-status {
-    font-size: 0.85rem;
-    margin-top: 4px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    display: none;
-  }
-
-  .institute-status.existing {
-    display: block;
-    background-color: #e8f5e9;
-    color: #2e7d32;
-  }
-
-  .institute-status.new {
-    display: block;
-    background-color: #fff3e0;
-    color: #e65100;
-  }
 </style>
-
-<script nonce="{{ csp_nonce() }}">
-document.addEventListener('DOMContentLoaded', function() {
-  const instituteInput = document.getElementById('institute');
-  const datalist = document.getElementById('institute-list');
-  const statusDiv = document.createElement('div');
-  statusDiv.className = 'institute-status';
-  instituteInput.parentElement.appendChild(statusDiv);
-
-  // Get list of valid institute names
-  const validInstitutes = Array.from(datalist.options).map(opt => opt.value.toLowerCase());
-
-  function checkInstitute() {
-    const value = instituteInput.value.trim().toLowerCase();
-
-    if (!value) {
-      instituteInput.classList.remove('valid-institute', 'new-institute');
-      statusDiv.className = 'institute-status';
-      return;
-    }
-
-    if (validInstitutes.includes(value)) {
-      // Existing institute
-      instituteInput.classList.remove('new-institute');
-      instituteInput.classList.add('valid-institute');
-      statusDiv.className = 'institute-status existing';
-      statusDiv.textContent = '✓ Joining existing institute';
-    } else {
-      // New institute
-      instituteInput.classList.remove('valid-institute');
-      instituteInput.classList.add('new-institute');
-      statusDiv.className = 'institute-status new';
-      statusDiv.textContent = '⚠ Creating new institute - make sure spelling is correct';
-    }
-  }
-
-  instituteInput.addEventListener('input', checkInstitute);
-  instituteInput.addEventListener('blur', checkInstitute);
-});
-</script>
 {% endblock %}
 
 {% block content %}
@@ -131,24 +58,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div class="institute-wrapper">
         <label for="institute" class="institute-label">Institute</label>
-        <input
-          list="institute-list"
-          name="institute"
-          id="institute"
-          class="input-field"
-          placeholder="Start typing to search institutes..."
-          required
-          autocomplete="off">
-        <datalist id="institute-list">
+        <select name="institute" id="institute" class="input-field" required {% if institutes|length == 0 %}disabled{% endif %}>
+          <option value="" disabled selected>-- Select Institute --</option>
           {% for inst in institutes %}
             <option value="{{ inst.name }}">{{ inst.name }} ({{ inst.count }} physio{% if inst.count != 1 %}s{% endif %})</option>
           {% endfor %}
-        </datalist>
+        </select>
         <div class="institute-hint">
           {% if institutes|length > 0 %}
-            Select from {{ institutes|length }} registered institute{% if institutes|length != 1 %}s{% endif %}, or type a new one
+            Select the institute you're joining. Starting a brand-new institute? Use <a href="{{ url_for('register_institute') }}">Register Institute</a> instead.
           {% else %}
-            No institutes registered yet. Type your institute name to create a new one.
+            No institutes are registered yet. If you're starting a new institute, use <a href="{{ url_for('register_institute') }}">Register Institute</a> instead.
           {% endif %}
         </div>
       </div>

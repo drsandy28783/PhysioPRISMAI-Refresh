@@ -187,7 +187,8 @@ from email_service import (
     send_super_admin_staff_registration_notification,
     send_super_admin_tier2_approval_notification,
     send_password_reset_notification,
-    send_email_verification
+    send_email_verification,
+    send_team_invite_notification
 )
 import logging
 import time
@@ -3300,6 +3301,96 @@ def api_institutes_list():
         return jsonify({'ok': False, 'error': 'FAILED_TO_FETCH_INSTITUTES'}), 500
 
 
+@app.route('/api/institute/invite-member', methods=['POST'])
+@csrf.exempt
+@require_auth
+def api_invite_team_member():
+    """
+    Institute admin adds a team member directly (auto-approved, no separate
+    approval-queue step -- the admin's action IS the approval). Shared by
+    both the web and mobile "Add Team Member" screens.
+    """
+    try:
+        if g.user.get('is_admin') != 1:
+            return jsonify({'ok': False, 'error': 'ADMIN_REQUIRED'}), 403
+
+        caller_email = g.user.get('email')
+        caller_institute = g.user.get('institute')
+
+        data = request.get_json() or {}
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip().lower()
+        phone = data.get('phone', '').strip()
+
+        if not name or not email:
+            return jsonify({'ok': False, 'error': 'MISSING_FIELDS'}), 400
+
+        existing_user = db.collection('users').document(email).get()
+        if existing_user.exists:
+            return jsonify({'ok': False, 'error': 'EMAIL_EXISTS'}), 409
+
+        from subscription_manager import check_user_limit
+        can_add, limit_message, current_users, max_users = check_user_limit(caller_email)
+        if not can_add:
+            return jsonify({
+                'ok': False,
+                'error': 'USER_LIMIT_REACHED',
+                'message': limit_message,
+                'current_users': current_users,
+                'max_users': max_users
+            }), 403
+
+        # Create Firebase Auth user with a random temp password -- the
+        # invitee sets their own real password via the emailed reset link.
+        temp_password = secrets.token_urlsafe(24)
+        try:
+            firebase_user = auth.create_user(email=email, password=temp_password, display_name=name)
+            firebase_uid = firebase_user.uid
+        except Exception as e:
+            logger.error(f"Failed to create Firebase Auth user for invited member {email}: {e}")
+            return jsonify({'ok': False, 'error': 'ACCOUNT_CREATION_FAILED'}), 500
+
+        password_hash = generate_password_hash(temp_password)
+
+        db.collection('users').document(email).set({
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'institute': caller_institute,
+            'institute_id': caller_email,
+            'password_hash': password_hash,
+            'firebase_uid': firebase_uid,
+            'created_at': SERVER_TIMESTAMP,
+            'approved': 1,  # Admin added them directly -- that IS the approval
+            'active': 1,
+            'is_admin': 0,
+            'user_type': 'institute_staff',
+            'email_verified': True,  # Admin is vouching for this address
+        })
+
+        reset_token = generate_reset_token()
+        store_reset_token(db, email, reset_token)
+        base_url = request.host_url.rstrip('/')
+        set_password_url = f"{base_url}/reset-password/{reset_token}"
+
+        try:
+            send_team_invite_notification(
+                {'name': name, 'email': email},
+                caller_institute,
+                set_password_url
+            )
+        except Exception as email_error:
+            logger.error(f"Failed to send team invite email to {email}: {email_error}")
+
+        log_action(caller_email, 'Invite Team Member', f"Invited {email} to {caller_institute}")
+
+        return jsonify({'ok': True, 'message': 'Invitation sent'}), 201
+
+    except Exception as e:
+        logger.error(f"API invite team member error: {e}", exc_info=True)
+        return jsonify({'ok': False, 'error': 'INVITE_FAILED'}), 500
+
+
 @app.route('/api/test-firestore', methods=['GET'])
 def test_firestore_connection():
     """
@@ -5349,15 +5440,18 @@ def register_with_institute():
             admin_email = admin_doc.id
             break
 
-        if admin_email:
-            try:
-                from subscription_manager import check_user_limit
-                can_add_more, limit_message, _, _ = check_user_limit(admin_email)
-                if not can_add_more:
-                    flash(limit_message or "This institute has reached its user limit. Contact your admin to upgrade the plan.", "error")
-                    return redirect('/register_with_institute')
-            except Exception as limit_error:
-                logger.warning(f"Could not check user limit for institute {institute}: {limit_error}")
+        if not admin_email:
+            flash("No institute found with that name. If you're starting a new institute, use 'Register Institute' instead.", "error")
+            return redirect('/register_with_institute')
+
+        try:
+            from subscription_manager import check_user_limit
+            can_add_more, limit_message, _, _ = check_user_limit(admin_email)
+            if not can_add_more:
+                flash(limit_message or "This institute has reached its user limit. Contact your admin to upgrade the plan.", "error")
+                return redirect('/register_with_institute')
+        except Exception as limit_error:
+            logger.warning(f"Could not check user limit for institute {institute}: {limit_error}")
 
         # Register new user under selected institute (use email as document ID)
         db.collection('users').document(email).set({
@@ -5413,16 +5507,13 @@ def register_with_institute():
 
         # Also notify institute admin (they can approve)
         try:
-            if admin_email:
-                send_institute_staff_registration_notification({
-                    'name': name,
-                    'email': email,
-                    'phone': phone,
-                    'institute': institute,
-                    'created_at': datetime.now().isoformat()
-                }, admin_email)
-            else:
-                logger.warning(f"No institute admin found for {institute} to send notification")
+            send_institute_staff_registration_notification({
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'institute': institute,
+                'created_at': datetime.now().isoformat()
+            }, admin_email)
         except Exception as email_error:
             # Log error but don't fail registration
             logger.error(f"Failed to send institute staff registration notification for {email}: {email_error}")
@@ -5451,6 +5542,14 @@ def register_with_institute():
 
     return render_template('register_with_institute.html', institutes=institutes)
     
+
+@app.route('/invite_team_member')
+@login_required()
+def invite_team_member():
+    if session.get('is_admin') != 1:
+        return redirect('/login_institute')
+    return render_template('invite_team_member.html')
+
 
 @app.route('/approve_physios')
 @login_required()
