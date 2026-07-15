@@ -366,6 +366,14 @@ Pathophysiological Mechanism findings:
 - Pain Severity (VAS): {pain_severity}/10
 - Pain Irritability: {pain_irritability}
 
+Subjective Examination findings (ICF model):
+- Body Structure: {body_structure}
+- Body Function (symptom behaviour, 24-hour pattern, aggravating/easing factors): {body_function}
+- Activity Performance: {activity_performance}
+- Activity Capacity: {activity_capacity}
+- Contextual Factors (Environmental): {contextual_environmental}
+- Contextual Factors (Personal): {contextual_personal}
+
 Generate pre-fills for the Risk Factors & Clinical Flags screen.
 
 ALLOWED maintenance cause values (use EXACTLY as written, array may be empty):
@@ -392,9 +400,10 @@ Flag type definitions (for your reference):
 """
 
 
-def build_risk_flags_user_prompt(patient: dict, patho_data: dict) -> str:
+def build_risk_flags_user_prompt(patient: dict, patho_data: dict, subjective_data: dict = None) -> str:
     """Format the user prompt for risk factors & clinical flags prefills."""
     options_str = "\n".join(f'- "{o}"' for o in MAINTENANCE_CAUSE_OPTIONS)
+    subjective_data = subjective_data or {}
     return RISK_FLAGS_USER_TEMPLATE.format(
         age_sex=patient.get("age_sex") or "Not provided",
         present_history=patient.get("present_history") or "Not provided",
@@ -405,6 +414,12 @@ def build_risk_flags_user_prompt(patient: dict, patho_data: dict) -> str:
         stage_healing=patho_data.get("stage_healing") or "Not recorded",
         pain_severity=patho_data.get("pain_severity") or "Not recorded",
         pain_irritability=patho_data.get("pain_irritability") or "Not recorded",
+        body_structure=subjective_data.get("body_structure") or "Not recorded",
+        body_function=subjective_data.get("body_function") or "Not recorded",
+        activity_performance=subjective_data.get("activity_performance") or "Not recorded",
+        activity_capacity=subjective_data.get("activity_capacity") or "Not recorded",
+        contextual_environmental=subjective_data.get("contextual_environmental") or "Not recorded",
+        contextual_personal=subjective_data.get("contextual_personal") or "Not recorded",
         maintenance_cause_options=options_str,
     )
 

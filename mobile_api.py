@@ -1516,7 +1516,8 @@ def api_qm_prefill():
 
         elif step == 'risk_flags':
             patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
-            prefills = generate_risk_flags_prefills(patient_data, patho_data)
+            subjective_data = fetch_assessment('subjective_examination', 'subjectiveExamination')
+            prefills = generate_risk_flags_prefills(patient_data, patho_data, subjective_data)
 
         elif step == 'objective':
             patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')

@@ -305,6 +305,7 @@ def _validate_initial_plan_prefills(raw: Dict[str, Any]) -> Dict[str, Any]:
 def generate_risk_flags_prefills(
     patient: Dict[str, Any],
     patho_data: Dict[str, Any],
+    subjective_data: Dict[str, Any] = None,
 ) -> Dict[str, Any]:
     """
     Generate AI pre-fills for the Risk Factors & Clinical Flags screen.
@@ -326,7 +327,7 @@ def generate_risk_flags_prefills(
             return {}
 
         client = get_azure_openai_client()
-        user_prompt = build_risk_flags_user_prompt(patient, patho_data or {})
+        user_prompt = build_risk_flags_user_prompt(patient, patho_data or {}, subjective_data or {})
 
         raw = client.generate_json_response(
             system_prompt=RISK_FLAGS_SYSTEM,

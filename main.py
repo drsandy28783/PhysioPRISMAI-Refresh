@@ -6472,8 +6472,22 @@ def qm_risk_factors_clinical_flags(patient_id):
     except Exception as e:
         logger.warning(f"QM risk flags: could not fetch patho_data for {patient_id}: {e}")
 
+    subjective_data = {}
+    try:
+        subjective_docs = (
+            db.collection('subjective_examination')
+            .where('patient_id', '==', patient_id)
+            .order_by('timestamp', direction='DESCENDING')
+            .limit(1)
+            .get()
+        )
+        if subjective_docs:
+            subjective_data = subjective_docs[0].to_dict()
+    except Exception as e:
+        logger.warning(f"QM risk flags: could not fetch subjective_data for {patient_id}: {e}")
+
     logger.info(f"QM risk flags: present_history present = {bool(patient.get('present_history'))}")
-    prefills = generate_risk_flags_prefills(patient, patho_data)
+    prefills = generate_risk_flags_prefills(patient, patho_data, subjective_data)
     logger.info(f"QM risk flags: prefills = {bool(prefills)}, keys = {list(prefills.keys()) if prefills else []}")
 
     return render_template(
