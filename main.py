@@ -8656,7 +8656,18 @@ def treatment_plan_suggest(field):
     age_sex = sanitize_age_sex(patient_info.get('age_sex', ''))
     present_hist = sanitize_clinical_text(patient_info.get('present_complaint', '') or patient_info.get('present_history', ''))
     past_hist = sanitize_clinical_text(patient_info.get('past_history', ''))
-    diagnosis = sanitize_clinical_text(str(prov_dx.get('diagnosis', '')) if prov_dx else '')
+    # provisional_diagnosis is stored as structured hypothesis-testing fields,
+    # not a single "diagnosis" string - build a readable summary from them
+    diagnosis = sanitize_clinical_text("\n".join(
+        f"- {label}: {prov_dx[key]}" for key, label in [
+            ('structure_fault', 'Structure at Fault'),
+            ('likelihood', 'Likelihood'),
+            ('symptom', 'Symptom'),
+            ('findings_support', 'Supporting Findings'),
+            ('findings_reject', 'Rejecting Findings'),
+            ('hypothesis_supported', 'Hypothesis Supported'),
+        ] if prov_dx.get(key)
+    )) if prov_dx else ''
     subjective = sanitize_subjective_data(subj) if subj else {}
     perspectives = sanitize_subjective_data(persp) if persp else {}
     goals_data = sanitize_subjective_data(goals) if goals else {}
@@ -8734,90 +8745,39 @@ def treatment_plan_summary(patient_id):
 
     # 2) Pull in each screen's data
     subj      = fetch_latest('subjective_examination')       # e.g. pain, history
-    persp     = fetch_latest('patient_perspectives')         # ICF beliefs (FIXED: was 'subjective_perspectives')
-    assess    = fetch_latest('initial_plan')                 # initial plan choices (FIXED: was 'subjective_assessments')
-    patho     = fetch_latest('patho_mechanism')              # (FIXED: was 'pathophysiological_mechanism')
-    chronic   = fetch_latest('chronic_diseases')             # (FIXED: was 'chronic_disease_factors')
-    flags     = fetch_latest('clinical_flags')
-    objective = fetch_latest('objective_assessments')        # (FIXED: was 'objective_assessment')
     prov_dx   = fetch_latest('provisional_diagnosis')
     goals     = fetch_latest('smart_goals')
     tx_plan   = fetch_latest('treatment_plan')
 
     # Log what data was found
-    logger.info(f"[Treatment Summary] Data fetched - subj: {bool(subj)}, persp: {bool(persp)}, assess: {bool(assess)}, "
-                f"patho: {bool(patho)}, chronic: {bool(chronic)}, flags: {bool(flags)}, objective: {bool(objective)}, "
+    logger.info(f"[Treatment Summary] Data fetched - subj: {bool(subj)}, "
                 f"prov_dx: {bool(prov_dx)}, goals: {bool(goals)}, tx_plan: {bool(tx_plan)}")
 
     # Sanitize patient demographics
     sanitized_age_sex = sanitize_age_sex(patient_info.get('age_sex', ''))
+    sanitized_present = sanitize_clinical_text(patient_info.get('present_history', ''))
     sanitized_past = sanitize_clinical_text(patient_info.get('past_history', ''))
 
     # Sanitize all fetched data
     sanitized_subj = sanitize_subjective_data(subj)
-    sanitized_persp = sanitize_subjective_data(persp)
-    sanitized_assess = sanitize_subjective_data(assess)
-    sanitized_patho = sanitize_subjective_data(patho)
-    sanitized_chronic = sanitize_subjective_data(chronic)
-    sanitized_flags = sanitize_subjective_data(flags)
-    sanitized_objective = sanitize_subjective_data(objective)
     sanitized_prov_dx = sanitize_subjective_data(prov_dx)
     sanitized_goals = sanitize_subjective_data(goals)
     sanitized_tx_plan = sanitize_subjective_data(tx_plan)
 
-    # 3) Build a single prompt that walks the AI through each section
-    prompt = (
-        "You are a PHIâ€‘safe clinical summarization assistant.\n\n"
-        f"Patient demographics: {sanitized_age_sex}; "
-        f"Past medical history: {sanitized_past}.\n\n"
+    diagnosis_str = "\n".join(
+        f"- {k.replace('_', ' ').title()}: {v}" for k, v in sanitized_prov_dx.items() if v
+    )
 
-        "Subjective examination:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_subj.items() if v)
-        + "\n\n"
-
-        "Patient perspectives (ICF model):\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_persp.items() if v)
-        + "\n\n"
-
-        "Initial plan of assessment:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {sanitize_clinical_text(str(v))}"
-                    for k,v in sanitized_assess.items() if v)
-        + "\n\n"
-
-        "Pathophysiological mechanism:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_patho.items() if v)
-        + "\n\n"
-
-        "Chronic disease factors:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_chronic.items() if v)
-        + "\n\n"
-
-        "Clinical flags:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_flags.items() if v)
-        + "\n\n"
-
-        "Objective assessment:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_objective.items() if v)
-        + "\n\n"
-
-        "Provisional diagnosis:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_prov_dx.items() if v)
-        + "\n\n"
-
-        "SMART goals:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_goals.items() if v)
-        + "\n\n"
-
-        "Treatment plan:\n"
-        + "\n".join(f"- {k.replace('_', ' ').title()}: {v}" for k,v in sanitized_tx_plan.items() if v)
-        + "\n\n"
-
-        "Using all of the above, create a concise treatment plan summary "
-        "that links the patient's history, exam findings, goals, and interventions.\n\n"
-        "Format: A cohesive 2-3 paragraph summary (maximum 300 words) covering:\n"
-        "1. Patient presentation and key findings\n"
-        "2. Clinical reasoning and diagnosis\n"
-        "3. Treatment approach and goals"
+    # 3) Use the same centralized, phase-based prompt the mobile app uses
+    prompt = get_treatment_plan_summary_prompt(
+        patient_id=patient_id,
+        age_sex=sanitized_age_sex,
+        present_hist=sanitized_present,
+        past_hist=sanitized_past,
+        subjective=sanitized_subj,
+        diagnosis=diagnosis_str,
+        goals=sanitized_goals,
+        treatment_fields=sanitized_tx_plan,
     )
 
     # Log prompt size for monitoring
@@ -8893,8 +8853,20 @@ def ai_followup_suggestion(patient_id):
     past_hist = sanitize_clinical_text(patient.get('past_history', ''))
 
     # Get diagnosis and treatment summary if available
+    # provisional_diagnosis is stored as structured hypothesis-testing fields,
+    # not a single "diagnosis" string - build a readable summary from them
     prov_dx_doc = db.collection('provisional_diagnosis').where('patient_id', '==', patient_id).order_by('timestamp', direction='DESCENDING').limit(1).get()
-    diagnosis = sanitize_clinical_text(prov_dx_doc[0].to_dict().get('diagnosis', '') if prov_dx_doc else '')
+    prov_dx_data = prov_dx_doc[0].to_dict() if prov_dx_doc else {}
+    diagnosis = sanitize_clinical_text("\n".join(
+        f"- {label}: {prov_dx_data[key]}" for key, label in [
+            ('structure_fault', 'Structure at Fault'),
+            ('likelihood', 'Likelihood'),
+            ('symptom', 'Symptom'),
+            ('findings_support', 'Supporting Findings'),
+            ('findings_reject', 'Rejecting Findings'),
+            ('hypothesis_supported', 'Hypothesis Supported'),
+        ] if prov_dx_data.get(key)
+    ))
 
     # Construct followup data from session inputs
     followup_data = {
@@ -8992,9 +8964,19 @@ def ai_followup_field(field):
                 .get()
         return coll[0].to_dict() if coll else {}
 
-    # Get diagnosis
+    # Get diagnosis - provisional_diagnosis is stored as structured hypothesis-testing
+    # fields, not a single "diagnosis" string - build a readable summary from them
     prov_dx_data = fetch_latest('provisional_diagnosis')
-    diagnosis = sanitize_clinical_text(prov_dx_data.get('diagnosis', ''))
+    diagnosis = sanitize_clinical_text("\n".join(
+        f"- {label}: {prov_dx_data[key]}" for key, label in [
+            ('structure_fault', 'Structure at Fault'),
+            ('likelihood', 'Likelihood'),
+            ('symptom', 'Symptom'),
+            ('findings_support', 'Supporting Findings'),
+            ('findings_reject', 'Rejecting Findings'),
+            ('hypothesis_supported', 'Hypothesis Supported'),
+        ] if prov_dx_data.get(key)
+    )) if prov_dx_data else ''
 
     # Get treatment plan summary
     treatment_data = fetch_latest('treatment_plan')
@@ -12272,7 +12254,8 @@ def get_patient_context(patient_id):
             'subjective': {},
             'perspectives': {},
             'assessments': {},
-            'smart_goals': {}
+            'smart_goals': {},
+            'provisional_diagnosis': ''
         }
 
         # Fetch most recent subjective examination
@@ -12354,6 +12337,29 @@ def get_patient_context(patient_id):
                 'smart_goal': goals_data.get('smart_goal', ''),
                 'smart_goal_details': goals_data.get('smart_goal_details', '')
             }
+            break  # Only need the most recent
+
+        # Fetch most recent provisional diagnosis
+        # (stored as structured hypothesis-testing fields, not a single "diagnosis" string)
+        prov_dx_docs = db.collection('provisional_diagnosis')\
+            .where('patient_id', '==', patient_id)\
+            .order_by('timestamp', direction='DESCENDING')\
+            .limit(1)\
+            .stream()
+
+        for doc in prov_dx_docs:
+            dx_data = doc.to_dict()
+            dx_fields = [
+                ('structure_fault', 'Structure at Fault'),
+                ('likelihood', 'Likelihood'),
+                ('symptom', 'Symptom'),
+                ('findings_support', 'Supporting Findings'),
+                ('findings_reject', 'Rejecting Findings'),
+                ('hypothesis_supported', 'Hypothesis Supported'),
+            ]
+            context['provisional_diagnosis'] = "\n".join(
+                f"- {label}: {dx_data[key]}" for key, label in dx_fields if dx_data.get(key)
+            )
             break  # Only need the most recent
 
         return jsonify(context), 200

@@ -632,14 +632,21 @@ if (document.getElementById('perspectives-form')) {
       AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
       try {
-        // HIPAA-COMPLIANT: Send only patient_id and current form inputs
-        // Server fetches all historical data from database
+        // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+        const context = await getPatientContext(currentPatientId);
+
         const res = await fetch(`/api/web_ai_suggestion/perspectives/${field}`, {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({
             patient_id: currentPatientId,
-            inputs: currentInputs
+            inputs: currentInputs,
+            previous: {
+              age_sex: context.age_sex || '',
+              present_history: context.present_history || '',
+              past_history: context.past_history || '',
+              subjective: context.subjective || {}
+            }
           })
         });
         const data = await res.json();
@@ -686,14 +693,23 @@ if (document.getElementById('perspectives-form')) {
         AIModal.show(`AI Suggestions: ${fieldTitle}`);
 
         try {
-          // HIPAA-COMPLIANT: Send only patient_id and current selection
-          // Server fetches all historical data from database
+          // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
+          const context = await getPatientContext(currentPatientId);
+
           const res = await fetch(`/api/web_ai_suggestion/initial_plan/${field}`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
               patient_id: currentPatientId,
-              selection: selection
+              selection: selection,
+              previous: {
+                age_sex: context.age_sex || '',
+                present_history: context.present_history || '',
+                past_history: context.past_history || '',
+                provisional_diagnosis: context.provisional_diagnosis || '',
+                subjective: context.subjective || {},
+                perspectives: context.perspectives || {}
+              }
             })
           });
           const data = await res.json();

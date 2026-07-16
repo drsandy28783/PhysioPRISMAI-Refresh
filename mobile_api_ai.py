@@ -1435,9 +1435,19 @@ def api_ai_followup_field(field):
                         .get()
                 return coll[0].to_dict() if coll else {}
 
-            # Get diagnosis
+            # Get diagnosis - provisional_diagnosis is stored as structured hypothesis-testing
+            # fields, not a single "diagnosis" string - build a readable summary from them
             prov_dx_data = fetch_latest('provisional_diagnosis')
-            diagnosis = sanitize_clinical_text(prov_dx_data.get('diagnosis', ''))
+            diagnosis = sanitize_clinical_text("\n".join(
+                f"- {label}: {prov_dx_data[key]}" for key, label in [
+                    ('structure_fault', 'Structure at Fault'),
+                    ('likelihood', 'Likelihood'),
+                    ('symptom', 'Symptom'),
+                    ('findings_support', 'Supporting Findings'),
+                    ('findings_reject', 'Rejecting Findings'),
+                    ('hypothesis_supported', 'Hypothesis Supported'),
+                ] if prov_dx_data.get(key)
+            )) if prov_dx_data else ''
 
             # Get treatment plan summary
             treatment_data = fetch_latest('treatment_plan')
