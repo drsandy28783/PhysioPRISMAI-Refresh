@@ -961,6 +961,81 @@ if (document.getElementById('clinical-flags-form')) {
 if (document.getElementById('risk-factors-form')) {
   const currentPatientId = window.currentPatientId || '';
 
+  // Split the comprehensive "all flags" AI text response into per-flag content,
+  // keyed the same way as the server-side Quick Mode prefill fields.
+  const parseClinicalFlagsText = (text) => {
+    const result = { red_flags: '', orange_flags: '', yellow_flags: '', black_flags: '', blue_flags: '' };
+    if (!text) return result;
+
+    let current = '';
+    let buffer = '';
+    const flush = () => {
+      if (current && buffer.trim()) {
+        result[current] = (result[current] ? result[current] + '\n' : '') + buffer.trim();
+      }
+      buffer = '';
+    };
+
+    text.split('\n').forEach(line => {
+      const lower = line.toLowerCase();
+      if (lower.includes('red flag')) { flush(); current = 'red_flags'; return; }
+      if (lower.includes('orange flag')) { flush(); current = 'orange_flags'; return; }
+      if (lower.includes('yellow flag')) { flush(); current = 'yellow_flags'; return; }
+      if (lower.includes('black flag')) { flush(); current = 'black_flags'; return; }
+      if (lower.includes('blue flag')) { flush(); current = 'blue_flags'; return; }
+      if (current && line.trim()) {
+        buffer += (buffer ? '\n' : '') + line.trim().replace(/\*\*/g, '');
+      }
+    });
+    flush();
+
+    Object.keys(result).forEach(k => {
+      if (/^(none identified|not applicable|none)[.\s\-–:]*.*$/i.test(result[k].trim()) && result[k].trim().length < 40) {
+        result[k] = '';
+      }
+    });
+    return result;
+  };
+
+  // Write parsed AI content into the matching textarea and apply the same
+  // "AI suggested" styling used by the server-rendered Quick Mode prefill.
+  const applyFlagAutofill = (field, content) => {
+    const el = document.getElementById(field);
+    const block = document.getElementById(field + '_block');
+    if (!el || !content) return;
+
+    el.value = content;
+    el.classList.remove('blank-textarea');
+    el.classList.add('prefilled-textarea');
+
+    if (block && !block.querySelector('.ai-prefill-label')) {
+      const label = document.createElement('div');
+      label.className = 'ai-prefill-label';
+      label.textContent = '🤖 AI suggested — edit or clear as needed';
+      el.parentNode.insertBefore(label, el);
+    }
+
+    if (field === 'red_flags' && block && !block.querySelector('.red-flag-alert')) {
+      const alertBox = document.createElement('div');
+      alertBox.className = 'red-flag-alert';
+      const icon = document.createElement('div');
+      icon.className = 'red-flag-alert-icon';
+      icon.textContent = '⚠️';
+      const text = document.createElement('div');
+      const strong = document.createElement('strong');
+      strong.textContent = 'Red Flags detected from history.';
+      text.appendChild(strong);
+      text.appendChild(document.createTextNode(
+        ' Review the pre-filled content below carefully. If confirmed, consider urgent ' +
+        'referral or medical clearance before proceeding with physiotherapy intervention.'
+      ));
+      alertBox.appendChild(icon);
+      alertBox.appendChild(text);
+      const flagLabel = block.querySelector('.flag-label');
+      (flagLabel || block).insertAdjacentElement('afterend', alertBox);
+    }
+  };
+
   // Single AI button for all flags suggestions
   document.getElementById('gen_flags_suggestions')?.addEventListener('click', async () => {
     AIModal.show('AI Suggestions for Clinical Flags');
@@ -999,6 +1074,11 @@ if (document.getElementById('risk-factors-form')) {
       const data = await res.json();
       if (data.error) throw new Error(error);
       AIModal.showContent(data);
+
+      // Auto-fill the individual flag textareas from the same response the modal shows,
+      // instead of leaving the physician to copy/paste each section manually.
+      const parsedFlags = parseClinicalFlagsText(data.visible_text || data.suggestion || data.text || '');
+      Object.entries(parsedFlags).forEach(([field, content]) => applyFlagAutofill(field, content));
     } catch (e) {
       AIModal.showError(e.message);
     }

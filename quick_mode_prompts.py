@@ -391,12 +391,25 @@ Return this exact JSON structure:
   "blue_flags": "<1-2 bullet points if work-related attitudes/demands evident — else empty string>"
 }}
 
-Flag type definitions (for your reference):
-- Red flags: serious pathology indicators (e.g. night pain, unexplained weight loss, bilateral neuro symptoms, bowel/bladder dysfunction)
-- Orange flags: symptoms suggestive of psychiatric illness (severe depression, PTSD, psychosis indicators)
-- Yellow flags (psychosocial): fear-avoidance, catastrophising, low self-efficacy, poor recovery expectation
-- Black flags (systems/environment): compensation claims, litigation, unsupportive employer or healthcare system
-- Blue flags (work-related): beliefs that work caused or worsens condition, low job satisfaction, fear of re-injury at work
+Flag type definitions and categories to actively screen against (check the history against
+EVERY category below — a single matching indicator is enough to flag):
+
+- Red flags (serious pathology — URGENT MEDICAL REFERRAL):
+  - Fracture: significant trauma, prolonged steroid use + minor trauma, age >50 + minor trauma, unable to weight-bear
+  - Infection: fever, night sweats, chills, recent infection, immunosuppression, IV drug use
+  - Cancer: age >50 with new-onset pain, history of cancer, unexplained weight loss, unremitting night pain, progressive pain
+  - Cauda equina: saddle anaesthesia, bilateral leg weakness/numbness, bowel/bladder dysfunction, sexual dysfunction
+  - Inflammatory/systemic disease: morning stiffness >1 hour, age <20 with back pain, alternating buttock pain,
+    peripheral joint symptoms, history of psoriasis/psoriatic skin patches (psoriatic arthritis risk)
+  - Vascular/cardiac: exertional chest pain, claudication (calf pain on walking, relieved by rest), pulselessness/colour change
+  - Serious neurological: rapidly progressive weakness, upper motor neuron signs, drop attacks, severe unrelenting headache
+- Orange flags: symptoms suggestive of psychiatric illness (severe depression, suicidal ideation, PTSD, psychosis, substance abuse)
+- Yellow flags (psychosocial): fear-avoidance beliefs, pain catastrophising, low self-efficacy, poor recovery expectation,
+  reduced activity/withdrawal, compensation claims pending, overprotective family
+- Black flags (systems/environment): compensation claims, litigation, unsupportive employer or healthcare system,
+  conflicting medical advice, access/transport barriers
+- Blue flags (work-related): beliefs that work caused or worsens condition, low job satisfaction, fear of re-injury at work,
+  perceived (not actual) excessive job demands
 """
 
 
