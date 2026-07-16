@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
     AIModal.show('Past History Questions');
 
     try {
-      const res  = await fetch('/api/ai_suggestion/past_questions', {
+      const res  = await fetch('/api/web_ai_suggestion/past_questions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -461,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout
 
-      const res  = await fetch('/api/ai_suggestion/provisional_diagnosis', {
+      const res  = await fetch('/api/web_ai_suggestion/provisional_diagnosis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -577,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
     AIModal.show('Subjective Diagnosis');
 
     try {
-      const res = await fetch('/api/ai_suggestion/subjective_diagnosis', {
+      const res = await fetch('/api/web_ai_suggestion/subjective_diagnosis', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(payload)
@@ -634,7 +634,7 @@ if (document.getElementById('perspectives-form')) {
       try {
         // HIPAA-COMPLIANT: Send only patient_id and current form inputs
         // Server fetches all historical data from database
-        const res = await fetch(`/api/ai_suggestion/perspectives/${field}`, {
+        const res = await fetch(`/api/web_ai_suggestion/perspectives/${field}`, {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({
@@ -688,7 +688,7 @@ if (document.getElementById('perspectives-form')) {
         try {
           // HIPAA-COMPLIANT: Send only patient_id and current selection
           // Server fetches all historical data from database
-          const res = await fetch(`/api/ai_suggestion/initial_plan/${field}`, {
+          const res = await fetch(`/api/web_ai_suggestion/initial_plan/${field}`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
@@ -745,7 +745,7 @@ if (document.getElementById('perspectives-form')) {
 
         console.log('[Initial Plan Summary] Request payload:', requestPayload);
 
-        const res = await fetch('/api/ai_suggestion/initial_plan_summary', {
+        const res = await fetch('/api/web_ai_suggestion/initial_plan_summary', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify(requestPayload)
@@ -1161,7 +1161,7 @@ if (document.getElementById('objective-assessment-form')) {
       }
 
       const res = await fetch(
-        `/api/ai_suggestion/provisional_diagnosis`,
+        `/api/web_ai_suggestion/provisional_diagnosis`,
         {
           method:'POST',
           headers:{'Content-Type':'application/json'},
@@ -1263,7 +1263,7 @@ document.querySelectorAll('.ai-btn[data-screen="smart_goals"]').forEach(btn => {
       // HIPAA-COMPLIANT: Fetch patient context from server (not localStorage)
       const context = await getPatientContext(currentPatientId);
 
-      const resp = await fetch(`/api/ai_suggestion/smart_goals/${field}`, {
+      const resp = await fetch(`/api/web_ai_suggestion/smart_goals/${field}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1319,7 +1319,7 @@ if (document.getElementById('treatment-plan-form') || document.querySelector('[n
         const context = await getPatientContext(currentPatientId);
 
         const resp = await fetch(
-          `/api/ai_suggestion/treatment_plan/${field}`,
+          `/api/web_ai_suggestion/treatment_plan/${field}`,
           {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
@@ -1361,7 +1361,7 @@ if (genBtn) {
     AIModal.show('Treatment Summary');
 
     try {
-      const url = `/api/ai_suggestion/treatment_plan_summary/${getPatientId()}`;
+      const url = `/api/web_ai_suggestion/treatment_plan_summary/${getPatientId()}`;
       console.log('[Treatment Summary] Fetching:', url);
 
       const resp = await fetch(url);

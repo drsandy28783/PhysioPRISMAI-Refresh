@@ -16,7 +16,7 @@ def test_ai_suggestion_endpoint_exists(client, auth_headers):
     """Test that AI suggestion endpoints exist."""
     # Test one of the AI endpoints
     response = client.post(
-        '/api/ai_suggestion/past_questions',
+        '/api/web_ai_suggestion/past_questions',
         headers=auth_headers,
         json={'age_sex': '45/M', 'present_history': 'Shoulder pain'}
     )
@@ -39,7 +39,7 @@ def test_past_questions_suggestion(client, auth_headers, mock_azure_openai):
     }
 
     response = client.post(
-        '/api/ai_suggestion/past_questions',
+        '/api/web_ai_suggestion/past_questions',
         headers=auth_headers,
         json=test_data
     )
@@ -59,7 +59,7 @@ def test_provisional_diagnosis_suggestion(client, auth_headers, mock_azure_opena
     }
 
     response = client.post(
-        '/api/ai_suggestion/provisional_diagnosis',
+        '/api/web_ai_suggestion/provisional_diagnosis',
         headers=auth_headers,
         json=test_data
     )
@@ -107,7 +107,7 @@ def test_treatment_plan_suggestion(client, auth_headers, mock_azure_openai):
 def test_ai_requires_authentication(client):
     """Test that AI suggestions require authentication."""
     response = client.post(
-        '/api/ai_suggestion/past_questions',
+        '/api/web_ai_suggestion/past_questions',
         json={'age_sex': '45/M'}
     )
 
@@ -135,7 +135,7 @@ def test_ai_handles_missing_data(client, auth_headers, mock_azure_openai):
     """Test AI endpoints handle missing required data gracefully."""
     # Send incomplete data
     response = client.post(
-        '/api/ai_suggestion/past_questions',
+        '/api/web_ai_suggestion/past_questions',
         headers=auth_headers,
         json={}  # Empty data
     )

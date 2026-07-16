@@ -7538,7 +7538,7 @@ def reactivate_user(user_email):
 
 
 
-@app.route('/api/ai_suggestion/past_questions', methods=['POST'])
+@app.route('/api/web_ai_suggestion/past_questions', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -7591,7 +7591,7 @@ def ai_past_questions():
         return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 
-@app.route('/api/ai_suggestion/provisional_diagnosis', methods=['POST'])
+@app.route('/api/web_ai_suggestion/provisional_diagnosis', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -7672,7 +7672,7 @@ def ai_provisional_diagnosis():
         return jsonify({'error': 'An unexpected error occurred.'}), 500
 
 
-@app.route('/api/ai_suggestion/subjective_diagnosis', methods=['POST'])
+@app.route('/api/web_ai_suggestion/subjective_diagnosis', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -7726,7 +7726,7 @@ def ai_subjective_diagnosis():
            return jsonify({'error': 'Unexpected error.'}), 500
 
 
-@app.route('/api/ai_suggestion/perspectives/<field>', methods=['POST'])
+@app.route('/api/web_ai_suggestion/perspectives/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -7881,7 +7881,7 @@ def ai_perspectives_diagnosis():
             return jsonify({'error': 'Unexpected error.'}), 500
 
 
-@app.route('/api/ai_suggestion/initial_plan/<field>', methods=['POST'])
+@app.route('/api/web_ai_suggestion/initial_plan/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -7949,7 +7949,7 @@ def ai_initial_plan_field(field):
         return jsonify({'error':'Unexpected error.'}), 500
 
 
-@app.route('/api/ai_suggestion/initial_plan_summary', methods=['POST'])
+@app.route('/api/web_ai_suggestion/initial_plan_summary', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -8514,7 +8514,7 @@ def provisional_diagnosis_suggest(patient_id):
 
 
 
-@app.route('/api/ai_suggestion/smart_goals/<field>', methods=['POST'])
+@app.route('/api/web_ai_suggestion/smart_goals/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -8593,7 +8593,7 @@ def ai_smart_goals(field):
 
 
 # 13) Treatment Plan Suggestions
-@app.route('/api/ai_suggestion/treatment_plan/<field>', methods=['POST'])
+@app.route('/api/web_ai_suggestion/treatment_plan/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -8697,7 +8697,7 @@ def treatment_plan_suggest(field):
         logger.error(f"Error in treatment_plan_suggest: {e}", exc_info=True)
         return jsonify({ 'error': 'An unexpected error occurred.' }), 500
 
-@app.route('/api/ai_suggestion/treatment_plan_summary/<patient_id>', methods=['GET'])
+@app.route('/api/web_ai_suggestion/treatment_plan_summary/<patient_id>', methods=['GET'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota
@@ -8855,7 +8855,7 @@ def treatment_plan_summary(patient_id):
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 def ai_followup_suggestion(patient_id):
-    """LEGACY: General follow-up suggestion (prefer /api/ai_suggestion/followup/<field>)"""
+    """LEGACY: General follow-up suggestion (prefer /api/web_ai_suggestion/followup/<field>)"""
     data = request.get_json() or {}
 
     # Validate AI request
@@ -8934,7 +8934,7 @@ def ai_followup_suggestion(patient_id):
         return jsonify({'error': 'Unexpected error occurred.'}), 500
 
 
-@app.route('/api/ai_suggestion/followup/<field>', methods=['POST'])
+@app.route('/api/web_ai_suggestion/followup/<field>', methods=['POST'])
 @csrf.exempt  # CSRF exempt because using Firebase bearer token auth
 @require_firebase_auth
 @require_ai_quota

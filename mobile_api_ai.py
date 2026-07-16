@@ -1292,7 +1292,7 @@ def api_ai_treatment_plan_summary(patient_id):
             'endpoint': 'treatment_plan_summary',
             'tags': ['treatment', 'summary'],
             'patient_id': patient_id,
-            'user_id': user_email
+            'user_id': g.user.get('email')
         }, patient_context=age_sex)
 
         split_response = split_ai_response(suggestion)

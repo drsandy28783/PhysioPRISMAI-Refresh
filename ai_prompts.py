@@ -1152,7 +1152,7 @@ def get_past_questions_prompt(age_sex: str, present_hist: str) -> str:
     """
     Generate targeted past medical history questions.
 
-    Endpoint: /api/ai_suggestion/past_questions
+    Endpoint: /api/web_ai_suggestion/past_questions
     """
     return f"""{GENERAL_PHYSIO_ROLE}
 
@@ -1516,7 +1516,7 @@ def get_subjective_diagnosis_prompt(
     """
     Generate provisional diagnoses based on subjective examination alone.
 
-    Endpoint: /api/ai_suggestion/subjective_diagnosis
+    Endpoint: /api/web_ai_suggestion/subjective_diagnosis
     """
     profile = build_patient_profile(age_sex, present_hist, past_hist)
     subj_block = _format_dict_block("Subjective Findings", subjective_inputs)
@@ -1576,7 +1576,7 @@ def get_patient_perspectives_field_prompt(
     NEW: Includes pathophysiological mechanism context to tailor perspective questions
     to pain type and mechanism (e.g., neurogenic vs somatic pain affects expectations).
 
-    Endpoint: /api/ai_suggestion/perspectives/<field>
+    Endpoint: /api/web_ai_suggestion/perspectives/<field>
     """
 
     # Field names mapping to readable labels
@@ -1948,7 +1948,7 @@ def get_provisional_diagnosis_prompt(
     """
     Generate comprehensive provisional diagnosis after assessment.
 
-    Endpoint: /api/ai_suggestion/provisional_diagnosis
+    Endpoint: /api/web_ai_suggestion/provisional_diagnosis
     """
     context = build_clinical_context(
         age_sex, present_hist, past_hist,
@@ -4110,7 +4110,7 @@ def get_initial_plan_field_prompt(
     - NEW: Contraindications based on pain mechanism, severity, and irritability
     - NEW: INTRA-FORM ADAPTIVE AI - Learns from previous fields on THIS form
 
-    Endpoint: /api/ai_suggestion/initial_plan/<field>
+    Endpoint: /api/web_ai_suggestion/initial_plan/<field>
     """
 
     # Field names mapping to readable labels
@@ -4505,7 +4505,7 @@ def get_initial_plan_summary_prompt(
     """
     Analyze the documented examination findings and provide clinical interpretation with provisional diagnosis.
 
-    Endpoint: /api/ai_suggestion/initial_plan_summary
+    Endpoint: /api/web_ai_suggestion/initial_plan_summary
     """
     context = build_clinical_context(age_sex, present_hist, past_hist, subjective=subjective, diagnosis=diagnosis)
     findings_block = _format_dict_block("PHYSICAL EXAMINATION FINDINGS DOCUMENTED", plan_fields)
@@ -4614,7 +4614,7 @@ def get_smart_goals_field_prompt(
 
     NEW: Adjusts goal timeframes and expectations based on pain severity, irritability, and healing stage.
 
-    Endpoint: /api/ai_suggestion/smart_goals/<field>
+    Endpoint: /api/web_ai_suggestion/smart_goals/<field>
     """
 
     # Detect body region for specific participation restrictions
@@ -5282,7 +5282,7 @@ def get_treatment_plan_field_prompt(
     requires different approaches) and respects irritability levels.
     NEW: INTRA-FORM ADAPTIVE AI - Learns from previous fields on THIS form
 
-    Endpoint: /api/ai_suggestion/treatment_plan/<field>
+    Endpoint: /api/web_ai_suggestion/treatment_plan/<field>
     """
     # Detect body region for specific intervention recommendations
     body_region = detect_body_region(present_hist)
@@ -5888,7 +5888,7 @@ def get_treatment_plan_summary_prompt(
     """
     Comprehensive treatment plan summary.
 
-    Endpoint: /api/ai_suggestion/treatment_plan_summary/<patient_id>
+    Endpoint: /api/web_ai_suggestion/treatment_plan_summary/<patient_id>
     """
     context = build_clinical_context(
         age_sex, present_hist, past_hist,
@@ -5986,7 +5986,7 @@ def get_followup_field_prompt(
     IMPROVED: Field-specific follow-up guidance with body region-specific progression strategies.
     Provides evidence-based reassessment and treatment modification recommendations.
 
-    Endpoint: /api/ai_suggestion/followup/<field>
+    Endpoint: /api/web_ai_suggestion/followup/<field>
     """
 
     # Detect body region for specific progression strategies
@@ -6846,7 +6846,7 @@ PROMPT_CATALOG = {
     "past_questions": {
         "function": get_past_questions_prompt,
         "category": "history_taking",
-        "endpoint": "/api/ai_suggestion/past_questions",
+        "endpoint": "/api/web_ai_suggestion/past_questions",
         "description": "Generate targeted past medical history questions",
         "version": "2025-01-improved",
     },
@@ -6863,7 +6863,7 @@ PROMPT_CATALOG = {
     "subjective_diagnosis": {
         "function": get_subjective_diagnosis_prompt,
         "category": "subjective_examination",
-        "endpoint": "/api/ai_suggestion/subjective_diagnosis",
+        "endpoint": "/api/web_ai_suggestion/subjective_diagnosis",
         "description": "Generate provisional diagnoses from subjective data only",
         "version": "2025-01-improved",
     },
@@ -6872,7 +6872,7 @@ PROMPT_CATALOG = {
     "patient_perspectives_field": {
         "function": get_patient_perspectives_field_prompt,
         "category": "biopsychosocial",
-        "endpoint": "/api/ai_suggestion/perspectives/<field>",
+        "endpoint": "/api/web_ai_suggestion/perspectives/<field>",
         "description": "Generate FIELD-SPECIFIC CSM-based patient perspective questions WITH clinical reasoning",
         "version": "2025-01-improved",
         "changelog": "Now provides field-specific questions AND clinical reasoning for each CSM component"
@@ -6890,7 +6890,7 @@ PROMPT_CATALOG = {
     "provisional_diagnosis": {
         "function": get_provisional_diagnosis_prompt,
         "category": "diagnosis",
-        "endpoint": "/api/ai_suggestion/provisional_diagnosis",
+        "endpoint": "/api/web_ai_suggestion/provisional_diagnosis",
         "description": "Generate comprehensive provisional diagnosis from all data",
         "version": "2025-01-improved",
     },
@@ -6946,14 +6946,14 @@ PROMPT_CATALOG = {
     "initial_plan_field": {
         "function": get_initial_plan_field_prompt,
         "category": "treatment_planning",
-        "endpoint": "/api/ai_suggestion/initial_plan/<field>",
+        "endpoint": "/api/web_ai_suggestion/initial_plan/<field>",
         "description": "Initial treatment plan field suggestions",
         "version": "2025-01-improved",
     },
     "initial_plan_summary": {
         "function": get_initial_plan_summary_prompt,
         "category": "treatment_planning",
-        "endpoint": "/api/ai_suggestion/initial_plan_summary",
+        "endpoint": "/api/web_ai_suggestion/initial_plan_summary",
         "description": "Summarize initial treatment plan",
         "version": "2025-01-improved",
     },
@@ -6968,7 +6968,7 @@ PROMPT_CATALOG = {
     "smart_goals_field": {
         "function": get_smart_goals_field_prompt,
         "category": "treatment_planning",
-        "endpoint": "/api/ai_suggestion/smart_goals/<field>",
+        "endpoint": "/api/web_ai_suggestion/smart_goals/<field>",
         "description": "FIELD-SPECIFIC SMART goals with body region-specific ICF participation guidance",
         "version": "2025-01-improved",
         "changelog": "Now provides body region-specific participation restrictions, measurement criteria, evidence-based timeframes, and detailed field-specific guidance for patient_goal and outcome_timeframe (combined outcomes + timeframe)"
@@ -6976,7 +6976,7 @@ PROMPT_CATALOG = {
     "treatment_plan_field": {
         "function": get_treatment_plan_field_prompt,
         "category": "treatment_planning",
-        "endpoint": "/api/ai_suggestion/treatment_plan/<field>",
+        "endpoint": "/api/web_ai_suggestion/treatment_plan/<field>",
         "description": "FIELD-SPECIFIC treatment interventions with body region-specific evidence-based guidance",
         "version": "2025-01-improved",
         "changelog": "Now provides body region-specific interventions (shoulder, lumbar, knee, etc.) with field-specific guidance for treatment_plan and reasoning fields"
@@ -6984,7 +6984,7 @@ PROMPT_CATALOG = {
     "treatment_plan_summary": {
         "function": get_treatment_plan_summary_prompt,
         "category": "treatment_planning",
-        "endpoint": "/api/ai_suggestion/treatment_plan_summary/<patient_id>",
+        "endpoint": "/api/web_ai_suggestion/treatment_plan_summary/<patient_id>",
         "description": "Summarize complete treatment plan",
         "version": "2025-01-improved",
     },
@@ -7001,7 +7001,7 @@ PROMPT_CATALOG = {
     "followup_field": {
         "function": get_followup_field_prompt,
         "category": "followup",
-        "endpoint": "/api/ai_suggestion/followup/<field>",
+        "endpoint": "/api/web_ai_suggestion/followup/<field>",
         "description": "FIELD-SPECIFIC follow-up with body region-specific progression strategies",
         "version": "2025-01-improved",
         "changelog": "Provides progression/modification strategies based on achievement grade (Fully/Partially/Not Achieved) with body region-specific reassessment priorities, discharge criteria, and clinical decision frameworks"
