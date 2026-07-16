@@ -1396,6 +1396,24 @@ if (genBtn) {
       } else {
         console.log('[Treatment Summary] Summary received, length:', data.summary.length);
         AIModal.showContent(data);
+
+        // Auto-fill the Treatment Plan textarea with the generated summary,
+        // instead of leaving the physician to copy/paste it manually.
+        const treatmentPlanEl = document.getElementById('treatment_plan');
+        if (treatmentPlanEl) {
+          treatmentPlanEl.value = data.summary.replace(/^#{1,3}\s*/gm, '').replace(/\*\*/g, '').trim();
+          treatmentPlanEl.classList.remove('blank-textarea');
+          treatmentPlanEl.classList.add('prefilled-textarea');
+
+          const fieldBlock = treatmentPlanEl.closest('.field-block');
+          if (fieldBlock && !fieldBlock.querySelector('.ai-prefill-label')) {
+            const label = document.createElement('div');
+            label.className = 'ai-prefill-label';
+            label.textContent = '🤖 AI suggested — edit as needed';
+            const anchor = treatmentPlanEl.closest('.control-group') || treatmentPlanEl;
+            anchor.parentNode.insertBefore(label, anchor);
+          }
+        }
       }
     } catch (err) {
       console.error('[Treatment Summary] Exception caught:', err);

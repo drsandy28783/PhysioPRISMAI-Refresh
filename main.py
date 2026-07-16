@@ -6685,8 +6685,6 @@ def qm_smart_goals(patient_id):
 @app.route('/qm/treatment_plan/<path:patient_id>', methods=['GET', 'POST'])
 @login_required()
 def qm_treatment_plan(patient_id):
-    from quick_mode_service import generate_treatment_plan_prefills
-
     doc = db.collection('patients').document(patient_id).get()
     if not doc.exists:
         return "Patient not found.", 404
@@ -6718,14 +6716,42 @@ def qm_treatment_plan(patient_id):
             logger.warning(f"QM treatment plan: could not fetch {collection} for {patient_id}: {e}")
             return {}
 
-    patho_data        = _fetch_latest('patho_mechanism')
+    subj_data         = _fetch_latest('subjective_examination')
     prov_diag_data    = _fetch_latest('provisional_diagnosis')
     smart_goals_data  = _fetch_latest('smart_goals')
-    obj_data          = _fetch_latest('objective_assessments')
 
-    prefills = generate_treatment_plan_prefills(
-        patient, patho_data, prov_diag_data, smart_goals_data, obj_data
-    )
+    # Use the same centralized, phase-based prompt as the "Generate Summary" button,
+    # so the automatic prefill and the on-demand summary are the same response
+    # instead of two different AI outputs for the same field.
+    prefills = {}
+    if patient.get('present_history'):
+        try:
+            diagnosis_str = "\n".join(
+                f"- {label}: {prov_diag_data[key]}" for key, label in [
+                    ('structure_fault', 'Structure at Fault'),
+                    ('likelihood', 'Likelihood'),
+                    ('symptom', 'Symptom'),
+                    ('findings_support', 'Supporting Findings'),
+                    ('findings_reject', 'Rejecting Findings'),
+                    ('hypothesis_supported', 'Hypothesis Supported'),
+                ] if prov_diag_data.get(key)
+            )
+            sanitized_age_sex = sanitize_age_sex(patient.get('age_sex', ''))
+            prompt = get_treatment_plan_summary_prompt(
+                patient_id=patient_id,
+                age_sex=sanitized_age_sex,
+                present_hist=sanitize_clinical_text(patient.get('present_history', '')),
+                past_hist=sanitize_clinical_text(patient.get('past_history', '')),
+                subjective=sanitize_subjective_data(subj_data),
+                diagnosis=diagnosis_str,
+                goals=sanitize_subjective_data(smart_goals_data),
+                treatment_fields={},
+            )
+            summary = get_ai_suggestion(prompt, patient_context=sanitized_age_sex).strip()
+            if summary:
+                prefills = {'treatment_plan': split_ai_response(summary)['visible_text']}
+        except Exception as e:
+            logger.error(f"QM treatment plan prefill failed for {patient_id}: {e}", exc_info=True)
 
     return render_template(
         'qm/treatment_plan.html',

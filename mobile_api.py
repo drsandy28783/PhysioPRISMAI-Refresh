@@ -1475,7 +1475,6 @@ def api_qm_prefill():
             generate_obj_assessment_prefills,
             generate_prov_diag_prefills,
             generate_smart_goals_prefills,
-            generate_treatment_plan_prefills,
         )
 
         body = request.get_json() or {}
@@ -1545,13 +1544,56 @@ def api_qm_prefill():
             prefills = generate_smart_goals_prefills(patient_data, patho_data, prov_diag_data, perspectives_data)
 
         elif step == 'treatment_plan':
-            patho_data = fetch_assessment('patho_mechanism', 'pathoMechanism')
-            prov_diag_data = fetch_assessment('provisional_diagnosis', 'provisionalDiagnosis')
+            # Use the same centralized, phase-based prompt as the mobile app's own
+            # "Generate Summary" button (api_ai_treatment_plan_summary), so the
+            # automatic prefill and the on-demand summary are the same response
+            # instead of two different AI outputs for the same field.
+            from ai_prompts import get_treatment_plan_summary_prompt, split_ai_response
+            from data_sanitization import sanitize_age_sex, sanitize_clinical_text, sanitize_subjective_data
+            from mobile_api_ai import get_ai_suggestion_safe
+
+            subjective_data = fetch_assessment('subjective_examination', 'subjectiveExamination')
             smart_goals_data = fetch_assessment('smart_goals', 'smartGoals')
-            obj_assessment_data = fetch_assessment('objective_assessments', 'objectiveAssessment')
-            prefills = generate_treatment_plan_prefills(
-                patient_data, patho_data, prov_diag_data, smart_goals_data, obj_assessment_data
-            )
+            prov_diag_data = fetch_assessment('provisional_diagnosis', 'provisionalDiagnosis')
+
+            if isinstance(prov_diag_data, dict):
+                diagnosis_str = "\n".join(
+                    f"- {label}: {prov_diag_data[key]}" for key, label in [
+                        ('structure_fault', 'Structure at Fault'),
+                        ('likelihood', 'Likelihood'),
+                        ('symptom', 'Symptom'),
+                        ('findings_support', 'Supporting Findings'),
+                        ('findings_reject', 'Rejecting Findings'),
+                        ('hypothesis_supported', 'Hypothesis Supported'),
+                    ] if prov_diag_data.get(key)
+                )
+            else:
+                diagnosis_str = str(prov_diag_data or '')
+
+            prefills = {}
+            if patient_data.get('present_history') or patient_data.get('present_complaint'):
+                try:
+                    age_sex = sanitize_age_sex(patient_data.get('age_sex', ''))
+                    prompt = get_treatment_plan_summary_prompt(
+                        patient_id=patient_id,
+                        age_sex=age_sex,
+                        present_hist=sanitize_clinical_text(patient_data.get('present_complaint', '') or patient_data.get('present_history', '')),
+                        past_hist=sanitize_clinical_text(patient_data.get('past_history', '')),
+                        subjective=sanitize_subjective_data(subjective_data),
+                        diagnosis=sanitize_clinical_text(diagnosis_str),
+                        goals=sanitize_subjective_data(smart_goals_data),
+                        treatment_fields={},
+                    )
+                    summary = get_ai_suggestion_safe(prompt, metadata={
+                        'endpoint': 'qm_treatment_plan_prefill',
+                        'tags': ['treatment', 'quick_mode', 'prefill'],
+                        'patient_id': patient_id,
+                        'user_id': g.user.get('email')
+                    }, patient_context=age_sex).strip()
+                    if summary:
+                        prefills = {'treatment_plan': split_ai_response(summary)['visible_text']}
+                except Exception as e:
+                    logger.error(f"QM treatment plan prefill failed for {patient_id}: {e}", exc_info=True)
 
         else:
             return jsonify({'error': f'Unknown step: {step}'}), 400
